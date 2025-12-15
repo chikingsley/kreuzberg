@@ -181,6 +181,13 @@ def update_text_file(file_path: Path, pattern: str, repl: str) -> Tuple[bool, st
     return True, old_value, repl
 
 
+def normalize_rubygems_version(version: str) -> str:
+    if "-" not in version:
+        return version
+    base, prerelease = version.split("-", 1)
+    return f"{base}.pre.{prerelease.replace('-', '.')}"
+
+
 def main():
     repo_root = get_repo_root()
 
@@ -251,12 +258,17 @@ def main():
         (
             repo_root / "packages/ruby/Gemfile.lock",
             r'(^\s{4}kreuzberg \()[^\)]+(\))',
-            rf"\g<1>{version}\g<2>",
+            rf"\g<1>{normalize_rubygems_version(version)}\g<2>",
         ),
         (
             repo_root / "crates/kreuzberg/Cargo.toml",
             r'^(kreuzberg-tesseract\s*=\s*\{\s*version\s*=\s*")[^"]+("\s*,\s*optional\s*=\s*true\s*\})',
             rf"\g<1>{version}\g<2>",
+        ),
+        (
+            repo_root / "crates/kreuzberg-ffi/kreuzberg-ffi-install.pc",
+            r"^Version:\s*([0-9A-Za-z\.\-]+)\s*$",
+            f"Version: {version}",
         ),
         (
             repo_root / "crates/kreuzberg-node/tests/binding/cli.spec.ts",
