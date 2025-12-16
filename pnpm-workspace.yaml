@@ -2,6 +2,7 @@ packages:
   - "."
   - "crates/*"
   - "packages/*"
+  - "packages/**/*"
   - "examples/*"
   - "examples/**/*"
   - 'e2e/**/*'
