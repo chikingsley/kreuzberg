@@ -32,6 +32,7 @@ __all__ = [
     "batch_extract_bytes_sync",
     "batch_extract_files",
     "batch_extract_files_sync",
+    "classify_error",
     "clear_document_extractors",
     "clear_ocr_backends",
     "clear_post_processors",
@@ -41,11 +42,13 @@ __all__ = [
     "config_to_json",
     "detect_mime_type_from_bytes",
     "detect_mime_type_from_path",
+    "error_code_name",
     "extract_bytes",
     "extract_bytes_sync",
     "extract_file",
     "extract_file_sync",
     "get_embedding_preset",
+    "get_error_details",
     "get_extensions_for_mime",
     "get_last_error_code",
     "get_last_panic_context",
@@ -1326,3 +1329,9 @@ def get_valid_token_reduction_levels() -> list[str]: ...
 def config_to_json(config: ExtractionConfig) -> str: ...
 def config_get_field(config: ExtractionConfig, field_name: str) -> Any | None: ...
 def config_merge(base: ExtractionConfig, override: ExtractionConfig) -> None: ...
+
+# Error Classification Functions (Phase 2 FFI)
+
+def get_error_details() -> dict[str, Any]: ...
+def classify_error(message: str) -> int: ...
+def error_code_name(code: int) -> str: ...

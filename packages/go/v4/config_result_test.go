@@ -338,6 +338,36 @@ func TestConfigMerge(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "override to default value (use_cache: false -> true)",
+			baseConfig: &kreuzberg.ExtractionConfig{
+				UseCache: kreuzberg.BoolPtr(false),
+			},
+			override: &kreuzberg.ExtractionConfig{
+				UseCache: kreuzberg.BoolPtr(true),
+			},
+			wantErr: false,
+			check: func(t *testing.T, merged *kreuzberg.ExtractionConfig) {
+				if merged.UseCache == nil || !*merged.UseCache {
+					t.Error("UseCache should be overridden to true (default value)")
+				}
+			},
+		},
+		{
+			name: "override to default value (force_ocr: false -> true)",
+			baseConfig: &kreuzberg.ExtractionConfig{
+				ForceOCR: kreuzberg.BoolPtr(false),
+			},
+			override: &kreuzberg.ExtractionConfig{
+				ForceOCR: kreuzberg.BoolPtr(true),
+			},
+			wantErr: false,
+			check: func(t *testing.T, merged *kreuzberg.ExtractionConfig) {
+				if merged.ForceOCR == nil || !*merged.ForceOCR {
+					t.Error("ForceOCR should be overridden to true")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -345,8 +375,9 @@ func TestConfigMerge(t *testing.T) {
 			// Make a copy to avoid modifying the original
 			var baseCopy *kreuzberg.ExtractionConfig
 			if tt.baseConfig != nil {
+				baseCopy = &kreuzberg.ExtractionConfig{}
 				data, _ := json.Marshal(tt.baseConfig)
-				json.Unmarshal(data, &baseCopy)
+				json.Unmarshal(data, baseCopy)
 			}
 
 			err := kreuzberg.ConfigMerge(baseCopy, tt.override)

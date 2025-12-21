@@ -1730,12 +1730,12 @@ fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> Resul
                 let table_hash = ruby.hash_new();
 
                 let cells_array = ruby.ary_new();
-                for row in table.cells {
+                for row in table.cells.clone() {
                     let row_array = ruby.ary_from_vec(row);
                     cells_array.push(row_array)?;
                 }
                 table_hash.aset("cells", cells_array)?;
-                table_hash.aset("markdown", table.markdown)?;
+                table_hash.aset("markdown", table.markdown.clone())?;
                 table_hash.aset("page_number", table.page_number as i64)?;
 
                 tables_array.push(table_hash)?;
@@ -1747,7 +1747,7 @@ fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> Resul
                 let image_hash = ruby.hash_new();
                 let data_value = ruby.str_from_slice(&image.data).into_value_with(ruby);
                 image_hash.aset("data", data_value)?;
-                image_hash.aset("format", image.format)?;
+                image_hash.aset("format", image.format.clone())?;
                 image_hash.aset("image_index", image.image_index as i64)?;
                 if let Some(page) = image.page_number {
                     image_hash.aset("page_number", page as i64)?;
@@ -1764,8 +1764,8 @@ fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> Resul
                 } else {
                     image_hash.aset("height", ruby.qnil().as_value())?;
                 }
-                if let Some(colorspace) = image.colorspace {
-                    image_hash.aset("colorspace", colorspace)?;
+                if let Some(colorspace) = &image.colorspace {
+                    image_hash.aset("colorspace", colorspace.clone())?;
                 } else {
                     image_hash.aset("colorspace", ruby.qnil().as_value())?;
                 }
@@ -1782,13 +1782,13 @@ fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> Resul
                         ruby.qfalse().as_value()
                     },
                 )?;
-                if let Some(description) = image.description {
-                    image_hash.aset("description", description)?;
+                if let Some(description) = &image.description {
+                    image_hash.aset("description", description.clone())?;
                 } else {
                     image_hash.aset("description", ruby.qnil().as_value())?;
                 }
-                if let Some(ocr_result) = image.ocr_result {
-                    let nested = extraction_result_to_ruby(ruby, *ocr_result)?;
+                if let Some(ocr_result) = &image.ocr_result {
+                    let nested = extraction_result_to_ruby(ruby, (**ocr_result).clone())?;
                     image_hash.aset("ocr_result", nested.into_value_with(ruby))?;
                 } else {
                     image_hash.aset("ocr_result", ruby.qnil().as_value())?;

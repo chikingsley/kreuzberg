@@ -2212,7 +2212,8 @@ impl From<kreuzberg::keywords::KeywordConfig> for KeywordConfig {
 ///     >>> json_str = config_to_json(config)
 ///     >>> print(json_str)
 #[pyfunction]
-pub fn config_to_json(config: &ExtractionConfig) -> PyResult<String> {
+#[pyo3(signature = (config))]
+pub fn config_to_json(config: ExtractionConfig) -> PyResult<String> {
     serde_json::to_string(&config.inner)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize config to JSON: {}", e)))
 }
@@ -2235,7 +2236,8 @@ pub fn config_to_json(config: &ExtractionConfig) -> PyResult<String> {
 ///     >>> use_cache = config_get_field(config, "use_cache")
 ///     >>> print(use_cache)  # True
 #[pyfunction]
-pub fn config_get_field(config: &ExtractionConfig, field_name: &str) -> PyResult<Option<Py<PyAny>>> {
+#[pyo3(signature = (config, field_name))]
+pub fn config_get_field(config: ExtractionConfig, field_name: &str) -> PyResult<Option<Py<PyAny>>> {
     let json_value = serde_json::to_value(&config.inner)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Failed to serialize config: {}", e)))?;
 
@@ -2275,51 +2277,55 @@ pub fn config_get_field(config: &ExtractionConfig, field_name: &str) -> PyResult
 ///     >>> print(base.force_ocr)  # True
 ///     >>> print(base.use_cache)  # True (unchanged)
 #[pyfunction]
-pub fn config_merge(base: &mut ExtractionConfig, override_config: &ExtractionConfig) -> PyResult<()> {
+#[pyo3(signature = (base, override_config))]
+pub fn config_merge(py: Python<'_>, base: Py<ExtractionConfig>, override_config: &ExtractionConfig) -> PyResult<()> {
     // Shallow merge: override non-default fields from override into base
     let override_default = kreuzberg::ExtractionConfig::default();
 
+    // Get mutable borrow of base
+    let mut base_mut = base.borrow_mut(py);
+
     if override_config.inner.use_cache != override_default.use_cache {
-        base.inner.use_cache = override_config.inner.use_cache;
+        base_mut.inner.use_cache = override_config.inner.use_cache;
     }
     if override_config.inner.enable_quality_processing != override_default.enable_quality_processing {
-        base.inner.enable_quality_processing = override_config.inner.enable_quality_processing;
+        base_mut.inner.enable_quality_processing = override_config.inner.enable_quality_processing;
     }
     if override_config.inner.force_ocr != override_default.force_ocr {
-        base.inner.force_ocr = override_config.inner.force_ocr;
+        base_mut.inner.force_ocr = override_config.inner.force_ocr;
     }
     if override_config.inner.ocr.is_some() {
-        base.inner.ocr = override_config.inner.ocr.clone();
+        base_mut.inner.ocr = override_config.inner.ocr.clone();
     }
     if override_config.inner.chunking.is_some() {
-        base.inner.chunking = override_config.inner.chunking.clone();
+        base_mut.inner.chunking = override_config.inner.chunking.clone();
     }
     if override_config.inner.images.is_some() {
-        base.inner.images = override_config.inner.images.clone();
+        base_mut.inner.images = override_config.inner.images.clone();
     }
     if override_config.inner.pdf_options.is_some() {
-        base.inner.pdf_options = override_config.inner.pdf_options.clone();
+        base_mut.inner.pdf_options = override_config.inner.pdf_options.clone();
     }
     if override_config.inner.token_reduction.is_some() {
-        base.inner.token_reduction = override_config.inner.token_reduction.clone();
+        base_mut.inner.token_reduction = override_config.inner.token_reduction.clone();
     }
     if override_config.inner.language_detection.is_some() {
-        base.inner.language_detection = override_config.inner.language_detection.clone();
+        base_mut.inner.language_detection = override_config.inner.language_detection.clone();
     }
     if override_config.inner.keywords.is_some() {
-        base.inner.keywords = override_config.inner.keywords.clone();
+        base_mut.inner.keywords = override_config.inner.keywords.clone();
     }
     if override_config.inner.postprocessor.is_some() {
-        base.inner.postprocessor = override_config.inner.postprocessor.clone();
+        base_mut.inner.postprocessor = override_config.inner.postprocessor.clone();
     }
     if override_config.inner.html_options.is_some() {
-        base.inner.html_options = override_config.inner.html_options.clone();
+        base_mut.inner.html_options = override_config.inner.html_options.clone();
     }
     if override_config.inner.max_concurrent_extractions.is_some() {
-        base.inner.max_concurrent_extractions = override_config.inner.max_concurrent_extractions;
+        base_mut.inner.max_concurrent_extractions = override_config.inner.max_concurrent_extractions;
     }
     if override_config.inner.pages.is_some() {
-        base.inner.pages = override_config.inner.pages.clone();
+        base_mut.inner.pages = override_config.inner.pages.clone();
     }
 
     Ok(())

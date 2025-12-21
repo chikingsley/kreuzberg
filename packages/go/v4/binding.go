@@ -58,6 +58,19 @@ int32_t kreuzberg_result_get_page_count(const CExtractionResult *result);
 int32_t kreuzberg_result_get_chunk_count(const CExtractionResult *result);
 char *kreuzberg_result_get_detected_language(const CExtractionResult *result);
 CMetadataField kreuzberg_result_get_metadata_field(const CExtractionResult *result, const char *field_name);
+
+// Phase 2 Error Classification FFI functions
+uint32_t kreuzberg_error_code_validation(void);
+uint32_t kreuzberg_error_code_parsing(void);
+uint32_t kreuzberg_error_code_ocr(void);
+uint32_t kreuzberg_error_code_missing_dependency(void);
+uint32_t kreuzberg_error_code_io(void);
+uint32_t kreuzberg_error_code_plugin(void);
+uint32_t kreuzberg_error_code_unsupported_format(void);
+uint32_t kreuzberg_error_code_internal(void);
+uint32_t kreuzberg_error_code_count(void);
+const char *kreuzberg_error_code_name(uint32_t code);
+const char *kreuzberg_error_code_description(uint32_t code);
 */
 import "C"
 
@@ -410,17 +423,16 @@ func lastError() error {
 	errMsg := C.GoString(errPtr)
 	code := ErrorCode(C.kreuzberg_last_error_code())
 
+	// Check for panic context regardless of error code
 	var panicCtx *PanicContext
-	if code == ErrorCodePanic {
-		panicPtr := C.kreuzberg_last_panic_context()
-		if panicPtr != nil {
-			defer C.kreuzberg_free_string(panicPtr)
-			panicJSON := C.GoString(panicPtr)
-			if panicJSON != "" {
-				var ctx PanicContext
-				if err := json.Unmarshal([]byte(panicJSON), &ctx); err == nil {
-					panicCtx = &ctx
-				}
+	panicPtr := C.kreuzberg_last_panic_context()
+	if panicPtr != nil {
+		defer C.kreuzberg_free_string(panicPtr)
+		panicJSON := C.GoString(panicPtr)
+		if panicJSON != "" {
+			var ctx PanicContext
+			if err := json.Unmarshal([]byte(panicJSON), &ctx); err == nil {
+				panicCtx = &ctx
 			}
 		}
 	}

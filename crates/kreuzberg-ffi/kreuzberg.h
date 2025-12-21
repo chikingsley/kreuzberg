@@ -221,6 +221,48 @@ typedef char *(*DocumentExtractorCallback)(const uint8_t *content,
 typedef char *(*ValidatorCallback)(const char *result_json);
 
 /**
+ * C-compatible structured error details returned by `kreuzberg_get_error_details()`.
+ *
+ * All string fields (message, error_type, source_file, source_function, context_info)
+ * are dynamically allocated C strings that MUST be freed using `kreuzberg_free_string()`.
+ * Set fields are non-NULL; unset fields are NULL.
+ */
+typedef struct CErrorDetails {
+  /**
+   * The error message (must be freed with kreuzberg_free_string)
+   */
+  char *message;
+  /**
+   * Numeric error code (0-7 for Kreuzberg errors, 1-7 for panic_shield codes)
+   */
+  uint32_t error_code;
+  /**
+   * Human-readable error type name (must be freed with kreuzberg_free_string)
+   */
+  char *error_type;
+  /**
+   * Source file where error occurred (may be NULL)
+   */
+  char *source_file;
+  /**
+   * Source function where error occurred (may be NULL)
+   */
+  char *source_function;
+  /**
+   * Line number in source file (0 if unknown)
+   */
+  uint32_t source_line;
+  /**
+   * Additional context information (may be NULL)
+   */
+  char *context_info;
+  /**
+   * 1 if this error originated from a panic, 0 otherwise
+   */
+  int32_t is_panic;
+} CErrorDetails;
+
+/**
  * Metadata field accessor structure
  *
  * Returned by `kreuzberg_result_get_metadata_field()`. Contains the field value
@@ -1563,6 +1605,113 @@ const char *kreuzberg_error_code_name(uint32_t code);
  * ```
  */
 const char *kreuzberg_error_code_description(uint32_t code);
+
+/**
+ * Retrieves detailed error information from the thread-local error storage.
+ *
+ * Returns structured error details including message, code, type, and source location.
+ * This function queries the error state captured by FFI functions and provides
+ * comprehensive error information for binding implementations.
+ *
+ * # Returns
+ *
+ * A `CErrorDetails` structure with the following characteristics:
+ * - All non-NULL string pointers must be freed with `kreuzberg_free_string()`
+ * - NULL pointers indicate the field is not available
+ * - `error_code` is a numeric code (0-7)
+ * - `source_line` is 0 if unknown
+ * - `is_panic` is 1 if error originated from a panic, 0 otherwise
+ *
+ * # Thread Safety
+ *
+ * This function is thread-safe. Each thread has its own error storage.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CErrorDetails details = kreuzberg_get_error_details();
+ * printf("Error: %s (code=%u, type=%s)\n", details.message, details.error_code, details.error_type);
+ * if (details.source_file != NULL) {
+ *     printf("  at %s:%u in %s\n", details.source_file, details.source_line, details.source_function);
+ * }
+ * kreuzberg_free_string(details.message);
+ * kreuzberg_free_string(details.error_type);
+ * if (details.source_file != NULL) kreuzberg_free_string(details.source_file);
+ * if (details.source_function != NULL) kreuzberg_free_string(details.source_function);
+ * if (details.context_info != NULL) kreuzberg_free_string(details.context_info);
+ * ```
+ *
+ * # C Signature
+ *
+ * ```c
+ * typedef struct {
+ *     char* message;
+ *     uint32_t error_code;
+ *     char* error_type;
+ *     char* source_file;
+ *     char* source_function;
+ *     uint32_t source_line;
+ *     char* context_info;
+ *     int is_panic;
+ * } CErrorDetails;
+ *
+ * CErrorDetails kreuzberg_get_error_details(void);
+ * ```
+ */
+struct CErrorDetails kreuzberg_get_error_details(void);
+
+/**
+ * Classifies an error based on the error message string.
+ *
+ * Analyzes an error message and attempts to classify it into one of the standard
+ * Kreuzberg error codes (0-7). This is useful for converting error messages from
+ * external libraries or system calls into Kreuzberg error categories.
+ *
+ * # Arguments
+ *
+ * - `error_message`: Pointer to a null-terminated C string with the error message
+ *
+ * # Returns
+ *
+ * Numeric error code (0-7) indicating the most likely error classification.
+ * Returns 7 (Internal) if the message cannot be reliably classified.
+ *
+ * # Classification Rules
+ *
+ * The classifier looks for common keywords and patterns:
+ * - **0 (Validation)**: "invalid", "validation", "parameter", "constraint", "format mismatch"
+ * - **1 (Parsing)**: "parse", "parsing", "corrupt", "unexpected", "malformed", "invalid format"
+ * - **2 (OCR)**: "ocr", "tesseract", "recognition", "optical"
+ * - **3 (MissingDependency)**: "not found", "missing", "dependency", "not installed", "unavailable"
+ * - **4 (Io)**: "io", "file", "read", "write", "permission", "access", "disk", "exists"
+ * - **5 (Plugin)**: "plugin", "loader", "registry", "extension"
+ * - **6 (UnsupportedFormat)**: "unsupported", "unknown format", "MIME type"
+ *
+ * # Thread Safety
+ *
+ * This function is thread-safe and has no side effects.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * uint32_t code = kreuzberg_classify_error("Failed to open file: permission denied");
+ * if (code == kreuzberg_error_code_io()) {
+ *     printf("This is an I/O error\n");
+ * }
+ * ```
+ *
+ * # Safety
+ *
+ * - `error_message` must be a valid null-terminated C string or NULL
+ * - `error_message` must remain valid for the duration of the function call
+ *
+ * # C Signature
+ *
+ * ```c
+ * uint32_t kreuzberg_classify_error(const char* error_message);
+ * ```
+ */
+uint32_t kreuzberg_classify_error(const char *error_message);
 
 /**
  * Get page count from extraction result.

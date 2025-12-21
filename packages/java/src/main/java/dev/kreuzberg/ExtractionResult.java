@@ -120,8 +120,14 @@ public final class ExtractionResult {
      */
     public int getPageCount() {
         // Return directly from metadata if available
-        if (this.metadata != null && this.metadata.pages != null) {
-            return this.metadata.pages.totalCount;
+        if (this.metadata != null) {
+            Object pages = this.metadata.get("pages");
+            if (pages instanceof Map) {
+                Object count = ((Map<?, ?>) pages).get("totalCount");
+                if (count instanceof Number) {
+                    return ((Number) count).intValue();
+                }
+            }
         }
         return 0;
     }
@@ -180,34 +186,34 @@ public final class ExtractionResult {
 
         // Direct field access without FFI for top-level metadata fields
         if ("title".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.title);
+            return Optional.ofNullable(this.metadata.get("title"));
         }
         if ("author".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.author);
+            return Optional.ofNullable(this.metadata.get("author"));
         }
         if ("subject".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.subject);
+            return Optional.ofNullable(this.metadata.get("subject"));
         }
         if ("keywords".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.keywords);
+            return Optional.ofNullable(this.metadata.get("keywords"));
         }
         if ("language".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.language);
+            return Optional.ofNullable(this.metadata.get("language"));
         }
         if ("created".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.created);
+            return Optional.ofNullable(this.metadata.get("created"));
         }
         if ("modified".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.modified);
+            return Optional.ofNullable(this.metadata.get("modified"));
         }
         if ("creators".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.creators);
+            return Optional.ofNullable(this.metadata.get("creators"));
         }
         if ("format".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.format);
+            return Optional.ofNullable(this.metadata.get("format"));
         }
         if ("pages".equals(fieldName)) {
-            return Optional.ofNullable(this.metadata.pages);
+            return Optional.ofNullable(this.metadata.get("pages"));
         }
 
         // For unknown fields, return empty

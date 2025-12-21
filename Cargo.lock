@@ -2948,6 +2948,7 @@ dependencies = [
  "async-trait",
  "html-to-markdown-rs",
  "kreuzberg",
+ "kreuzberg-ffi",
  "once_cell",
  "pyo3",
  "pyo3-async-runtimes",

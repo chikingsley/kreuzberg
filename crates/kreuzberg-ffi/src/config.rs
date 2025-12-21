@@ -399,23 +399,13 @@ pub unsafe extern "C" fn kreuzberg_config_merge(
     let base_ref = unsafe { &mut *base };
     let override_ref = unsafe { &*override_config };
 
-    // Simple shallow merge: copy non-default override fields into base
-    // This merges top-level fields directly
-    if override_ref.use_cache != ExtractionConfig::default().use_cache {
-        base_ref.use_cache = override_ref.use_cache;
-    }
-
-    if override_ref.enable_quality_processing != ExtractionConfig::default().enable_quality_processing {
-        base_ref.enable_quality_processing = override_ref.enable_quality_processing;
-    }
-
-    if override_ref.force_ocr != ExtractionConfig::default().force_ocr {
-        base_ref.force_ocr = override_ref.force_ocr;
-    }
-
-    if override_ref.max_concurrent_extractions != ExtractionConfig::default().max_concurrent_extractions {
-        base_ref.max_concurrent_extractions = override_ref.max_concurrent_extractions;
-    }
+    // Proper merge: unconditionally copy all fields from override to base.
+    // This ensures that override values take precedence, even when they match
+    // the default (fixes the bug where overriding to a default value was ignored).
+    base_ref.use_cache = override_ref.use_cache;
+    base_ref.enable_quality_processing = override_ref.enable_quality_processing;
+    base_ref.force_ocr = override_ref.force_ocr;
+    base_ref.max_concurrent_extractions = override_ref.max_concurrent_extractions;
 
     // Merge nested optional fields
     if override_ref.ocr.is_some() {
@@ -428,6 +418,32 @@ pub unsafe extern "C" fn kreuzberg_config_merge(
 
     if override_ref.images.is_some() {
         base_ref.images = override_ref.images.clone();
+    }
+
+    #[cfg(feature = "pdf")]
+    if override_ref.pdf_options.is_some() {
+        base_ref.pdf_options = override_ref.pdf_options.clone();
+    }
+
+    if override_ref.token_reduction.is_some() {
+        base_ref.token_reduction = override_ref.token_reduction.clone();
+    }
+
+    if override_ref.language_detection.is_some() {
+        base_ref.language_detection = override_ref.language_detection.clone();
+    }
+
+    if override_ref.pages.is_some() {
+        base_ref.pages = override_ref.pages.clone();
+    }
+
+    #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
+    if override_ref.keywords.is_some() {
+        base_ref.keywords = override_ref.keywords.clone();
+    }
+
+    if override_ref.postprocessor.is_some() {
+        base_ref.postprocessor = override_ref.postprocessor.clone();
     }
 
     if override_ref.html_options.is_some() {
@@ -971,6 +987,64 @@ mod tests {
 
         unsafe {
             kreuzberg_config_free(base_ptr);
+        }
+    }
+
+    #[test]
+    fn test_config_merge_override_to_default_value() {
+        // Test the bug fix: overriding use_cache from false to true
+        // (true is the default, so the old code would skip it)
+        let base_json = r#"{"use_cache": false}"#;
+        let override_json = r#"{"use_cache": true}"#;
+
+        let base_ptr = unsafe { kreuzberg_config_from_json(std::ffi::CString::new(base_json).unwrap().as_ptr()) };
+        let override_ptr =
+            unsafe { kreuzberg_config_from_json(std::ffi::CString::new(override_json).unwrap().as_ptr()) };
+
+        assert!(!base_ptr.is_null());
+        assert!(!override_ptr.is_null());
+
+        // Verify base starts with use_cache = false
+        let base_ref = unsafe { &*base_ptr };
+        assert!(!base_ref.use_cache);
+
+        // Perform merge
+        let result = unsafe { kreuzberg_config_merge(base_ptr, override_ptr) };
+        assert_eq!(result, 1);
+
+        // Verify the merge applied the override (use_cache should now be true)
+        let base_ref = unsafe { &*base_ptr };
+        assert!(base_ref.use_cache, "override to default value should be applied");
+
+        unsafe {
+            kreuzberg_config_free(base_ptr);
+            kreuzberg_config_free(override_ptr);
+        }
+    }
+
+    #[test]
+    fn test_config_merge_override_force_ocr() {
+        // Test merging force_ocr field (default is false)
+        let base_json = r#"{"force_ocr": false}"#;
+        let override_json = r#"{"force_ocr": true}"#;
+
+        let base_ptr = unsafe { kreuzberg_config_from_json(std::ffi::CString::new(base_json).unwrap().as_ptr()) };
+        let override_ptr =
+            unsafe { kreuzberg_config_from_json(std::ffi::CString::new(override_json).unwrap().as_ptr()) };
+
+        assert!(!base_ptr.is_null());
+        assert!(!override_ptr.is_null());
+
+        let result = unsafe { kreuzberg_config_merge(base_ptr, override_ptr) };
+        assert_eq!(result, 1);
+
+        // Verify merged config has force_ocr = true
+        let base_ref = unsafe { &*base_ptr };
+        assert!(base_ref.force_ocr);
+
+        unsafe {
+            kreuzberg_config_free(base_ptr);
+            kreuzberg_config_free(override_ptr);
         }
     }
 }

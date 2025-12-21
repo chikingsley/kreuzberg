@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Kreuzberg
   module Config
     # OCR configuration
@@ -715,7 +717,7 @@ module Kreuzberg
       #
       def to_json(*_args)
         json_hash = to_h
-        Kreuzberg._config_to_json_native(json_hash.to_json)
+        Kreuzberg._config_to_json_native(JSON.generate(json_hash))
       end
 
       # Get a field from the configuration
@@ -735,7 +737,7 @@ module Kreuzberg
       #
       def get_field(field_name)
         json_hash = to_h
-        Kreuzberg._config_get_field_native(json_hash.to_json, field_name.to_s)
+        Kreuzberg._config_get_field_native(JSON.generate(json_hash), field_name.to_s)
       end
 
       # Merge another configuration into this one
@@ -755,9 +757,17 @@ module Kreuzberg
       #
       def merge(other)
         other_config = other.is_a?(Extraction) ? other : Extraction.new(**other)
-        merged_json = Kreuzberg._config_merge_native(to_h.to_json, other_config.to_h.to_json)
+        merged_json = Kreuzberg._config_merge_native(JSON.generate(to_h), JSON.generate(other_config.to_h))
         merged_hash = JSON.parse(merged_json)
-        Extraction.new(**merged_hash.transform_keys(&:to_sym))
+        # Filter to only known keywords to avoid unknown keyword errors
+        known_keys = %i[
+          use_cache enable_quality_processing force_ocr ocr chunking
+          language_detection pdf_options image_extraction image_preprocessing
+          postprocessor token_reduction keywords html_options pages
+          max_concurrent_extractions
+        ]
+        filtered_hash = merged_hash.transform_keys(&:to_sym).select { |k, _| known_keys.include?(k) }
+        Extraction.new(**filtered_hash)
       end
 
       # Merge another configuration into this one (mutating)

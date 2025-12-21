@@ -99,6 +99,9 @@ from kreuzberg._internal_bindings import (
     batch_extract_bytes as batch_extract_bytes_impl,
 )
 from kreuzberg._internal_bindings import (
+    classify_error as _classify_error_impl,
+)
+from kreuzberg._internal_bindings import (
     batch_extract_bytes_sync as batch_extract_bytes_sync_impl,
 )
 from kreuzberg._internal_bindings import (
@@ -106,6 +109,11 @@ from kreuzberg._internal_bindings import (
 )
 from kreuzberg._internal_bindings import (
     batch_extract_files_sync as batch_extract_files_sync_impl,
+)
+from kreuzberg._internal_bindings import (
+    config_get_field,
+    config_merge,
+    config_to_json,
 )
 from kreuzberg._internal_bindings import (
     detect_mime_type_from_path as _detect_mime_type_from_path_impl,
@@ -121,6 +129,12 @@ from kreuzberg._internal_bindings import (
 )
 from kreuzberg._internal_bindings import (
     extract_file_sync as extract_file_sync_impl,
+)
+from kreuzberg._internal_bindings import (
+    error_code_name as _error_code_name_impl,
+)
+from kreuzberg._internal_bindings import (
+    get_error_details as _get_error_details_impl,
 )
 from kreuzberg._internal_bindings import (
     get_last_error_code as _get_last_error_code_impl,
@@ -198,17 +212,23 @@ __all__ = [
     "batch_extract_bytes_sync",
     "batch_extract_files",
     "batch_extract_files_sync",
+    "classify_error",
     "clear_document_extractors",
     "clear_ocr_backends",
     "clear_post_processors",
     "clear_validators",
+    "config_get_field",
+    "config_merge",
+    "config_to_json",
     "detect_mime_type",
     "detect_mime_type_from_path",
+    "error_code_name",
     "extract_bytes",
     "extract_bytes_sync",
     "extract_file",
     "extract_file_sync",
     "get_embedding_preset",
+    "get_error_details",
     "get_extensions_for_mime",
     "get_last_error_code",
     "get_last_panic_context",
@@ -765,3 +785,86 @@ def get_last_error_code() -> int | None:
         ...     print("A panic occurred")
     """
     return _get_last_error_code_impl()
+
+
+def get_error_details() -> dict[str, Any]:
+    """Get detailed error information from the FFI layer.
+
+    Retrieves structured error information from the thread-local error storage
+    in the FFI layer. Returns comprehensive details about the most recent error
+    including message, code, type, and source location if available.
+
+    Returns:
+        dict: Structured error details with keys:
+            - "message" (str): Human-readable error message
+            - "error_code" (int): Numeric error code (0-7)
+            - "error_type" (str): Error type name (e.g., "validation", "ocr")
+            - "source_file" (str | None): Source file path if available
+            - "source_function" (str | None): Function name if available
+            - "source_line" (int): Line number (0 if unknown)
+            - "context_info" (str | None): Additional context if available
+            - "is_panic" (bool): Whether error came from a panic
+
+    Example:
+        >>> from kreuzberg import get_error_details
+        >>> details = get_error_details()
+        >>> print(f"Error: {details['message']} (code={details['error_code']})")
+        >>> if details['source_file']:
+        ...     print(f"  at {details['source_file']}:{details['source_line']}")
+    """
+    return _get_error_details_impl()
+
+
+def classify_error(message: str) -> int:
+    """Classify an error message into a Kreuzberg error code.
+
+    Analyzes an error message and returns the most likely Kreuzberg error code
+    (0-7). Useful for categorizing error messages from external libraries or
+    system calls into standard Kreuzberg error categories.
+
+    Args:
+        message: The error message to classify
+
+    Returns:
+        int: Error code (0-7) representing the classification:
+            - 0 (Validation): Invalid parameters, constraints, format mismatches
+            - 1 (Parsing): Parse errors, corrupt data, malformed content
+            - 2 (OCR): OCR processing failures
+            - 3 (MissingDependency): Missing libraries or system dependencies
+            - 4 (Io): File I/O, permissions, disk errors
+            - 5 (Plugin): Plugin loading or registry errors
+            - 6 (UnsupportedFormat): Unsupported MIME types or formats
+            - 7 (Internal): Unknown or internal errors
+
+    Example:
+        >>> from kreuzberg import classify_error
+        >>> code = classify_error("Failed to open file: permission denied")
+        >>> if code == 4:
+        ...     print("This is an I/O error")
+        >>> code = classify_error("OCR processing failed")
+        >>> if code == 2:
+        ...     print("This is an OCR error")
+    """
+    return _classify_error_impl(message)
+
+
+def error_code_name(code: int) -> str:
+    """Get the human-readable name of an error code.
+
+    Args:
+        code: Numeric error code (0-7)
+
+    Returns:
+        str: Human-readable error code name (e.g., "validation", "ocr")
+             Returns "unknown" for codes outside the valid range.
+
+    Example:
+        >>> from kreuzberg import error_code_name
+        >>> name = error_code_name(0)
+        >>> print(name)  # output: "validation"
+        >>> name = error_code_name(2)
+        >>> print(name)  # output: "ocr"
+        >>> name = error_code_name(99)
+        >>> print(name)  # output: "unknown"
+    """
+    return _error_code_name_impl(code)

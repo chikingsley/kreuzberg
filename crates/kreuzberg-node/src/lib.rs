@@ -94,6 +94,44 @@ unsafe extern "C" {
         result: *const RustExtractionResult,
         field_name: *const c_char,
     ) -> CMetadataField;
+
+    // Phase 2 Error FFI functions - centralized error code definitions
+    /// Get the name of an error code as a C string.
+    /// Returns pointer to static string valid for program lifetime.
+    /// Example: kreuzberg_error_code_name(0) -> "validation"
+    pub fn kreuzberg_error_code_name(code: u32) -> *const c_char;
+
+    /// Get the description of an error code as a C string.
+    /// Returns pointer to static string valid for program lifetime.
+    /// Example: kreuzberg_error_code_description(0) -> "Input validation error"
+    pub fn kreuzberg_error_code_description(code: u32) -> *const c_char;
+
+    /// Get the validation error code constant (0)
+    pub fn kreuzberg_error_code_validation() -> u32;
+
+    /// Get the parsing error code constant (1)
+    pub fn kreuzberg_error_code_parsing() -> u32;
+
+    /// Get the OCR error code constant (2)
+    pub fn kreuzberg_error_code_ocr() -> u32;
+
+    /// Get the missing dependency error code constant (3)
+    pub fn kreuzberg_error_code_missing_dependency() -> u32;
+
+    /// Get the I/O error code constant (4)
+    pub fn kreuzberg_error_code_io() -> u32;
+
+    /// Get the plugin error code constant (5)
+    pub fn kreuzberg_error_code_plugin() -> u32;
+
+    /// Get the unsupported format error code constant (6)
+    pub fn kreuzberg_error_code_unsupported_format() -> u32;
+
+    /// Get the internal error code constant (7)
+    pub fn kreuzberg_error_code_internal() -> u32;
+
+    /// Get the total count of valid error codes (8)
+    pub fn kreuzberg_error_code_count() -> u32;
 }
 
 lazy_static! {
@@ -244,6 +282,209 @@ fn validate_plugin_object(obj: &Object, plugin_type: &str, required_methods: &[&
     }
 
     Ok(())
+}
+
+// ============================================================================
+// Phase 2 Error Handling FFI Wrappers
+// ============================================================================
+
+/// Returns the human-readable name for an error code.
+///
+/// Maps to FFI function kreuzberg_error_code_name().
+///
+/// # Arguments
+///
+/// * `code` - Numeric error code (0-7)
+///
+/// # Returns
+///
+/// A string containing the error code name (e.g., "validation", "ocr", "unknown")
+///
+/// # Examples
+///
+/// ```typescript
+/// const name = getErrorCodeName(0);  // returns "validation"
+/// const name = getErrorCodeName(2);  // returns "ocr"
+/// const name = getErrorCodeName(99); // returns "unknown"
+/// ```
+#[napi]
+pub fn get_error_code_name(code: u32) -> String {
+    unsafe {
+        let ptr = kreuzberg_error_code_name(code);
+        if ptr.is_null() {
+            "unknown".to_string()
+        } else {
+            CStr::from_ptr(ptr)
+                .to_str()
+                .unwrap_or("unknown")
+                .to_string()
+        }
+    }
+}
+
+/// Returns the description for an error code.
+///
+/// Maps to FFI function kreuzberg_error_code_description().
+///
+/// # Arguments
+///
+/// * `code` - Numeric error code (0-7)
+///
+/// # Returns
+///
+/// A string containing a brief description of the error
+///
+/// # Examples
+///
+/// ```typescript
+/// const desc = getErrorCodeDescription(0);  // returns "Input validation error"
+/// const desc = getErrorCodeDescription(4);  // returns "File system I/O error"
+/// const desc = getErrorCodeDescription(99); // returns "Unknown error code"
+/// ```
+#[napi]
+pub fn get_error_code_description(code: u32) -> String {
+    unsafe {
+        let ptr = kreuzberg_error_code_description(code);
+        if ptr.is_null() {
+            "Unknown error code".to_string()
+        } else {
+            CStr::from_ptr(ptr)
+                .to_str()
+                .unwrap_or("Unknown error code")
+                .to_string()
+        }
+    }
+}
+
+/// Classifies an error message string into an error code category.
+///
+/// This function analyzes the error message content and returns the most likely
+/// error code (0-7) based on keyword patterns. Used to programmatically classify
+/// errors for handling purposes.
+///
+/// # Arguments
+///
+/// * `error_message` - The error message string to classify
+///
+/// # Returns
+///
+/// An object with:
+/// - `code`: The numeric error code (0-7)
+/// - `name`: The error code name string
+/// - `description`: Brief description of the error type
+/// - `confidence`: Confidence score (0.0-1.0) of the classification
+///
+/// # Classification Rules
+///
+/// - **Validation (0)**: Keywords: invalid, validation, invalid_argument, schema, required, unexpected field
+/// - **Parsing (1)**: Keywords: parsing, parse_error, corrupted, malformed, invalid format, decode, encoding
+/// - **Ocr (2)**: Keywords: ocr, optical, character, recognition, tesseract, language, model
+/// - **MissingDependency (3)**: Keywords: not found, not installed, missing, dependency, require, unavailable
+/// - **Io (4)**: Keywords: io, file, disk, read, write, permission, access, path
+/// - **Plugin (5)**: Keywords: plugin, register, extension, handler, processor
+/// - **UnsupportedFormat (6)**: Keywords: unsupported, format, mime, type, codec
+/// - **Internal (7)**: Keywords: internal, bug, panic, unexpected, invariant
+///
+/// # Examples
+///
+/// ```typescript
+/// const result = classifyError("PDF file is corrupted");
+/// // Returns: { code: 1, name: "parsing", confidence: 0.95 }
+///
+/// const result = classifyError("Tesseract not found");
+/// // Returns: { code: 3, name: "missing_dependency", confidence: 0.9 }
+/// ```
+#[napi(object)]
+pub struct ErrorClassification {
+    pub code: u32,
+    pub name: String,
+    pub description: String,
+    pub confidence: f64,
+}
+
+#[napi]
+pub fn classify_error(error_message: String) -> ErrorClassification {
+    let lower = error_message.to_lowercase();
+
+    // Calculate confidence and determine error code based on keywords
+    let (code, confidence) = if lower.contains("validation")
+        || lower.contains("invalid_argument")
+        || lower.contains("schema")
+        || lower.contains("required")
+        || lower.contains("unexpected field")
+    {
+        (0u32, 0.9)
+    } else if lower.contains("parsing")
+        || lower.contains("parse_error")
+        || lower.contains("corrupted")
+        || lower.contains("malformed")
+        || lower.contains("invalid format")
+        || lower.contains("decode")
+        || lower.contains("encoding")
+    {
+        (1u32, 0.85)
+    } else if lower.contains("ocr")
+        || lower.contains("optical")
+        || lower.contains("character")
+        || lower.contains("recognition")
+        || lower.contains("tesseract")
+        || lower.contains("language")
+        || lower.contains("model")
+    {
+        (2u32, 0.88)
+    } else if lower.contains("not found")
+        || lower.contains("not installed")
+        || lower.contains("missing")
+        || lower.contains("dependency")
+        || lower.contains("require")
+        || lower.contains("unavailable")
+    {
+        (3u32, 0.92)
+    } else if lower.contains("io")
+        || lower.contains("file")
+        || lower.contains("disk")
+        || lower.contains("read")
+        || lower.contains("write")
+        || lower.contains("permission")
+        || lower.contains("access")
+        || lower.contains("path")
+    {
+        (4u32, 0.87)
+    } else if lower.contains("plugin")
+        || lower.contains("register")
+        || lower.contains("extension")
+        || lower.contains("handler")
+        || lower.contains("processor")
+    {
+        (5u32, 0.84)
+    } else if lower.contains("unsupported")
+        || lower.contains("format")
+        || lower.contains("mime")
+        || lower.contains("type")
+        || lower.contains("codec")
+    {
+        (6u32, 0.83)
+    } else if lower.contains("internal")
+        || lower.contains("bug")
+        || lower.contains("panic")
+        || lower.contains("unexpected")
+        || lower.contains("invariant")
+    {
+        (7u32, 0.86)
+    } else {
+        // Default to internal with low confidence
+        (7u32, 0.1)
+    };
+
+    let name = get_error_code_name(code);
+    let description = get_error_code_description(code);
+
+    ErrorClassification {
+        code,
+        name,
+        description,
+        confidence,
+    }
 }
 
 #[napi(object)]

@@ -274,10 +274,10 @@ def test_extraction_result_get_metadata_field_nonexistent() -> None:
 
 
 def test_extraction_result_get_page_count_no_pages() -> None:
-    from kreuzberg import extract_file_sync
+    from kreuzberg import extract_bytes_sync
 
     config = ExtractionConfig()
-    result = extract_file_sync(
+    result = extract_bytes_sync(
         b"Hello world test content",
         "text/plain",
         config=config,
@@ -289,10 +289,10 @@ def test_extraction_result_get_page_count_no_pages() -> None:
 
 
 def test_extraction_result_get_chunk_count_no_chunks() -> None:
-    from kreuzberg import extract_file_sync
+    from kreuzberg import extract_bytes_sync
 
     config = ExtractionConfig()
-    result = extract_file_sync(
+    result = extract_bytes_sync(
         b"Hello world test content",
         "text/plain",
         config=config,
