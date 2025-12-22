@@ -126,27 +126,6 @@
         </pluginManagement>
 
         <plugins>
-            <!-- Build Helper Plugin - Add benchmark helper sources (test scope) -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>${build-helper-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>add-benchmark-helper-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/../../tools/benchmark-harness/scripts</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -161,6 +140,9 @@
                     <excludes>
                         <exclude>**/TikaExtract.java</exclude>
                     </excludes>
+                    <testExcludes>
+                        <testExclude>**/TikaExtract.java</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
 
@@ -393,6 +375,37 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>benchmark-helper</id>
+            <activation>
+                <property>
+                    <name>benchmarkHelper</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>${build-helper-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>add-benchmark-helper-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>${project.basedir}/../../tools/benchmark-harness/scripts</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>build-native</id>
             <build>
