@@ -340,11 +340,13 @@ export async function initWasm(): Promise<void> {
 			let wasmModule: unknown;
 			try {
 				// Try importing from wasm-pack output (pkg/) shipped with the published package.
-				wasmModule = await import("../pkg/kreuzberg_wasm.js");
+				// eslint-disable-next-line @typescript-eslint/no-implied-eval
+				wasmModule = await import(/* @vite-ignore */ "../pkg/kreuzberg_wasm.js");
 			} catch {
 				// Fallback to dist-relative path (legacy builds which copy wasm-pack outputs into dist/)
 				// @ts-expect-error - Dynamic import path
-				wasmModule = await import("./kreuzberg_wasm.js");
+				// eslint-disable-next-line @typescript-eslint/no-implied-eval
+				wasmModule = await import(/* @vite-ignore */ "./kreuzberg_wasm.js");
 			}
 			wasm = wasmModule as unknown as WasmModule;
 

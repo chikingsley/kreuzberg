@@ -73,7 +73,39 @@ Without ONNX Runtime, embeddings will raise `MissingDependencyError` with instal
 
 ### Using Pre-built Binaries (Recommended)
 
-Download pre-built FFI libraries from the [releases page](https://github.com/kreuzberg-dev/kreuzberg/releases):
+#### Automated Installation (Fastest)
+
+Use the automated installer script (downloads with automatic source build fallback):
+
+```bash
+# Clone the repository
+git clone https://github.com/kreuzberg-dev/kreuzberg.git
+cd kreuzberg
+
+# Run the installer (detects platform, downloads pre-built or builds from source)
+./scripts/go/install-binaries.sh
+
+# The script prints env vars to add to your shell profile
+```
+
+Options for the installer:
+
+```bash
+# Download specific version to custom location
+./scripts/go/install-binaries.sh --tag v4.0.0 --dest /usr/local
+
+# Download only, fail if not available (no source build fallback)
+./scripts/go/install-binaries.sh --skip-build-fallback -v
+
+# Use environment variables instead of CLI flags
+export KREUZBERG_INSTALL_DEST="$HOME/.local"
+export KREUZBERG_SKIP_BUILD="true"
+./scripts/go/install-binaries.sh
+```
+
+#### Manual Installation
+
+Alternatively, download and extract pre-built FFI libraries from the [releases page](https://github.com/kreuzberg-dev/kreuzberg/releases):
 
 ```bash
 # Download for your platform (linux-x86_64, macos-arm64, or windows-x86_64)

@@ -27,7 +27,11 @@ mkdir -p "$REPO_ROOT/packages/ruby/vendor"
 cp -R "$REPO_ROOT/crates/kreuzberg" "$REPO_ROOT/packages/ruby/vendor/kreuzberg"
 cp -R "$REPO_ROOT/crates/kreuzberg-tesseract" "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract"
 cp -R "$REPO_ROOT/crates/kreuzberg-ffi" "$REPO_ROOT/packages/ruby/vendor/kreuzberg-ffi"
-cp -R "$REPO_ROOT/vendor/rb-sys" "$REPO_ROOT/packages/ruby/vendor/rb-sys"
+
+# Only copy rb-sys if it exists in the root vendor directory
+if [ -d "$REPO_ROOT/vendor/rb-sys" ]; then
+	cp -R "$REPO_ROOT/vendor/rb-sys" "$REPO_ROOT/packages/ruby/vendor/rb-sys"
+fi
 
 # Clean up build artifacts
 rm -rf "$REPO_ROOT/packages/ruby/vendor/kreuzberg/.fastembed_cache"
@@ -43,10 +47,13 @@ find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.swp' -delete
 find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.bak' -delete
 find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*.tmp' -delete
 find "$REPO_ROOT/packages/ruby/vendor/kreuzberg-tesseract" -name '*~' -delete
-find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.swp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.bak' -delete
-find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.tmp' -delete
-find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*~' -delete
+
+if [ -d "$REPO_ROOT/packages/ruby/vendor/rb-sys" ]; then
+	find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.swp' -delete
+	find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.bak' -delete
+	find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*.tmp' -delete
+	find "$REPO_ROOT/packages/ruby/vendor/rb-sys" -name '*~' -delete
+fi
 
 # Extract core version from workspace Cargo.toml
 core_version=$(awk -F '"' '/^\[workspace.package\]/,/^version =/ {if ($0 ~ /^version =/) {print $2; exit}}' "$REPO_ROOT/Cargo.toml")
@@ -121,6 +128,7 @@ anyhow = "1.0"
 # Async utilities
 async-trait = "0.1.89"
 libc = "0.2.178"
+parking_lot = "0.12.3"
 
 # Tracing/observability
 tracing = "0.1"
