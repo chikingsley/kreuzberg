@@ -158,9 +158,9 @@ jobs:
           echo "=== System Information ==="
           uname -a
           if [ "$RUNNER_OS" = "Windows" ]; then
-            wmic os get version
-            wmic cpu get name
-            wmic os get totalvisiblememorybytes
+            powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object Version"
+            powershell -Command "Get-CimInstance Win32_Processor | Select-Object Name"
+            powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object @{Name='TotalMemoryGB'; Expression={[Math]::Round($_.TotalVisibleMemorySize / 1MB, 2)}}"
           fi
           echo "=== Disk Space ==="
           df -h
@@ -319,9 +319,9 @@ jobs:
           echo "=== System Information ==="
           uname -a
           if [ "$RUNNER_OS" = "Windows" ]; then
-            wmic os get version
-            wmic cpu get name
-            wmic os get totalvisiblememorybytes
+            powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object Version"
+            powershell -Command "Get-CimInstance Win32_Processor | Select-Object Name"
+            powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object @{Name='TotalMemoryGB'; Expression={[Math]::Round($_.TotalVisibleMemorySize / 1MB, 2)}}"
           fi
           echo "=== Disk Space ==="
           df -h

@@ -203,7 +203,7 @@ jobs:
           echo "=== Ruby Environment ==="
           echo "Ruby version: $(ruby --version)"
           echo "Ruby platform: $(ruby -e 'puts RUBY_PLATFORM')"
-          echo "Gem home: $(gem home)"
+          echo "Gem home: $(gem env home)"
           echo "Gem paths: $(gem env | grep -A 10 'EXECUTABLE')"
           echo ""
           echo "=== Rust Environment ==="

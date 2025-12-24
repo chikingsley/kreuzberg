@@ -12,7 +12,7 @@ Write-Host ""
 Write-Host "=== Ruby Environment ===" -ForegroundColor Yellow
 ruby --version
 Write-Host "Ruby platform: $(ruby -e 'puts RUBY_PLATFORM')"
-Write-Host "Gem home: $(gem home)"
+Write-Host "Gem home: $(gem env home)"
 
 Write-Host ""
 Write-Host "=== Rust Toolchain ===" -ForegroundColor Yellow
@@ -24,7 +24,8 @@ Write-Host ""
 Write-Host "=== System Info ===" -ForegroundColor Yellow
 $osInfo = Get-ComputerInfo
 Write-Host "OS: $($osInfo.OsName)"
-Write-Host "Architecture: $(wmic os get osarchitecture /value | Select-String 'OsArchitecture' | ForEach-Object { $_.ToString().Split('=')[1].Trim() })"
+$osArch = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
+Write-Host "Architecture: $osArch"
 Write-Host "Compiler: x86_64-pc-windows-gnu"
 
 Write-Host ""
