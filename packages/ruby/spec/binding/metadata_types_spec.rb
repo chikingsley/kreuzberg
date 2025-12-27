@@ -12,7 +12,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
   # ============================================================================
 
   describe 'HtmlMetadata structure' do
-    # rubocop:disable RSpec/ExampleLength
     it 'has correct fields with Sorbet types' do
       metadata = Kreuzberg::HtmlMetadata.new(
         title: 'Test Page',
@@ -53,7 +52,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata.application_name).to eq('Test App')
       expect(metadata.robots).to eq('index, follow')
     end
-    # rubocop:enable RSpec/ExampleLength
 
     it 'has keywords as T::Array[String], not String' do
       keywords_array = %w[test metadata array]
@@ -117,7 +115,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata).to respond_to(:canonical_url)
     end
 
-    # rubocop:disable RSpec/ExampleLength
     it 'has open_graph as T::Hash[String, String]' do
       og_tags = {
         'og:title' => 'Test Title',
@@ -157,9 +154,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
         expect(value).to be_a(String)
       end
     end
-    # rubocop:enable RSpec/ExampleLength
 
-    # rubocop:disable RSpec/ExampleLength
     it 'has twitter_card as T::Hash[String, String]' do
       twitter_tags = {
         'twitter:card' => 'summary_large_image',
@@ -199,7 +194,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
         expect(value).to be_a(String)
       end
     end
-    # rubocop:enable RSpec/ExampleLength
   end
 
   # ============================================================================
@@ -546,7 +540,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       end
     end
 
-    # rubocop:disable RSpec/ExampleLength
     it 'supports nil optional fields' do
       metadata = Kreuzberg::HtmlMetadata.new(
         title: nil,
@@ -588,7 +581,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata.application_name).to be_nil
       expect(metadata.robots).to be_nil
     end
-    # rubocop:enable RSpec/ExampleLength
 
     it 'handles empty collections' do
       metadata = Kreuzberg::HtmlMetadata.new(
@@ -801,7 +793,6 @@ RSpec.describe 'Kreuzberg Metadata Types' do
     end
     # rubocop:enable RSpec/ExampleLength
 
-    # rubocop:disable RSpec/ExampleLength
     it 'handles images with attributes' do
       images = [
         Kreuzberg::ImageMetadata.new(
@@ -852,9 +843,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata.images[1].dimensions).to be_nil
       expect(metadata.images[1].attributes['loading']).to eq('lazy')
     end
-    # rubocop:enable RSpec/ExampleLength
 
-    # rubocop:disable RSpec/ExampleLength
     it 'handles structured data with multiple types' do
       json_ld = '{"@context":"https://schema.org","@type":"Article"}'
       microdata = '{"type":"http://schema.org/Person"}'
@@ -908,9 +897,8 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata.structured_data[1].data_type).to eq('microdata')
       expect(metadata.structured_data[2].schema_type).to be_nil
     end
-    # rubocop:enable RSpec/ExampleLength
 
-    # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+    # rubocop:disable RSpec/ExampleLength
     it 'handles complete HtmlMetadata with all fields populated' do
       headers = [
         Kreuzberg::HeaderMetadata.new(level: 1, text: 'Title', id: 'title', depth: 0, html_offset: 100)
@@ -995,7 +983,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       expect(metadata.images.length).to eq(1)
       expect(metadata.structured_data.length).to eq(1)
     end
-    # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
+    # rubocop:enable RSpec/ExampleLength
   end
 
   # ============================================================================

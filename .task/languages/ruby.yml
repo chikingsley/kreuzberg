@@ -9,7 +9,7 @@ includes:
     internal: true
 
 vars:
-  BUNDLE: bundle
+  BUNDLE: /opt/homebrew/bin/bundle
 
 tasks:
   # Installation

@@ -216,12 +216,28 @@ tasks:
   lint:all:
     desc: Run all linters with auto-fix across all languages
     cmds:
-      - task: _lint_wf:all
+      - task: rust:lint
+      - task: python:lint
+      - task: node:lint
+      - task: go:lint
+      - task: java:lint
+      - task: csharp:lint
+      - task: wasm:lint
+      - task: ruby:lint
+      - task: php:lint
 
   lint:check:
     desc: Run all linters in check-only mode (no modifications)
     cmds:
-      - task: _lint_wf:check
+      - task: rust:lint:check
+      - task: python:lint:check
+      - task: node:lint:check
+      - task: go:lint:check
+      - task: java:lint:check
+      - task: csharp:lint:check
+      - task: wasm:lint:check
+      - task: ruby:lint:check
+      - task: php:lint:check
 
   e2e:generate:all:
     desc: Generate all E2E tests from fixtures across all supported languages
