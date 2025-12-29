@@ -37,15 +37,17 @@ Write-Host "RB_SYS_VERBOSE: $($env:RB_SYS_VERBOSE)"
 Write-Host ""
 Write-Host "=== Bundler Configuration ===" -ForegroundColor Yellow
 Write-Host "Setting bundle config for Windows..."
+$defaultBundlePath = Join-Path $PSScriptRoot "..\\..\\packages\\ruby\\.bundle\\bundle"
+$bundlePath = if ($env:BUNDLE_PATH) { $env:BUNDLE_PATH } else { $defaultBundlePath }
 bundle config set deployment false
-bundle config set path vendor/bundle
+bundle config set path $bundlePath
 
 if ($env:GITHUB_ENV) {
   if (-not $env:BUNDLE_GEMFILE) {
     Add-Content -Path $env:GITHUB_ENV -Value "BUNDLE_GEMFILE=$PSScriptRoot\..\..\packages\ruby\Gemfile"
   }
   if (-not $env:BUNDLE_PATH) {
-    Add-Content -Path $env:GITHUB_ENV -Value "BUNDLE_PATH=$PSScriptRoot\..\..\packages\ruby\vendor\bundle"
+    Add-Content -Path $env:GITHUB_ENV -Value "BUNDLE_PATH=$bundlePath"
   }
 }
 
