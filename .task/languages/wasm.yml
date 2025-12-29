@@ -115,6 +115,7 @@ tasks:
     desc: Run WASM unit tests in CI mode
     dir: crates/kreuzberg-wasm
     cmds:
+      - pnpm run build --minify
       - pnpm test
 
   test:watch:
