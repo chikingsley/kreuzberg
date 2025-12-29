@@ -129,8 +129,12 @@ export interface PdfConfig {
  * Page extraction configuration
  */
 export interface PageExtractionConfig {
-	/** Whether to extract per-page content */
-	enabled?: boolean;
+	/** Extract pages as separate array (ExtractionResult.pages) */
+	extractPages?: boolean;
+	/** Insert page markers in main content string */
+	insertPageMarkers?: boolean;
+	/** Page marker format (use {page_num} placeholder) */
+	markerFormat?: string;
 }
 
 /**

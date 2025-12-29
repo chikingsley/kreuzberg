@@ -385,7 +385,14 @@ jobs:
             python: "3.10"
             needs_qemu: false
             extra_args: ""
-          # TODO: Re-enable linux-aarch64 once build issues are resolved
+          - label: linux-aarch64
+            os: ubuntu-latest
+            artifact: python-wheels-linux-aarch64
+            rust_target: aarch64-unknown-linux-gnu
+            manylinux: auto
+            python: "3.10"
+            needs_qemu: true
+            extra_args: ""
           - label: macos-arm64
             os: macos-latest
             artifact: python-wheels-macos
@@ -1103,7 +1110,12 @@ jobs:
         run: |
           echo "=== Disk space after gem build ===" >&2
           df -h / >&2
-          du -sh packages/ruby/pkg/ >&2
+          if [ -d packages/ruby/pkg ]; then
+            du -sh packages/ruby/pkg/ >&2
+            ls -lah packages/ruby/pkg/ >&2
+          else
+            echo "WARNING: packages/ruby/pkg/ directory does not exist" >&2
+          fi
 
       - name: Ensure Ruby bundle config (Windows)
         if: runner.os == 'Windows'
@@ -2023,6 +2035,10 @@ jobs:
         with:
           elixir-version: "1.14.0"
           otp-version: "26"
+
+      - name: Install Elixir dependencies
+        working-directory: packages/elixir
+        run: mix deps.get
 
       - name: Build documentation
         working-directory: packages/elixir

@@ -26,6 +26,10 @@ public class ErrorHandlingTests
 
         var ex = Assert.Throws<KreuzbergValidationException>(() => KreuzbergClient.ExtractFileSync(nonexistentPath));
         Assert.NotNull(ex);
+        Assert.NotEmpty(ex.Message);
+        Assert.True(ex.Message.Contains("file", StringComparison.OrdinalIgnoreCase) ||
+                    ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase),
+                    $"Error message should indicate file problem: {ex.Message}");
     }
 
     [Fact]
@@ -54,6 +58,8 @@ public class ErrorHandlingTests
     {
         var ex = Assert.Throws<KreuzbergValidationException>(() => KreuzbergClient.DetectMimeTypeFromPath("/nonexistent/file.pdf"));
         Assert.NotNull(ex);
+        Assert.NotEmpty(ex.Message);
+        Assert.True(ex.Message.Length > 10, "Error message should be descriptive");
     }
 
     [Fact]

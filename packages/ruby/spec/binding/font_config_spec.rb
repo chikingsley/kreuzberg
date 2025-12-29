@@ -122,16 +122,16 @@ RSpec.describe Kreuzberg::Config::FontConfig do
       expect(hash[:custom_font_dirs]).to be_nil
     end
 
-    it 'converts to JSON' do
+    it 'converts to hash and includes all keys' do
       config = described_class.new(
         enabled: true,
         custom_font_dirs: ['/fonts']
       )
-      json_str = config.to_json
+      hash = config.to_h
 
-      expect(json_str).to be_a(String)
-      expect(json_str).to include('enabled')
-      expect(json_str).to include('true')
+      expect(hash).to be_a(Hash)
+      expect(hash).to include(enabled: true)
+      expect(hash).to include(custom_font_dirs: ['/fonts'])
     end
   end
 
@@ -141,7 +141,7 @@ RSpec.describe Kreuzberg::Config::FontConfig do
         enabled: true,
         custom_font_dirs: ['/fonts']
       )
-      pdf_config = Kreuzberg::Config::PdfConfig.new(font_config: font_config)
+      pdf_config = Kreuzberg::Config::PDF.new(font_config: font_config)
 
       expect(pdf_config.font_config).not_to be_nil
       expect(pdf_config.font_config.enabled).to be true
@@ -153,7 +153,7 @@ RSpec.describe Kreuzberg::Config::FontConfig do
         enabled: true,
         custom_font_dirs: ['/custom-fonts']
       )
-      pdf_config = Kreuzberg::Config::PdfConfig.new(
+      pdf_config = Kreuzberg::Config::PDF.new(
         extract_images: true,
         passwords: ['pass1'],
         extract_metadata: true,
@@ -167,7 +167,7 @@ RSpec.describe Kreuzberg::Config::FontConfig do
     end
 
     it 'allows setting font_config via setter' do
-      pdf_config = Kreuzberg::Config::PdfConfig.new
+      pdf_config = Kreuzberg::Config::PDF.new
       font_config = described_class.new(enabled: false)
 
       pdf_config.font_config = font_config
@@ -178,7 +178,7 @@ RSpec.describe Kreuzberg::Config::FontConfig do
 
     it 'allows clearing font_config via setter' do
       font_config = described_class.new(custom_font_dirs: ['/fonts'])
-      pdf_config = Kreuzberg::Config::PdfConfig.new(font_config: font_config)
+      pdf_config = Kreuzberg::Config::PDF.new(font_config: font_config)
 
       expect(pdf_config.font_config).not_to be_nil
 

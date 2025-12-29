@@ -3,14 +3,15 @@
 require 'spec_helper'
 require 'tempfile'
 require 'fileutils'
+require 'securerandom'
 
 RSpec.describe Kreuzberg do
   describe '#batch_extract_files_sync' do
     it 'extracts multiple files in a single batch operation' do
       paths = []
       3.times do |i|
-        file = Tempfile.new("batch_test_#{i}.txt")
-        file.write("Content of file #{i}")
+        file = Tempfile.new(["batch_test_#{i}", '.md'])
+        file.write("# Content of file #{i}\n\nSome markdown content")
         file.close
         paths << file.path
       end
@@ -29,21 +30,22 @@ RSpec.describe Kreuzberg do
 
     it 'maintains correct order of results' do
       paths = []
-      contents = []
+      unique_ids = []
       3.times do |i|
-        file = Tempfile.new("ordered_#{i}.txt")
-        content = "File #{i} unique content #{SecureRandom.hex(8)}"
+        file = Tempfile.new(["ordered_#{i}", '.md'])
+        unique_id = SecureRandom.hex(8)
+        content = "# File #{i}\n\nUnique marker: #{unique_id}\n\nSome content"
         file.write(content)
         file.close
         paths << file.path
-        contents << content
+        unique_ids << unique_id
       end
 
       results = described_class.batch_extract_files_sync(paths)
 
       expect(results.length).to eq(paths.length)
       results.each_with_index do |result, idx|
-        expect(result.content).to include(contents[idx])
+        expect(result.content).to include(unique_ids[idx])
       end
     ensure
       paths.each { |p| FileUtils.rm_f(p) }

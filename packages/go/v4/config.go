@@ -12,25 +12,68 @@ import (
 */
 import "C"
 
-// BoolPtr returns a pointer to a bool value. Useful for initializing nullable config fields.
-func BoolPtr(b bool) *bool {
-	return &b
-}
+// Functional option types for idiomatic Go configuration building.
+// See config_options.go for usage examples and option constructors.
 
-// StringPtr returns a pointer to a string value. Useful for initializing nullable config fields.
-func StringPtr(s string) *string {
-	return &s
-}
+// ExtractionOption is a functional option for configuring ExtractionConfig.
+type ExtractionOption func(*ExtractionConfig)
 
-// IntPtr returns a pointer to an int value. Useful for initializing nullable config fields.
-func IntPtr(i int) *int {
-	return &i
-}
+// OCROption is a functional option for configuring OCRConfig.
+type OCROption func(*OCRConfig)
 
-// FloatPtr returns a pointer to a float64 value. Useful for initializing nullable config fields.
-func FloatPtr(f float64) *float64 {
-	return &f
-}
+// TesseractOption is a functional option for configuring TesseractConfig.
+type TesseractOption func(*TesseractConfig)
+
+// ImagePreprocessingOption is a functional option for configuring ImagePreprocessingConfig.
+type ImagePreprocessingOption func(*ImagePreprocessingConfig)
+
+// ChunkingOption is a functional option for configuring ChunkingConfig.
+type ChunkingOption func(*ChunkingConfig)
+
+// EmbeddingOption is a functional option for configuring EmbeddingConfig.
+type EmbeddingOption func(*EmbeddingConfig)
+
+// ImageExtractionOption is a functional option for configuring ImageExtractionConfig.
+type ImageExtractionOption func(*ImageExtractionConfig)
+
+// FontConfigOption is a functional option for configuring FontConfig.
+type FontConfigOption func(*FontConfig)
+
+// PdfOption is a functional option for configuring PdfConfig.
+type PdfOption func(*PdfConfig)
+
+// HierarchyOption is a functional option for configuring HierarchyConfig.
+type HierarchyOption func(*HierarchyConfig)
+
+// TokenReductionOption is a functional option for configuring TokenReductionConfig.
+type TokenReductionOption func(*TokenReductionConfig)
+
+// LanguageDetectionOption is a functional option for configuring LanguageDetectionConfig.
+type LanguageDetectionOption func(*LanguageDetectionConfig)
+
+// PostProcessorOption is a functional option for configuring PostProcessorConfig.
+type PostProcessorOption func(*PostProcessorConfig)
+
+// EmbeddingModelTypeOption is a functional option for configuring EmbeddingModelType.
+type EmbeddingModelTypeOption func(*EmbeddingModelType)
+
+// KeywordOption is a functional option for configuring KeywordConfig.
+type KeywordOption func(*KeywordConfig)
+
+// YakeParamsOption is a functional option for configuring YakeParams.
+type YakeParamsOption func(*YakeParams)
+
+// RakeParamsOption is a functional option for configuring RakeParams.
+type RakeParamsOption func(*RakeParams)
+
+// HTMLPreprocessingOption is a functional option for configuring HTMLPreprocessingOptions.
+type HTMLPreprocessingOption func(*HTMLPreprocessingOptions)
+
+// HTMLConversionOption is a functional option for configuring HTMLConversionOptions.
+type HTMLConversionOption func(*HTMLConversionOptions)
+
+// PageOption is a functional option for configuring PageConfig.
+type PageOption func(*PageConfig)
 
 // ExtractionConfig mirrors the Rust ExtractionConfig structure and is serialized to JSON
 // before crossing the FFI boundary. Use pointer fields to omit values and rely on Kreuzberg

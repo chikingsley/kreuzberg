@@ -62,8 +62,8 @@ import type {
 	LanguageDetectionConfig,
 	OcrBackendProtocol,
 	OcrConfig,
-	PageConfig,
 	PageContent,
+	PageExtractionConfig,
 	PdfConfig,
 	PostProcessorConfig,
 	PostProcessorProtocol,
@@ -435,9 +435,9 @@ function convertResult(rawResult: unknown): ExtractionResult {
 			metadata: {},
 			tables: [],
 			detectedLanguages: null,
-			chunks: undefined as unknown as Chunk[] | null,
-			images: undefined as unknown as ExtractedImage[] | null,
-			pages: undefined as unknown as PageContent[] | null,
+			chunks: null,
+			images: null,
+			pages: null,
 		};
 	}
 
@@ -457,9 +457,9 @@ function convertResult(rawResult: unknown): ExtractionResult {
 		tables: Array.isArray(result["tables"]) ? (result["tables"] as Table[]) : [],
 		// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
 		detectedLanguages: Array.isArray(result["detectedLanguages"]) ? (result["detectedLanguages"] as string[]) : null,
-		chunks: undefined as unknown as Chunk[] | null,
-		images: undefined as unknown as ExtractedImage[] | null,
-		pages: undefined as unknown as PageContent[] | null,
+		chunks: null,
+		images: null,
+		pages: null,
 	};
 
 	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
@@ -671,7 +671,7 @@ function normalizeKeywordConfig(config?: KeywordConfig): NativeExtractionConfig 
 	return normalized;
 }
 
-function normalizePageConfig(pages?: PageConfig): NativeExtractionConfig | undefined {
+function normalizePageConfig(pages?: PageExtractionConfig): NativeExtractionConfig | undefined {
 	if (!pages) {
 		return undefined;
 	}
@@ -1700,119 +1700,12 @@ export function clearDocumentExtractors(): void {
 }
 
 /**
- * Builder class for creating ExtractionConfig objects with a fluent API.
- *
- * Provides a convenient way to build extraction configurations using method chaining.
- *
- * @example
- * ```typescript
- * import { ExtractionConfig, extractFile } from '@kreuzberg/node';
- *
- * // Create with builder pattern
- * const config = ExtractionConfig.default()
- *   .withChunking({ maxChars: 2048 })
- *   .withOcr({ backend: 'tesseract', language: 'eng' })
- *   .build();
- *
- * const result = await extractFile('document.pdf', null, config);
- * ```
- */
-class ExtractionConfigBuilder {
-	private config: Record<string, unknown> = {};
-
-	/**
-	 * Create a new builder with default configuration.
-	 */
-	static default(): ExtractionConfigBuilder {
-		return new ExtractionConfigBuilder();
-	}
-
-	/**
-	 * Set OCR configuration.
-	 */
-	withOcr(ocr: OcrConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["ocr"] = ocr;
-		return this;
-	}
-
-	/**
-	 * Set chunking configuration.
-	 */
-	withChunking(chunking: ChunkingConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["chunking"] = chunking;
-		return this;
-	}
-
-	/**
-	 * Set image extraction configuration.
-	 */
-	withImageExtraction(images: ImageExtractionConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["imageExtraction"] = images;
-		return this;
-	}
-
-	/**
-	 * Set PDF configuration.
-	 */
-	withPdf(pdf: PdfConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["pdf"] = pdf;
-		return this;
-	}
-
-	/**
-	 * Set keyword extraction configuration.
-	 */
-	withKeywords(keywords: KeywordConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["keywords"] = keywords;
-		return this;
-	}
-
-	/**
-	 * Set language detection configuration.
-	 */
-	withLanguageDetection(languageDetection: LanguageDetectionConfig): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["languageDetection"] = languageDetection;
-		return this;
-	}
-
-	/**
-	 * Set whether to enable metadata extraction.
-	 */
-	withMetadataExtraction(enabled: boolean): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["metadataExtraction"] = enabled;
-		return this;
-	}
-
-	/**
-	 * Set whether to enable quality mode.
-	 */
-	withQualityMode(enabled: boolean): ExtractionConfigBuilder {
-		// biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for Record type
-		this.config["qualityMode"] = enabled;
-		return this;
-	}
-
-	/**
-	 * Build and return the final ExtractionConfig object.
-	 */
-	build(): ExtractionConfigType {
-		return this.config as ExtractionConfigType;
-	}
-}
-
-/**
- * ExtractionConfig namespace with static methods for loading configuration from files
- * and creating new configurations with the builder pattern.
+ * ExtractionConfig namespace with static methods for loading configuration from files.
  *
  * Provides factory methods to load extraction configuration from TOML, YAML, or JSON files,
- * or to create configurations using a fluent builder API.
+ * or to discover configuration files in the current directory tree.
+ *
+ * For creating configurations programmatically, use plain TypeScript objects instead:
  *
  * @example
  * ```typescript
@@ -1821,38 +1714,17 @@ class ExtractionConfigBuilder {
  * // Load configuration from file
  * const config1 = ExtractionConfig.fromFile('config.toml');
  *
- * // Create with builder pattern
- * const config2 = ExtractionConfig.default()
- *   .withChunking({ maxChars: 2048 })
- *   .build();
+ * // Or create with plain object
+ * const config2 = {
+ *   chunking: { maxChars: 2048 },
+ *   ocr: { backend: 'tesseract', language: 'eng' }
+ * };
  *
  * // Use with extraction
  * const result = await extractFile('document.pdf', null, config2);
  * ```
  */
 export const ExtractionConfig = {
-	/**
-	 * Create a default extraction configuration using the builder pattern.
-	 *
-	 * Returns a builder object that allows you to configure extraction settings
-	 * using method chaining.
-	 *
-	 * @returns ExtractionConfigBuilder for chaining configuration calls
-	 *
-	 * @example
-	 * ```typescript
-	 * import { ExtractionConfig } from '@kreuzberg/node';
-	 *
-	 * const config = ExtractionConfig.default()
-	 *   .withChunking({ maxChars: 2048 })
-	 *   .withOcr({ backend: 'tesseract', language: 'eng' })
-	 *   .build();
-	 * ```
-	 */
-	default(): ExtractionConfigBuilder {
-		return ExtractionConfigBuilder.default();
-	},
-
 	/**
 	 * Load extraction configuration from a file.
 	 *

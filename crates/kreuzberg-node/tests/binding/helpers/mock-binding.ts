@@ -29,8 +29,8 @@ const toWire = (result: ExtractionResult) => ({
 	metadata: result.metadata,
 	tables: result.tables,
 	detected_languages: result.detectedLanguages,
-	chunks: result.chunks ?? undefined,
-	images: result.images ?? undefined,
+	chunks: result.chunks ?? null,
+	images: result.images ?? null,
 });
 
 const fromWire = (wire: {

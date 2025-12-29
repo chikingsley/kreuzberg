@@ -149,6 +149,19 @@ jobs:
           composer install
         shell: bash
 
+      - name: Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: '1.17'
+          otp-version: '27.2'
+          version-type: strict
+
+      - name: Install Elixir dependencies
+        run: |
+          cd packages/elixir
+          mix deps.get
+        shell: bash
+
       - name: Check disk space before tool installations
         run: scripts/ci/validate/show-disk-space.sh "Disk space before tool installations"
         shell: bash

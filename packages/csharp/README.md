@@ -101,6 +101,35 @@ Console.WriteLine(result.Content);
 Console.WriteLine($"MIME Type: {result.MimeType}");
 ```
 
+### Immutable Configuration Patterns
+
+All configuration classes use immutable patterns with init-only properties, ensuring thread-safe and predictable configurations:
+
+```cs
+using Kreuzberg;
+
+// Create immutable configurations using object initializer syntax
+var baseConfig = new ExtractionConfig
+{
+    UseCache = true,
+    EnableQualityProcessing = true
+};
+
+// All config properties are immutable after creation
+var ocrConfig = new ExtractionConfig
+{
+    Ocr = new OcrConfig
+    {
+        Backend = "tesseract",
+        Language = "eng"
+    }
+};
+
+// Properties cannot be modified after creation - they're read-only
+// This ensures thread-safety across batch operations
+var result = KreuzbergClient.ExtractFileSync("document.pdf", baseConfig);
+```
+
 ### Common Use Cases
 
 #### Extract with Custom Configuration
@@ -448,6 +477,188 @@ class Program
         }
     }
 }
+```
+
+## Immutable Configuration Design
+
+Kreuzberg's C# binding uses immutable configuration objects throughout. All configuration classes employ the `init` accessor, making properties settable only during object initialization and read-only afterward.
+
+### Benefits of Immutability
+
+- **Thread Safety**: Configurations can be safely shared across threads without locks
+- **Predictability**: Configuration state cannot change unexpectedly during extraction
+- **Concurrency**: Ideal for batch operations and parallel processing
+- **Caching**: Enables efficient configuration caching without invalidation concerns
+
+### Configuration Examples
+
+#### Basic Immutable Configuration
+
+```cs
+// Create configuration with init-only properties
+var config = new ExtractionConfig
+{
+    UseCache = true,
+    EnableQualityProcessing = true
+};
+
+// This works - creates a new object with modified values
+var enhancedConfig = new ExtractionConfig
+{
+    UseCache = config.UseCache ?? false,
+    EnableQualityProcessing = true,
+    MaxConcurrentExtractions = 4
+};
+
+// This will NOT compile - properties are read-only after init
+// config.UseCache = false;  // Error: cannot assign to init-only property
+```
+
+#### Nested Immutable Configs
+
+```cs
+// Complex nested configurations remain immutable
+var advancedConfig = new ExtractionConfig
+{
+    UseCache = true,
+    Ocr = new OcrConfig
+    {
+        Backend = "tesseract",
+        Language = "eng+fra+deu",
+        TesseractConfig = new TesseractConfig
+        {
+            Psm = 3,
+            Oem = 1,
+            MinConfidence = 0.5,
+            EnableTableDetection = true
+        }
+    },
+    Chunking = new ChunkingConfig
+    {
+        MaxChars = 1000,
+        MaxOverlap = 100,
+        Preset = "semantic"
+    },
+    LanguageDetection = new LanguageDetectionConfig
+    {
+        Enabled = true,
+        MinConfidence = 0.7,
+        DetectMultiple = true
+    }
+};
+
+// Use the immutable config across multiple operations
+var result1 = KreuzbergClient.ExtractFileSync("doc1.pdf", advancedConfig);
+var result2 = KreuzbergClient.ExtractFileSync("doc2.pdf", advancedConfig);
+// Both operations safely share the same immutable configuration
+```
+
+#### Configuration with Optional Features
+
+```cs
+// Selectively enable features through immutable initialization
+var configWithImages = new ExtractionConfig
+{
+    UseCache = true,
+    EnableQualityProcessing = true,
+    Images = new ImageExtractionConfig
+    {
+        ExtractImages = true,
+        TargetDpi = 150,
+        AutoAdjustDpi = true,
+        MinDpi = 72,
+        MaxDpi = 300
+    }
+};
+
+var configWithKeywords = new ExtractionConfig
+{
+    Keywords = new KeywordConfig
+    {
+        Algorithm = KeywordAlgorithm.Yake,
+        MaxKeywords = 20,
+        MinScore = 0.5,
+        Language = "en"
+    }
+};
+
+// PDF-specific immutable configuration
+var pdfConfig = new ExtractionConfig
+{
+    UseCache = true,
+    PdfOptions = new PdfConfig
+    {
+        ExtractImages = true,
+        ExtractMetadata = true,
+        Passwords = new List<string> { "password1", "password2" },
+        FontConfig = new FontConfig
+        {
+            FontFallbackEnabled = true,
+            FontDir = "/usr/share/fonts"
+        }
+    }
+};
+```
+
+#### HTML Processing with Immutable Options
+
+```cs
+// Rich HTML conversion options, all immutable
+var htmlConfig = new ExtractionConfig
+{
+    HtmlOptions = new HtmlConversionOptions
+    {
+        HeadingStyle = "atx",
+        ListIndentType = "space",
+        ListIndentWidth = 2,
+        Bullets = "-",
+        Autolinks = true,
+        ExtractMetadata = true,
+        WhitespaceMode = "collapse",
+        Wrap = true,
+        WrapWidth = 80,
+        CodeBlockStyle = "fenced",
+        HighlightStyle = "github-dark",
+        Preprocessing = new HtmlPreprocessingOptions
+        {
+            Enabled = true,
+            Preset = "readability",
+            RemoveNavigation = true,
+            RemoveForms = true
+        }
+    }
+};
+```
+
+#### Thread-Safe Batch Operations
+
+```cs
+// Immutable configs are perfect for batch processing
+var batchConfig = new ExtractionConfig
+{
+    UseCache = true,
+    EnableQualityProcessing = true,
+    MaxConcurrentExtractions = 4
+};
+
+var filePaths = new[]
+{
+    "document1.pdf",
+    "document2.pdf",
+    "document3.pdf",
+    "document4.docx"
+};
+
+// Safe to use same immutable config across all batch items
+var results = KreuzbergClient.BatchExtractFilesSync(filePaths, batchConfig);
+
+// Or async with cancellation token
+using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+var asyncResults = await KreuzbergClient.BatchExtractFilesAsync(
+    filePaths,
+    batchConfig,
+    cts.Token
+);
 ```
 
 ## Configuration

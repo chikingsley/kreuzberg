@@ -190,7 +190,7 @@ jobs:
         uses: ./.github/actions/build-and-cache-ffi
         with:
           platform: ${{ runner.os }}
-          ffi-crate: kreuzberg-elixir
+          ffi-crate: kreuzberg-ffi
           cache-version: v1
           pdfium-version: ${{ env.PDFIUM_VERSION }}
           ort-version: ${{ env.ORT_VERSION }}

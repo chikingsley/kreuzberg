@@ -7,49 +7,45 @@ use std::sync::Mutex;
 /// Cached state for lazy Pdfium initialization.
 enum InitializationState {
     Uninitialized,
-    Initialized {
-        #[allow(dead_code)]
-        lib_dir: Option<PathBuf>,
-    },
+    Initialized { lib_dir: Option<PathBuf> },
     Failed(String),
 }
 
 static PDFIUM_STATE: Lazy<Mutex<InitializationState>> = Lazy::new(|| Mutex::new(InitializationState::Uninitialized));
 
-fn bind_pdfium_impl() -> Result<(Option<PathBuf>, Box<dyn PdfiumLibraryBindings>), String> {
-    #[cfg(all(feature = "pdf", feature = "bundled-pdfium"))]
+fn extract_and_get_lib_dir() -> Result<Option<PathBuf>, String> {
+    #[cfg(all(feature = "pdf", feature = "bundled-pdfium", not(target_arch = "wasm32")))]
     {
-        #[cfg(target_arch = "wasm32")]
-        {
-            let bindings =
-                Pdfium::bind_to_system_library().map_err(|e| format!("Failed to initialize Pdfium for WASM: {}", e))?;
-            Ok((None, bindings))
-        }
+        let lib_path =
+            crate::pdf::extract_bundled_pdfium().map_err(|e| format!("Failed to extract bundled Pdfium: {}", e))?;
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let lib_path =
-                crate::pdf::extract_bundled_pdfium().map_err(|e| format!("Failed to extract bundled Pdfium: {}", e))?;
+        let lib_dir = lib_path.parent().ok_or_else(|| {
+            format!(
+                "Failed to determine Pdfium extraction directory for '{}'",
+                lib_path.display()
+            )
+        })?;
 
-            let lib_dir = lib_path.parent().ok_or_else(|| {
-                format!(
-                    "Failed to determine Pdfium extraction directory for '{}'",
-                    lib_path.display()
-                )
-            })?;
+        Ok(Some(lib_dir.to_path_buf()))
+    }
 
-            let bindings = Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(lib_dir))
-                .map_err(|e| format!("Failed to initialize Pdfium: {}", e))?;
+    #[cfg(any(not(feature = "bundled-pdfium"), target_arch = "wasm32"))]
+    {
+        Ok(None)
+    }
+}
 
-            Ok((Some(lib_dir.to_path_buf()), bindings))
+fn bind_to_pdfium(lib_dir: &Option<PathBuf>) -> Result<Box<dyn PdfiumLibraryBindings>, String> {
+    #[cfg(all(feature = "pdf", feature = "bundled-pdfium", not(target_arch = "wasm32")))]
+    {
+        if let Some(dir) = lib_dir {
+            return Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(dir))
+                .map_err(|e| format!("Failed to bind to Pdfium library: {}", e));
         }
     }
 
-    #[cfg(all(feature = "pdf", not(feature = "bundled-pdfium")))]
-    {
-        let bindings = Pdfium::bind_to_system_library().map_err(|e| format!("Failed to initialize Pdfium: {}", e))?;
-        Ok((None, bindings))
-    }
+    // For system library or WASM
+    Pdfium::bind_to_system_library().map_err(|e| format!("Failed to bind to system Pdfium library: {}", e))
 }
 
 /// Get Pdfium bindings with lazy initialization.
@@ -85,30 +81,37 @@ fn bind_pdfium_impl() -> Result<(Option<PathBuf>, Box<dyn PdfiumLibraryBindings>
 pub(crate) fn bind_pdfium(map_err: fn(String) -> PdfError, context: &'static str) -> Result<Pdfium, PdfError> {
     let mut state = PDFIUM_STATE.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
-    match &*state {
-        InitializationState::Uninitialized => match bind_pdfium_impl() {
-            Ok((lib_dir, bindings)) => {
-                let pdfium = Pdfium::new(bindings);
-                *state = InitializationState::Initialized { lib_dir };
-                Ok(pdfium)
+    // Check current state and get lib_dir if already initialized
+    let lib_dir = match &*state {
+        InitializationState::Uninitialized => {
+            // Extract bundled library (only happens once)
+            match extract_and_get_lib_dir() {
+                Ok(lib_dir) => {
+                    // Update state to mark as initialized
+                    let lib_dir_clone = lib_dir.clone();
+                    *state = InitializationState::Initialized { lib_dir };
+                    lib_dir_clone
+                }
+                Err(err) => {
+                    *state = InitializationState::Failed(err.clone());
+                    return Err(map_err(format!("Pdfium extraction failed ({}): {}", context, err)));
+                }
             }
-            Err(err) => {
-                *state = InitializationState::Failed(err.clone());
-                Err(map_err(format!("Pdfium initialization failed ({}): {}", context, err)))
-            }
-        },
-        InitializationState::Failed(err) => Err(map_err(format!(
-            "Pdfium initialization previously failed ({}): {}",
-            context, err
-        ))),
-        InitializationState::Initialized { .. } => match bind_pdfium_impl() {
-            Ok((_lib_dir, bindings)) => Ok(Pdfium::new(bindings)),
-            Err(err) => Err(map_err(format!(
-                "Pdfium re-initialization failed ({}): {}",
-                context, err
-            ))),
-        },
-    }
+        }
+        InitializationState::Failed(err) => {
+            return Err(map_err(format!(
+                "Pdfium initialization previously failed ({}): {}",
+                context,
+                err.clone()
+            )));
+        }
+        InitializationState::Initialized { lib_dir } => lib_dir.clone(),
+    };
+
+    // Create bindings from the library path (works for both first time and subsequent calls)
+    let bindings =
+        bind_to_pdfium(&lib_dir).map_err(|e| map_err(format!("Pdfium binding failed ({}): {}", context, e)))?;
+    Ok(Pdfium::new(bindings))
 }
 
 #[cfg(test)]

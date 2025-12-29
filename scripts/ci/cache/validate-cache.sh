@@ -110,7 +110,7 @@ for path in "$@"; do
 			wasm_files=$(find "$path" -type f -name "*.wasm" 2>/dev/null || true)
 			if [[ -z "$wasm_files" ]]; then
 				warn "No WASM files found in directory: $path"
-				((MISSING_COUNT++))
+				((++MISSING_COUNT))
 			else
 				while IFS= read -r artifact; do
 					# Skip empty lines
@@ -122,17 +122,17 @@ for path in "$@"; do
 
 					if [[ "$FILE_SIZE" -eq 0 ]]; then
 						warn "Empty file: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 						continue
 					fi
 
 					# Check for WASM magic bytes (\0asm)
 					if check_wasm_magic "$artifact"; then
 						info "✓ Valid WASM module: $artifact ($SIZE)"
-						((VALID_COUNT++))
+						((++VALID_COUNT))
 					else
 						warn "Invalid WASM format: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 					fi
 				done < <(echo "$wasm_files")
 			fi
@@ -141,7 +141,7 @@ for path in "$@"; do
 			node_files=$(find "$path" -type f -name "*.node" 2>/dev/null || true)
 			if [[ -z "$node_files" ]]; then
 				warn "No Node.js modules found in directory: $path"
-				((MISSING_COUNT++))
+				((++MISSING_COUNT))
 			else
 				while IFS= read -r artifact; do
 					# Skip empty lines
@@ -153,17 +153,17 @@ for path in "$@"; do
 
 					if [[ "$FILE_SIZE" -eq 0 ]]; then
 						warn "Empty file: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 						continue
 					fi
 
 					# Check for valid Node.js native module
 					if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|DLL)"; then
 						info "✓ Valid Node.js module: $artifact ($SIZE)"
-						((VALID_COUNT++))
+						((++VALID_COUNT))
 					else
 						warn "Invalid .node format: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 					fi
 				done < <(echo "$node_files")
 			fi
@@ -172,7 +172,7 @@ for path in "$@"; do
 			ffi_files=$(find "$path" -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "*.a" -o -name "*.lib" \) 2>/dev/null || true)
 			if [[ -z "$ffi_files" ]]; then
 				warn "No FFI library files found in directory: $path"
-				((MISSING_COUNT++))
+				((++MISSING_COUNT))
 			else
 				while IFS= read -r artifact; do
 					# Skip empty lines
@@ -184,24 +184,24 @@ for path in "$@"; do
 
 					if [[ "$FILE_SIZE" -eq 0 ]]; then
 						warn "Empty file: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 						continue
 					fi
 
 					# Check for valid library file format
 					if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|DLL|current ar archive)"; then
 						info "✓ Valid FFI library: $artifact ($SIZE)"
-						((VALID_COUNT++))
+						((++VALID_COUNT))
 					else
 						warn "Invalid FFI library format: $artifact"
-						((INVALID_COUNT++))
+						((++INVALID_COUNT))
 					fi
 				done < <(echo "$ffi_files")
 			fi
 		else
 			# For other types, just check that the directory exists
 			info "✓ Directory exists: $path"
-			((VALID_COUNT++))
+			((++VALID_COUNT))
 		fi
 		continue
 	fi
@@ -210,7 +210,7 @@ for path in "$@"; do
 	for artifact in $path; do
 		if [[ ! -e "$artifact" ]]; then
 			warn "Missing: $artifact"
-			((MISSING_COUNT++))
+			((++MISSING_COUNT))
 			continue
 		fi
 
@@ -232,24 +232,24 @@ for path in "$@"; do
 				# Check if it's a valid binary (has ELF/Mach-O/PE magic bytes)
 				if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|PE32|DLL)"; then
 					info "✓ Valid FFI library: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid binary format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			elif [[ "$artifact" == *.a || "$artifact" == *.lib ]]; then
 				# Static library
 				if file "$artifact" 2>/dev/null | grep -qE "(archive|library)"; then
 					info "✓ Valid static library: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid archive format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				# Other files (e.g., .pc files)
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -259,23 +259,23 @@ for path in "$@"; do
 				# Check if it's a valid ZIP archive
 				if file "$artifact" 2>/dev/null | grep -q "Zip archive"; then
 					info "✓ Valid Python wheel: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid wheel format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			elif [[ "$artifact" == *.tar.gz ]]; then
 				# Check if it's a valid tarball
 				if file "$artifact" 2>/dev/null | grep -q "gzip compressed"; then
 					info "✓ Valid Python sdist: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid sdist format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -284,22 +284,22 @@ for path in "$@"; do
 			if [[ "$artifact" == *.gem ]]; then
 				if file "$artifact" 2>/dev/null | grep -q "tar archive"; then
 					info "✓ Valid Ruby gem: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid gem format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			elif [[ "$artifact" == *.bundle || "$artifact" == *.so ]]; then
 				if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|bundle)"; then
 					info "✓ Valid Ruby extension: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid extension format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -308,22 +308,22 @@ for path in "$@"; do
 			if [[ "$artifact" == *.node ]]; then
 				if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|DLL)"; then
 					info "✓ Valid Node.js module: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid .node format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			elif [[ "$artifact" == *.tgz || "$artifact" == *.tar.gz ]]; then
 				if file "$artifact" 2>/dev/null | grep -q "gzip compressed"; then
 					info "✓ Valid npm package: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid package format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -333,14 +333,14 @@ for path in "$@"; do
 				# Check for WASM magic bytes (\0asm) using check_wasm_magic function
 				if check_wasm_magic "$artifact"; then
 					info "✓ Valid WASM module: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid WASM format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -349,14 +349,14 @@ for path in "$@"; do
 			if [[ "$artifact" == *.jar ]]; then
 				if file "$artifact" 2>/dev/null | grep -q "Zip archive"; then
 					info "✓ Valid JAR file: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid JAR format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
@@ -365,29 +365,29 @@ for path in "$@"; do
 			if [[ "$artifact" == *.nupkg ]]; then
 				if file "$artifact" 2>/dev/null | grep -q "Zip archive"; then
 					info "✓ Valid NuGet package: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid NuGet format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			elif [[ "$artifact" == *.dll || "$artifact" == *.so || "$artifact" == *.dylib ]]; then
 				if file "$artifact" 2>/dev/null | grep -qE "(shared object|shared library|Mach-O|DLL|PE32)"; then
 					info "✓ Valid native library: $artifact ($SIZE)"
-					((VALID_COUNT++))
+					((++VALID_COUNT))
 				else
 					warn "Invalid library format: $artifact"
-					((INVALID_COUNT++))
+					((++INVALID_COUNT))
 				fi
 			else
 				info "✓ File exists: $artifact ($SIZE)"
-				((VALID_COUNT++))
+				((++VALID_COUNT))
 			fi
 			;;
 
 		*)
 			# Generic validation - just check existence and non-zero size
 			info "✓ File exists: $artifact ($SIZE)"
-			((VALID_COUNT++))
+			((++VALID_COUNT))
 			;;
 		esac
 	done

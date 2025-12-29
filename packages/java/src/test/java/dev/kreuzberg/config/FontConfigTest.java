@@ -1,16 +1,17 @@
 package dev.kreuzberg.config;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 /**
  * Comprehensive FontConfig tests.
  *
- * Tests for FontConfig feature that allows users to enable/disable custom
- * font provider and add custom font directories.
+ * <p>
+ * Tests for FontConfig feature that allows users to enable/disable custom font
+ * provider and add custom font directories.
  */
 class FontConfigTest {
 
@@ -25,9 +26,7 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigBuilderWithEnabledTrue() {
-		FontConfig config = FontConfig.builder()
-				.enabled(true)
-				.build();
+		FontConfig config = FontConfig.builder().enabled(true).build();
 
 		assertTrue(config.isEnabled(), "enabled should be true");
 		assertNull(config.getCustomFontDirs(), "customFontDirs should be null");
@@ -35,9 +34,7 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigBuilderWithEnabledFalse() {
-		FontConfig config = FontConfig.builder()
-				.enabled(false)
-				.build();
+		FontConfig config = FontConfig.builder().enabled(false).build();
 
 		assertFalse(config.isEnabled(), "enabled should be false");
 		assertNull(config.getCustomFontDirs(), "customFontDirs should be null");
@@ -45,43 +42,29 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigBuilderWithCustomDirs() {
-		java.util.List<String> dirs = java.util.Arrays.asList(
-				"/usr/share/fonts/custom",
-				"~/my-fonts"
-		);
+		java.util.List<String> dirs = java.util.Arrays.asList("/usr/share/fonts/custom", "~/my-fonts");
 
-		FontConfig config = FontConfig.builder()
-				.customFontDirs(dirs)
-				.build();
+		FontConfig config = FontConfig.builder().customFontDirs(dirs).build();
 
 		assertTrue(config.isEnabled(), "enabled should default to true");
 		assertNotNull(config.getCustomFontDirs(), "customFontDirs should not be null");
-		assertThat(config.getCustomFontDirs())
-				.hasSize(2)
-				.containsExactly("/usr/share/fonts/custom", "~/my-fonts");
+		assertThat(config.getCustomFontDirs()).hasSize(2).containsExactly("/usr/share/fonts/custom", "~/my-fonts");
 	}
 
 	@Test
 	void testFontConfigBuilderWithAllParameters() {
 		java.util.List<String> dirs = java.util.Arrays.asList("/path/to/fonts", "/another/path");
 
-		FontConfig config = FontConfig.builder()
-				.enabled(true)
-				.customFontDirs(dirs)
-				.build();
+		FontConfig config = FontConfig.builder().enabled(true).customFontDirs(dirs).build();
 
 		assertTrue(config.isEnabled(), "enabled should be true");
 		assertNotNull(config.getCustomFontDirs(), "customFontDirs should not be null");
-		assertThat(config.getCustomFontDirs())
-				.hasSize(2)
-				.containsExactlyElementsOf(dirs);
+		assertThat(config.getCustomFontDirs()).hasSize(2).containsExactlyElementsOf(dirs);
 	}
 
 	@Test
 	void testFontConfigBuilderChaining() {
-		FontConfig config = FontConfig.builder()
-				.enabled(false)
-				.customFontDirs(java.util.Arrays.asList("/fonts"))
+		FontConfig config = FontConfig.builder().enabled(false).customFontDirs(java.util.Arrays.asList("/fonts"))
 				.build();
 
 		assertFalse(config.isEnabled(), "Method chaining should work");
@@ -90,10 +73,7 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigEmptyCustomDirs() {
-		FontConfig config = FontConfig.builder()
-				.enabled(true)
-				.customFontDirs(new java.util.ArrayList<>())
-				.build();
+		FontConfig config = FontConfig.builder().enabled(true).customFontDirs(new java.util.ArrayList<>()).build();
 
 		assertTrue(config.isEnabled());
 		assertNotNull(config.getCustomFontDirs());
@@ -102,36 +82,21 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigMultipleCustomDirs() {
-		java.util.List<String> dirs = java.util.Arrays.asList(
-				"/path1",
-				"/path2",
-				"/path3",
-				"~/fonts",
-				"./relative-fonts"
-		);
+		java.util.List<String> dirs = java.util.Arrays.asList("/path1", "/path2", "/path3", "~/fonts",
+				"./relative-fonts");
 
-		FontConfig config = FontConfig.builder()
-				.customFontDirs(dirs)
-				.build();
+		FontConfig config = FontConfig.builder().customFontDirs(dirs).build();
 
-		assertThat(config.getCustomFontDirs())
-				.hasSize(5)
-				.containsExactlyElementsOf(dirs);
+		assertThat(config.getCustomFontDirs()).hasSize(5).containsExactlyElementsOf(dirs);
 	}
 
 	@Test
 	void testFontConfigEqualsAndHashCode() {
 		java.util.List<String> dirs = java.util.Arrays.asList("/fonts");
 
-		FontConfig config1 = FontConfig.builder()
-				.enabled(true)
-				.customFontDirs(dirs)
-				.build();
+		FontConfig config1 = FontConfig.builder().enabled(true).customFontDirs(dirs).build();
 
-		FontConfig config2 = FontConfig.builder()
-				.enabled(true)
-				.customFontDirs(dirs)
-				.build();
+		FontConfig config2 = FontConfig.builder().enabled(true).customFontDirs(dirs).build();
 
 		assertEquals(config1, config2, "Equal configs should be equal");
 		assertEquals(config1.hashCode(), config2.hashCode(), "Equal configs should have same hash");
@@ -139,9 +104,7 @@ class FontConfigTest {
 
 	@Test
 	void testFontConfigToString() {
-		FontConfig config = FontConfig.builder()
-				.enabled(true)
-				.customFontDirs(java.util.Arrays.asList("/fonts"))
+		FontConfig config = FontConfig.builder().enabled(true).customFontDirs(java.util.Arrays.asList("/fonts"))
 				.build();
 
 		String str = config.toString();
@@ -155,52 +118,35 @@ class FontConfigTest {
 
 		@Test
 		void testPdfConfigWithFontConfig() {
-			FontConfig fontConfig = FontConfig.builder()
-					.enabled(true)
-					.customFontDirs(java.util.Arrays.asList("/fonts"))
+			FontConfig fontConfig = FontConfig.builder().enabled(true).customFontDirs(java.util.Arrays.asList("/fonts"))
 					.build();
 
-			PdfConfig pdfConfig = PdfConfig.builder()
-					.extractImages(true)
-					.fontConfig(fontConfig)
-					.build();
+			PdfConfig pdfConfig = PdfConfig.builder().extractImages(true).fontConfig(fontConfig).build();
 
 			assertNotNull(pdfConfig.getFontConfig());
 			assertTrue(pdfConfig.getFontConfig().isEnabled());
-			assertThat(pdfConfig.getFontConfig().getCustomFontDirs())
-					.contains("/fonts");
+			assertThat(pdfConfig.getFontConfig().getCustomFontDirs()).contains("/fonts");
 		}
 
 		@Test
 		void testPdfConfigWithFontConfigDisabled() {
-			FontConfig fontConfig = FontConfig.builder()
-					.enabled(false)
-					.customFontDirs(java.util.Arrays.asList("/custom"))
-					.build();
+			FontConfig fontConfig = FontConfig.builder().enabled(false)
+					.customFontDirs(java.util.Arrays.asList("/custom")).build();
 
-			PdfConfig pdfConfig = PdfConfig.builder()
-					.fontConfig(fontConfig)
-					.build();
+			PdfConfig pdfConfig = PdfConfig.builder().fontConfig(fontConfig).build();
 
 			assertNotNull(pdfConfig.getFontConfig());
 			assertFalse(pdfConfig.getFontConfig().isEnabled());
-			assertThat(pdfConfig.getFontConfig().getCustomFontDirs())
-					.contains("/custom");
+			assertThat(pdfConfig.getFontConfig().getCustomFontDirs()).contains("/custom");
 		}
 
 		@Test
 		void testPdfConfigWithFontConfigAllParameters() {
-			FontConfig fontConfig = FontConfig.builder()
-					.enabled(true)
-					.customFontDirs(java.util.Arrays.asList("/custom-fonts"))
-					.build();
+			FontConfig fontConfig = FontConfig.builder().enabled(true)
+					.customFontDirs(java.util.Arrays.asList("/custom-fonts")).build();
 
-			PdfConfig pdfConfig = PdfConfig.builder()
-					.extractImages(true)
-					.passwords(java.util.Arrays.asList("pass1"))
-					.extractMetadata(true)
-					.fontConfig(fontConfig)
-					.build();
+			PdfConfig pdfConfig = PdfConfig.builder().extractImages(true).passwords(java.util.Arrays.asList("pass1"))
+					.extractMetadata(true).fontConfig(fontConfig).build();
 
 			assertTrue(pdfConfig.isExtractImages());
 			assertThat(pdfConfig.getPasswords()).contains("pass1");
@@ -210,18 +156,14 @@ class FontConfigTest {
 
 		@Test
 		void testPdfConfigWithoutFontConfig() {
-			PdfConfig pdfConfig = PdfConfig.builder()
-					.extractImages(true)
-					.build();
+			PdfConfig pdfConfig = PdfConfig.builder().extractImages(true).build();
 
 			assertNull(pdfConfig.getFontConfig(), "FontConfig should be null when not set");
 		}
 
 		@Test
 		void testPdfConfigFontConfigNull() {
-			PdfConfig pdfConfig = PdfConfig.builder()
-					.fontConfig(null)
-					.build();
+			PdfConfig pdfConfig = PdfConfig.builder().fontConfig(null).build();
 
 			assertNull(pdfConfig.getFontConfig());
 		}

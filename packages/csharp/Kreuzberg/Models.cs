@@ -825,85 +825,85 @@ public sealed class ExtractionConfig
     /// Whether to use caching for extraction results. Default is null (use server default).
     /// </summary>
     [JsonPropertyName("use_cache")]
-    public bool? UseCache { get; set; }
+    public bool? UseCache { get; init; }
 
     /// <summary>
     /// Whether to enable quality processing to improve extraction quality. Default is null.
     /// </summary>
     [JsonPropertyName("enable_quality_processing")]
-    public bool? EnableQualityProcessing { get; set; }
+    public bool? EnableQualityProcessing { get; init; }
 
     /// <summary>
     /// OCR configuration for handling scanned documents and images. If null, OCR is disabled.
     /// </summary>
     [JsonPropertyName("ocr")]
-    public OcrConfig? Ocr { get; set; }
+    public OcrConfig? Ocr { get; init; }
 
     /// <summary>
     /// Whether to force OCR processing even for documents with text. Default is false.
     /// </summary>
     [JsonPropertyName("force_ocr")]
-    public bool? ForceOcr { get; set; }
+    public bool? ForceOcr { get; init; }
 
     /// <summary>
     /// Text chunking configuration for splitting long documents. If null, chunking is disabled.
     /// </summary>
     [JsonPropertyName("chunking")]
-    public ChunkingConfig? Chunking { get; set; }
+    public ChunkingConfig? Chunking { get; init; }
 
     /// <summary>
     /// Image extraction configuration. If null, image extraction is disabled.
     /// </summary>
     [JsonPropertyName("images")]
-    public ImageExtractionConfig? Images { get; set; }
+    public ImageExtractionConfig? Images { get; init; }
 
     /// <summary>
     /// PDF-specific extraction options (password protection, metadata, etc.).
     /// </summary>
     [JsonPropertyName("pdf_options")]
-    public PdfConfig? PdfOptions { get; set; }
+    public PdfConfig? PdfOptions { get; init; }
 
     /// <summary>
     /// Token reduction configuration for reducing token counts in results.
     /// </summary>
     [JsonPropertyName("token_reduction")]
-    public TokenReductionConfig? TokenReduction { get; set; }
+    public TokenReductionConfig? TokenReduction { get; init; }
 
     /// <summary>
     /// Language detection configuration. If null, language detection is disabled.
     /// </summary>
     [JsonPropertyName("language_detection")]
-    public LanguageDetectionConfig? LanguageDetection { get; set; }
+    public LanguageDetectionConfig? LanguageDetection { get; init; }
 
     /// <summary>
     /// Post-processor configuration for controlling which processors are enabled/disabled.
     /// </summary>
     [JsonPropertyName("postprocessor")]
-    public PostProcessorConfig? Postprocessor { get; set; }
+    public PostProcessorConfig? Postprocessor { get; init; }
 
     /// <summary>
     /// HTML conversion options for HTML documents.
     /// </summary>
     [JsonPropertyName("html_options")]
-    public HtmlConversionOptions? HtmlOptions { get; set; }
+    public HtmlConversionOptions? HtmlOptions { get; init; }
 
     /// <summary>
     /// Keyword extraction configuration.
     /// </summary>
     [JsonPropertyName("keywords")]
-    public KeywordConfig? Keywords { get; set; }
+    public KeywordConfig? Keywords { get; init; }
 
     /// <summary>
     /// Page extraction and tracking configuration.
     /// </summary>
     [JsonPropertyName("pages")]
-    public PageConfig? Pages { get; set; }
+    public PageConfig? Pages { get; init; }
 
     /// <summary>
     /// Maximum number of concurrent extractions in batch operations. Default is null.
     /// </summary>
     [JsonPropertyName("max_concurrent_extractions")]
-    public int? MaxConcurrentExtractions { get; set; }
+    public int? MaxConcurrentExtractions { get; init; }
 }
 
 /// <summary>
@@ -915,19 +915,19 @@ public sealed class OcrConfig
     /// OCR backend to use (e.g., "tesseract", "paddle").
     /// </summary>
     [JsonPropertyName("backend")]
-    public string? Backend { get; set; }
+    public string? Backend { get; init; }
 
     /// <summary>
     /// Language for OCR processing (e.g., "eng", "fra", "deu").
     /// </summary>
     [JsonPropertyName("language")]
-    public string? Language { get; set; }
+    public string? Language { get; init; }
 
     /// <summary>
     /// Tesseract-specific configuration, if using Tesseract backend.
     /// </summary>
     [JsonPropertyName("tesseract_config")]
-    public TesseractConfig? TesseractConfig { get; set; }
+    public TesseractConfig? TesseractConfig { get; init; }
 }
 
 /// <summary>
@@ -939,127 +939,127 @@ public sealed class TesseractConfig
     /// OCR language (e.g., "eng", "fra", "deu").
     /// </summary>
     [JsonPropertyName("language")]
-    public string? Language { get; set; }
+    public string? Language { get; init; }
 
     /// <summary>
     /// Page Segmentation Mode (PSM) for Tesseract (0-13).
     /// </summary>
     [JsonPropertyName("psm")]
-    public int? Psm { get; set; }
+    public int? Psm { get; init; }
 
     /// <summary>
     /// Output format specification.
     /// </summary>
     [JsonPropertyName("output_format")]
-    public string? OutputFormat { get; set; }
+    public string? OutputFormat { get; init; }
 
     /// <summary>
     /// OCR Engine Mode (OEM) for Tesseract (0-3).
     /// </summary>
     [JsonPropertyName("oem")]
-    public int? Oem { get; set; }
+    public int? Oem { get; init; }
 
     /// <summary>
     /// Minimum confidence threshold for character recognition (0.0-1.0).
     /// </summary>
     [JsonPropertyName("min_confidence")]
-    public double? MinConfidence { get; set; }
+    public double? MinConfidence { get; init; }
 
     /// <summary>
     /// Image preprocessing configuration for OCR preparation.
     /// </summary>
     [JsonPropertyName("preprocessing")]
-    public ImagePreprocessingConfig? Preprocessing { get; set; }
+    public ImagePreprocessingConfig? Preprocessing { get; init; }
 
     /// <summary>
     /// Whether to enable table detection and extraction.
     /// </summary>
     [JsonPropertyName("enable_table_detection")]
-    public bool? EnableTableDetection { get; set; }
+    public bool? EnableTableDetection { get; init; }
 
     /// <summary>
     /// Minimum confidence for table detection.
     /// </summary>
     [JsonPropertyName("table_min_confidence")]
-    public double? TableMinConfidence { get; set; }
+    public double? TableMinConfidence { get; init; }
 
     /// <summary>
     /// Threshold for detecting table columns.
     /// </summary>
     [JsonPropertyName("table_column_threshold")]
-    public int? TableColumnThreshold { get; set; }
+    public int? TableColumnThreshold { get; init; }
 
     /// <summary>
     /// Ratio threshold for detecting table rows.
     /// </summary>
     [JsonPropertyName("table_row_threshold_ratio")]
-    public double? TableRowThresholdRatio { get; set; }
+    public double? TableRowThresholdRatio { get; init; }
 
     /// <summary>
     /// Whether to use caching for OCR results.
     /// </summary>
     [JsonPropertyName("use_cache")]
-    public bool? UseCache { get; set; }
+    public bool? UseCache { get; init; }
 
     /// <summary>
     /// Whether to classify using pre-adapted templates.
     /// </summary>
     [JsonPropertyName("classify_use_pre_adapted_templates")]
-    public bool? ClassifyUsePreAdaptedTemplates { get; set; }
+    public bool? ClassifyUsePreAdaptedTemplates { get; init; }
 
     /// <summary>
     /// Whether to use language model n-gram.
     /// </summary>
     [JsonPropertyName("language_model_ngram_on")]
-    public bool? LanguageModelNgramOn { get; set; }
+    public bool? LanguageModelNgramOn { get; init; }
 
     /// <summary>
     /// Tesseract parameter: don't reject good words in blocks.
     /// </summary>
     [JsonPropertyName("tessedit_dont_blkrej_good_wds")]
-    public bool? TesseditDontBlkrejGoodWds { get; set; }
+    public bool? TesseditDontBlkrejGoodWds { get; init; }
 
     /// <summary>
     /// Tesseract parameter: don't reject good words in rows.
     /// </summary>
     [JsonPropertyName("tessedit_dont_rowrej_good_wds")]
-    public bool? TesseditDontRowrejGoodWds { get; set; }
+    public bool? TesseditDontRowrejGoodWds { get; init; }
 
     /// <summary>
     /// Tesseract parameter: enable dictionary correction.
     /// </summary>
     [JsonPropertyName("tessedit_enable_dict_correction")]
-    public bool? TesseditEnableDictCorrection { get; set; }
+    public bool? TesseditEnableDictCorrection { get; init; }
 
     /// <summary>
     /// Whitelist of characters for OCR recognition.
     /// </summary>
     [JsonPropertyName("tessedit_char_whitelist")]
-    public string? TesseditCharWhitelist { get; set; }
+    public string? TesseditCharWhitelist { get; init; }
 
     /// <summary>
     /// Blacklist of characters to exclude from OCR recognition.
     /// </summary>
     [JsonPropertyName("tessedit_char_blacklist")]
-    public string? TesseditCharBlacklist { get; set; }
+    public string? TesseditCharBlacklist { get; init; }
 
     /// <summary>
     /// Tesseract parameter: use primary params model.
     /// </summary>
     [JsonPropertyName("tessedit_use_primary_params_model")]
-    public bool? TesseditUsePrimaryParamsModel { get; set; }
+    public bool? TesseditUsePrimaryParamsModel { get; init; }
 
     /// <summary>
     /// Tesseract parameter: space size is variable.
     /// </summary>
     [JsonPropertyName("textord_space_size_is_variable")]
-    public bool? TextordSpaceSizeIsVariable { get; set; }
+    public bool? TextordSpaceSizeIsVariable { get; init; }
 
     /// <summary>
     /// Thresholding method for image binarization.
     /// </summary>
     [JsonPropertyName("thresholding_method")]
-    public bool? ThresholdingMethod { get; set; }
+    public bool? ThresholdingMethod { get; init; }
 }
 
 /// <summary>
@@ -1071,43 +1071,43 @@ public sealed class ImagePreprocessingConfig
     /// Target dots-per-inch (DPI) for image upscaling/downscaling.
     /// </summary>
     [JsonPropertyName("target_dpi")]
-    public int? TargetDpi { get; set; }
+    public int? TargetDpi { get; init; }
 
     /// <summary>
     /// Whether to automatically rotate images to correct orientation.
     /// </summary>
     [JsonPropertyName("auto_rotate")]
-    public bool? AutoRotate { get; set; }
+    public bool? AutoRotate { get; init; }
 
     /// <summary>
     /// Whether to deskew (rotate to correct skew) the image.
     /// </summary>
     [JsonPropertyName("deskew")]
-    public bool? Deskew { get; set; }
+    public bool? Deskew { get; init; }
 
     /// <summary>
     /// Whether to apply denoising to reduce image noise.
     /// </summary>
     [JsonPropertyName("denoise")]
-    public bool? Denoise { get; set; }
+    public bool? Denoise { get; init; }
 
     /// <summary>
     /// Whether to enhance image contrast.
     /// </summary>
     [JsonPropertyName("contrast_enhance")]
-    public bool? ContrastEnhance { get; set; }
+    public bool? ContrastEnhance { get; init; }
 
     /// <summary>
     /// Binarization method for converting to black and white.
     /// </summary>
     [JsonPropertyName("binarization_method")]
-    public string? BinarizationMode { get; set; }
+    public string? BinarizationMode { get; init; }
 
     /// <summary>
     /// Whether to invert image colors.
     /// </summary>
     [JsonPropertyName("invert_colors")]
-    public bool? InvertColors { get; set; }
+    public bool? InvertColors { get; init; }
 }
 
 /// <summary>
@@ -1119,43 +1119,43 @@ public sealed class ChunkingConfig
     /// Maximum number of characters per chunk.
     /// </summary>
     [JsonPropertyName("max_chars")]
-    public int? MaxChars { get; set; }
+    public int? MaxChars { get; init; }
 
     /// <summary>
     /// Maximum character overlap between consecutive chunks.
     /// </summary>
     [JsonPropertyName("max_overlap")]
-    public int? MaxOverlap { get; set; }
+    public int? MaxOverlap { get; init; }
 
     /// <summary>
     /// Chunk size (alternative to max_chars).
     /// </summary>
     [JsonPropertyName("chunk_size")]
-    public int? ChunkSize { get; set; }
+    public int? ChunkSize { get; init; }
 
     /// <summary>
     /// Character overlap between chunks.
     /// </summary>
     [JsonPropertyName("chunk_overlap")]
-    public int? ChunkOverlap { get; set; }
+    public int? ChunkOverlap { get; init; }
 
     /// <summary>
     /// Named preset for chunking strategy (e.g., "default", "semantic").
     /// </summary>
     [JsonPropertyName("preset")]
-    public string? Preset { get; set; }
+    public string? Preset { get; init; }
 
     /// <summary>
     /// Embedding configuration for vector generation.
     /// </summary>
     [JsonPropertyName("embedding")]
-    public Dictionary<string, object?>? Embedding { get; set; }
+    public Dictionary<string, object?>? Embedding { get; init; }
 
     /// <summary>
     /// Whether chunking is enabled.
     /// </summary>
     [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
+    public bool? Enabled { get; init; }
 }
 
 /// <summary>
@@ -1167,37 +1167,37 @@ public sealed class ImageExtractionConfig
     /// Whether to extract images from documents.
     /// </summary>
     [JsonPropertyName("extract_images")]
-    public bool? ExtractImages { get; set; }
+    public bool? ExtractImages { get; init; }
 
     /// <summary>
     /// Target DPI for extracted images.
     /// </summary>
     [JsonPropertyName("target_dpi")]
-    public int? TargetDpi { get; set; }
+    public int? TargetDpi { get; init; }
 
     /// <summary>
     /// Maximum dimension (width or height) for extracted images.
     /// </summary>
     [JsonPropertyName("max_image_dimension")]
-    public int? MaxImageDimension { get; set; }
+    public int? MaxImageDimension { get; init; }
 
     /// <summary>
     /// Whether to automatically adjust DPI based on image characteristics.
     /// </summary>
     [JsonPropertyName("auto_adjust_dpi")]
-    public bool? AutoAdjustDpi { get; set; }
+    public bool? AutoAdjustDpi { get; init; }
 
     /// <summary>
     /// Minimum allowed DPI for extracted images.
     /// </summary>
     [JsonPropertyName("min_dpi")]
-    public int? MinDpi { get; set; }
+    public int? MinDpi { get; init; }
 
     /// <summary>
     /// Maximum allowed DPI for extracted images.
     /// </summary>
     [JsonPropertyName("max_dpi")]
-    public int? MaxDpi { get; set; }
+    public int? MaxDpi { get; init; }
 }
 
 /// <summary>
@@ -1209,13 +1209,13 @@ public sealed class FontConfig
     /// Whether font fallback is enabled for handling missing fonts.
     /// </summary>
     [JsonPropertyName("font_fallback_enabled")]
-    public bool? FontFallbackEnabled { get; set; }
+    public bool? FontFallbackEnabled { get; init; }
 
     /// <summary>
     /// Directory path for custom fonts.
     /// </summary>
     [JsonPropertyName("font_dir")]
-    public string? FontDir { get; set; }
+    public string? FontDir { get; init; }
 }
 
 /// <summary>
@@ -1227,25 +1227,25 @@ public sealed class HierarchyConfig
     /// Whether hierarchy detection is enabled.
     /// </summary>
     [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
+    public bool? Enabled { get; init; }
 
     /// <summary>
     /// Number of k clusters for hierarchy detection.
     /// </summary>
     [JsonPropertyName("k_clusters")]
-    public int? KClusters { get; set; }
+    public int? KClusters { get; init; }
 
     /// <summary>
     /// Whether to include bounding box information in hierarchy output.
     /// </summary>
     [JsonPropertyName("include_bbox")]
-    public bool? IncludeBbox { get; set; }
+    public bool? IncludeBbox { get; init; }
 
     /// <summary>
     /// OCR coverage threshold for hierarchy detection (0.0-1.0).
     /// </summary>
     [JsonPropertyName("ocr_coverage_threshold")]
-    public float? OcrCoverageThreshold { get; set; }
+    public float? OcrCoverageThreshold { get; init; }
 }
 
 /// <summary>
@@ -1257,31 +1257,31 @@ public sealed class PdfConfig
     /// Whether to extract images from PDF documents.
     /// </summary>
     [JsonPropertyName("extract_images")]
-    public bool? ExtractImages { get; set; }
+    public bool? ExtractImages { get; init; }
 
     /// <summary>
     /// List of passwords to try for encrypted PDFs.
     /// </summary>
     [JsonPropertyName("passwords")]
-    public List<string>? Passwords { get; set; }
+    public List<string>? Passwords { get; init; }
 
     /// <summary>
     /// Whether to extract document metadata (title, author, etc.).
     /// </summary>
     [JsonPropertyName("extract_metadata")]
-    public bool? ExtractMetadata { get; set; }
+    public bool? ExtractMetadata { get; init; }
 
     /// <summary>
     /// Font configuration for PDF text extraction.
     /// </summary>
     [JsonPropertyName("font_config")]
-    public FontConfig? FontConfig { get; set; }
+    public FontConfig? FontConfig { get; init; }
 
     /// <summary>
     /// Hierarchy detection configuration for document structure analysis.
     /// </summary>
     [JsonPropertyName("hierarchy")]
-    public HierarchyConfig? Hierarchy { get; set; }
+    public HierarchyConfig? Hierarchy { get; init; }
 }
 
 /// <summary>
@@ -1293,13 +1293,13 @@ public sealed class TokenReductionConfig
     /// Token reduction mode (e.g., "none", "aggressive", "balanced").
     /// </summary>
     [JsonPropertyName("mode")]
-    public string? Mode { get; set; }
+    public string? Mode { get; init; }
 
     /// <summary>
     /// Whether to preserve important words during token reduction.
     /// </summary>
     [JsonPropertyName("preserve_important_words")]
-    public bool? PreserveImportantWords { get; set; }
+    public bool? PreserveImportantWords { get; init; }
 }
 
 /// <summary>
@@ -1311,19 +1311,19 @@ public sealed class LanguageDetectionConfig
     /// Whether language detection is enabled.
     /// </summary>
     [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
+    public bool? Enabled { get; init; }
 
     /// <summary>
     /// Minimum confidence threshold for language detection (0.0-1.0).
     /// </summary>
     [JsonPropertyName("min_confidence")]
-    public double? MinConfidence { get; set; }
+    public double? MinConfidence { get; init; }
 
     /// <summary>
     /// Whether to detect multiple languages in the document.
     /// </summary>
     [JsonPropertyName("detect_multiple")]
-    public bool? DetectMultiple { get; set; }
+    public bool? DetectMultiple { get; init; }
 }
 
 /// <summary>
@@ -1335,19 +1335,19 @@ public sealed class PostProcessorConfig
     /// Whether post-processing is enabled.
     /// </summary>
     [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
+    public bool? Enabled { get; init; }
 
     /// <summary>
     /// List of post-processor names to enable.
     /// </summary>
     [JsonPropertyName("enabled_processors")]
-    public List<string>? EnabledProcessors { get; set; }
+    public List<string>? EnabledProcessors { get; init; }
 
     /// <summary>
     /// List of post-processor names to disable.
     /// </summary>
     [JsonPropertyName("disabled_processors")]
-    public List<string>? DisabledProcessors { get; set; }
+    public List<string>? DisabledProcessors { get; init; }
 }
 
 /// <summary>
@@ -1359,187 +1359,187 @@ public sealed class HtmlConversionOptions
     /// Style for markdown headings (e.g., "setext", "atx").
     /// </summary>
     [JsonPropertyName("heading_style")]
-    public string? HeadingStyle { get; set; }
+    public string? HeadingStyle { get; init; }
 
     /// <summary>
     /// Type of indentation for lists (e.g., "space", "tab").
     /// </summary>
     [JsonPropertyName("list_indent_type")]
-    public string? ListIndentType { get; set; }
+    public string? ListIndentType { get; init; }
 
     /// <summary>
     /// Width of list indentation.
     /// </summary>
     [JsonPropertyName("list_indent_width")]
-    public int? ListIndentWidth { get; set; }
+    public int? ListIndentWidth { get; init; }
 
     /// <summary>
     /// Bullet style for unordered lists (e.g., "-", "*", "+").
     /// </summary>
     [JsonPropertyName("bullets")]
-    public string? Bullets { get; set; }
+    public string? Bullets { get; init; }
 
     /// <summary>
     /// Symbol for strong/emphasis text.
     /// </summary>
     [JsonPropertyName("strong_em_symbol")]
-    public string? StrongEmSymbol { get; set; }
+    public string? StrongEmSymbol { get; init; }
 
     /// <summary>
     /// Whether to escape asterisks in output.
     /// </summary>
     [JsonPropertyName("escape_asterisks")]
-    public bool? EscapeAsterisks { get; set; }
+    public bool? EscapeAsterisks { get; init; }
 
     /// <summary>
     /// Whether to escape underscores in output.
     /// </summary>
     [JsonPropertyName("escape_underscores")]
-    public bool? EscapeUnderscores { get; set; }
+    public bool? EscapeUnderscores { get; init; }
 
     /// <summary>
     /// Whether to escape miscellaneous characters.
     /// </summary>
     [JsonPropertyName("escape_misc")]
-    public bool? EscapeMisc { get; set; }
+    public bool? EscapeMisc { get; init; }
 
     /// <summary>
     /// Whether to escape ASCII control characters.
     /// </summary>
     [JsonPropertyName("escape_ascii")]
-    public bool? EscapeAscii { get; set; }
+    public bool? EscapeAscii { get; init; }
 
     /// <summary>
     /// Language for code blocks syntax highlighting.
     /// </summary>
     [JsonPropertyName("code_language")]
-    public string? CodeLanguage { get; set; }
+    public string? CodeLanguage { get; init; }
 
     /// <summary>
     /// Whether to automatically convert URLs to hyperlinks.
     /// </summary>
     [JsonPropertyName("autolinks")]
-    public bool? Autolinks { get; set; }
+    public bool? Autolinks { get; init; }
 
     /// <summary>
     /// Default title for documents without one.
     /// </summary>
     [JsonPropertyName("default_title")]
-    public string? DefaultTitle { get; set; }
+    public string? DefaultTitle { get; init; }
 
     /// <summary>
     /// Whether to use HTML line breaks in tables.
     /// </summary>
     [JsonPropertyName("br_in_tables")]
-    public bool? BrInTables { get; set; }
+    public bool? BrInTables { get; init; }
 
     /// <summary>
     /// Whether to use hOCR spatial tables.
     /// </summary>
     [JsonPropertyName("hocr_spatial_tables")]
-    public bool? HocrSpatialTables { get; set; }
+    public bool? HocrSpatialTables { get; init; }
 
     /// <summary>
     /// Highlighting style for code blocks.
     /// </summary>
     [JsonPropertyName("highlight_style")]
-    public string? HighlightStyle { get; set; }
+    public string? HighlightStyle { get; init; }
 
     /// <summary>
     /// Whether to extract and include document metadata.
     /// </summary>
     [JsonPropertyName("extract_metadata")]
-    public bool? ExtractMetadata { get; set; }
+    public bool? ExtractMetadata { get; init; }
 
     /// <summary>
     /// Whitespace handling mode (e.g., "preserve", "collapse").
     /// </summary>
     [JsonPropertyName("whitespace_mode")]
-    public string? WhitespaceMode { get; set; }
+    public string? WhitespaceMode { get; init; }
 
     /// <summary>
     /// Whether to strip newlines from output.
     /// </summary>
     [JsonPropertyName("strip_newlines")]
-    public bool? StripNewlines { get; set; }
+    public bool? StripNewlines { get; init; }
 
     /// <summary>
     /// Whether to wrap text output.
     /// </summary>
     [JsonPropertyName("wrap")]
-    public bool? Wrap { get; set; }
+    public bool? Wrap { get; init; }
 
     /// <summary>
     /// Text wrapping width in characters.
     /// </summary>
     [JsonPropertyName("wrap_width")]
-    public int? WrapWidth { get; set; }
+    public int? WrapWidth { get; init; }
 
     /// <summary>
     /// Whether to convert HTML as inline content.
     /// </summary>
     [JsonPropertyName("convert_as_inline")]
-    public bool? ConvertAsInline { get; set; }
+    public bool? ConvertAsInline { get; init; }
 
     /// <summary>
     /// Symbol for subscript text.
     /// </summary>
     [JsonPropertyName("sub_symbol")]
-    public string? SubSymbol { get; set; }
+    public string? SubSymbol { get; init; }
 
     /// <summary>
     /// Symbol for superscript text.
     /// </summary>
     [JsonPropertyName("sup_symbol")]
-    public string? SupSymbol { get; set; }
+    public string? SupSymbol { get; init; }
 
     /// <summary>
     /// Newline style for output (e.g., "lf", "crlf").
     /// </summary>
     [JsonPropertyName("newline_style")]
-    public string? NewlineStyle { get; set; }
+    public string? NewlineStyle { get; init; }
 
     /// <summary>
     /// Style for code blocks (e.g., "fenced", "indented").
     /// </summary>
     [JsonPropertyName("code_block_style")]
-    public string? CodeBlockStyle { get; set; }
+    public string? CodeBlockStyle { get; init; }
 
     /// <summary>
     /// List of HTML elements to keep inline images in.
     /// </summary>
     [JsonPropertyName("keep_inline_images_in")]
-    public List<string>? KeepInlineImagesIn { get; set; }
+    public List<string>? KeepInlineImagesIn { get; init; }
 
     /// <summary>
     /// Character encoding for output.
     /// </summary>
     [JsonPropertyName("encoding")]
-    public string? Encoding { get; set; }
+    public string? Encoding { get; init; }
 
     /// <summary>
     /// Whether to include debug information in output.
     /// </summary>
     [JsonPropertyName("debug")]
-    public bool? Debug { get; set; }
+    public bool? Debug { get; init; }
 
     /// <summary>
     /// HTML tags to strip from output.
     /// </summary>
     [JsonPropertyName("strip_tags")]
-    public List<string>? StripTags { get; set; }
+    public List<string>? StripTags { get; init; }
 
     /// <summary>
     /// HTML tags to preserve in output.
     /// </summary>
     [JsonPropertyName("preserve_tags")]
-    public List<string>? PreserveTags { get; set; }
+    public List<string>? PreserveTags { get; init; }
 
     /// <summary>
     /// HTML preprocessing configuration.
     /// </summary>
     [JsonPropertyName("preprocessing")]
-    public HtmlPreprocessingOptions? Preprocessing { get; set; }
+    public HtmlPreprocessingOptions? Preprocessing { get; init; }
 }
 
 /// <summary>
@@ -1551,25 +1551,25 @@ public sealed class HtmlPreprocessingOptions
     /// Whether preprocessing is enabled.
     /// </summary>
     [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
+    public bool? Enabled { get; init; }
 
     /// <summary>
     /// Named preset for preprocessing strategy.
     /// </summary>
     [JsonPropertyName("preset")]
-    public string? Preset { get; set; }
+    public string? Preset { get; init; }
 
     /// <summary>
     /// Whether to remove navigation elements.
     /// </summary>
     [JsonPropertyName("remove_navigation")]
-    public bool? RemoveNavigation { get; set; }
+    public bool? RemoveNavigation { get; init; }
 
     /// <summary>
     /// Whether to remove form elements.
     /// </summary>
     [JsonPropertyName("remove_forms")]
-    public bool? RemoveForms { get; set; }
+    public bool? RemoveForms { get; init; }
 }
 
 /// <summary>
@@ -1607,43 +1607,43 @@ public sealed class KeywordConfig
     /// Keyword extraction algorithm to use (e.g., "yake", "rake").
     /// </summary>
     [JsonPropertyName("algorithm")]
-    public string? Algorithm { get; set; }
+    public string? Algorithm { get; init; }
 
     /// <summary>
     /// Maximum number of keywords to extract.
     /// </summary>
     [JsonPropertyName("max_keywords")]
-    public int? MaxKeywords { get; set; }
+    public int? MaxKeywords { get; init; }
 
     /// <summary>
     /// Minimum relevance score threshold for keywords (0.0-1.0).
     /// </summary>
     [JsonPropertyName("min_score")]
-    public double? MinScore { get; set; }
+    public double? MinScore { get; init; }
 
     /// <summary>
     /// N-gram range for keyword extraction [min, max].
     /// </summary>
     [JsonPropertyName("ngram_range")]
-    public List<int>? NgramRange { get; set; }
+    public List<int>? NgramRange { get; init; }
 
     /// <summary>
     /// Language for keyword extraction (e.g., "en", "fr", "de").
     /// </summary>
     [JsonPropertyName("language")]
-    public string? Language { get; set; }
+    public string? Language { get; init; }
 
     /// <summary>
     /// Algorithm-specific parameters for YAKE.
     /// </summary>
     [JsonPropertyName("yake_params")]
-    public Dictionary<string, object?>? YakeParams { get; set; }
+    public Dictionary<string, object?>? YakeParams { get; init; }
 
     /// <summary>
     /// Algorithm-specific parameters for RAKE.
     /// </summary>
     [JsonPropertyName("rake_params")]
-    public Dictionary<string, object?>? RakeParams { get; set; }
+    public Dictionary<string, object?>? RakeParams { get; init; }
 }
 
 /// <summary>
@@ -1655,19 +1655,19 @@ public sealed class PageConfig
     /// Whether to extract and track page information.
     /// </summary>
     [JsonPropertyName("extract_pages")]
-    public bool? ExtractPages { get; set; }
+    public bool? ExtractPages { get; init; }
 
     /// <summary>
     /// Whether to insert page markers in the extracted content.
     /// </summary>
     [JsonPropertyName("insert_page_markers")]
-    public bool? InsertPageMarkers { get; set; }
+    public bool? InsertPageMarkers { get; init; }
 
     /// <summary>
     /// Format for page markers (e.g., "[PAGE_N]", "Page: N").
     /// </summary>
     [JsonPropertyName("marker_format")]
-    public string? MarkerFormat { get; set; }
+    public string? MarkerFormat { get; init; }
 }
 
 /// <summary>

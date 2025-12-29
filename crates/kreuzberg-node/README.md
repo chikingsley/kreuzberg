@@ -1,4 +1,4 @@
-# TypeScript (Node.js)
+# Node.js Native Bindings
 
 <div align="center" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0;">
   <!-- Language Bindings -->
@@ -84,9 +84,16 @@ yarn add @kreuzberg/node
 
 ### System Requirements
 
-- **Node.js 16+** or **Bun 1.0+** required
+- **Node.js 22+** required (NAPI-RS native bindings)
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.21 or lower for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+
+### Platform Support
+
+Pre-built binaries available for:
+- macOS (arm64, x64)
+- Linux (x64)
+- Windows (x64)
 
 ## Quick Start
 
@@ -171,6 +178,27 @@ const result = await extractFile('document.pdf');
 console.log(result.content);
 ```
 
+#### Configuration Discovery
+
+Use `discoverExtractionConfig()` to automatically find and load configuration files from the current directory or parent directories:
+
+```typescript
+import { discoverExtractionConfig, extractFile } from '@kreuzberg/node';
+
+const config = discoverExtractionConfig();
+if (config) {
+  console.log('Found configuration file');
+  const result = await extractFile('document.pdf', null, config);
+  console.log(result.content);
+} else {
+  console.log('No configuration file found, using defaults');
+  const result = await extractFile('document.pdf');
+  console.log(result.content);
+}
+```
+
+The discovery function looks for `kreuzberg.toml`, `kreuzberg.yaml`, or `kreuzberg.json` files starting in the current directory and searching parent directories up to the filesystem root.
+
 ### Next Steps
 
 - **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
@@ -178,6 +206,31 @@ console.log(result.content);
 - **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
 - **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
 - **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+
+## NAPI-RS Implementation Details
+
+### Native Performance
+
+This binding uses NAPI-RS to provide native Node.js bindings with:
+
+- **Zero-copy data transfer** between JavaScript and Rust layers
+- **Native thread pool** for concurrent document processing
+- **Direct memory management** for efficient large document handling
+- **Binary-compatible** pre-built native modules across platforms
+
+### Threading Model
+
+- Single documents are processed synchronously or asynchronously in a dedicated thread
+- Batch operations distribute work across available CPU cores
+- Thread count is configurable but defaults to system CPU count
+- Long-running extractions block the event loop unless using async APIs
+
+### Memory Management
+
+- Large documents (> 100 MB) are streamed to avoid loading entirely into memory
+- Temporary files are created in system temp directory for extraction
+- Memory is automatically released after extraction completion
+- ONNX models are cached in memory for repeated embeddings operations
 
 ## Features
 

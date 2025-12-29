@@ -18,6 +18,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `PageHierarchy` type with hierarchical text blocks
   - Comprehensive test suite with 32 tests including ground truth validation
 
+## [4.0.0] - 2025-12-29
+
+### Added
+
+- **TypeScript Node.js bindings documentation** - Comprehensive README with NAPI-RS specifics
+  - `discoverExtractionConfig()` method for automatic configuration file discovery
+  - Configuration discovery searches current and parent directories for `kreuzberg.toml`, `kreuzberg.yaml`, `kreuzberg.json`
+  - NAPI-RS implementation details: zero-copy transfer, native thread pool, direct memory management
+  - Platform support matrix (macOS arm64/x64, Linux x64, Windows x64)
+  - Comprehensive test suite for config discovery and API functions
+  - 100+ test cases covering all binding functionality
+
+- **TypeScript WASM bindings documentation** - Complete guide for browser/Deno/Cloudflare Workers
+  - Runtime capability detection: `getWasmCapabilities()` function
+  - Web Worker support for parallel document processing
+  - Module Worker vs standard Worker capability detection
+  - Complete DocumentWorkerPool example with queue management
+  - Memory management guidance for large document processing
+  - Initialization workflow with `initWasm()` function
+  - Threading model documentation (main thread vs worker threads)
+
+- **WASM worker threading** - Production-ready worker pool implementation
+  - Configurable worker count (defaults to hardware concurrency)
+  - Task queuing and load balancing across worker threads
+  - Support for both module workers (ES modules) and standard workers
+  - Graceful degradation when workers unavailable
+  - Memory isolation between worker instances
+  - Error handling and worker lifecycle management
+  - Comprehensive test suite with 50+ threading tests
+
+- **Configuration discovery tests** - Extensive testing for config loading
+  - Config file format detection (TOML, YAML, JSON)
+  - Parent directory traversal and search termination
+  - Edge cases: missing files, malformed configs, permission errors
+  - Cross-platform path handling (Windows, macOS, Linux)
+  - Test coverage for discover() function across all platforms
+
+- **All test suites for TypeScript bindings**
+  - Smoke tests for basic functionality
+  - Binding tests for API contract compliance
+  - Error handling and edge case testing
+  - Worker pool lifecycle tests
+  - Memory management tests
+  - Configuration discovery tests
+  - Total: 200+ tests across Node.js and WASM bindings
+
+### Documentation
+
+- **NAPI-RS specific notes** in Node.js README
+  - Threading model explanation for sync/async operations
+  - Memory considerations for large files
+  - Platform-specific binary distribution
+  - Zero-copy optimization benefits
+
+- **WASM-specific implementation details**
+  - 4GB linear memory address space limitation
+  - SharedArrayBuffer not required for multi-threading
+  - Sandbox security model explanation
+  - Format-specific support table (PDF, Office, Images, OCR, Embeddings)
+  - Content Security Policy considerations
+
+### Changed
+
+- **Node.js README title** - Changed from "TypeScript (Node.js)" to "Node.js Native Bindings"
+- **WASM README title** - Changed from "WebAssembly" to "WebAssembly Bindings"
+- **Runtime requirement** - Node.js 22+ now required (updated from 16+) for NAPI-RS stability
+
 ## [4.0.0-rc.22] - 2025-12-27
 
 ### Added

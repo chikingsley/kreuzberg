@@ -70,21 +70,46 @@ Install via one of the supported package managers:
 <dependency>
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.0-rc.22</version>
 </dependency>
 ```
 
 **Gradle:**
 
 ```gradle
-implementation 'dev.kreuzberg:kreuzberg:4.0.0'
+implementation 'dev.kreuzberg:kreuzberg:4.0.0-rc.22'
+```
+
+**Maven with Specific Classifier (if needed):**
+
+For platform-specific native libraries, Maven handles automatic classifier selection. If you need explicit control:
+
+```xml
+<dependency>
+    <groupId>dev.kreuzberg</groupId>
+    <artifactId>kreuzberg</artifactId>
+    <version>4.0.0-rc.22</version>
+    <!-- Classifiers: linux-x86_64, macos-aarch64, macos-x86_64, windows-x86_64 -->
+</dependency>
 ```
 
 ### System Requirements
 
-- **Java 11+** required
+- **Java 21+** required (Java 25 recommended for best FFM API performance)
+- **FFM API** enabled by default (no additional flags needed in Java 21+)
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.21 or lower for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+
+### FFM API (Foreign Function & Memory API)
+
+Kreuzberg uses the modern Foreign Function & Memory API (FFM API) for native interop instead of JNI. This provides:
+
+- Type-safe native access without unsafe native code
+- Better performance with reduced overhead
+- Memory safety guarantees with Arena allocation
+- Cleaner API without JNI boilerplate
+
+No additional configuration is required. The FFM API is enabled by default in Java 21+.
 
 ## Quick Start
 
@@ -120,9 +145,9 @@ public class BasicUsage {
 
 ### Common Use Cases
 
-#### Extract with Custom Configuration
+#### Extract with Custom Configuration Using Builder Pattern
 
-Most use cases benefit from configuration to control extraction behavior:
+Kreuzberg uses a fluent builder pattern for configuring extraction behavior. All configuration is optional:
 
 **With OCR (for scanned documents):**
 
@@ -149,6 +174,36 @@ public class Main {
         } catch (IOException | KreuzbergException e) {
             System.err.println("Extraction failed: " + e.getMessage());
         }
+    }
+}
+```
+
+**Building Complex Configurations:**
+
+```java
+import dev.kreuzberg.Kreuzberg;
+import dev.kreuzberg.config.ExtractionConfig;
+import dev.kreuzberg.config.OcrConfig;
+import dev.kreuzberg.config.TableConfig;
+
+public class ConfigurationExample {
+    public static void main(String[] args) throws Exception {
+        // Build a comprehensive configuration using fluent API
+        ExtractionConfig config = ExtractionConfig.builder()
+            .ocr(OcrConfig.builder()
+                .backend("tesseract")
+                .language("eng")
+                .build())
+            .extractTables(true)
+            .extractImages(true)
+            .useCache(true)
+            .build();
+
+        ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
+
+        System.out.println("Text: " + result.getContent());
+        System.out.println("Tables: " + result.getTables().size());
+        System.out.println("Images: " + result.getImages().size());
     }
 }
 ```

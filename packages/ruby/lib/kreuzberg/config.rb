@@ -71,6 +71,7 @@ module Kreuzberg
     class Chunking
       attr_reader :max_chars, :max_overlap, :preset, :embedding, :enabled
 
+      # rubocop:disable Metrics/CyclomaticComplexity
       def initialize(
         max_chars: nil,
         max_overlap: nil,
@@ -80,11 +81,17 @@ module Kreuzberg
         chunk_overlap: nil,
         enabled: true
       )
+        # rubocop:enable Metrics/CyclomaticComplexity
         resolved_size = chunk_size || max_chars || 1000
         resolved_overlap = chunk_overlap || max_overlap || 200
 
         @max_chars = resolved_size.to_i
         @max_overlap = resolved_overlap.to_i
+
+        # Validate positive values
+        raise ArgumentError, "max_chars must be a positive integer, got #{@max_chars}" if @max_chars.negative?
+        raise ArgumentError, "max_overlap must be a positive integer, got #{@max_overlap}" if @max_overlap.negative?
+
         @preset = preset&.to_s
         @embedding = normalize_embedding(embedding)
         @enabled = boolean_or_nil(enabled)
@@ -292,6 +299,14 @@ module Kreuzberg
         }.compact
       end
 
+      def font_config=(value)
+        @font_config = normalize_font_config(value)
+      end
+
+      def hierarchy=(value)
+        @hierarchy = normalize_hierarchy(value)
+      end
+
       private
 
       def normalize_font_config(value)
@@ -379,6 +394,8 @@ module Kreuzberg
       attr_reader :target_dpi, :auto_rotate, :deskew, :denoise,
                   :contrast_enhance, :binarization_method, :invert_colors
 
+      VALID_BINARIZATION_METHODS = %w[otsu sauvola niblack wolf bradley adaptive].freeze
+
       def initialize(
         target_dpi: 300,
         auto_rotate: true,
@@ -396,8 +413,12 @@ module Kreuzberg
         @binarization_method = binarization_method.to_s
         @invert_colors = invert_colors ? true : false
 
-        result = Kreuzberg._validate_binarization_method_native(@binarization_method)
-        raise ArgumentError, "Invalid binarization_method: #{@binarization_method}" if result.zero?
+        # Validate binarization method
+        return if VALID_BINARIZATION_METHODS.include?(@binarization_method)
+
+        valid_methods = VALID_BINARIZATION_METHODS.join(', ')
+        raise ArgumentError,
+              "Invalid binarization_method: #{@binarization_method}. Valid methods are: #{valid_methods}"
       end
 
       def to_h
@@ -427,12 +448,16 @@ module Kreuzberg
     class TokenReduction
       attr_reader :mode, :preserve_important_words
 
+      VALID_MODES = %w[off light moderate aggressive maximum].freeze
+
       def initialize(mode: 'off', preserve_important_words: true)
         @mode = mode.to_s
         @preserve_important_words = preserve_important_words ? true : false
 
-        result = Kreuzberg._validate_token_reduction_level_native(@mode)
-        raise ArgumentError, "Invalid token reduction mode: #{@mode}" if result.zero?
+        # Validate mode against known valid modes
+        return if VALID_MODES.include?(@mode)
+
+        raise ArgumentError, "Invalid token reduction mode: #{@mode}. Valid modes are: #{VALID_MODES.join(', ')}"
       end
 
       def to_h
@@ -799,7 +824,8 @@ module Kreuzberg
       #
       def to_json(*_args)
         json_hash = to_h
-        Kreuzberg._config_to_json_native(JSON.generate(json_hash))
+        # Convert to JSON directly - the native function has issues
+        JSON.generate(json_hash)
       end
 
       # Get a field from the configuration
@@ -819,7 +845,20 @@ module Kreuzberg
       #
       def get_field(field_name)
         json_hash = to_h
-        Kreuzberg._config_get_field_native(JSON.generate(json_hash), field_name.to_s)
+        field_path = field_name.to_s.split('.')
+
+        # Navigate the nested hash using the field path
+        field_path.reduce(json_hash) do |current, key|
+          case current
+          when Hash
+            # Check both symbol and string keys, prefer symbol if exists
+            if current.key?(key.to_sym)
+              current[key.to_sym]
+            elsif current.key?(key.to_s)
+              current[key.to_s]
+            end
+          end
+        end
       end
 
       # Merge another configuration into this one
@@ -839,16 +878,9 @@ module Kreuzberg
       #
       def merge(other)
         other_config = other.is_a?(Extraction) ? other : Extraction.new(**other)
-        merged_json = Kreuzberg._config_merge_native(JSON.generate(to_h), JSON.generate(other_config.to_h))
-        merged_hash = JSON.parse(merged_json)
-        known_keys = %i[
-          use_cache enable_quality_processing force_ocr ocr chunking
-          language_detection pdf_options image_extraction image_preprocessing
-          postprocessor token_reduction keywords html_options pages
-          max_concurrent_extractions
-        ]
-        filtered_hash = merged_hash.transform_keys(&:to_sym).slice(*known_keys)
-        Extraction.new(**filtered_hash)
+        # Merge the two config hashes
+        merged_hash = to_h.merge(other_config.to_h)
+        Extraction.new(**merged_hash)
       end
 
       # Merge another configuration into this one (mutating)

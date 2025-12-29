@@ -12,149 +12,149 @@ import java.util.Map;
  * @since 4.0.0
  */
 public final class PdfConfig {
-  private final boolean extractImages;
-  private final List<String> passwords;
-  private final boolean extractMetadata;
-  private final FontConfig fontConfig;
-  private final HierarchyConfig hierarchyConfig;
+	private final boolean extractImages;
+	private final List<String> passwords;
+	private final boolean extractMetadata;
+	private final FontConfig fontConfig;
+	private final HierarchyConfig hierarchyConfig;
 
-  private PdfConfig(Builder builder) {
-    this.extractImages = builder.extractImages;
-    this.passwords =
-        builder.passwords != null ? Collections.unmodifiableList(new ArrayList<>(builder.passwords))
-            : null;
-    this.extractMetadata = builder.extractMetadata;
-    this.fontConfig = builder.fontConfig;
-    this.hierarchyConfig = builder.hierarchyConfig;
-  }
+	private PdfConfig(Builder builder) {
+		this.extractImages = builder.extractImages;
+		this.passwords = builder.passwords != null
+				? Collections.unmodifiableList(new ArrayList<>(builder.passwords))
+				: null;
+		this.extractMetadata = builder.extractMetadata;
+		this.fontConfig = builder.fontConfig;
+		this.hierarchyConfig = builder.hierarchyConfig;
+	}
 
-  public static Builder builder() {
-    return new Builder();
-  }
+	public static Builder builder() {
+		return new Builder();
+	}
 
-  public boolean isExtractImages() {
-    return extractImages;
-  }
+	public boolean isExtractImages() {
+		return extractImages;
+	}
 
-  public List<String> getPasswords() {
-    return passwords;
-  }
+	public List<String> getPasswords() {
+		return passwords;
+	}
 
-  public boolean isExtractMetadata() {
-    return extractMetadata;
-  }
+	public boolean isExtractMetadata() {
+		return extractMetadata;
+	}
 
-  public FontConfig getFontConfig() {
-    return fontConfig;
-  }
+	public FontConfig getFontConfig() {
+		return fontConfig;
+	}
 
-  public HierarchyConfig getHierarchyConfig() {
-    return hierarchyConfig;
-  }
+	public HierarchyConfig getHierarchyConfig() {
+		return hierarchyConfig;
+	}
 
-  public Map<String, Object> toMap() {
-    Map<String, Object> map = new HashMap<>();
-    map.put("extract_images", extractImages);
-    if (passwords != null && !passwords.isEmpty()) {
-      map.put("passwords", passwords);
-    }
-    map.put("extract_metadata", extractMetadata);
-    if (fontConfig != null) {
-      map.put("font_config", fontConfig.toMap());
-    }
-    if (hierarchyConfig != null) {
-      map.put("hierarchy", hierarchyConfig.toMap());
-    }
-    return map;
-  }
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new HashMap<>();
+		map.put("extract_images", extractImages);
+		if (passwords != null && !passwords.isEmpty()) {
+			map.put("passwords", passwords);
+		}
+		map.put("extract_metadata", extractMetadata);
+		if (fontConfig != null) {
+			map.put("font_config", fontConfig.toMap());
+		}
+		if (hierarchyConfig != null) {
+			map.put("hierarchy", hierarchyConfig.toMap());
+		}
+		return map;
+	}
 
-  public static final class Builder {
-    private boolean extractImages = false;
-    private List<String> passwords;
-    private boolean extractMetadata = true;
-    private FontConfig fontConfig;
-    private HierarchyConfig hierarchyConfig;
+	public static final class Builder {
+		private boolean extractImages = false;
+		private List<String> passwords;
+		private boolean extractMetadata = true;
+		private FontConfig fontConfig;
+		private HierarchyConfig hierarchyConfig;
 
-    private Builder() {
-    }
+		private Builder() {
+		}
 
-    public Builder extractImages(boolean extractImages) {
-      this.extractImages = extractImages;
-      return this;
-    }
+		public Builder extractImages(boolean extractImages) {
+			this.extractImages = extractImages;
+			return this;
+		}
 
-    public Builder passwords(List<String> passwords) {
-      this.passwords = passwords;
-      return this;
-    }
+		public Builder passwords(List<String> passwords) {
+			this.passwords = passwords;
+			return this;
+		}
 
-    public Builder password(String password) {
-      if (this.passwords == null) {
-        this.passwords = new ArrayList<>();
-      }
-      this.passwords.add(password);
-      return this;
-    }
+		public Builder password(String password) {
+			if (this.passwords == null) {
+				this.passwords = new ArrayList<>();
+			}
+			this.passwords.add(password);
+			return this;
+		}
 
-    public Builder extractMetadata(boolean extractMetadata) {
-      this.extractMetadata = extractMetadata;
-      return this;
-    }
+		public Builder extractMetadata(boolean extractMetadata) {
+			this.extractMetadata = extractMetadata;
+			return this;
+		}
 
-    public Builder fontConfig(FontConfig fontConfig) {
-      this.fontConfig = fontConfig;
-      return this;
-    }
+		public Builder fontConfig(FontConfig fontConfig) {
+			this.fontConfig = fontConfig;
+			return this;
+		}
 
-    public Builder hierarchyConfig(HierarchyConfig hierarchyConfig) {
-      this.hierarchyConfig = hierarchyConfig;
-      return this;
-    }
+		public Builder hierarchyConfig(HierarchyConfig hierarchyConfig) {
+			this.hierarchyConfig = hierarchyConfig;
+			return this;
+		}
 
-    public PdfConfig build() {
-      return new PdfConfig(this);
-    }
-  }
+		public PdfConfig build() {
+			return new PdfConfig(this);
+		}
+	}
 
-  static PdfConfig fromMap(Map<String, Object> map) {
-    if (map == null) {
-      return null;
-    }
-    Builder builder = builder();
-    Object extractImagesValue = map.get("extract_images");
-    if (extractImagesValue instanceof Boolean) {
-      builder.extractImages((Boolean) extractImagesValue);
-    }
-    Object passwordsValue = map.get("passwords");
-    if (passwordsValue instanceof Iterable) {
-      @SuppressWarnings("unchecked")
-      Iterable<Object> iterable = (Iterable<Object>) passwordsValue;
-      List<String> passwords = new ArrayList<>();
-      for (Object entry : iterable) {
-        if (entry instanceof String) {
-          passwords.add((String) entry);
-        }
-      }
-      builder.passwords(passwords);
-    }
-    Object extractMetadataValue = map.get("extract_metadata");
-    if (extractMetadataValue instanceof Boolean) {
-      builder.extractMetadata((Boolean) extractMetadataValue);
-    }
-    @SuppressWarnings("unchecked")
-    Map<String, Object> fontConfigMap = map.get("font_config") instanceof Map
-        ? (Map<String, Object>) map.get("font_config")
-        : null;
-    if (fontConfigMap != null) {
-      builder.fontConfig(FontConfig.fromMap(fontConfigMap));
-    }
-    @SuppressWarnings("unchecked")
-    Map<String, Object> hierarchyConfigMap = map.get("hierarchy") instanceof Map
-        ? (Map<String, Object>) map.get("hierarchy")
-        : null;
-    if (hierarchyConfigMap != null) {
-      builder.hierarchyConfig(HierarchyConfig.fromMap(hierarchyConfigMap));
-    }
-    return builder.build();
-  }
+	static PdfConfig fromMap(Map<String, Object> map) {
+		if (map == null) {
+			return null;
+		}
+		Builder builder = builder();
+		Object extractImagesValue = map.get("extract_images");
+		if (extractImagesValue instanceof Boolean) {
+			builder.extractImages((Boolean) extractImagesValue);
+		}
+		Object passwordsValue = map.get("passwords");
+		if (passwordsValue instanceof Iterable) {
+			@SuppressWarnings("unchecked")
+			Iterable<Object> iterable = (Iterable<Object>) passwordsValue;
+			List<String> passwords = new ArrayList<>();
+			for (Object entry : iterable) {
+				if (entry instanceof String) {
+					passwords.add((String) entry);
+				}
+			}
+			builder.passwords(passwords);
+		}
+		Object extractMetadataValue = map.get("extract_metadata");
+		if (extractMetadataValue instanceof Boolean) {
+			builder.extractMetadata((Boolean) extractMetadataValue);
+		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> fontConfigMap = map.get("font_config") instanceof Map
+				? (Map<String, Object>) map.get("font_config")
+				: null;
+		if (fontConfigMap != null) {
+			builder.fontConfig(FontConfig.fromMap(fontConfigMap));
+		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> hierarchyConfigMap = map.get("hierarchy") instanceof Map
+				? (Map<String, Object>) map.get("hierarchy")
+				: null;
+		if (hierarchyConfigMap != null) {
+			builder.hierarchyConfig(HierarchyConfig.fromMap(hierarchyConfigMap));
+		}
+		return builder.build();
+	}
 }

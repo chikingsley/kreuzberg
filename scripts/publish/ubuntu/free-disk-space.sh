@@ -25,5 +25,12 @@ docker builder prune -af || true
 echo "=== Cleaning journalctl logs ==="
 sudo journalctl --vacuum=50M || true
 
+echo "=== Cleaning Python caches ==="
+sudo rm -rf ~/.cache/pip /tmp/pip-* /tmp/tmp* || true
+sudo rm -rf /opt/pipx_bin /opt/pipx || true
+
+echo "=== Cleaning Rust artifacts ==="
+sudo rm -rf ~/.cargo/registry/cache ~/.cargo/git/db || true
+
 echo "=== Disk usage after cleanup ==="
 df -h /

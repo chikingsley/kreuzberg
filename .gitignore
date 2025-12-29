@@ -28,6 +28,7 @@
 *temp/
 .benchmarks/
 .cache/
+.mvn/
 .claude/
 .coverage
 .coverage*

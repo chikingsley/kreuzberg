@@ -12,7 +12,7 @@ defmodule Kreuzberg.ExtractionConfig do
   ### Boolean Flags (Top-level)
 
     * `:use_cache` - Enable result caching (default: true)
-    * `:enable_quality_processing` - Enable quality post-processing (default: true)
+    * `:enable_quality_processing` - Enable quality post-processing (default: false)
     * `:force_ocr` - Force OCR even for searchable PDFs (default: false)
 
   ### Nested Configuration Maps (Optional)
@@ -31,7 +31,7 @@ defmodule Kreuzberg.ExtractionConfig do
 
   All boolean flags default to reasonable values:
   - `use_cache`: true - Caching is enabled by default for better performance
-  - `enable_quality_processing`: true - Quality processing is enabled by default
+  - `enable_quality_processing`: false - Quality processing is disabled by default (can be enabled as needed)
   - `force_ocr`: false - OCR is only used when necessary (searchable PDFs bypass OCR)
 
   All nested configurations default to nil, allowing the Rust implementation to apply
@@ -81,7 +81,7 @@ defmodule Kreuzberg.ExtractionConfig do
         "keywords" => nil,
         "pdf_config" => nil,
         "use_cache" => true,
-        "enable_quality_processing" => true,
+        "enable_quality_processing" => false,
         "force_ocr" => false
       }
   """
@@ -116,7 +116,7 @@ defmodule Kreuzberg.ExtractionConfig do
     :keywords,
     :pdf_options,
     use_cache: true,
-    enable_quality_processing: true,
+    enable_quality_processing: false,
     force_ocr: false
   ]
 

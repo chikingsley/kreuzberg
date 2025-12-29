@@ -1,4 +1,4 @@
-# Python
+# Kreuzberg Python Binding
 
 <div align="center" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0;">
   <!-- Language Bindings -->
@@ -52,95 +52,191 @@
   </a>
 </div>
 
-Extract text, tables, images, and metadata from 56 file formats including PDF, Office documents, and images. Native Python bindings with async/await support, multiple OCR backends (Tesseract, EasyOCR, PaddleOCR), and extensible plugin system.
+High-performance document intelligence library for Python. Extract text, metadata, tables, images, and keywords from 56+ file formats including PDF, Office documents, and images. Native bindings with async/await support, multiple OCR backends, vector embeddings, and extensible plugin system.
 
 > **Version 4.0.0 Release Candidate**
-> Kreuzberg v4.0.0 is in **Release Candidate** stage. Bugs and breaking changes are expected.
-> This is a pre-release version. Please test the library and [report any issues](https://github.com/kreuzberg-dev/kreuzberg/issues) you encounter.
+> Kreuzberg v4.0.0 is in **Release Candidate** stage. Bugs and breaking changes are expected. Please test and [report any issues](https://github.com/kreuzberg-dev/kreuzberg/issues).
 
 ## Installation
 
-### Package Installation
+### From PyPI (Recommended)
 
-Install via pip:
+Install the latest stable release:
 
 ```bash
 pip install kreuzberg
 ```
 
-For async support and additional features:
+Install with OCR backend support:
 
 ```bash
-pip install kreuzberg[async]
+# With EasyOCR support
+pip install kreuzberg[easyocr]
+
+# With PaddleOCR support
+pip install kreuzberg[paddleocr]
+
+# With all optional dependencies
+pip install kreuzberg[all]
+```
+
+### Install from Source
+
+Clone the repository and build from source:
+
+```bash
+git clone https://github.com/kreuzberg-dev/kreuzberg.git
+cd kreuzberg/packages/python
+pip install -e .
 ```
 
 ### System Requirements
 
-- **Python 3.10+** required
-- Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.21 or lower for embeddings support
-- Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+- **Python 3.10+** (3.11+ recommended for best performance)
+- **Rust toolchain** (for building from source): [Install Rust](https://rustup.rs/)
+- Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for native OCR support
+- Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime) version 1.21 or lower for vector embeddings
+- Optional: [FFmpeg](https://ffmpeg.org/download.html) for audio/video extraction
+
+### Dependency Installation by Platform
+
+**macOS:**
+```bash
+brew install tesseract
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install tesseract-ocr
+```
+
+**Windows:**
+Download and install from [Tesseract GitHub](https://github.com/tesseract-ocr/tesseract/releases)
 
 ## Quick Start
 
-### Basic Extraction
+### Basic Text Extraction
 
-Extract text, metadata, and structure from any supported document format:
+Extract text and metadata from any supported document:
 
 ```python
 import asyncio
 from kreuzberg import extract_file, ExtractionConfig
 
 async def main() -> None:
+    # Simple extraction with caching and quality processing
     config = ExtractionConfig(
         use_cache=True,
         enable_quality_processing=True
     )
     result = await extract_file("document.pdf", config=config)
-    print(result.content)
+
+    print(f"Content: {result.content}")
+    print(f"Author: {result.metadata.author}")
+    print(f"Format: {result.metadata.format_type}")
 
 asyncio.run(main())
 ```
 
-### Common Use Cases
+### Keyword Extraction
 
-#### Extract with Custom Configuration
+Extract meaningful keywords and named entities from documents:
 
-Most use cases benefit from configuration to control extraction behavior:
+```python
+import asyncio
+from kreuzberg import extract_file, ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
-**With OCR (for scanned documents):**
+async def main() -> None:
+    config = ExtractionConfig(
+        keywords=KeywordConfig(
+            algorithm=KeywordAlgorithm.Yake,
+            max_keywords=10,
+            min_score=0.1
+        )
+    )
+    result = await extract_file("document.pdf", config=config)
+
+    print(f"Keywords: {result.metadata.keywords}")
+
+asyncio.run(main())
+```
+
+### Image Extraction
+
+Extract images from PDFs and Office documents:
+
+```python
+import asyncio
+from kreuzberg import extract_file, ExtractionConfig, ImageExtractionConfig
+
+async def main() -> None:
+    config = ExtractionConfig(
+        images=ImageExtractionConfig(
+            extract_images=True,
+            target_dpi=150
+        )
+    )
+    result = await extract_file("document.pdf", config=config)
+
+    print(f"Images found: {len(result.images)}")
+    for img in result.images:
+        print(f"  - Format: {img.format}, Dimensions: {img.width}x{img.height}")
+
+asyncio.run(main())
+```
+
+### Table Extraction
+
+Extract structured table data with full preservation:
 
 ```python
 import asyncio
 from kreuzberg import extract_file
 
 async def main() -> None:
-    result = await extract_file("document.pdf")
-    print(result.content)
+    result = await extract_file("spreadsheet.xlsx")
+
+    print(f"Tables found: {len(result.tables)}")
+    for table in result.tables:
+        print(f"  - Rows: {len(table.rows)}, Columns: {len(table.rows[0]) if table.rows else 0}")
+        print(f"    Markdown:\n{table.markdown}")
 
 asyncio.run(main())
 ```
 
-#### Table Extraction
+### Vector Embeddings
+
+Generate vector embeddings for semantic search and similarity:
 
 ```python
 import asyncio
-from kreuzberg import extract_file
+from kreuzberg import extract_file, ExtractionConfig, ChunkingConfig, EmbeddingConfig, EmbeddingModelType
 
 async def main() -> None:
-    result = await extract_file("document.pdf")
+    model = EmbeddingModelType.preset("balanced")
+    config = ExtractionConfig(
+        chunking=ChunkingConfig(
+            max_chars=512,
+            max_overlap=100,
+            embedding=EmbeddingConfig(
+                model=model,
+                normalize=True
+            )
+        )
+    )
+    result = await extract_file("document.pdf", config=config)
 
-    content: str = result.content
-    tables: int = len(result.tables)
-    format_type: str | None = result.metadata.format_type
-
-    print(f"Content length: {len(content)} characters")
-    print(f"Tables found: {tables}")
-    print(f"Format: {format_type}")
+    # Access chunk embeddings for similarity search
+    for chunk in result.chunks:
+        print(f"Chunk: {chunk.text[:50]}...")
+        print(f"Embedding dimensions: {len(chunk.embedding) if chunk.embedding else 0}")
 
 asyncio.run(main())
 ```
 
-#### Processing Multiple Files
+### OCR for Scanned Documents
+
+Process scanned PDFs and images with OCR:
 
 ```python
 import asyncio
@@ -150,21 +246,22 @@ async def main() -> None:
     config = ExtractionConfig(
         force_ocr=True,
         ocr=OcrConfig(
-            backend="tesseract",
+            backend="tesseract",  # or "easyocr", "paddleocr"
             language="eng",
             tesseract_config=TesseractConfig(psm=3)
         )
     )
     result = await extract_file("scanned.pdf", config=config)
-    print(result.content)
+
+    print(f"Text: {result.content}")
     print(f"Detected Languages: {result.detected_languages}")
 
 asyncio.run(main())
 ```
 
-#### Async Processing
+### Batch Processing
 
-For non-blocking document processing:
+Process multiple documents concurrently:
 
 ```python
 import asyncio
@@ -172,24 +269,157 @@ from pathlib import Path
 from kreuzberg import extract_file
 
 async def main() -> None:
-    file_path: Path = Path("document.pdf")
+    files = list(Path("documents/").glob("*.pdf"))
 
-    result = await extract_file(file_path)
+    # Process files concurrently for better performance
+    tasks = [extract_file(str(f)) for f in files]
+    results = await asyncio.gather(*tasks)
 
-    print(f"Content: {result.content}")
-    print(f"MIME Type: {result.metadata.format_type}")
-    print(f"Tables: {len(result.tables)}")
+    for result, file in zip(results, files):
+        print(f"{file.name}: {len(result.content)} characters")
 
 asyncio.run(main())
 ```
 
+## Configuration Guide
+
+### Core Configuration Options
+
+Kreuzberg provides fine-grained control over extraction behavior:
+
+```python
+from kreuzberg import ExtractionConfig, ChunkingConfig, LanguageDetectionConfig
+
+config = ExtractionConfig(
+    # Performance
+    use_cache=True,
+    enable_quality_processing=True,
+
+    # Language and OCR
+    language_detection=LanguageDetectionConfig(
+        detect_languages=True,
+        enable_language_specific_processing=True
+    ),
+
+    # Text chunking for embeddings
+    chunking=ChunkingConfig(
+        max_chars=512,
+        max_overlap=100
+    ),
+
+    # Quality thresholds
+    min_text_quality_score=0.5,
+    confidence_threshold=0.7
+)
+```
+
+### Extraction Configuration
+
+Key configuration parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `use_cache` | bool | False | Enable caching of extraction results |
+| `enable_quality_processing` | bool | False | Apply quality filters to output |
+| `force_ocr` | bool | False | Always use OCR even for selectable text |
+| `min_text_quality_score` | float | 0.0 | Minimum quality threshold (0.0-1.0) |
+| `confidence_threshold` | float | 0.0 | Confidence threshold for extraction |
+
+### OCR Configuration
+
+Configure OCR behavior:
+
+```python
+from kreuzberg import OcrConfig, TesseractConfig
+
+ocr_config = OcrConfig(
+    backend="tesseract",  # "tesseract", "easyocr", "paddleocr"
+    language="eng",        # ISO 639-1 language code
+    tesseract_config=TesseractConfig(
+        psm=3,  # Page segmentation mode
+        oem=1   # OCR engine mode
+    )
+)
+```
+
+### Chunking Configuration
+
+Split text into semantic chunks for embeddings:
+
+```python
+from kreuzberg import ChunkingConfig, EmbeddingConfig
+
+chunking_config = ChunkingConfig(
+    max_chars=512,      # Maximum chunk size
+    max_overlap=100,    # Overlap between chunks
+    embedding=EmbeddingConfig(
+        normalize=True,  # L2 normalization
+        model=model      # Embedding model
+    )
+)
+```
+
 ### Next Steps
 
-- **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
-- **[API Documentation](https://kreuzberg.dev/api/)** - Complete API reference
-- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
+- **[Complete API Reference](https://kreuzberg.dev/reference/api-python/)** - All classes and methods
+- **[Configuration Documentation](https://kreuzberg.dev/configuration/)** - Detailed configuration guide
+- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Real-world examples
 - **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+
+## Testing
+
+### Running Tests
+
+Run the full test suite:
+
+```bash
+pytest tests/
+```
+
+Run specific test categories:
+
+```bash
+# Core binding tests
+pytest tests/binding/
+
+# Only fast tests (skip slow and integration tests)
+pytest tests/ -m "not slow"
+
+# Specific feature tests
+pytest tests/binding/test_keywords.py
+pytest tests/binding/test_images.py
+pytest tests/binding/test_tables.py
+pytest tests/binding/test_embeddings.py
+pytest tests/binding/test_error_handling.py
+```
+
+### Test Coverage
+
+Kreuzberg has comprehensive test coverage:
+
+- **Keywords Tests** - Keyword and NER extraction across multiple languages
+- **Images Tests** - Image extraction, format detection, and metadata
+- **Tables Tests** - Table structure preservation and Markdown conversion
+- **Embeddings Tests** - Vector generation and normalization correctness
+- **Error Handling Tests** - Configuration validation and error scenarios
+- **OCR Tests** - Multiple OCR backends (Tesseract, EasyOCR, PaddleOCR)
+- **Integration Tests** - End-to-end extraction workflows
+- **CLI Tests** - Command-line interface and server functionality
+
+### Writing Tests
+
+Tests use pytest and follow async patterns:
+
+```python
+import pytest
+from kreuzberg import extract_file, ExtractionConfig
+
+@pytest.mark.asyncio
+async def test_custom_feature():
+    config = ExtractionConfig(...)
+    result = await extract_file("test.pdf", config=config)
+    assert result.content is not None
+```
 
 ## Features
 

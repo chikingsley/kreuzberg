@@ -13,7 +13,8 @@ use kreuzberg::plugins::registry::{get_post_processor_registry, get_validator_re
 use kreuzberg::{
     Chunk as RustChunk, ChunkMetadata as RustChunkMetadata, ChunkingConfig as RustChunkingConfig,
     EmbeddingConfig as RustEmbeddingConfig, EmbeddingModelType as RustEmbeddingModelType, ExtractionConfig,
-    ExtractionResult as RustExtractionResult, ImageExtractionConfig as RustImageExtractionConfig, KNOWN_FORMATS,
+    ExtractionResult as RustExtractionResult, HierarchyConfig as RustHierarchyConfig,
+    ImageExtractionConfig as RustImageExtractionConfig, KNOWN_FORMATS,
     LanguageDetectionConfig as RustLanguageDetectionConfig, OcrConfig as RustOcrConfig, PdfConfig as RustPdfConfig,
     PostProcessorConfig as RustPostProcessorConfig, TesseractConfig as RustTesseractConfig,
     TokenReductionConfig as RustTokenReductionConfig,
@@ -633,10 +634,30 @@ impl From<JsTokenReductionConfig> for RustTokenReductionConfig {
 }
 
 #[napi(object)]
+pub struct JsHierarchyConfig {
+    pub enabled: Option<bool>,
+    pub k_clusters: Option<i32>,
+    pub include_bbox: Option<bool>,
+    pub ocr_coverage_threshold: Option<f64>,
+}
+
+impl From<JsHierarchyConfig> for RustHierarchyConfig {
+    fn from(val: JsHierarchyConfig) -> Self {
+        RustHierarchyConfig {
+            enabled: val.enabled.unwrap_or(true),
+            k_clusters: val.k_clusters.map(|v| v as usize).unwrap_or(6),
+            include_bbox: val.include_bbox.unwrap_or(true),
+            ocr_coverage_threshold: val.ocr_coverage_threshold.map(|v| v as f32),
+        }
+    }
+}
+
+#[napi(object)]
 pub struct JsPdfConfig {
     pub extract_images: Option<bool>,
     pub passwords: Option<Vec<String>>,
     pub extract_metadata: Option<bool>,
+    pub hierarchy: Option<JsHierarchyConfig>,
 }
 
 impl From<JsPdfConfig> for RustPdfConfig {
@@ -645,6 +666,7 @@ impl From<JsPdfConfig> for RustPdfConfig {
             extract_images: val.extract_images.unwrap_or(false),
             passwords: val.passwords,
             extract_metadata: val.extract_metadata.unwrap_or(true),
+            hierarchy: val.hierarchy.map(|h| h.into()),
         }
     }
 }

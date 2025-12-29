@@ -120,6 +120,127 @@ if (count($result->tables) > 0) {
 }
 ```
 
+### Configuration with Factory Methods
+
+All configuration classes support factory methods for easy creation from arrays, JSON, or files:
+
+**Using fromArray():**
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Kreuzberg\Kreuzberg;
+use Kreuzberg\Config\ExtractionConfig;
+use Kreuzberg\Config\HierarchyConfig;
+
+// Create HierarchyConfig from array
+$hierarchyData = [
+    'enabled' => true,
+    'k_clusters' => 8,
+    'include_bbox' => true,
+    'ocr_coverage_threshold' => 0.8,
+];
+
+$hierarchyConfig = HierarchyConfig::fromArray($hierarchyData);
+
+// Use the config in extraction
+$config = new ExtractionConfig();
+$kreuzberg = new Kreuzberg($config);
+
+$result = $kreuzberg->extractFile('document.pdf');
+echo "Extraction completed with hierarchy detection\n";
+```
+
+**Using fromJson():**
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Kreuzberg\Config\TokenReductionConfig;
+
+// Create TokenReductionConfig from JSON string
+$jsonConfig = '{
+    "mode": "balanced",
+    "preserve_important_words": true
+}';
+
+$tokenConfig = TokenReductionConfig::fromJson($jsonConfig);
+
+echo "Token reduction mode: " . $tokenConfig->mode . "\n";
+echo "Preserve important words: " . ($tokenConfig->preserveImportantWords ? 'yes' : 'no') . "\n";
+```
+
+**Using fromFile():**
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Kreuzberg\Kreuzberg;
+use Kreuzberg\Config\ExtractionConfig;
+
+// Load entire extraction config from JSON file
+$config = ExtractionConfig::fromFile('/path/to/config.json');
+
+$kreuzberg = new Kreuzberg($config);
+$result = $kreuzberg->extractFile('document.pdf');
+
+echo "Extraction completed with config from file\n";
+```
+
+**Converting back to JSON/Array:**
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Kreuzberg\Config\HierarchyConfig;
+
+// Create config
+$config = new HierarchyConfig(
+    enabled: true,
+    kClusters: 10,
+    includeBbox: false
+);
+
+// Convert to array
+$arrayData = $config->toArray();
+print_r($arrayData);
+// Output:
+// Array (
+//     [enabled] => 1
+//     [k_clusters] => 10
+//     [include_bbox] =>
+// )
+
+// Convert to JSON
+$jsonString = $config->toJson();
+echo $jsonString;
+// Output:
+// {
+//     "enabled": true,
+//     "k_clusters": 10,
+//     "include_bbox": false
+// }
+
+// Save to file
+file_put_contents('hierarchy-config.json', $jsonString);
+```
+
 ### Common Use Cases
 
 #### Extract with Custom Configuration

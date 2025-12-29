@@ -1,4 +1,2 @@
-/**
- * Tests for Kreuzberg Java bindings.
- */
+/** Tests for Kreuzberg Java bindings. */
 package dev.kreuzberg;

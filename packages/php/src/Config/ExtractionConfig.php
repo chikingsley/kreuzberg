@@ -40,6 +40,144 @@ readonly class ExtractionConfig
     }
 
     /**
+     * Create configuration from array data.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): self
+    {
+        /** @var bool $extractImages */
+        $extractImages = $data['extract_images'] ?? false;
+        if (!is_bool($extractImages)) {
+            /** @var bool $extractImages */
+            $extractImages = (bool) $extractImages;
+        }
+
+        /** @var bool $extractTables */
+        $extractTables = $data['extract_tables'] ?? true;
+        if (!is_bool($extractTables)) {
+            /** @var bool $extractTables */
+            $extractTables = (bool) $extractTables;
+        }
+
+        /** @var bool $preserveFormatting */
+        $preserveFormatting = $data['preserve_formatting'] ?? false;
+        if (!is_bool($preserveFormatting)) {
+            /** @var bool $preserveFormatting */
+            $preserveFormatting = (bool) $preserveFormatting;
+        }
+
+        /** @var string|null $outputFormat */
+        $outputFormat = $data['output_format'] ?? null;
+        if ($outputFormat !== null && !is_string($outputFormat)) {
+            /** @var string $outputFormat */
+            $outputFormat = (string) $outputFormat;
+        }
+
+        $ocr = null;
+        if (isset($data['ocr']) && is_array($data['ocr'])) {
+            /** @var array<string, mixed> $ocrData */
+            $ocrData = $data['ocr'];
+            $ocr = OcrConfig::fromArray($ocrData);
+        }
+
+        $pdf = null;
+        if (isset($data['pdf']) && is_array($data['pdf'])) {
+            /** @var array<string, mixed> $pdfData */
+            $pdfData = $data['pdf'];
+            $pdf = PdfConfig::fromArray($pdfData);
+        }
+
+        $chunking = null;
+        if (isset($data['chunking']) && is_array($data['chunking'])) {
+            /** @var array<string, mixed> $chunkingData */
+            $chunkingData = $data['chunking'];
+            $chunking = ChunkingConfig::fromArray($chunkingData);
+        }
+
+        $embedding = null;
+        if (isset($data['embedding']) && is_array($data['embedding'])) {
+            /** @var array<string, mixed> $embeddingData */
+            $embeddingData = $data['embedding'];
+            $embedding = EmbeddingConfig::fromArray($embeddingData);
+        }
+
+        $imageExtraction = null;
+        if (isset($data['image_extraction']) && is_array($data['image_extraction'])) {
+            /** @var array<string, mixed> $imageExtractionData */
+            $imageExtractionData = $data['image_extraction'];
+            $imageExtraction = ImageExtractionConfig::fromArray($imageExtractionData);
+        }
+
+        $page = null;
+        if (isset($data['page']) && is_array($data['page'])) {
+            /** @var array<string, mixed> $pageData */
+            $pageData = $data['page'];
+            $page = PageConfig::fromArray($pageData);
+        }
+
+        $languageDetection = null;
+        if (isset($data['language_detection']) && is_array($data['language_detection'])) {
+            /** @var array<string, mixed> $languageDetectionData */
+            $languageDetectionData = $data['language_detection'];
+            $languageDetection = LanguageDetectionConfig::fromArray($languageDetectionData);
+        }
+
+        $keyword = null;
+        if (isset($data['keyword']) && is_array($data['keyword'])) {
+            /** @var array<string, mixed> $keywordData */
+            $keywordData = $data['keyword'];
+            $keyword = KeywordConfig::fromArray($keywordData);
+        }
+
+        return new self(
+            ocr: $ocr,
+            pdf: $pdf,
+            chunking: $chunking,
+            embedding: $embedding,
+            imageExtraction: $imageExtraction,
+            page: $page,
+            languageDetection: $languageDetection,
+            keyword: $keyword,
+            extractImages: $extractImages,
+            extractTables: $extractTables,
+            preserveFormatting: $preserveFormatting,
+            outputFormat: $outputFormat,
+        );
+    }
+
+    /**
+     * Create configuration from JSON string.
+     */
+    public static function fromJson(string $json): self
+    {
+        $data = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \InvalidArgumentException('Invalid JSON: ' . json_last_error_msg());
+        }
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('JSON must decode to an object/array');
+        }
+        /** @var array<string, mixed> $data */
+        return self::fromArray($data);
+    }
+
+    /**
+     * Create configuration from JSON file.
+     */
+    public static function fromFile(string $path): self
+    {
+        if (!file_exists($path)) {
+            throw new \InvalidArgumentException("File not found: {$path}");
+        }
+        $contents = file_get_contents($path);
+        if ($contents === false) {
+            throw new \InvalidArgumentException("Unable to read file: {$path}");
+        }
+        return self::fromJson($contents);
+    }
+
+    /**
      * Convert configuration to array for FFI.
      *
      * @return array<string, mixed>
@@ -60,5 +198,17 @@ readonly class ExtractionConfig
             'preserve_formatting' => $this->preserveFormatting,
             'output_format' => $this->outputFormat,
         ], static fn ($value): bool => $value !== null);
+    }
+
+    /**
+     * Convert configuration to JSON string.
+     */
+    public function toJson(): string
+    {
+        $json = json_encode($this->toArray(), JSON_PRETTY_PRINT);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode configuration to JSON');
+        }
+        return $json;
     }
 }

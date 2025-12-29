@@ -123,17 +123,18 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 		});
 	});
 
-	describe("ExtractionConfig Builder", () => {
-		it("should create default extraction config", () => {
-			const config = ExtractionConfig.default();
+	describe("ExtractionConfig Plain Objects", () => {
+		it("should create extraction config with plain object", () => {
+			const config = {};
 			expect(config).toBeDefined();
 			expect(typeof config).toBe("object");
 		});
 
-		it("should build config with custom options", () => {
-			const config = ExtractionConfig.default().withChunking({ maxChars: 2048 }).build();
+		it("should create config with chunking options", () => {
+			const config = { chunking: { maxChars: 2048 } };
 			expect(config).toBeDefined();
 			expect(config.chunking).toBeDefined();
+			expect(config.chunking?.maxChars).toBe(2048);
 		});
 
 		it("should configure OCR settings", () => {
@@ -141,13 +142,13 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 				backend: "tesseract",
 				language: "eng",
 			};
-			const config = ExtractionConfig.default().withOcr(ocrConfig).build();
+			const config = { ocr: ocrConfig };
 			expect(config.ocr).toBeDefined();
 			expect(config.ocr?.backend).toBe("tesseract");
 		});
 
 		it("should configure PDF settings", () => {
-			const config = ExtractionConfig.default().withPdf({ extractTables: true }).build();
+			const config = { pdf: { extractTables: true } };
 			expect(config.pdf).toBeDefined();
 		});
 
@@ -156,7 +157,7 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 				maxChars: 4096,
 				maxOverlap: 512,
 			};
-			const config = ExtractionConfig.default().withChunking(chunkingConfig).build();
+			const config = { chunking: chunkingConfig };
 			expect(config.chunking).toBeDefined();
 			expect(config.chunking?.maxChars).toBe(4096);
 		});
@@ -165,7 +166,7 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 			const imageConfig: ImageExtractionConfig = {
 				enabled: true,
 			};
-			const config = ExtractionConfig.default().withImageExtraction(imageConfig).build();
+			const config = { imageExtraction: imageConfig };
 			expect(config.imageExtraction).toBeDefined();
 		});
 
@@ -174,7 +175,7 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 				enabled: true,
 				maxKeywords: 10,
 			};
-			const config = ExtractionConfig.default().withKeywords(keywordConfig).build();
+			const config = { keywords: keywordConfig };
 			expect(config.keywords).toBeDefined();
 		});
 
@@ -182,17 +183,17 @@ describe("Kreuzberg TypeScript/Node.js Bindings", () => {
 			const langConfig: LanguageDetectionConfig = {
 				enabled: true,
 			};
-			const config = ExtractionConfig.default().withLanguageDetection(langConfig).build();
+			const config = { languageDetection: langConfig };
 			expect(config.languageDetection).toBeDefined();
 		});
 
-		it("should enable/disable metadata extraction", () => {
-			const config = ExtractionConfig.default().withMetadataExtraction(true).build();
+		it("should enable metadata extraction", () => {
+			const config = { metadataExtraction: true };
 			expect(config.metadataExtraction).toBe(true);
 		});
 
-		it("should enable/disable quality mode", () => {
-			const config = ExtractionConfig.default().withQualityMode(true).build();
+		it("should enable quality mode", () => {
+			const config = { qualityMode: true };
 			expect(config.qualityMode).toBe(true);
 		});
 	});

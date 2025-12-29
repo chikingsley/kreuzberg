@@ -10,6 +10,7 @@ export default defineConfig({
 				singleThread: true,
 			},
 		},
+		include: ["src/**/*.{test,spec}.ts", "../tests/**/*.{test,spec}.ts"],
 		testTimeout: 30000,
 		hookTimeout: 10000,
 	},

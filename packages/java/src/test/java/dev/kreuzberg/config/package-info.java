@@ -1,4 +1,2 @@
-/**
- * Test configuration for Kreuzberg extraction tests.
- */
+/** Test configuration for Kreuzberg extraction tests. */
 package dev.kreuzberg.config;

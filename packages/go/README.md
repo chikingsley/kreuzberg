@@ -52,15 +52,17 @@
   </a>
 </div>
 
-Extract text, tables, images, and metadata from 56 file formats including PDF, Office documents, and images. Go bindings with context-aware async support, idiomatic Go API, and CGO-based native performance.
+Extract text, tables, images, and metadata from 56 file formats including PDF, Office documents, and images. Go bindings with context-aware async support, idiomatic functional options API, and CGO-based native performance.
 
 > **Version 4.0.0 Release Candidate**
 > Kreuzberg v4.0.0 is in **Release Candidate** stage. Bugs and breaking changes are expected.
 > This is a pre-release version. Please test the library and [report any issues](https://github.com/kreuzberg-dev/kreuzberg/issues) you encounter.
+>
+> **Breaking Change**: v4.0.0 introduces the functional options pattern for configuration. See [MIGRATION_v4.md](./MIGRATION_v4.md) for migration from v3.x.
 
 ## Installation
 
-### Package Installation
+### Go Package
 
 Install with go get:
 
@@ -68,19 +70,66 @@ Install with go get:
 go get github.com/kreuzberg-dev/kreuzberg/packages/go/v4
 ```
 
-For more details on FFI setup and native library linking, see the [Go Setup Guide](https://kreuzberg.dev/bindings/go/setup/).
+### Native Library
+
+The Go binding requires the Kreuzberg FFI library. Use one of these approaches:
+
+#### Automated Setup (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/kreuzberg-dev/kreuzberg.git
+cd kreuzberg
+
+# Run the installer (detects platform, downloads pre-built or builds from source)
+./scripts/go/install-binaries.sh
+
+# Follow the printed instructions to set environment variables
+```
+
+#### Manual Setup
+
+Download pre-built FFI libraries from [releases](https://github.com/kreuzberg-dev/kreuzberg/releases):
+
+```bash
+# Download for your platform
+curl -LO https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0/go-ffi-linux-x86_64.tar.gz
+
+# Extract and install
+tar -xzf go-ffi-linux-x86_64.tar.gz
+cd kreuzberg-ffi
+sudo cp -r lib/* /usr/local/lib/
+sudo cp -r include/* /usr/local/include/
+sudo ldconfig  # Linux only
+
+# Verify
+pkg-config --modversion kreuzberg-ffi
+```
+
+#### Build from Source
+
+```bash
+# In the Kreuzberg repository
+cargo build -p kreuzberg-ffi --release
+
+# Set environment for development
+export PKG_CONFIG_PATH="$PWD/crates/kreuzberg-ffi:$PKG_CONFIG_PATH"
+export LD_LIBRARY_PATH="$PWD/target/release"  # Linux
+export DYLD_FALLBACK_LIBRARY_PATH="$PWD/target/release"  # macOS
+```
 
 ### System Requirements
 
 - **Go 1.19+** required
-- Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.21 or lower for embeddings support
-- Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+- **Platform**: Linux (x86_64), macOS (arm64/x86_64), Windows (x86_64)
+- **Optional**: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) for embeddings support
+- **Optional**: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
 ## Quick Start
 
-### Basic Extraction
+### Minimal Example
 
-Extract text, metadata, and structure from any supported document format:
+Extract text from any supported document format with defaults:
 
 ```go
 package main
@@ -93,32 +142,57 @@ import (
 )
 
 func main() {
-	result, err := kreuzberg.ExtractFileSync("document.pdf", nil)
+	// nil config uses Kreuzberg defaults
+	result, err := v4.ExtractFileSync("document.pdf", nil)
 	if err != nil {
-		log.Fatalf("extract failed: %v", err)
+		log.Fatalf("extraction failed: %v", err)
+	}
+
+	fmt.Println(result.Content)
+}
+```
+
+### With Configuration
+
+The new functional options API makes configuration clean and readable:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+)
+
+func main() {
+	// Build configuration with functional options
+	config := v4.NewExtractionConfig(
+		v4.WithUseCache(true),
+		v4.WithEnableQualityProcessing(true),
+	)
+
+	result, err := v4.ExtractFileSync("document.pdf", config)
+	if err != nil {
+		log.Fatalf("extraction failed: %v", err)
 	}
 
 	fmt.Println("Content:")
 	fmt.Println(result.Content)
 
 	fmt.Println("\nMetadata:")
-	if result.Metadata != nil {
-		fmt.Printf("Title: %v\n", result.Metadata["title"])
-		fmt.Printf("Author: %v\n", result.Metadata["author"])
+	for key, value := range result.Metadata {
+		fmt.Printf("%s: %v\n", key, value)
 	}
 
-	fmt.Printf("\nTables found: %d\n", len(result.Tables))
-	fmt.Printf("Images found: %d\n", len(result.Images))
+	fmt.Printf("\nTables: %d, Images: %d\n", len(result.Tables), len(result.Images))
 }
 ```
 
 ### Common Use Cases
 
-#### Extract with Custom Configuration
-
-Most use cases benefit from configuration to control extraction behavior:
-
-**With OCR (for scanned documents):**
+#### Extract with OCR (Scanned Documents)
 
 ```go
 package main
@@ -131,91 +205,185 @@ import (
 )
 
 func main() {
-	result, err := kreuzberg.ExtractFileSync("document.pdf", nil)
+	config := v4.NewExtractionConfig(
+		v4.WithForceOCR(true),
+		v4.WithOCR(
+			v4.WithOCRBackend("tesseract"),
+			v4.WithOCRLanguage("eng"),
+		),
+	)
+
+	result, err := v4.ExtractFileSync("scanned.pdf", config)
 	if err != nil {
-		log.Fatalf("extract failed: %v", err)
+		log.Fatalf("ocr extraction failed: %v", err)
 	}
 
-	fmt.Println("Extracted content:")
-	if len(result.Content) > 200 {
-		fmt.Println(result.Content[:200])
-	} else {
-		fmt.Println(result.Content)
+	fmt.Println("Extracted from scanned document:")
+	fmt.Println(result.Content)
+}
+```
+
+#### Advanced OCR Configuration
+
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+)
+
+func main() {
+	config := v4.NewExtractionConfig(
+		v4.WithOCR(
+			v4.WithOCRBackend("tesseract"),
+			v4.WithOCRLanguage("eng"),
+			v4.WithTesseract(
+				v4.WithTesseractLanguage("eng"),
+				v4.WithTesseractPSM(3),
+				v4.WithTesseractMinConfidence(0.75),
+				v4.WithTesseractEnableTableDetection(true),
+				v4.WithTesseractTableMinConfidence(0.8),
+			),
+		),
+	)
+
+	result, err := v4.ExtractFileSync("complex.pdf", config)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	log.Printf("Extracted %d characters, %d tables\n",
+		len(result.Content), len(result.Tables))
 }
 ```
 
 #### Table Extraction
 
-See [Table Extraction Guide](https://kreuzberg.dev/features/table-extraction/) for detailed examples.
-
-#### Processing Multiple Files
-
 ```go
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
 )
 
 func main() {
-	backend := "tesseract"
-	language := "eng"
+	config := v4.NewExtractionConfig(
+		v4.WithChunking(
+			v4.WithChunkingEnabled(true),
+			v4.WithChunkSize(2000),
+		),
+	)
 
-	ocrConfig := &kreuzberg.OCRConfig{
-		Backend:  &backend,
-		Language: &language,
-	}
-
-	config := &kreuzberg.ExtractionConfig{
-		OCR: ocrConfig,
-	}
-
-	result, err := kreuzberg.ExtractFileSync("scanned.pdf", config)
+	result, err := v4.ExtractFileSync("spreadsheet.xlsx", config)
 	if err != nil {
-		log.Fatalf("extract failed: %v", err)
+		log.Fatal(err)
 	}
 
-	fmt.Println("Extracted text from scanned document:")
-	fmt.Println(result.Content)
-	fmt.Println("Used OCR backend: tesseract")
+	for _, table := range result.Tables {
+		log.Printf("Table: %d rows x %d cols\n",
+			len(table.Rows), len(table.Rows[0].Cells))
+	}
 }
 ```
 
-#### Async Processing
-
-For non-blocking document processing:
+#### Batch Processing
 
 ```go
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
 )
 
 func main() {
-	useCache := true
-	enableQP := true
+	config := v4.NewExtractionConfig(
+		v4.WithUseCache(true),
+		v4.WithMaxConcurrentExtractions(4),
+	)
 
-	config := &kreuzberg.ExtractionConfig{
-		UseCache:                &useCache,
-		EnableQualityProcessing: &enableQP,
-	}
-
-	result, err := kreuzberg.ExtractFileSync("contract.pdf", config)
+	files := []string{"doc1.pdf", "doc2.docx", "doc3.xlsx"}
+	results, err := v4.BatchExtractFilesSync(files, config)
 	if err != nil {
-		log.Fatalf("extract failed: %v", err)
+		log.Fatal(err)
 	}
 
-	fmt.Printf("Extracted %d characters\n", len(result.Content))
-	fmt.Printf("Quality score: %v\n", result.Metadata["quality_score"])
-	fmt.Printf("Processing time: %vms\n", result.Metadata["processing_time"])
+	for i, result := range results {
+		if result != nil {
+			log.Printf("[%d] %s: %d bytes", i, result.MimeType, len(result.Content))
+		}
+	}
+}
+```
+
+#### Language Detection & Keyword Extraction
+
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+)
+
+func main() {
+	config := v4.NewExtractionConfig(
+		v4.WithLanguageDetection(
+			v4.WithLanguageDetectionEnabled(true),
+		),
+		v4.WithKeywords(
+			v4.WithKeywordsEnabled(true),
+		),
+	)
+
+	result, err := v4.ExtractFileSync("article.pdf", config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if lang, ok := result.Metadata["language"]; ok {
+		log.Println("Detected language:", lang)
+	}
+
+	for _, keyword := range result.Keywords {
+		log.Printf("  %s (score: %.2f)\n", keyword.Text, keyword.Score)
+	}
+}
+```
+
+#### Quality Processing
+
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+)
+
+func main() {
+	config := v4.NewExtractionConfig(
+		v4.WithEnableQualityProcessing(true),
+		v4.WithUseCache(true),
+		v4.WithTokenReduction(
+			v4.WithTokenReductionEnabled(true),
+		),
+	)
+
+	result, err := v4.ExtractFileSync("document.pdf", config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Quality score: %v\n", result.Metadata["quality_score"])
+	log.Printf("Processing time: %vms\n", result.Metadata["processing_time"])
 }
 ```
 
@@ -310,132 +478,184 @@ func main() {
 | **Archives** | 5-50 MB/s | ~200MB per doc | ZIP, TAR, etc. |
 | **Web formats** | 50-200 MB/s | Streaming | HTML, XML, JSON |
 
-## OCR Support
+## Key Features
 
-Kreuzberg supports multiple OCR backends for extracting text from scanned documents and images:
+### Supported File Formats
 
-- **Tesseract**
+Extract text, tables, and metadata from 56+ file formats:
 
-### OCR Configuration Example
+**Office Documents**: PDF, DOCX, XLSX, PPTX, and more
+**Images**: PNG, JPG, WEBP, TIFF, SVG (with OCR support)
+**Web**: HTML, XML, JSON, YAML, CSV, Markdown
+**Email & Archives**: EML, MSG, ZIP, TAR, 7Z
+**Academic**: LaTeX, Jupyter notebooks, citations
 
-```go
-package main
+[Complete format reference](https://kreuzberg.dev/reference/formats/)
 
-import (
-	"fmt"
-	"log"
+### Core Capabilities
 
-	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
-)
+- **Text Extraction** - Full content with position information
+- **Metadata Extraction** - Document properties, dates, author
+- **Table Extraction** - Structure-preserving table parsing
+- **Image Extraction** - Embedded images with metadata
+- **OCR Support** - Tesseract backend for scanned documents
+- **Language Detection** - Automatic language identification
+- **Keyword Extraction** - YAKE and RAKE algorithms
+- **Batch Processing** - Process multiple files efficiently
+- **Concurrent Extraction** - Parallel document processing
+- **Token Reduction** - Reduce text for LLM optimization
+- **Plugin System** - Custom post-processing pipelines
 
-func main() {
-	result, err := kreuzberg.ExtractFileSync("document.pdf", nil)
-	if err != nil {
-		log.Fatalf("extract failed: %v", err)
-	}
+### Functional Options API
 
-	fmt.Println("Extracted content:")
-	if len(result.Content) > 200 {
-		fmt.Println(result.Content[:200])
-	} else {
-		fmt.Println(result.Content)
-	}
-}
-```
-
-## Async Support
-
-This binding provides full async/await support for non-blocking document processing:
+All configuration uses the idiomatic functional options pattern for clean, readable code:
 
 ```go
-package main
-
-import (
-	"fmt"
-	"log"
-
-	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
+config := v4.NewExtractionConfig(
+    v4.WithOCR(
+        v4.WithOCRBackend("tesseract"),
+        v4.WithOCRLanguage("eng"),
+    ),
+    v4.WithKeywords(
+        v4.WithKeywordsEnabled(true),
+    ),
 )
-
-func main() {
-	useCache := true
-	enableQP := true
-
-	config := &kreuzberg.ExtractionConfig{
-		UseCache:                &useCache,
-		EnableQualityProcessing: &enableQP,
-	}
-
-	result, err := kreuzberg.ExtractFileSync("contract.pdf", config)
-	if err != nil {
-		log.Fatalf("extract failed: %v", err)
-	}
-
-	fmt.Printf("Extracted %d characters\n", len(result.Content))
-	fmt.Printf("Quality score: %v\n", result.Metadata["quality_score"])
-	fmt.Printf("Processing time: %vms\n", result.Metadata["processing_time"])
-}
 ```
 
-## Plugin System
+This approach is:
+- **Type-safe**: Compiler catches misconfigurations
+- **Self-documenting**: Option names describe what they do
+- **Composable**: Mix and match any options
+- **Extensible**: Adding options never breaks existing code
 
-Kreuzberg supports extensible post-processing plugins for custom text transformation and filtering.
+See [MIGRATION_v4.md](./MIGRATION_v4.md) for migration from v3.x pointer helpers.
 
-For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/plugins/).
+## Testing
 
-## Batch Processing
+The Go binding includes comprehensive test coverage across 18 test suites (9,705 lines):
 
-Process multiple documents efficiently:
+- **Batch Processing** - Multiple file extraction
+- **Concurrent Operations** - Goroutine-safe extraction
+- **Configuration & Results** - Config validation, result integrity
+- **Embeddings** - Vector generation and caching
+- **Error Handling** - Exception propagation, recovery
+- **Extraction** - All 56+ format support
+- **Images** - Embedded image extraction and EXIF
+- **Keywords** - YAKE and RAKE algorithms
+- **Memory Safety** - Goroutine leaks, cleanup verification
+- **Metadata** - Document properties extraction
+- **OCR** - Tesseract integration
+- **Pages** - Page range handling
+- **Plugins** - Custom plugin execution
+- **Tables** - Table structure preservation
+- **Validation** - Input/output validation
 
-```go
-package main
+Run tests:
 
-import (
-	"fmt"
-	"log"
+```bash
+# Standard tests
+go test ./...
 
-	"github.com/kreuzberg-dev/kreuzberg/packages/go/v4"
-)
+# With coverage
+go test -cover ./...
 
-func main() {
-	backend := "tesseract"
-	language := "eng"
-
-	ocrConfig := &kreuzberg.OCRConfig{
-		Backend:  &backend,
-		Language: &language,
-	}
-
-	config := &kreuzberg.ExtractionConfig{
-		OCR: ocrConfig,
-	}
-
-	result, err := kreuzberg.ExtractFileSync("scanned.pdf", config)
-	if err != nil {
-		log.Fatalf("extract failed: %v", err)
-	}
-
-	fmt.Println("Extracted text from scanned document:")
-	fmt.Println(result.Content)
-	fmt.Println("Used OCR backend: tesseract")
-}
+# Specific test
+go test -run TestExtractFile ./...
 ```
 
-## Configuration
+## Configuration API Reference
 
-For advanced configuration options including language detection, table extraction, OCR settings, and more:
+### ExtractionConfig Options
 
-**[Configuration Guide](https://kreuzberg.dev/configuration/)**
+| Option | Type | Purpose |
+|--------|------|---------|
+| `WithUseCache()` | bool | Enable caching of extraction results |
+| `WithEnableQualityProcessing()` | bool | Enable quality enhancement |
+| `WithForceOCR()` | bool | Force OCR on all documents |
+| `WithOCR()` | ...OCROption | Configure OCR backend and settings |
+| `WithChunking()` | ...ChunkingOption | Split text into chunks |
+| `WithImages()` | ...ImageExtractionOption | Configure image extraction |
+| `WithPdfOptions()` | ...PdfOption | PDF-specific settings |
+| `WithTokenReduction()` | ...TokenReductionOption | Reduce tokens for LLM |
+| `WithLanguageDetection()` | ...LanguageDetectionOption | Detect document language |
+| `WithKeywords()` | ...KeywordOption | Extract keywords (YAKE/RAKE) |
+| `WithPostprocessor()` | ...PostProcessorOption | Apply post-processing |
+| `WithHTMLOptions()` | ...HTMLConversionOption | HTML conversion settings |
+| `WithPages()` | ...PageOption | Specify page ranges |
+| `WithMaxConcurrentExtractions()` | int | Limit concurrent operations |
 
-## Documentation
+### OCR Options
 
-- **[Official Documentation](https://kreuzberg.dev/)**
-- **[API Reference](https://kreuzberg.dev/reference/api-go/)**
-- **[Examples & Guides](https://kreuzberg.dev/guides/)**
+| Option | Type | Purpose |
+|--------|------|---------|
+| `WithOCRBackend()` | string | OCR backend ("tesseract") |
+| `WithOCRLanguage()` | string | Language code (e.g., "eng", "deu") |
+| `WithTesseract()` | ...TesseractOption | Tesseract-specific settings |
+
+### Tesseract Options
+
+| Option | Type | Purpose |
+|--------|------|---------|
+| `WithTesseractLanguage()` | string | Tesseract language |
+| `WithTesseractPSM()` | int | Page segmentation mode (0-13) |
+| `WithTesseractOEM()` | int | OCR engine mode |
+| `WithTesseractMinConfidence()` | float64 | Minimum confidence (0-1) |
+| `WithTesseractEnableTableDetection()` | bool | Detect tables in OCR |
+| `WithTesseractTableMinConfidence()` | float64 | Table detection threshold |
+| `WithTesseractUseCache()` | bool | Cache OCR results |
+
+See GoDoc for complete option reference:
+[pkg.go.dev/github.com/kreuzberg-dev/kreuzberg/packages/go/v4](https://pkg.go.dev/github.com/kreuzberg-dev/kreuzberg/packages/go/v4)
 
 ## Troubleshooting
 
-For common issues and solutions, visit [Troubleshooting Guide](https://kreuzberg.dev/troubleshooting/).
+### Installation Issues
+
+| Error | Solution |
+|-------|----------|
+| `pkg-config: kreuzberg-ffi not found` | Set `PKG_CONFIG_PATH` to include installation directory or run installer script |
+| `dlopen: image not found` (macOS) | Set `DYLD_FALLBACK_LIBRARY_PATH=$PWD/target/release` |
+| `cannot open shared object` (Linux) | Set `LD_LIBRARY_PATH=$PWD/target/release` |
+| Windows build fails | Use MSVC build (`x86_64-pc-windows-msvc`) for full support |
+
+### Configuration Issues
+
+| Error | Solution |
+|-------|----------|
+| `undefined: BoolPtr` | Update to v4.0.0 functional options: use `WithUseCache(true)` instead |
+| `wrong number of arguments to NewExtractionConfig` | Options must be functions: `NewExtractionConfig(v4.WithUseCache(true))` |
+| `undefined: WithMyOption` | Check option name or file a [GitHub issue](https://github.com/kreuzberg-dev/kreuzberg/issues) |
+
+### Runtime Issues
+
+| Error | Solution |
+|-------|----------|
+| `Missing dependency: tesseract` | Install: `brew install tesseract` (macOS), `apt install tesseract-ocr` (Linux) |
+| `Missing dependency: onnxruntime` | Install: `brew install onnxruntime` (macOS), `apt install libonnxruntime` (Linux) |
+| Embeddings unavailable on Windows MinGW | Use Windows MSVC build for embeddings support |
+| Memory growth in long-running jobs | Enable caching and disable quality processing if not needed |
+
+### Performance
+
+| Issue | Solution |
+|-------|----------|
+| Slow extraction | Enable caching: `WithUseCache(true)` |
+| High memory usage | Reduce `MaxConcurrentExtractions` or disable unnecessary features |
+| OCR very slow | Reduce Tesseract PSM (0 is fastest, 13 is most thorough) |
+| Timeouts on large files | Increase context timeout or use batch processing with limits |
+
+For more help:
+- **Issues**: [GitHub Issues](https://github.com/kreuzberg-dev/kreuzberg/issues)
+- **Discord**: [Join Community](https://discord.gg/pXxagNK2zN)
+- **Migration**: [MIGRATION_v4.md](./MIGRATION_v4.md) for v3.x to v4.0 upgrades
+
+## Documentation
+
+- **[Official Site](https://kreuzberg.dev/)** - Complete documentation
+- **[GoDoc](https://pkg.go.dev/github.com/kreuzberg-dev/kreuzberg/packages/go/v4)** - API reference
+- **[Format Support](https://kreuzberg.dev/reference/formats/)** - All supported formats
+- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Detailed option reference
+- **[Examples](https://github.com/kreuzberg-dev/kreuzberg/tree/main/examples/go)** - Code examples
 
 ## Contributing
 

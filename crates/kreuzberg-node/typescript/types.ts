@@ -390,7 +390,7 @@ export interface KeywordConfig {
  * Page range information in chunk metadata (first_page/last_page) is automatically
  * enabled when page boundaries are available and chunking is configured.
  */
-export interface PageConfig {
+export interface PageExtractionConfig {
 	/** Extract pages as separate array (ExtractionResult.pages) */
 	extractPages?: boolean;
 	/** Insert page markers in main content string */
@@ -443,7 +443,7 @@ export interface ExtractionConfig {
 	keywords?: KeywordConfig;
 
 	/** Page tracking and extraction configuration for multi-page documents. */
-	pages?: PageConfig;
+	pages?: PageExtractionConfig;
 
 	/** Maximum number of concurrent extractions in batch operations. Default: 4. */
 	maxConcurrentExtractions?: number;

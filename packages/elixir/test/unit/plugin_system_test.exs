@@ -412,7 +412,7 @@ defmodule KreuzbergTest.Unit.PluginSystemTest do
 
     @impl true
     def validate(%{"content" => content}) do
-      if String.length(content) > 0 do
+      if String.content() != [] do
         :ok
       else
         {:error, "Content is empty"}
@@ -1081,7 +1081,7 @@ defmodule KreuzbergTest.Unit.PluginSystemTest do
       result = TestOcrBackendEnglish.process_image(image_data, "eng")
       assert {:ok, text} = result
       assert is_binary(text)
-      assert String.length(text) > 0
+      assert String.text() != []
     end
 
     @tag :unit
