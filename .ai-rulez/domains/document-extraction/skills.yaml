@@ -11,7 +11,7 @@ skills:
       - Extractor selection and execution
       - Cache integration
       - Error handling with fallback chains
-    step_by_step:
+    step_by_step: |
       1. Read file into memory (or stream for large files)
       2. Detect MIME type from extension/magic bytes
       3. Query extractor registry for matching extractors
@@ -38,7 +38,7 @@ skills:
       - Result ordering preservation
       - Worker pool management
       - Performance optimization
-    step_by_step:
+    step_by_step: |
       1. Estimate optimal worker pool size
       2. Create async task queue for documents
       3. Spawn worker tasks up to pool size
@@ -65,7 +65,7 @@ skills:
       - Cache validation
       - Cache invalidation on config change
       - Performance metrics
-    step_by_step:
+    step_by_step: |
       1. Compute content hash of file
       2. Generate cache key from hash
       3. Query cache for entry
@@ -91,7 +91,7 @@ skills:
       - Content-based detection
       - Legacy format detection
       - Format conversion coordination
-    step_by_step:
+    step_by_step: |
       1. Check file extension
       2. Read magic bytes
       3. Match against known signatures
@@ -116,7 +116,7 @@ skills:
       - Fallback chain execution
       - Error context preservation
       - Batch operation resilience
-    step_by_step:
+    step_by_step: |
       1. Query registry for MIME type
       2. Get list of supporting extractors
       3. Sort by priority (highest first)
@@ -144,7 +144,7 @@ skills:
       - Config validation
       - Config application to behavior
       - Config impact on output
-    step_by_step:
+    step_by_step: |
       1. Define ExtractionConfig with all options
       2. Document each config field
       3. Create config validators
@@ -170,7 +170,7 @@ skills:
       - Selective plugin application
       - Error handling in chains
       - Result preservation
-    step_by_step:
+    step_by_step: |
       1. Get configured post-processors
       2. Sort by priority
       3. For each post-processor:
@@ -196,7 +196,7 @@ skills:
       - Batch processing efficiency
       - Memory profiling
       - Trend analysis
-    step_by_step:
+    step_by_step: |
       1. Define performance baselines
       2. Create benchmark documents
       3. Measure extraction times
@@ -221,7 +221,7 @@ skills:
       - Graceful degradation
       - User-friendly messages
       - Logging for debugging
-    step_by_step:
+    step_by_step: |
       1. Classify error types
       2. Capture error context
       3. Implement fallback strategies
@@ -245,7 +245,7 @@ skills:
       - Metadata validation
       - Table extraction testing
       - Image preservation testing
-    step_by_step:
+    step_by_step: |
       1. Create test documents
       2. Define expected outputs
       3. Run extraction
@@ -270,7 +270,7 @@ skills:
       - Complex encodings
       - Unusual layouts
       - Corrupted/malformed documents
-    step_by_step:
+    step_by_step: |
       1. Identify edge cases
       2. Create test documents
       3. Test extraction behavior

@@ -11,7 +11,7 @@ skills:
       - Batch image processing
       - Language and config management
       - Result caching integration
-    step_by_step:
+    step_by_step: |
       1. Create OcrProcessor with cache config
       2. Check cache for image hash
       3. If cache hit, return cached result
@@ -39,7 +39,7 @@ skills:
       - hOCR output format
       - Confidence score extraction
       - Performance optimization
-    step_by_step:
+    step_by_step: |
       1. Validate language packs installed
       2. Select appropriate PSM mode:
          - 0: OSD only
@@ -69,7 +69,7 @@ skills:
       - Python object caching in Rust
       - Exception handling and translation
       - Async execution via tokio::task::spawn_blocking
-    step_by_step:
+    step_by_step: |
       1. Wrap Python OCR class
       2. Cache name and supported languages
       3. For process_image():
@@ -98,7 +98,7 @@ skills:
       - Contrast enhancement (CLAHE)
       - Deskewing algorithms
       - Binarization for specific backends
-    step_by_step:
+    step_by_step: |
       1. Analyze image characteristics (resolution, color, noise)
       2. Apply format normalization
       3. Adjust resolution if needed:
@@ -131,7 +131,7 @@ skills:
       - Text formatting preservation
       - Markdown conversion
       - Integration with table reconstruction
-    step_by_step:
+    step_by_step: |
       1. Parse hOCR XML from Tesseract
       2. Extract word elements with:
          - Text content
@@ -169,7 +169,7 @@ skills:
       - TSV format parsing
       - Markdown table generation
       - Handling complex layouts (merged cells)
-    step_by_step:
+    step_by_step: |
       1. Extract word positions from hOCR
       2. Perform spatial clustering:
          - Group words by vertical alignment
@@ -206,7 +206,7 @@ skills:
       - Language code standardization
       - Per-document language specification
       - Language detection and fallback
-    step_by_step:
+    step_by_step: |
       1. Validate language packs installed
       2. Check language pack integrity
       3. Configure languages per document
@@ -237,7 +237,7 @@ skills:
       - Cache invalidation
       - Cache statistics and metrics
       - Hit rate optimization
-    step_by_step:
+    step_by_step: |
       1. Generate content hash of image
       2. Combine with:
          - OCR backend identifier
@@ -271,7 +271,7 @@ skills:
       - Per-image error handling
       - Resource sharing
       - Result ordering preservation
-    step_by_step:
+    step_by_step: |
       1. Create OcrProcessor (shared)
       2. Estimate optimal worker count
       3. Create queue of images
@@ -300,7 +300,7 @@ skills:
       - Preprocessing impact measurement
       - Backend comparison
       - Language-specific quality
-    step_by_step:
+    step_by_step: |
       1. Run OCR on test documents
       2. Extract confidence scores
       3. Calculate accuracy metrics:
@@ -331,7 +331,7 @@ skills:
       - Partial result handling
       - Error context preservation
       - User notification
-    step_by_step:
+    step_by_step: |
       1. Attempt OCR with selected backend
       2. On error:
          a. Log error details
@@ -361,7 +361,7 @@ skills:
       - Region-based mode selection
       - Mode impact on accuracy
       - Default mode optimization
-    step_by_step:
+    step_by_step: |
       1. Analyze document layout
       2. Identify layout characteristics:
          - Single column vs. multi-column

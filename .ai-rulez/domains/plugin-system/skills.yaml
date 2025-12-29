@@ -11,7 +11,7 @@ skills:
       - Type-specific trait implementation
       - Thread safety requirements (Send + Sync)
       - Async trait support
-    step_by_step:
+    step_by_step: |
       1. Define plugin struct
       2. Implement Plugin base trait:
          - name() → String identifier
@@ -45,7 +45,7 @@ skills:
       - Result standardization
       - Error handling
       - Priority management
-    step_by_step:
+    step_by_step: |
       1. Create struct implementing DocumentExtractor
       2. Declare supported MIME types
       3. Set priority level (0-255)
@@ -79,7 +79,7 @@ skills:
       - Capability declaration
       - TesseractConfig usage
       - Result standardization
-    step_by_step:
+    step_by_step: |
       1. Create struct implementing OcrBackend
       2. Initialize OCR model/engine
       3. Implement async process_image():
@@ -112,7 +112,7 @@ skills:
       - GIL management patterns
       - Async Python method calls
       - Exception translation
-    step_by_step:
+    step_by_step: |
       1. Create wrapper struct holding Py<PyAny>
       2. Cache frequently-accessed data:
          - name
@@ -151,7 +151,7 @@ skills:
       - Registration/unregistration
       - Query optimization
       - Consistency maintenance
-    step_by_step:
+    step_by_step: |
       1. Define registry struct:
          - Arc<RwLock<Vec<Plugin>>>
          - Arc<RwLock<HashMap<MimeType, Indices>>>
@@ -191,7 +191,7 @@ skills:
       - Sorting algorithms
       - Fallback chains
       - Conflict resolution
-    step_by_step:
+    step_by_step: |
       1. Define priority semantics:
          - Higher = more priority
          - Default = 50 (middle)
@@ -224,7 +224,7 @@ skills:
       - Trait validation
       - Plugin instantiation
       - Error handling
-    step_by_step:
+    step_by_step: |
       1. For static Rust plugins:
          a. Create plugin instance
          b. Validate implements traits
@@ -260,7 +260,7 @@ skills:
       - tokio::task::spawn_blocking for async
       - Data caching strategies
       - Performance implications
-    step_by_step:
+    step_by_step: |
       1. For quick Python operations:
          ```rust
          Python::attach(|py| {
@@ -302,7 +302,7 @@ skills:
       - Validation logic
       - Per-plugin configuration
       - Config cascade from ExtractionConfig
-    step_by_step:
+    step_by_step: |
       1. Define config struct:
          ```rust
          #[derive(Deserialize)]
@@ -339,7 +339,7 @@ skills:
       - Error handling
       - Resource management
       - State tracking
-    step_by_step:
+    step_by_step: |
       1. In initialize():
          a. Load resources (models, configs)
          b. Validate dependencies
@@ -371,7 +371,7 @@ skills:
       - Fallback strategies
       - User-friendly messages
       - Error propagation
-    step_by_step:
+    step_by_step: |
       1. Classify plugin errors:
          - InitializationError
          - ExecutionError
@@ -401,7 +401,7 @@ skills:
       - Partial result handling
       - Logging at each step
       - Chain termination strategies
-    step_by_step:
+    step_by_step: |
       1. Get ordered list of plugins (by priority)
       2. For each plugin:
          a. Attempt operation
@@ -436,7 +436,7 @@ skills:
       - Mock plugin implementations
       - Concurrent access testing
       - Performance testing
-    step_by_step:
+    step_by_step: |
       1. Create mock plugin implementations
       2. Unit test plugin logic:
          - Input validation
@@ -474,7 +474,7 @@ skills:
       - Configurable behavior
       - Error injection
       - Performance simulation
-    step_by_step:
+    step_by_step: |
       1. Create simple test plugin:
          ```rust
          struct MockExtractor {
@@ -505,7 +505,7 @@ skills:
       - GIL overhead analysis
       - Lock contention measurement
       - Bottleneck identification
-    step_by_step:
+    step_by_step: |
       1. Measure plugin registration time
       2. Measure selection overhead
       3. Measure plugin execution time
