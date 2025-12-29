@@ -7,7 +7,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       expect(result.pages).not_to be_nil
@@ -20,7 +20,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -33,7 +33,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -46,7 +46,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: false)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       expect(result.pages).to be_nil
@@ -57,7 +57,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       if result.pages.length > 1
         (0...(result.pages.length - 1)).each do |i|
@@ -73,7 +73,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(insert_page_markers: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -85,7 +85,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(insert_page_markers: false)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       # Default marker format should not appear when not enabled
@@ -97,7 +97,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(insert_page_markers: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       # Should contain at least page 1
@@ -109,7 +109,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(insert_page_markers: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       marker_count = result.content.scan('<!-- PAGE').length
@@ -127,7 +127,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -143,7 +143,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       expect(result.content).to include('[Page Number:')
@@ -159,7 +159,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       expect(result.content).to include('PAGE_')
@@ -174,7 +174,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       expect(result.content).to include('---PAGE')
@@ -189,7 +189,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       expect(result.content).to include('CUSTOM_PAGE_')
@@ -202,7 +202,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       expect(result.pages.length).to be > 0
@@ -213,7 +213,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each_with_index do |page, index|
@@ -226,7 +226,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -240,7 +240,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(insert_page_markers: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.content).not_to be_nil
       marker_count = result.content.scan('<!-- PAGE').length
@@ -254,7 +254,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -268,7 +268,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -282,7 +282,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -296,7 +296,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       result.pages.each do |page|
@@ -310,7 +310,7 @@ RSpec.describe 'Pages Extraction' do
         pages: Kreuzberg::Config::PageConfig.new(extract_pages: true)
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       page_with_content = result.pages.find { |p| p.content && !p.content.strip.empty? }
@@ -327,7 +327,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result).not_to be_nil
       expect(result.pages).not_to be_nil
@@ -344,7 +344,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       expect(result.pages.length).to be > 0
@@ -359,7 +359,7 @@ RSpec.describe 'Pages Extraction' do
         )
       )
 
-      result = Kreuzberg.extract_file('test.pdf', config)
+      result = Kreuzberg.extract_file(path: 'test.pdf', config: config)
 
       expect(result.pages).not_to be_nil
       expect(result.content).not_to be_nil

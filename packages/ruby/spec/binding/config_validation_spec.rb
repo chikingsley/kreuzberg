@@ -337,7 +337,7 @@ RSpec.describe 'Configuration Validation' do
         ocr: Kreuzberg::Config::OCR.new(backend: 'tesseract', language: 'eng')
       )
 
-      result = Kreuzberg.extract_file_sync(path, config: config)
+      result = Kreuzberg.extract_file_sync(path: path, config: config)
       expect(result).to be_a(Kreuzberg::Result)
     end
 
@@ -347,7 +347,7 @@ RSpec.describe 'Configuration Validation' do
         chunking: Kreuzberg::Config::Chunking.new(max_chars: 50)
       )
 
-      result = Kreuzberg.extract_file_sync(path, config: config)
+      result = Kreuzberg.extract_file_sync(path: path, config: config)
       expect(result).to be_a(Kreuzberg::Result)
     end
 
@@ -357,7 +357,7 @@ RSpec.describe 'Configuration Validation' do
         language_detection: Kreuzberg::Config::LanguageDetection.new(enabled: true)
       )
 
-      result = Kreuzberg.extract_file_sync(path, config: config)
+      result = Kreuzberg.extract_file_sync(path: path, config: config)
       expect(result).to be_a(Kreuzberg::Result)
     end
 
@@ -370,7 +370,7 @@ RSpec.describe 'Configuration Validation' do
         language_detection: { enabled: false }
       )
 
-      result = Kreuzberg.extract_file_sync(path, config: config)
+      result = Kreuzberg.extract_file_sync(path: path, config: config)
       expect(result).to be_a(Kreuzberg::Result)
     end
   end

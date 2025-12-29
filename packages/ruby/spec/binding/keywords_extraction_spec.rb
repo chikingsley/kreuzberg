@@ -11,7 +11,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology. Neural networks and deep learning are key areas of AI research. These technologies enable predictions and data analysis.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -27,7 +27,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Artificial intelligence transforms technology development. Machine learning algorithms improve with training data.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.metadata).to be_a(Hash)
@@ -45,7 +45,7 @@ RSpec.describe 'Keyword Extraction' do
         )
 
         text = 'Machine learning and artificial intelligence are transforming technology. Neural networks and deep learning are key research areas. Data science enables predictions. Algorithms process information efficiently.'
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         expect(result).not_to be_nil
         expect(result.content).not_to be_nil
@@ -61,7 +61,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Artificial intelligence is transforming the world.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -80,7 +80,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology development globally.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -96,7 +96,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Maschinelles Lernen und künstliche Intelligenz transformieren die Technologieentwicklung.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -112,7 +112,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = "L'apprentissage automatique et l'intelligence artificielle transforment le développement technologique."
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -131,7 +131,7 @@ RSpec.describe 'Keyword Extraction' do
         )
 
         text = 'Machine learning and artificial intelligence.'
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         expect(result).not_to be_nil
       end
@@ -154,7 +154,7 @@ RSpec.describe 'Keyword Extraction' do
           )
         )
 
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
         results_by_threshold[threshold] = result
 
         expect(result).not_to be_nil
@@ -177,9 +177,9 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Artificial intelligence is transforming data science and machine learning research globally with neural networks.'
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result3 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result3 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       # Results should be identical across runs
       expect(result1.content).to eq(result2.content)
@@ -208,7 +208,7 @@ RSpec.describe 'Keyword Extraction' do
           )
         )
 
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
         results[label] = result
 
         expect(result).not_to be_nil
@@ -230,8 +230,8 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology development across industry.'
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       # Results should be identical
       expect(result1.content).to eq(result2.content)
@@ -256,8 +256,8 @@ RSpec.describe 'Keyword Extraction' do
         )
       )
 
-      yake_result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: yake_config)
-      rake_result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: rake_config)
+      yake_result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: yake_config)
+      rake_result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: rake_config)
 
       expect(yake_result).not_to be_nil
       expect(yake_result.content).not_to be_nil
@@ -288,8 +288,8 @@ RSpec.describe 'Keyword Extraction' do
         )
       )
 
-      result_small = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: yake_config_small)
-      result_large = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: yake_config_large)
+      result_small = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: yake_config_small)
+      result_large = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: yake_config_large)
 
       expect(result_small).not_to be_nil
       expect(result_large).not_to be_nil
@@ -311,7 +311,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -353,8 +353,8 @@ RSpec.describe 'Keyword Extraction' do
 
       text = 'Machine learning and artificial intelligence are transforming technology development globally.'
 
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result1).not_to be_nil
       expect(result2).not_to be_nil
@@ -395,7 +395,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology. Neural networks and deep learning enable data science applications.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -410,7 +410,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Artificial intelligence machine learning data science neural networks deep learning transforming technology.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -429,7 +429,7 @@ RSpec.describe 'Keyword Extraction' do
         )
 
         text = 'Machine learning artificial intelligence data science neural networks deep learning technology.'
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         expect(result).not_to be_nil
       end
@@ -444,8 +444,8 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence transform technology.'
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result1).not_to be_nil
       expect(result2).not_to be_nil
@@ -462,7 +462,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'AI'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -477,7 +477,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'a b c d e'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -491,7 +491,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine machine machine learning learning learning artificial artificial artificial intelligence intelligence.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -506,7 +506,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -520,7 +520,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence are transforming technology.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -528,7 +528,7 @@ RSpec.describe 'Keyword Extraction' do
     it 'handles disabled keyword extraction' do
       config = Kreuzberg::Config::Extraction.new
       text = 'Machine learning and artificial intelligence.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.content).not_to be_nil
@@ -543,7 +543,7 @@ RSpec.describe 'Keyword Extraction' do
       )
 
       text = 'Machine learning and artificial intelligence.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end

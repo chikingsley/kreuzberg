@@ -36,7 +36,7 @@ RSpec.describe 'OCR Backend Plugin System' do
         ocr: Kreuzberg::Config::Ocr.new(backend: 'mock-ocr')
       )
 
-      result = Kreuzberg.extract_file_sync(test_image, config: config)
+      result = Kreuzberg.extract_file_sync(path: test_image, config: config)
 
       expect(backend.process_called).to be true
       expect(result.content).to include('Mocked OCR text')
@@ -69,7 +69,7 @@ RSpec.describe 'OCR Backend Plugin System' do
         )
       )
 
-      Kreuzberg.extract_file_sync(test_image, config: config)
+      Kreuzberg.extract_file_sync(path: test_image, config: config)
 
       expect(backend.received_config).to be_a(Hash)
       expect(backend.received_config['backend']).to eq('config-capture')
@@ -102,7 +102,7 @@ RSpec.describe 'OCR Backend Plugin System' do
         ocr: Kreuzberg::Config::Ocr.new(backend: 'bytes-capture')
       )
 
-      Kreuzberg.extract_file_sync(test_image, config: config)
+      Kreuzberg.extract_file_sync(path: test_image, config: config)
 
       received_bytes = BytesCapturingBackend.instance_variable_get(:@received_bytes)
       expect(received_bytes).to be_a(String)
@@ -131,7 +131,7 @@ RSpec.describe 'OCR Backend Plugin System' do
         ocr: Kreuzberg::Config::Ocr.new(backend: 'simple-ocr')
       )
 
-      result = Kreuzberg.extract_file_sync(test_image, config: config)
+      result = Kreuzberg.extract_file_sync(path: test_image, config: config)
 
       expect(result.content).to include('Invoice Total')
       expect(result.content).to include('1,234.56')
@@ -167,8 +167,8 @@ RSpec.describe 'OCR Backend Plugin System' do
         ocr: Kreuzberg::Config::Ocr.new(backend: 'stateful-ocr')
       )
 
-      Kreuzberg.extract_file_sync(test_image, config: config)
-      Kreuzberg.extract_file_sync(test_image, config: config)
+      Kreuzberg.extract_file_sync(path: test_image, config: config)
+      Kreuzberg.extract_file_sync(path: test_image, config: config)
 
       expect(backend.call_count).to be >= 1
     end
@@ -197,7 +197,7 @@ RSpec.describe 'OCR Backend Plugin System' do
       )
 
       expect do
-        Kreuzberg.extract_file_sync(test_image, config: config)
+        Kreuzberg.extract_file_sync(path: test_image, config: config)
       end.to raise_error(StandardError, /OCR processing failed/)
     end
 
@@ -208,7 +208,7 @@ RSpec.describe 'OCR Backend Plugin System' do
       )
 
       expect do
-        Kreuzberg.extract_file_sync(test_image, config: config)
+        Kreuzberg.extract_file_sync(path: test_image, config: config)
       end.to raise_error
     end
   end

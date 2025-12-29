@@ -211,4 +211,14 @@ readonly class ExtractionConfig
         }
         return $json;
     }
+
+    /**
+     * Create a new configuration builder instance.
+     *
+     * @return ExtractionConfigBuilder A builder for creating ExtractionConfig instances
+     */
+    public static function builder(): ExtractionConfigBuilder
+    {
+        return new ExtractionConfigBuilder();
+    }
 }

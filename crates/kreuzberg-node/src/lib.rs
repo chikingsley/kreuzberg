@@ -9,12 +9,12 @@ use kreuzberg::keywords::{
     KeywordAlgorithm as RustKeywordAlgorithm, KeywordConfig as RustKeywordConfig, RakeParams as RustRakeParams,
     YakeParams as RustYakeParams,
 };
+use kreuzberg::pdf::HierarchyConfig as RustHierarchyConfig;
 use kreuzberg::plugins::registry::{get_post_processor_registry, get_validator_registry};
 use kreuzberg::{
     Chunk as RustChunk, ChunkMetadata as RustChunkMetadata, ChunkingConfig as RustChunkingConfig,
     EmbeddingConfig as RustEmbeddingConfig, EmbeddingModelType as RustEmbeddingModelType, ExtractionConfig,
-    ExtractionResult as RustExtractionResult, HierarchyConfig as RustHierarchyConfig,
-    ImageExtractionConfig as RustImageExtractionConfig, KNOWN_FORMATS,
+    ExtractionResult as RustExtractionResult, ImageExtractionConfig as RustImageExtractionConfig, KNOWN_FORMATS,
     LanguageDetectionConfig as RustLanguageDetectionConfig, OcrConfig as RustOcrConfig, PdfConfig as RustPdfConfig,
     PostProcessorConfig as RustPostProcessorConfig, TesseractConfig as RustTesseractConfig,
     TokenReductionConfig as RustTokenReductionConfig,
@@ -1331,6 +1331,12 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
                 extract_images: Some(pdf.extract_images),
                 passwords: pdf.passwords,
                 extract_metadata: Some(pdf.extract_metadata),
+                hierarchy: pdf.hierarchy.map(|h| JsHierarchyConfig {
+                    enabled: Some(h.enabled),
+                    k_clusters: Some(h.k_clusters as i32),
+                    include_bbox: Some(h.include_bbox),
+                    ocr_coverage_threshold: h.ocr_coverage_threshold.map(|v| v as f64),
+                }),
             }),
             token_reduction: val.token_reduction.map(|tr| JsTokenReductionConfig {
                 mode: Some(tr.mode),

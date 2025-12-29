@@ -176,12 +176,13 @@ public final class ExtractionConfig {
 	 * Searches for kreuzberg.toml, kreuzberg.yaml, or kreuzberg.json in the current
 	 * directory and parent directories.
 	 *
-	 * @return discovered configuration, or null if not found
+	 * @return Optional containing discovered configuration if found, empty Optional
+	 *         otherwise
 	 * @throws KreuzbergException
 	 *             if an error occurs during discovery
 	 * @since 4.0.0
 	 */
-	public static ExtractionConfig discover() throws KreuzbergException {
+	public static Optional<ExtractionConfig> discover() throws KreuzbergException {
 		return dev.kreuzberg.Kreuzberg.discoverExtractionConfig();
 	}
 

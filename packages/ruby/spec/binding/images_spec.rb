@@ -16,7 +16,7 @@ RSpec.describe 'Image Extraction' do
 
       pdf_path = 'test.pdf'
       begin
-        result = Kreuzberg.extract_file_sync(pdf_path, config: config)
+        result = Kreuzberg.extract_file_sync(path: pdf_path, config: config)
 
         expect(result).not_to be_nil
         expect(result.images).not_to be_nil
@@ -41,7 +41,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result.images).not_to be_nil
         if result.images && !result.images.empty?
@@ -66,7 +66,7 @@ RSpec.describe 'Image Extraction' do
         )
 
         begin
-          result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+          result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
           expect(result).not_to be_nil
           expect(result.images).not_to be_nil
@@ -85,7 +85,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           image = result.images.first
@@ -112,7 +112,7 @@ RSpec.describe 'Image Extraction' do
 
       begin
         docx_path = 'test.docx'
-        result = Kreuzberg.extract_file_sync(docx_path, config: config)
+        result = Kreuzberg.extract_file_sync(path: docx_path, config: config)
 
         expect(result).not_to be_nil
         expect(result.content).not_to be_nil
@@ -130,7 +130,7 @@ RSpec.describe 'Image Extraction' do
 
       begin
         pptx_path = 'test.pptx'
-        result = Kreuzberg.extract_file_sync(pptx_path, config: config)
+        result = Kreuzberg.extract_file_sync(path: pptx_path, config: config)
 
         expect(result).not_to be_nil
         expect(result.content).not_to be_nil
@@ -148,7 +148,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result.images).not_to be_nil
         if result.images && result.images.length > 1
@@ -168,7 +168,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && result.images.length > 1
           result.images.each_with_index do |image, _index|
@@ -191,7 +191,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           formats = result.images.filter_map(&:format)
@@ -211,7 +211,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           result.images.each do |image|
@@ -232,7 +232,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result.images).not_to be_nil
       rescue Kreuzberg::Errors::ValidationError
@@ -248,8 +248,8 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result1 = Kreuzberg.extract_file_sync('test.pdf', config: config)
-        result2 = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result1 = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
+        result2 = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result1.images && result2.images && !result1.images.empty? && !result2.images.empty?
           expect(result1.images.first.format).to eq(result2.images.first.format)
@@ -269,7 +269,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result.images).not_to be_nil
       rescue Kreuzberg::Errors::ValidationError
@@ -286,7 +286,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           image = result.images.first
@@ -305,7 +305,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           image = result.images.first
@@ -325,7 +325,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result.images).to be_nil
       rescue Kreuzberg::Errors::ValidationError
@@ -343,7 +343,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
         expect(result).not_to be_nil
       rescue Kreuzberg::Errors::ValidationError
         skip 'Test file not available'
@@ -358,7 +358,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result).not_to be_nil
         expect(result.content).not_to be_nil
@@ -376,7 +376,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           result.images.each do |image|
@@ -400,7 +400,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result).not_to be_nil
         expect(result.images).not_to be_nil
@@ -420,7 +420,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result).not_to be_nil
         expect(result.images).not_to be_nil
@@ -437,7 +437,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && result.images.length > 1
           result.images.each do |image|
@@ -457,7 +457,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && result.images.length > 1
           (0...(result.images.length - 1)).each do |i|
@@ -484,7 +484,7 @@ RSpec.describe 'Image Extraction' do
         )
       )
 
-      results = Kreuzberg.batch_extract_files_sync(paths, config: config)
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
 
       expect(results).to be_a(Array)
       expect(results.length).to eq(2)
@@ -508,7 +508,7 @@ RSpec.describe 'Image Extraction' do
         )
       )
 
-      results = Kreuzberg.batch_extract_files_sync(paths, config: config)
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
 
       expect(results.length).to eq(paths.length)
       expect(results).to all(be_a(Kreuzberg::Result))
@@ -533,8 +533,8 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result_low = Kreuzberg.extract_file_sync('test.pdf', config: config_low)
-        result_high = Kreuzberg.extract_file_sync('test.pdf', config: config_high)
+        result_low = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config_low)
+        result_high = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config_high)
 
         # Both configurations should produce valid extraction
         expect(result_low).not_to be_nil
@@ -559,8 +559,8 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result_enabled = Kreuzberg.extract_file_sync('test.pdf', config: config_enabled)
-        result_disabled = Kreuzberg.extract_file_sync('test.pdf', config: config_disabled)
+        result_enabled = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config_enabled)
+        result_disabled = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config_disabled)
 
         # Enabled should extract if images present
         expect(result_enabled).not_to be_nil
@@ -580,7 +580,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         expect(result).not_to be_nil
         # Dimension constraint should be applied
@@ -674,7 +674,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           result.images.each do |image|
@@ -700,7 +700,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && !result.images.empty?
           result.images.each do |image|
@@ -723,7 +723,7 @@ RSpec.describe 'Image Extraction' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync('test.pdf', config: config)
+        result = Kreuzberg.extract_file_sync(path: 'test.pdf', config: config)
 
         if result.images && result.images.length > 1
           indices = result.images.map(&:image_index)

@@ -234,7 +234,19 @@ public final class Kreuzberg {
 		}
 	}
 
-	public static ExtractionConfig discoverExtractionConfig() throws KreuzbergException {
+	/**
+	 * Discover extraction configuration from environment or configuration files.
+	 *
+	 * <p>
+	 * Attempts to locate and load Kreuzberg configuration from the environment.
+	 * Returns an empty Optional if no configuration is found.
+	 *
+	 * @return Optional containing ExtractionConfig if found, empty Optional
+	 *         otherwise
+	 * @throws KreuzbergException
+	 *             if discovery process encounters an error
+	 */
+	public static Optional<ExtractionConfig> discoverExtractionConfig() throws KreuzbergException {
 		try {
 			MemorySegment jsonPtr = (MemorySegment) KreuzbergFFI.KREUZBERG_CONFIG_DISCOVER.invoke();
 			if (jsonPtr == null || jsonPtr.address() == 0) {
@@ -242,11 +254,11 @@ public final class Kreuzberg {
 				if (error != null && !error.isBlank()) {
 					throw new KreuzbergException("Failed to discover config: " + error);
 				}
-				return null;
+				return Optional.empty();
 			}
 			try {
 				String json = KreuzbergFFI.readCString(jsonPtr);
-				return ExtractionConfig.fromJson(json);
+				return Optional.ofNullable(ExtractionConfig.fromJson(json));
 			} finally {
 				KreuzbergFFI.KREUZBERG_FREE_STRING.invoke(jsonPtr);
 			}
@@ -257,47 +269,115 @@ public final class Kreuzberg {
 		}
 	}
 
+	/**
+	 * Asynchronously extract content from a file.
+	 *
+	 * <p>
+	 * Performs extraction in a background thread using the default ForkJoinPool.
+	 * Exceptions are properly propagated through the CompletableFuture.
+	 *
+	 * @param path
+	 *            file path
+	 * @param config
+	 *            extraction configuration (optional)
+	 * @return CompletableFuture that completes with ExtractionResult
+	 */
 	public static CompletableFuture<ExtractionResult> extractFileAsync(Path path, ExtractionConfig config) {
-		return CompletableFuture.supplyAsync(() -> {
+		CompletableFuture<ExtractionResult> future = new CompletableFuture<>();
+		CompletableFuture.runAsync(() -> {
 			try {
-				return extractFile(path, config);
+				ExtractionResult result = extractFile(path, config);
+				future.complete(result);
 			} catch (IOException | KreuzbergException e) {
-				throw new RuntimeException(e);
+				future.completeExceptionally(e);
 			}
 		});
+		return future;
 	}
 
+	/**
+	 * Asynchronously extract content from byte array.
+	 *
+	 * <p>
+	 * Performs extraction in a background thread using the default ForkJoinPool.
+	 * Exceptions are properly propagated through the CompletableFuture.
+	 *
+	 * @param data
+	 *            byte array to extract from
+	 * @param mimeType
+	 *            MIME type of the data
+	 * @param config
+	 *            extraction configuration (optional)
+	 * @return CompletableFuture that completes with ExtractionResult
+	 */
 	public static CompletableFuture<ExtractionResult> extractBytesAsync(byte[] data, String mimeType,
 			ExtractionConfig config) {
-		return CompletableFuture.supplyAsync(() -> {
+		CompletableFuture<ExtractionResult> future = new CompletableFuture<>();
+		CompletableFuture.runAsync(() -> {
 			try {
-				return extractBytes(data, mimeType, config);
+				ExtractionResult result = extractBytes(data, mimeType, config);
+				future.complete(result);
 			} catch (KreuzbergException e) {
-				throw new RuntimeException(e);
+				future.completeExceptionally(e);
 			}
 		});
+		return future;
 	}
 
+	/**
+	 * Asynchronously extract content from multiple files.
+	 *
+	 * <p>
+	 * Performs batch extraction in a background thread using the default
+	 * ForkJoinPool. Exceptions are properly propagated through the
+	 * CompletableFuture.
+	 *
+	 * @param paths
+	 *            file paths to extract
+	 * @param config
+	 *            extraction configuration (optional)
+	 * @return CompletableFuture that completes with list of ExtractionResults
+	 */
 	public static CompletableFuture<List<ExtractionResult>> batchExtractFilesAsync(List<String> paths,
 			ExtractionConfig config) {
-		return CompletableFuture.supplyAsync(() -> {
+		CompletableFuture<List<ExtractionResult>> future = new CompletableFuture<>();
+		CompletableFuture.runAsync(() -> {
 			try {
-				return batchExtractFiles(paths, config);
+				List<ExtractionResult> results = batchExtractFiles(paths, config);
+				future.complete(results);
 			} catch (KreuzbergException e) {
-				throw new RuntimeException(e);
+				future.completeExceptionally(e);
 			}
 		});
+		return future;
 	}
 
+	/**
+	 * Asynchronously extract content from multiple byte arrays.
+	 *
+	 * <p>
+	 * Performs batch extraction in a background thread using the default
+	 * ForkJoinPool. Exceptions are properly propagated through the
+	 * CompletableFuture.
+	 *
+	 * @param items
+	 *            byte arrays with MIME types to extract
+	 * @param config
+	 *            extraction configuration (optional)
+	 * @return CompletableFuture that completes with list of ExtractionResults
+	 */
 	public static CompletableFuture<List<ExtractionResult>> batchExtractBytesAsync(List<BytesWithMime> items,
 			ExtractionConfig config) {
-		return CompletableFuture.supplyAsync(() -> {
+		CompletableFuture<List<ExtractionResult>> future = new CompletableFuture<>();
+		CompletableFuture.runAsync(() -> {
 			try {
-				return batchExtractBytes(items, config);
+				List<ExtractionResult> results = batchExtractBytes(items, config);
+				future.complete(results);
 			} catch (KreuzbergException e) {
-				throw new RuntimeException(e);
+				future.completeExceptionally(e);
 			}
 		});
+		return future;
 	}
 
 	public static String detectMimeType(String path) throws KreuzbergException {

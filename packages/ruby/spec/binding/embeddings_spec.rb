@@ -16,7 +16,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning transforms technology. Artificial intelligence enables automation and prediction across industries.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).not_to be_nil
@@ -42,7 +42,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Deep learning neural networks enable complex pattern recognition.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
@@ -63,8 +63,8 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Artificial intelligence transforms technology development.'
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result1).not_to be_nil
       expect(result2).not_to be_nil
@@ -89,7 +89,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning techniques evolve continuously. Neural networks improve performance. Data science enables insights.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       if result.chunks && result.chunks.length > 1
@@ -119,7 +119,7 @@ RSpec.describe 'Embeddings Vector Generation' do
         )
 
         text = 'Technology transforms industries. Machine learning advances AI. Neural networks improve models. Data analysis drives decisions.'
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         expect(result).not_to be_nil
         expect(result.chunks).not_to be_nil
@@ -138,7 +138,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Embeddings capture semantic meaning in vector space representations.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -161,7 +161,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'a'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -186,7 +186,7 @@ RSpec.describe 'Embeddings Vector Generation' do
              'Reinforcement learning optimizes decisions. Transfer learning improves efficiency.'
 
       start_time = Time.now
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
       elapsed = Time.now - start_time
 
       expect(result).not_to be_nil
@@ -209,7 +209,7 @@ RSpec.describe 'Embeddings Vector Generation' do
           )
         )
 
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
         results << result if result
       end
 
@@ -233,7 +233,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = ('Machine learning and artificial intelligence are transforming technology. ' * 10)
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks.length).to be >= 1
@@ -253,7 +253,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning enables advanced data analysis and predictions.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.mime_type).to include('text')
@@ -269,7 +269,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Data science transforms business decisions with insights.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).not_to be_nil
@@ -289,7 +289,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Artificial intelligence enables automation across industries.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).to be_a(Array)
@@ -309,7 +309,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning enables pattern recognition. Artificial intelligence drives innovation.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && result.chunks.length >= 2
         embeddings = result.chunks.select { |c| c.embedding.is_a?(Array) }.map(&:embedding)
@@ -343,7 +343,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Embeddings capture semantic information in vector space.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -367,8 +367,8 @@ RSpec.describe 'Embeddings Vector Generation' do
       text1 = 'Machine learning enables data analysis'
       text2 = 'Artificial intelligence enables learning'
 
-      result1 = Kreuzberg.extract_bytes_sync(text1, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text2, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text1, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text2, mime_type: 'text/plain', config: config)
 
       if result1.chunks && result2.chunks && !result1.chunks.empty? && !result2.chunks.empty?
         emb1 = result1.chunks.first.embedding
@@ -404,7 +404,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Normalization ensures consistent vector magnitudes.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config_normalized)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config_normalized)
 
       expect(result).not_to be_nil
       expect(result.chunks).not_to be_nil
@@ -425,7 +425,7 @@ RSpec.describe 'Embeddings Vector Generation' do
         )
 
         text = 'Embeddings can be normalized or unnormalized depending on use case.'
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         expect(result).not_to be_nil
         expect(result.chunks).to be_a(Array)
@@ -444,7 +444,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Normalized embeddings typically have values between -1 and 1.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -465,7 +465,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Numerical stability prevents overflow and underflow in floating point computation.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -559,7 +559,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'AI'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).not_to be_nil
@@ -576,7 +576,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning & AI. Data science -> insights. Deep learning @ scale.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).not_to be_nil
@@ -593,7 +593,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Machine learning transforms technology. Aprendizaje automático transforma.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -609,7 +609,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'machine machine machine learning learning learning'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
     end
@@ -622,7 +622,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'This text will not be chunked.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       expect(result).not_to be_nil
       expect(result.chunks).to be_a(Array)
@@ -700,7 +700,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Validating floating-point properties of embedding values.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -721,7 +721,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Testing for dead embeddings and zero vectors.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -742,7 +742,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       )
 
       text = 'Testing identical vector similarity.'
-      result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result.chunks && !result.chunks.empty? && result.chunks.first.embedding
         embedding = result.chunks.first.embedding
@@ -768,8 +768,8 @@ RSpec.describe 'Embeddings Vector Generation' do
 
       text = 'Testing deterministic embedding generation.'
 
-      result1 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
-      result2 = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+      result1 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
+      result2 = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
       if result1.chunks && result2.chunks && !result1.chunks.empty? && !result2.chunks.empty?
         emb1 = result1.chunks.first.embedding
@@ -800,7 +800,7 @@ RSpec.describe 'Embeddings Vector Generation' do
       dimensions = []
 
       texts.each do |text|
-        result = Kreuzberg.extract_bytes_sync(text, 'text/plain', config: config)
+        result = Kreuzberg.extract_bytes_sync(data: text, mime_type: 'text/plain', config: config)
 
         next unless result.chunks
 

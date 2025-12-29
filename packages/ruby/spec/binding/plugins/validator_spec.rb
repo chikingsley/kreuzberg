@@ -17,7 +17,7 @@ RSpec.describe 'Validator Plugin System' do
       end
 
       Kreuzberg.register_validator('check_called', validator)
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(validator_called).to be true
     end
@@ -27,7 +27,7 @@ RSpec.describe 'Validator Plugin System' do
       end
 
       Kreuzberg.register_validator('pass_validator', validator)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result).to be_a(Kreuzberg::Result)
       expect(result.content).not_to be_empty
@@ -43,7 +43,7 @@ RSpec.describe 'Validator Plugin System' do
       Kreuzberg.register_validator('min_length', validator)
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.to raise_error(Kreuzberg::Errors::ValidationError, /Content too short/)
     end
   end
@@ -66,7 +66,7 @@ RSpec.describe 'Validator Plugin System' do
 
       validator = MinimumLengthValidator.new(10)
       Kreuzberg.register_validator('min_length', validator)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result).to be_a(Kreuzberg::Result)
       expect(result.content.length).to be >= 10
@@ -85,7 +85,7 @@ RSpec.describe 'Validator Plugin System' do
 
       validator = NonEmptyValidator.new
       Kreuzberg.register_validator('non_empty', validator)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.content.strip).not_to be_empty
     end
@@ -99,7 +99,7 @@ RSpec.describe 'Validator Plugin System' do
       end
 
       Kreuzberg.register_validator('capture', validator)
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(received_result).to be_a(Hash)
       expect(received_result).to have_key('content')
@@ -115,7 +115,7 @@ RSpec.describe 'Validator Plugin System' do
       end
 
       Kreuzberg.register_validator('capture_content', validator)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(received_content).to eq(result.content)
     end
@@ -136,7 +136,7 @@ RSpec.describe 'Validator Plugin System' do
 
       Kreuzberg.register_validator('val1', validator1)
       Kreuzberg.register_validator('val2', validator2)
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(validator1_called).to be true
       expect(validator2_called).to be true
@@ -155,7 +155,7 @@ RSpec.describe 'Validator Plugin System' do
       Kreuzberg.register_validator('never_reached', validator2)
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.to raise_error(Kreuzberg::Errors::ValidationError, /First validator failed/)
     end
   end
@@ -170,7 +170,7 @@ RSpec.describe 'Validator Plugin System' do
       Kreuzberg.unregister_validator('removable')
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.not_to raise_error
     end
 
@@ -195,7 +195,7 @@ RSpec.describe 'Validator Plugin System' do
       Kreuzberg.register_validator('keep3', validator3)
 
       Kreuzberg.unregister_validator('remove')
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(validator1_called).to be true
       expect(validator3_called).to be true
@@ -218,7 +218,7 @@ RSpec.describe 'Validator Plugin System' do
       Kreuzberg.clear_validators
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.not_to raise_error
     end
   end

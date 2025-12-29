@@ -338,7 +338,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       )
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         expect(result).to be_a(Kreuzberg::Result)
         expect(result.metadata).not_to be_nil
 
@@ -363,7 +363,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(html_content)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Hash) && metadata['keywords']
@@ -393,7 +393,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(html_content)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Hash) && metadata['open_graph']
@@ -422,7 +422,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(html_content)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Hash) && metadata['headers']
@@ -451,7 +451,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(html_content)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Hash) && metadata['links']
@@ -480,7 +480,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(html_content)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Hash) && metadata['images']
@@ -499,7 +499,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file('<html><body></body></html>')
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Kreuzberg::HtmlMetadata)
@@ -963,7 +963,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
 
       expect(File.exist?(html_file)).to be(true)
 
-      result = Kreuzberg.extract_file_sync(html_file)
+      result = Kreuzberg.extract_file_sync(path: html_file)
       expect(result).to be_a(Kreuzberg::Result)
       expect(result.metadata).not_to be_nil
 
@@ -1019,12 +1019,12 @@ RSpec.describe 'Kreuzberg Metadata Types' do
 
       begin
         expect do
-          result = Kreuzberg.extract_file_sync(html_file)
+          result = Kreuzberg.extract_file_sync(path: html_file)
           expect(result).to be_a(Kreuzberg::Result)
           expect(result.metadata).not_to be_nil
         end.not_to raise_error
 
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         metadata = result.metadata
 
         if metadata.is_a?(Kreuzberg::HtmlMetadata)
@@ -1064,7 +1064,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
       html_file = create_test_html_file(special_chars_html)
 
       begin
-        result = Kreuzberg.extract_file_sync(html_file)
+        result = Kreuzberg.extract_file_sync(path: html_file)
         expect(result).to be_a(Kreuzberg::Result)
 
         metadata = result.metadata

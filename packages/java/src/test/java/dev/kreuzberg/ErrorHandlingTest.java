@@ -548,15 +548,15 @@ class ErrorHandlingTest {
 		@Test
 		@DisplayName("should discover config safely when not found")
 		void testDiscoverConfigWhenNotFound() throws KreuzbergException {
-			ExtractionConfig config = ExtractionConfig.discover();
+			var configOptional = ExtractionConfig.discover();
 
-			// Config should either be null if not found, or a valid ExtractionConfig
-			// instance if found
-			if (config != null) {
-				assertThat(config).as("If config is found, it should be a valid ExtractionConfig")
+			// Config should either be empty if not found, or contain a valid
+			// ExtractionConfig instance if found
+			if (configOptional.isPresent()) {
+				assertThat(configOptional.get()).as("If config is found, it should be a valid ExtractionConfig")
 						.isInstanceOf(ExtractionConfig.class);
 			}
-			// If config is null, that's also acceptable (no config file found)
+			// If config is empty, that's also acceptable (no config file found)
 		}
 
 		@Test

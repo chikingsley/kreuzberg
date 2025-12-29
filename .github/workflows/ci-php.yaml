@@ -99,6 +99,7 @@ jobs:
           tools: composer
 
       - name: Export PHP build config
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           PHP_CONFIG_BIN="$(command -v php-config || true)"
@@ -113,7 +114,11 @@ jobs:
         run: |
           echo "=== PHP Environment ==="
           echo "PHP version: $(php --version)"
-          echo "PHP config (php-config): $(php-config --version)"
+          if command -v php-config >/dev/null 2>&1; then
+            echo "PHP config (php-config): $(php-config --version)"
+          else
+            echo "PHP config (php-config): not available"
+          fi
           echo "PHP ini: $(php --ini)"
           echo "Composer version: $(composer --version)"
 

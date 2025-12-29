@@ -91,7 +91,7 @@ Extract text, metadata, and structure from any supported document format:
 ```ruby
 require 'kreuzberg'
 
-result = Kreuzberg.extract_file_sync('document.pdf')
+result = Kreuzberg.extract_file_sync(path: 'document.pdf')
 
 puts "Content:"
 puts result.content
@@ -121,7 +121,7 @@ ocr_config = Kreuzberg::Config::OCR.new(
 )
 
 config = Kreuzberg::Config::Extraction.new(ocr: ocr_config)
-result = Kreuzberg.extract_file_sync('scanned.pdf', config: config)
+result = Kreuzberg.extract_file_sync(path: 'scanned.pdf', config: config)
 
 puts "Extracted text from scanned document:"
 puts result.content
@@ -140,7 +140,7 @@ require 'kreuzberg'
 puts "Kreuzberg version: #{Kreuzberg::VERSION}"
 puts "FFI bindings loaded successfully"
 
-result = Kreuzberg.extract_file_sync('sample.pdf')
+result = Kreuzberg.extract_file_sync(path: 'sample.pdf')
 puts "Installation verified! Extracted #{result.content.length} characters"
 ```
 
@@ -156,7 +156,7 @@ config = Kreuzberg::Config::Extraction.new(
   enable_quality_processing: true
 )
 
-result = Kreuzberg.extract_file_sync('contract.pdf', config: config)
+result = Kreuzberg.extract_file_sync(path: 'contract.pdf', config: config)
 
 puts "Extracted #{result.content.length} characters"
 puts "Quality score: #{result.metadata&.dig('quality_score')}"
@@ -273,7 +273,7 @@ ocr_config = Kreuzberg::Config::OCR.new(
 )
 
 config = Kreuzberg::Config::Extraction.new(ocr: ocr_config)
-result = Kreuzberg.extract_file_sync('scanned.pdf', config: config)
+result = Kreuzberg.extract_file_sync(path: 'scanned.pdf', config: config)
 
 puts "Extracted text from scanned document:"
 puts result.content
@@ -292,7 +292,7 @@ config = Kreuzberg::Config::Extraction.new(
   enable_quality_processing: true
 )
 
-result = Kreuzberg.extract_file_sync('contract.pdf', config: config)
+result = Kreuzberg.extract_file_sync(path: 'contract.pdf', config: config)
 
 puts "Extracted #{result.content.length} characters"
 puts "Quality score: #{result.metadata&.dig('quality_score')}"
@@ -321,7 +321,7 @@ require 'kreuzberg'
 puts "Kreuzberg version: #{Kreuzberg::VERSION}"
 puts "FFI bindings loaded successfully"
 
-result = Kreuzberg.extract_file_sync('sample.pdf')
+result = Kreuzberg.extract_file_sync(path: 'sample.pdf')
 puts "Installation verified! Extracted #{result.content.length} characters"
 ```
 

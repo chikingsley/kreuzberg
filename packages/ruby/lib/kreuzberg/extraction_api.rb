@@ -14,7 +14,7 @@ module Kreuzberg
     # @example Extract a PDF file
     # @example Extract with explicit MIME type
     # @example Extract with OCR enabled
-    def extract_file_sync(path, mime_type: nil, config: nil)
+    def extract_file_sync(path:, mime_type: nil, config: nil)
       opts = normalize_config(config)
       hash = if mime_type
                native_extract_file_sync(path.to_s, mime_type.to_s, **opts)
@@ -52,7 +52,7 @@ module Kreuzberg
     # @example Extract from a network stream
     #   response = HTTParty.get("https://example.com/document.docx")
     #   result = Kreuzberg.extract_bytes_sync(response.body, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    def extract_bytes_sync(data, mime_type, config: nil)
+    def extract_bytes_sync(data:, mime_type:, config: nil)
       opts = normalize_config(config)
       hash = native_extract_bytes_sync(data.to_s, mime_type.to_s, **opts)
       result = Result.new(hash)
@@ -91,7 +91,7 @@ module Kreuzberg
     #   paths = Dir.glob("documents/*.pdf")
     #   config = Kreuzberg::Config::Extraction.new(force_ocr: true)
     #   results = Kreuzberg.batch_extract_files_sync(paths, config: config)
-    def batch_extract_files_sync(paths, config: nil)
+    def batch_extract_files_sync(paths:, config: nil)
       opts = normalize_config(config)
       hashes = native_batch_extract_files_sync(paths.map(&:to_s), **opts)
       results = hashes.map { |hash| Result.new(hash) }
@@ -129,7 +129,7 @@ module Kreuzberg
     #     ocr: Kreuzberg::Config::OCR.new(language: "deu")
     #   )
     #   result = Kreuzberg.extract_file("document.pdf", config: config)
-    def extract_file(path, mime_type: nil, config: nil)
+    def extract_file(path:, mime_type: nil, config: nil)
       opts = normalize_config(config)
       hash = if mime_type
                native_extract_file(path.to_s, mime_type.to_s, **opts)
@@ -171,7 +171,7 @@ module Kreuzberg
     #     image_extraction: Kreuzberg::Config::ImageExtraction.new(extract_images: true)
     #   )
     #   result = Kreuzberg.extract_bytes(data, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", config: config)
-    def extract_bytes(data, mime_type, config: nil)
+    def extract_bytes(data:, mime_type:, config: nil)
       opts = normalize_config(config)
       hash = native_extract_bytes(data.to_s, mime_type.to_s, **opts)
       result = Result.new(hash)
@@ -212,7 +212,7 @@ module Kreuzberg
     #     chunking: Kreuzberg::Config::Chunking.new(max_chars: 1000, max_overlap: 200)
     #   )
     #   results = Kreuzberg.batch_extract_files(paths, config: config)
-    def batch_extract_files(paths, config: nil)
+    def batch_extract_files(paths:, config: nil)
       opts = normalize_config(config)
       hashes = native_batch_extract_files(paths.map(&:to_s), **opts)
       results = hashes.map { |hash| Result.new(hash) }
@@ -251,7 +251,7 @@ module Kreuzberg
     #   types = ["application/pdf", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
     #   results = Kreuzberg.batch_extract_bytes_sync(data, types)
     #   results.each { |r| puts r.content }
-    def batch_extract_bytes_sync(data_array, mime_types, config: nil)
+    def batch_extract_bytes_sync(data_array:, mime_types:, config: nil)
       opts = normalize_config(config)
       hashes = native_batch_extract_bytes_sync(data_array.map(&:to_s), mime_types.map(&:to_s), **opts)
       results = hashes.map { |hash| Result.new(hash) }
@@ -295,7 +295,7 @@ module Kreuzberg
     #   types = ["image/png", "image/png", "image/png"]
     #   config = Kreuzberg::Config::Extraction.new(force_ocr: true)
     #   results = Kreuzberg.batch_extract_bytes(data, types, config: config)
-    def batch_extract_bytes(data_array, mime_types, config: nil)
+    def batch_extract_bytes(data_array:, mime_types:, config: nil)
       opts = normalize_config(config)
       hashes = native_batch_extract_bytes(data_array.map(&:to_s), mime_types.map(&:to_s), **opts)
       results = hashes.map { |hash| Result.new(hash) }

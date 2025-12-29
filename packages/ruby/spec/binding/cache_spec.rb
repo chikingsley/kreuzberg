@@ -19,8 +19,8 @@ RSpec.describe 'Cache Management' do
 
   describe 'clear_cache' do
     it 'removes all cached results' do
-      Kreuzberg.extract_file_sync(test_pdf)
-      Kreuzberg.extract_file_sync(test_text)
+      Kreuzberg.extract_file_sync(path: test_pdf)
+      Kreuzberg.extract_file_sync(path: test_text)
 
       stats_before = Kreuzberg.cache_stats
       expect(stats_before['total_entries']).to be_positive
@@ -47,10 +47,10 @@ RSpec.describe 'Cache Management' do
     end
 
     it 'does not affect future extractions' do
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       Kreuzberg.clear_cache
 
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result).to be_a(Kreuzberg::Result)
       expect(result.content).not_to be_empty
@@ -77,7 +77,7 @@ RSpec.describe 'Cache Management' do
     it 'shows entries after extractions' do
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       stats = Kreuzberg.cache_stats
 
       expect(stats['total_entries']).to be_positive
@@ -86,7 +86,7 @@ RSpec.describe 'Cache Management' do
     it 'shows total size in bytes' do
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       stats = Kreuzberg.cache_stats
 
       expect(stats['total_size_bytes']).to be_positive
@@ -95,10 +95,10 @@ RSpec.describe 'Cache Management' do
     it 'increases stats with multiple extractions' do
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       stats_after_one = Kreuzberg.cache_stats
 
-      Kreuzberg.extract_file_sync(test_text)
+      Kreuzberg.extract_file_sync(path: test_text)
       stats_after_two = Kreuzberg.cache_stats
 
       expect(stats_after_two['total_entries']).to be >= stats_after_one['total_entries']
@@ -111,11 +111,11 @@ RSpec.describe 'Cache Management' do
       stats_initial = Kreuzberg.cache_stats
       expect(stats_initial['total_entries']).to eq(0)
 
-      result1 = Kreuzberg.extract_file_sync(test_pdf)
+      result1 = Kreuzberg.extract_file_sync(path: test_pdf)
       stats_after_first = Kreuzberg.cache_stats
       expect(stats_after_first['total_entries']).to be_positive
 
-      result2 = Kreuzberg.extract_file_sync(test_pdf)
+      result2 = Kreuzberg.extract_file_sync(path: test_pdf)
       stats_after_second = Kreuzberg.cache_stats
 
       expect(result1.content).to eq(result2.content)
@@ -125,10 +125,10 @@ RSpec.describe 'Cache Management' do
     it 'tracks different files separately' do
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       stats_after_pdf = Kreuzberg.cache_stats
 
-      Kreuzberg.extract_file_sync(test_text)
+      Kreuzberg.extract_file_sync(path: test_text)
       stats_after_text = Kreuzberg.cache_stats
 
       expect(stats_after_text['total_entries']).to be >= stats_after_pdf['total_entries']
@@ -138,11 +138,11 @@ RSpec.describe 'Cache Management' do
       Kreuzberg.clear_cache
 
       Time.now
-      result1 = Kreuzberg.extract_file_sync(test_pdf)
+      result1 = Kreuzberg.extract_file_sync(path: test_pdf)
       Time.now
 
       Time.now
-      result2 = Kreuzberg.extract_file_sync(test_pdf)
+      result2 = Kreuzberg.extract_file_sync(path: test_pdf)
       Time.now
 
       expect(result1.content).to eq(result2.content)
@@ -150,11 +150,11 @@ RSpec.describe 'Cache Management' do
     end
 
     it 'clears cache between extractions when requested' do
-      result1 = Kreuzberg.extract_file_sync(test_pdf)
+      result1 = Kreuzberg.extract_file_sync(path: test_pdf)
 
       Kreuzberg.clear_cache
 
-      result2 = Kreuzberg.extract_file_sync(test_pdf)
+      result2 = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result1.content).to eq(result2.content)
     end
@@ -167,10 +167,10 @@ RSpec.describe 'Cache Management' do
       config1 = Kreuzberg::Config::Extraction.new(use_cache: true)
       config2 = Kreuzberg::Config::Extraction.new(use_cache: false)
 
-      Kreuzberg.extract_file_sync(test_pdf, config: config1)
+      Kreuzberg.extract_file_sync(path: test_pdf, config: config1)
       stats_after_first = Kreuzberg.cache_stats
 
-      Kreuzberg.extract_file_sync(test_pdf, config: config2)
+      Kreuzberg.extract_file_sync(path: test_pdf, config: config2)
       stats_after_second = Kreuzberg.cache_stats
 
       expect(stats_after_second['total_entries']).to eq(stats_after_first['total_entries'])
@@ -179,8 +179,8 @@ RSpec.describe 'Cache Management' do
 
   describe 'cache stats consistency' do
     it 'stats remain consistent after clear' do
-      Kreuzberg.extract_file_sync(test_pdf)
-      Kreuzberg.extract_file_sync(test_text)
+      Kreuzberg.extract_file_sync(path: test_pdf)
+      Kreuzberg.extract_file_sync(path: test_text)
 
       Kreuzberg.clear_cache
       stats = Kreuzberg.cache_stats
@@ -192,12 +192,12 @@ RSpec.describe 'Cache Management' do
     it 'stats update correctly after new extractions' do
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_pdf)
+      Kreuzberg.extract_file_sync(path: test_pdf)
       Kreuzberg.cache_stats
 
       Kreuzberg.clear_cache
 
-      Kreuzberg.extract_file_sync(test_text)
+      Kreuzberg.extract_file_sync(path: test_text)
       stats2 = Kreuzberg.cache_stats
 
       expect(stats2['total_entries']).to be_positive

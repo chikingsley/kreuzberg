@@ -158,7 +158,7 @@ RSpec.describe 'Kreuzberg package' do
   describe 'basic extraction smoke tests' do
     it 'extracts inline text via bytes API' do
       bytes = StringIO.new('Hello from Kreuzberg')
-      result = Kreuzberg.extract_bytes_sync(bytes.string, 'text/plain')
+      result = Kreuzberg.extract_bytes_sync(data: bytes.string, mime_type: 'text/plain')
 
       expect(result.content).to include('Hello')
       expect(result.mime_type).to eq('text/plain')
@@ -166,7 +166,7 @@ RSpec.describe 'Kreuzberg package' do
 
     it 'extracts from small temp file via sync API' do
       file = create_test_file('Simple document for smoke testing')
-      result = Kreuzberg.extract_file_sync(file)
+      result = Kreuzberg.extract_file_sync(path: file)
 
       expect(result.content).to include('Simple document')
       expect(result.mime_type).to eq('text/plain')

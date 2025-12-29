@@ -19,7 +19,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       end
 
       Kreuzberg.register_post_processor('upcase', processor)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(processor_called).to be true
       expect(result.content).to eq(result.content.upcase)
@@ -32,7 +32,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       end
 
       Kreuzberg.register_post_processor('prefix', processor)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.content).to start_with('[PROCESSED]')
     end
@@ -45,7 +45,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       end
 
       Kreuzberg.register_post_processor('metadata_adder', processor)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['custom_field']).to eq('custom_value')
       expect(result.metadata['word_count']).to be_positive
@@ -67,7 +67,7 @@ RSpec.describe 'PostProcessor Plugin System' do
 
       processor = WordCountProcessor.new
       Kreuzberg.register_post_processor('word_count', processor)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['word_count']).to be_positive
       expect(result.metadata['processor_name']).to eq('WordCountProcessor')
@@ -89,7 +89,7 @@ RSpec.describe 'PostProcessor Plugin System' do
 
       processor = TruncateProcessor.new(50)
       Kreuzberg.register_post_processor('truncate', processor)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.content.length).to be <= 53
     end
@@ -109,7 +109,7 @@ RSpec.describe 'PostProcessor Plugin System' do
 
       Kreuzberg.register_post_processor('proc1', processor1)
       Kreuzberg.register_post_processor('proc2', processor2)
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['processor1']).to eq('executed')
       expect(result.metadata['processor2']).to eq('executed')
@@ -125,7 +125,7 @@ RSpec.describe 'PostProcessor Plugin System' do
 
       Kreuzberg.register_post_processor('removable', processor)
       Kreuzberg.unregister_post_processor('removable')
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['should_not_appear']).to be_nil
     end
@@ -151,7 +151,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       Kreuzberg.register_post_processor('keep3', processor3)
 
       Kreuzberg.unregister_post_processor('remove')
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['keep1']).to eq('value1')
       expect(result.metadata['remove']).to be_nil
@@ -175,7 +175,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       Kreuzberg.register_post_processor('proc2', processor2)
 
       Kreuzberg.clear_post_processors
-      result = Kreuzberg.extract_file_sync(test_pdf)
+      result = Kreuzberg.extract_file_sync(path: test_pdf)
 
       expect(result.metadata['proc1']).to be_nil
       expect(result.metadata['proc2']).to be_nil
@@ -191,7 +191,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       Kreuzberg.register_post_processor('failing', processor)
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.to raise_error(StandardError, /Post-processor error/)
     end
 
@@ -203,7 +203,7 @@ RSpec.describe 'PostProcessor Plugin System' do
       Kreuzberg.register_post_processor('invalid', processor)
 
       expect do
-        Kreuzberg.extract_file_sync(test_pdf)
+        Kreuzberg.extract_file_sync(path: test_pdf)
       end.to raise_error
     end
   end

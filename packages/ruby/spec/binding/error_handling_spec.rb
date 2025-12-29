@@ -104,7 +104,7 @@ RSpec.describe 'Error Handling' do
     it 'raises error for non-existent file with meaningful message' do
       # rubocop:disable Style/MultilineBlockChain
       expect do
-        Kreuzberg.extract_file_sync('/nonexistent/path/file.txt')
+        Kreuzberg.extract_file_sync(path: '/nonexistent/path/file.txt')
       end.to raise_error do |error|
         expect(error).to be_a(StandardError)
         expect(error.message).not_to be_empty
@@ -114,13 +114,13 @@ RSpec.describe 'Error Handling' do
 
     it 'raises error for empty file path' do
       expect do
-        Kreuzberg.extract_file_sync('')
+        Kreuzberg.extract_file_sync(path: '')
       end.to raise_error(StandardError)
     end
 
     it 'raises error for nil file path' do
       expect do
-        Kreuzberg.extract_file_sync(nil)
+        Kreuzberg.extract_file_sync(path: nil)
       end.to raise_error(StandardError)
     end
 
@@ -129,7 +129,7 @@ RSpec.describe 'Error Handling' do
       corrupted_path = create_test_file("\x00\x01\x02\xFF\xFE\xFD", filename: 'corrupted.bin')
 
       begin
-        result = Kreuzberg.extract_file_sync(corrupted_path, mime_type: 'application/octet-stream')
+        result = Kreuzberg.extract_file_sync(path: corrupted_path, mime_type: 'application/octet-stream')
         # May succeed with empty content or raise error - both acceptable
         expect(result).to be_a(Kreuzberg::Result)
       rescue Kreuzberg::Errors::ParsingError => e
@@ -198,7 +198,7 @@ RSpec.describe 'Error Handling' do
       File.chmod(0o000, test_file)
 
       begin
-        Kreuzberg.extract_file_sync(test_file)
+        Kreuzberg.extract_file_sync(path: test_file)
       ensure
         File.chmod(0o644, test_file)
       end
@@ -323,7 +323,7 @@ RSpec.describe 'Error Handling' do
       errors = []
 
       3.times do |i|
-        Kreuzberg.extract_file_sync("/nonexistent#{i}.pdf")
+        Kreuzberg.extract_file_sync(path: "/nonexistent#{i}.pdf")
       rescue StandardError => e
         errors << e
       end
@@ -338,7 +338,7 @@ RSpec.describe 'Error Handling' do
       # First operation: try to extract from nonexistent file
       error_caught = false
       begin
-        Kreuzberg.extract_file_sync('/nonexistent/does_not_exist.txt')
+        Kreuzberg.extract_file_sync(path: '/nonexistent/does_not_exist.txt')
       rescue StandardError
         error_caught = true
       end
@@ -347,7 +347,7 @@ RSpec.describe 'Error Handling' do
 
       # Second operation: should work fine with valid file
       valid_file = create_test_file('Valid content after error')
-      result = Kreuzberg.extract_file_sync(valid_file)
+      result = Kreuzberg.extract_file_sync(path: valid_file)
 
       expect(result).to be_a(Kreuzberg::Result)
     end
@@ -357,7 +357,7 @@ RSpec.describe 'Error Handling' do
 
       # Try invalid file
       begin
-        Kreuzberg.extract_file_sync('/nonexistent/file1.txt')
+        Kreuzberg.extract_file_sync(path: '/nonexistent/file1.txt')
       rescue StandardError
         results << :error1
       end
@@ -369,7 +369,7 @@ RSpec.describe 'Error Handling' do
 
       # Another invalid file
       begin
-        Kreuzberg.extract_file_sync('/nonexistent/file2.txt')
+        Kreuzberg.extract_file_sync(path: '/nonexistent/file2.txt')
       rescue StandardError
         results << :error2
       end
@@ -381,7 +381,7 @@ RSpec.describe 'Error Handling' do
   describe 'type conversion and coercion errors' do
     it 'handles non-string content in results gracefully' do
       path = create_test_file('Type coercion test')
-      result = Kreuzberg.extract_file_sync(path)
+      result = Kreuzberg.extract_file_sync(path: path)
 
       expect(result.content).to be_a(String)
       expect(result.mime_type).to be_a(String)
