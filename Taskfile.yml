@@ -113,39 +113,10 @@ tasks:
       - task: elixir:test
 
 
-  format:
-    desc: Format code for all languages (with modifications)
-    cmds:
-      - task: toml:format
-      - task: rust:format
-      - task: python:format
-      - task: ruby:format
-      - task: node:format
-      - task: java:format
-      - task: go:format
-      - task: csharp:format
-      - task: php:format
-      - task: elixir:format
-
-  format:check:
-    desc: Check code formatting without modifications
-    cmds:
-      - task: toml:format:check
-      - task: rust:format:check
-      - task: python:format:check
-      - task: ruby:format:check
-      - task: node:format:check
-      - task: java:format:check
-      - task: go:format:check
-      - task: csharp:format:check
-      - task: php:format:check
-      - task: elixir:format:check
-
   check:
-    desc: Run all checks without modifications (lint + format checks)
+    desc: Run all linting and formatting checks via prek
     cmds:
-      - task: lint:check
-      - task: format:check
+      - task: lint
 
   update:
     desc: Update all dependencies to latest versions
@@ -222,35 +193,9 @@ tasks:
       - task: _test_wf:all:ci
 
   lint:
-    desc: Run all linters with auto-fix across all languages
+    desc: Run all linters and formatters via prek (pre-commit framework)
     cmds:
-      - task: rust:lint
-      - task: python:lint
-      - task: node:lint
-      - task: go:lint
-      - task: java:lint
-      - task: csharp:lint
-      - task: wasm:lint
-      - task: ruby:lint
-      - task: php:lint
-      - task: elixir:lint
-
-  lint:check:
-    desc: Run all linters in check-only mode (no modifications)
-    cmds:
-      - task: toml:format:check
-      - task: shell:lint:check
-      - task: github:lint
-      - task: rust:lint:check
-      - task: python:lint:check
-      - task: node:lint:check
-      - task: go:lint:check
-      - task: java:lint:check
-      - task: csharp:lint:check
-      - task: wasm:lint:check
-      - task: ruby:lint:check
-      - task: php:lint:check
-      - task: elixir:lint:check
+      - prek run --all-files
 
   e2e:generate:all:
     desc: Generate all E2E tests from fixtures across all supported languages

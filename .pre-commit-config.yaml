@@ -1,15 +1,18 @@
 default_install_hook_types:
   - pre-commit
   - commit-msg
-exclude: ^docs/snippets/|vendor/|node_modules/|target/|v3/|invalid*
+exclude: ^docs/snippets/|vendor/|node_modules/|target/|v3/|invalid*|dist/|artifacts/
 
 repos:
+  # Commit message linting
   - repo: https://github.com/Goldziher/gitfluff
     rev: v0.7.0
     hooks:
       - id: gitfluff-lint
         args: ["--write"]
         stages: [commit-msg]
+
+  # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -24,77 +27,91 @@ repos:
         args: ["--allow-multiple-documents"]
       - id: check-toml
       - id: check-case-conflict
+
+  # TOML formatting
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+
+  # Python: ruff (linting + formatting) + mypy (type checking)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^packages/python/
+      - id: ruff-format
+        files: ^packages/python/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+        files: ^packages/python/
+        additional_dependencies: []
+
+  # Rust: formatting, linting, and license checking
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+        files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
+      - id: clippy
+        files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
+        args: ["--workspace", "--all-features", "--all-targets", "--", "-D", "warnings"]
+
+  - repo: https://github.com/EmbarkStudios/cargo-deny
+    rev: 0.18.9
+    hooks:
+      - id: cargo-deny
+        args: ["check"]
+        files: ^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml|deny\.toml)$
+
+  # Node.js/TypeScript: biome (formatting + linting)
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.3.10
+    hooks:
+      - id: biome-check
+        files: ^(crates/kreuzberg-node|crates/kreuzberg-wasm)/
+        args: ["--write", "--unsafe"]
+
+  # Go: formatting and linting
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        files: ^packages/go/v4/.*\.go$
+
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.7.2
+    hooks:
+      - id: golangci-lint
+        files: ^packages/go/v4/
+        args: ["--fix"]
+
+  # Shell scripts: formatting and linting
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+        args: ["-w", "-i", "2"]
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+      - id: shellcheck
+
+  # GitHub Actions: linting
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.10
+    hooks:
+      - id: actionlint
+
+  # Local hooks for unsupported languages (Ruby, Java, C#, PHP)
   - repo: local
     hooks:
-      # TOML Formatting - using task command
-      - id: toml-format
-        name: Format TOML files
-        entry: task toml:format
-        language: system
-        files: \.toml$
-        pass_filenames: false
-        require_serial: true
-      # Python Linting and Formatting - using task commands
-      - id: python-lint-check
-        name: Check Python linting (ruff + mypy)
-        entry: task python:lint:check
-        language: system
-        types: [python]
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      - id: python-format
-        name: Format Python code
-        entry: task python:format
-        language: system
-        types: [python]
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Rust Linting and Formatting - using task commands
-      - id: rust-format-check
-        name: Check Rust formatting
-        entry: task rust:format:check
-        language: system
-        files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      - id: rust-lint-check
-        name: Check Rust linting (clippy)
-        entry: task rust:lint:check
-        language: system
-        files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Rust dependency licenses - using task command
-      - id: rust-licenses
-        name: Check Rust dependency licenses
-        entry: task rust:licenses
-        language: system
-        files: ^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml|deny\.toml)$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Node/TypeScript Linting and Formatting - using task commands
-      - id: node-format-check
-        name: Check TypeScript formatting (biome)
-        entry: task node:format:check
-        language: system
-        files: ^crates/kreuzberg-node/
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      - id: node-lint-check
-        name: Check Node/TypeScript linting
-        entry: task node:lint:check
-        language: system
-        files: ^crates/kreuzberg-node/
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Ruby Linting and Formatting - using task commands
+      # Ruby - prek doesn't support Ruby yet
       - id: ruby-format-check
         name: Check Ruby formatting (rubocop)
         entry: task ruby:format:check
@@ -103,6 +120,7 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
+
       - id: ruby-lint-check
         name: Check Ruby linting (rubocop + steep)
         entry: task ruby:lint:check
@@ -111,24 +129,8 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
-      # Go Linting and Formatting - using task commands
-      - id: go-format-check
-        name: Check Go formatting
-        entry: task go:format:check
-        language: system
-        files: ^packages/go/v4/.*\.go$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      - id: go-lint-check
-        name: Check Go linting (golangci-lint)
-        entry: task go:lint:check
-        language: system
-        files: ^packages/go/v4/
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Java Linting and Formatting - using task commands
+
+      # Java - prek doesn't support Java
       - id: java-format-check
         name: Check Java formatting (spotless)
         entry: task java:format:check
@@ -137,6 +139,7 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
+
       - id: java-lint-check
         name: Check Java linting (checkstyle + pmd)
         entry: task java:lint:check
@@ -145,7 +148,8 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
-      # C# Linting and Formatting - using task commands
+
+      # C# - prek doesn't support C#
       - id: csharp-format-check
         name: Check C# formatting (dotnet format)
         entry: task csharp:format:check
@@ -154,6 +158,7 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
+
       - id: csharp-lint-check
         name: Check C# linting (dotnet format verify)
         entry: task csharp:lint:check
@@ -162,7 +167,8 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
-      # PHP Linting and Formatting - using task commands
+
+      # PHP - prek doesn't support PHP
       - id: php-format-check
         name: Check PHP formatting (php-cs-fixer)
         entry: task php:format:check
@@ -171,29 +177,12 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [commit]
+
       - id: php-lint-check
         name: Check PHP linting (phpstan + php-cs-fixer)
         entry: task php:lint:check
         language: system
         files: ^packages/php/.*\.php$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # Shell scripts linting - using task command
-      - id: shell-lint-check
-        name: Check shell scripts (shfmt + shellcheck)
-        entry: task shell:lint:check
-        language: system
-        files: \.sh$
-        pass_filenames: false
-        require_serial: true
-        stages: [commit]
-      # GitHub Actions linting - using task command
-      - id: github-actions-lint
-        name: Lint GitHub Actions workflows (actionlint)
-        entry: task github:lint
-        language: system
-        files: ^\.github/workflows/.*\.ya?ml$
         pass_filenames: false
         require_serial: true
         stages: [commit]

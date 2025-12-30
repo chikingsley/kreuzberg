@@ -166,41 +166,17 @@ jobs:
         run: scripts/ci/validate/show-disk-space.sh "Disk space before tool installations"
         shell: bash
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
-        shell: bash
-
       - name: Install Task
         uses: ./.github/actions/install-task
-
-      - name: Install taplo (with cargo cleanup)
-        run: scripts/ci/validate/install-taplo.sh
-        shell: bash
-
-      - name: Install cargo-deny (with cargo cleanup)
-        run: scripts/ci/validate/install-cargo-deny.sh
-        shell: bash
-
-      - name: Install shfmt
-        run: scripts/ci/validate/install-shfmt.sh
-        shell: bash
-
-      - name: Install actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@latest
-        shell: bash
-
-      - name: Cache Prek
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/prek/
-          key: prek-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.pre-commit-config.yaml') }}-v2
 
       - name: Check disk space before lint
         run: scripts/ci/validate/show-disk-space.sh "Disk space before lint"
         shell: bash
 
-      - name: Run lint checks
-        run: task lint:check
+      - name: Run prek hooks
+        uses: j178/prek-action@v1.0.11
+        with:
+          args: run --all-files --show-diff-on-failure
 
       - name: Check final disk space
         if: always()
