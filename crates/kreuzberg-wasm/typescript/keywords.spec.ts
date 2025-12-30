@@ -399,7 +399,8 @@ describe("Keyword Extraction (WASM Bindings)", () => {
 				},
 			};
 
-			const text = "Keywords are limited by max_keywords configuration parameter. " +
+			const text =
+				"Keywords are limited by max_keywords configuration parameter. " +
 				"This text contains many potential keywords and terms.";
 			const textBytes = new TextEncoder().encode(text);
 			const result = extractBytesSync(textBytes, "text/plain", config);
@@ -421,7 +422,8 @@ describe("Keyword Extraction (WASM Bindings)", () => {
 				},
 			};
 
-			const text = "Keywords are limited by max_keywords configuration parameter. " +
+			const text =
+				"Keywords are limited by max_keywords configuration parameter. " +
 				"This text contains many potential keywords and terms.";
 			const textBytes = new TextEncoder().encode(text);
 			const result = extractBytesSync(textBytes, "text/plain", config);
@@ -705,7 +707,8 @@ describe("Keyword Extraction (WASM Bindings)", () => {
 				},
 			};
 
-			const text = "REST API endpoints, OAuth 2.0 authentication, and JSON Web Tokens enable " +
+			const text =
+				"REST API endpoints, OAuth 2.0 authentication, and JSON Web Tokens enable " +
 				"secure microservices architecture with containerized deployment.";
 			const textBytes = new TextEncoder().encode(text);
 			const result = extractBytesSync(textBytes, "text/plain", config);

@@ -71,7 +71,7 @@ new_formula=$(echo "$new_formula" | sed '/# bottle do/,/# end/d')
 
 # Insert bottle block before depends_on line using awk (more reliable than sed for multiline)
 new_formula=$(echo "$new_formula" | awk -v bottle="$bottle_block" '
-  /^  depends_on/ { print bottle; print ""; }
+  /^  depends_on/ && !inserted { print bottle; print ""; inserted=1 }
   { print }
 ')
 

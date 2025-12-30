@@ -13,10 +13,7 @@ let samplePdfBytes: Uint8Array;
 
 beforeAll(async () => {
 	await initWasm();
-	const pdfPath = new URL(
-		"../../../tests/fixtures/documents/pdf/simple.pdf",
-		import.meta.url,
-	).pathname;
+	const pdfPath = new URL("../../../tests/fixtures/documents/pdf/simple.pdf", import.meta.url).pathname;
 	samplePdfBytes = new Uint8Array(readFileSync(pdfPath));
 });
 
@@ -33,11 +30,15 @@ describe("Table Extraction (WASM)", () => {
 				if (table.cells?.length > 0) {
 					table.cells.forEach((row) => {
 						expect(Array.isArray(row)).toBe(true);
-						row.forEach((cell) => expect(typeof cell).toBe("string"));
+						row.forEach((cell) => {
+							expect(typeof cell).toBe("string");
+						});
 					});
 				}
 				if (table.headers) {
-					table.headers.forEach((h) => expect(typeof h).toBe("string"));
+					table.headers.forEach((h) => {
+						expect(typeof h).toBe("string");
+					});
 				}
 			}
 		});
@@ -45,9 +46,11 @@ describe("Table Extraction (WASM)", () => {
 		it("should extract rows from table structure", () => {
 			const result = extractBytesSync(samplePdfBytes, "application/pdf", {});
 			if (result.tables[0]?.rows) {
-				result.tables[0].rows.forEach((row) =>
-					row.forEach((cell) => expect(typeof cell).toBe("string")),
-				);
+				result.tables[0].rows.forEach((row) => {
+					row.forEach((cell) => {
+						expect(typeof cell).toBe("string");
+					});
+				});
 			}
 		});
 	});
@@ -160,9 +163,7 @@ describe("Table Extraction (WASM)", () => {
 			const emptyTable: Table = { cells: [], markdown: "" };
 			expect(emptyTable.cells.length).toBe(0);
 
-			const htmlBytes = new TextEncoder().encode(
-				"<table><tr><th>H</th></tr><tr><td>C</td></tr></table>",
-			);
+			const htmlBytes = new TextEncoder().encode("<table><tr><th>H</th></tr><tr><td>C</td></tr></table>");
 			const result = extractBytesSync(htmlBytes, "text/html", {});
 			expect(Array.isArray(result.tables)).toBe(true);
 		});

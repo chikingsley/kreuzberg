@@ -102,7 +102,7 @@ task format
 task format:check
 
 # Run all linters (with auto-fix)
-task lint:all
+task lint
 
 # Check linting without modifications
 task lint:check
@@ -415,13 +415,13 @@ Lint checks ensure code quality and consistency:
 
 ```bash
 # Run all linters with auto-fix
-task lint:all
+task lint
 
 # Check only (no modifications)
 task lint:check
 ```
 
-Supported linters vary by language. Check `task -h lint:all` for details.
+Supported linters vary by language. Check `task -h lint` for details.
 
 ### Pre-commit Hooks
 

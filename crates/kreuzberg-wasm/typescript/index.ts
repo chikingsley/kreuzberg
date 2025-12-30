@@ -99,20 +99,6 @@ import { registerOcrBackend } from "./ocr/registry.js";
 import { TesseractWasmBackend } from "./ocr/tesseract-wasm-backend.js";
 import { detectRuntime, hasWasm, isBrowser } from "./runtime.js";
 import type { ExtractionConfig as ExtractionConfigType, ExtractionResult } from "./types.js";
-import {
-	clearPostProcessors,
-	clearValidators,
-	getPostProcessor,
-	getValidator,
-	listPostProcessors,
-	listValidators,
-	registerPostProcessor,
-	registerValidator,
-	unregisterPostProcessor,
-	unregisterValidator,
-	type PostProcessor,
-	type Validator,
-} from "./plugin-registry.js";
 
 export {
 	configToJS,
@@ -136,11 +122,11 @@ export {
 	getValidator,
 	listPostProcessors,
 	listValidators,
+	type PostProcessor,
 	registerPostProcessor,
 	registerValidator,
 	unregisterPostProcessor,
 	unregisterValidator,
-	type PostProcessor,
 	type Validator,
 } from "./plugin-registry.js";
 export {

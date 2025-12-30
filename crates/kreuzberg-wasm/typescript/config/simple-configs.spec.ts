@@ -5,15 +5,15 @@
  * PageExtractionConfig, LanguageDetectionConfig, and TesseractConfig.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type {
-	TokenReductionConfig,
-	PostProcessorConfig,
-	PageExtractionConfig,
-	LanguageDetectionConfig,
-	TesseractConfig,
 	ExtractionConfig,
+	LanguageDetectionConfig,
 	OcrConfig,
+	PageExtractionConfig,
+	PostProcessorConfig,
+	TesseractConfig,
+	TokenReductionConfig,
 } from "../types";
 
 describe("WASM: TokenReductionConfig", () => {
@@ -320,12 +320,7 @@ describe("WASM: TesseractConfig", () => {
 
 	describe("edge cases", () => {
 		it("should handle various PSM values", () => {
-			const configs: TesseractConfig[] = [
-				{ psm: 0 },
-				{ psm: 3 },
-				{ psm: 6 },
-				{ psm: 11 },
-			];
+			const configs: TesseractConfig[] = [{ psm: 0 }, { psm: 3 }, { psm: 6 }, { psm: 11 }];
 
 			expect(configs).toHaveLength(4);
 			expect(configs[3].psm).toBe(11);

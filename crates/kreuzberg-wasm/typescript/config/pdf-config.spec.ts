@@ -5,8 +5,8 @@
  * extraction options including image extraction and passwords.
  */
 
-import { describe, it, expect } from "vitest";
-import type { PdfConfig, ExtractionConfig } from "../types";
+import { describe, expect, it } from "vitest";
+import type { ExtractionConfig, PdfConfig } from "../types";
 
 describe("WASM: PdfConfig", () => {
 	describe("type definitions", () => {

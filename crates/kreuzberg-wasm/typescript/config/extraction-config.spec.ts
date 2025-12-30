@@ -5,7 +5,7 @@
  * configuration types for comprehensive document extraction control.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ExtractionConfig } from "../types";
 
 describe("WASM: ExtractionConfig", () => {

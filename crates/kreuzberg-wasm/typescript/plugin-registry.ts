@@ -67,7 +67,9 @@ export interface Validator {
 	 * Validate an extraction result
 	 * Can be sync or async
 	 */
-	validate(result: ExtractionResult): { valid: boolean; errors: string[] } | Promise<{ valid: boolean; errors: string[] }>;
+	validate(
+		result: ExtractionResult,
+	): { valid: boolean; errors: string[] } | Promise<{ valid: boolean; errors: string[] }>;
 
 	/**
 	 * Shutdown the validator (optional)
@@ -138,9 +140,7 @@ export function registerPostProcessor(processor: PostProcessor): void {
 	const name = processor.name();
 
 	if (postProcessors.has(name)) {
-		console.warn(
-			`Post-processor "${name}" already registered, overwriting with new implementation`,
-		);
+		console.warn(`Post-processor "${name}" already registered, overwriting with new implementation`);
 	}
 
 	postProcessors.set(name, processor);
@@ -295,9 +295,7 @@ export function registerValidator(validator: Validator): void {
 	const name = validator.name();
 
 	if (validators.has(name)) {
-		console.warn(
-			`Validator "${name}" already registered, overwriting with new implementation`,
-		);
+		console.warn(`Validator "${name}" already registered, overwriting with new implementation`);
 	}
 
 	validators.set(name, validator);
@@ -405,16 +403,11 @@ export async function clearValidators(): Promise<void> {
  *
  * @internal
  */
-export function executePostProcessor(
-	name: string,
-	result: ExtractionResult,
-): Promise<ExtractionResult> {
+export function executePostProcessor(name: string, result: ExtractionResult): Promise<ExtractionResult> {
 	const processor = postProcessors.get(name);
 
 	if (!processor) {
-		return Promise.reject(
-			new Error(`Post-processor "${name}" is not registered`),
-		);
+		return Promise.reject(new Error(`Post-processor "${name}" is not registered`));
 	}
 
 	try {
@@ -426,9 +419,7 @@ export function executePostProcessor(
 
 		return Promise.resolve(output);
 	} catch (error) {
-		return Promise.reject(
-			new Error(`Error executing post-processor "${name}": ${String(error)}`),
-		);
+		return Promise.reject(new Error(`Error executing post-processor "${name}": ${String(error)}`));
 	}
 }
 
@@ -447,9 +438,7 @@ export function executeValidator(
 	const validator = validators.get(name);
 
 	if (!validator) {
-		return Promise.reject(
-			new Error(`Validator "${name}" is not registered`),
-		);
+		return Promise.reject(new Error(`Validator "${name}" is not registered`));
 	}
 
 	try {
@@ -461,9 +450,7 @@ export function executeValidator(
 
 		return Promise.resolve(output);
 	} catch (error) {
-		return Promise.reject(
-			new Error(`Error executing validator "${name}": ${String(error)}`),
-		);
+		return Promise.reject(new Error(`Error executing validator "${name}": ${String(error)}`));
 	}
 }
 

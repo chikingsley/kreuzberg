@@ -5,8 +5,8 @@
  * image extraction parameters including DPI and dimensions.
  */
 
-import { describe, it, expect } from "vitest";
-import type { ImageExtractionConfig, ExtractionConfig } from "../types";
+import { describe, expect, it } from "vitest";
+import type { ExtractionConfig, ImageExtractionConfig } from "../types";
 
 describe("WASM: ImageExtractionConfig", () => {
 	describe("type definitions", () => {

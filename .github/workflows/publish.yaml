@@ -2644,6 +2644,7 @@ jobs:
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
           DRY_RUN: ${{ needs.prepare.outputs.dry_run }}
+          PACKAGIST_API_TOKEN: ${{ secrets.PACKAGIST_API_TOKEN }}
         run: scripts/publish/php/publish-packagist.sh "${{ needs.prepare.outputs.version }}"
 
       - name: Ensure GitHub release exists

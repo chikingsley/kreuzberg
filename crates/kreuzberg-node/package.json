@@ -101,7 +101,7 @@
     "version": "napi version"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.5.0",
+    "@napi-rs/cli": "^3.5.1",
     "@types/archiver": "^7.0.0",
     "@types/node": "^25.0.3",
     "@types/which": "^3.0.4",

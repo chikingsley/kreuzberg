@@ -532,4 +532,3 @@ describe("Batch Operations: Result Validation", () => {
 		expect(results[0].metadata).toHaveProperty("wordCount");
 	});
 });
-

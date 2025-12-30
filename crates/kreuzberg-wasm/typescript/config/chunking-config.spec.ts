@@ -5,7 +5,7 @@
  * document chunking strategy and chunk parameters.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ChunkingConfig, ExtractionConfig } from "../types";
 
 describe("WASM: ChunkingConfig", () => {

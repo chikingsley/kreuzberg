@@ -11,22 +11,40 @@ fi
 VERSION="$1"
 DRY_RUN="${DRY_RUN:-false}"
 PACKAGE_NAME="kreuzberg/kreuzberg"
+PACKAGIST_API_TOKEN="${PACKAGIST_API_TOKEN:-}"
 
 echo "::group::Publishing to Packagist"
 echo "Package: ${PACKAGE_NAME}"
 echo "Version: ${VERSION}"
 echo "Dry run: ${DRY_RUN}"
 
-echo "::notice::Packagist updates automatically via GitHub webhook"
-echo "::notice::Waiting for Packagist to detect the new tag..."
-
 if [[ "$DRY_RUN" == "true" ]]; then
-	echo "::notice::Dry run mode - skipping Packagist verification"
+	echo "::notice::Dry run mode - skipping Packagist update"
 	echo "::endgroup::"
 	exit 0
 fi
 
-echo "Waiting 30 seconds for webhook processing..."
+# Trigger Packagist update using API token if available
+if [[ -n "$PACKAGIST_API_TOKEN" ]]; then
+	echo "::notice::Triggering Packagist update via API..."
+	UPDATE_RESPONSE=$(curl \
+		--silent \
+		--show-error \
+		--retry 3 \
+		--retry-delay 5 \
+		--request POST \
+		"https://packagist.org/api/update-package?username=kreuzberg-dev&apiToken=${PACKAGIST_API_TOKEN}" \
+		--data "{\"repository\": {\"url\": \"https://github.com/kreuzberg-dev/kreuzberg\"}}" \
+		--header "Content-Type: application/json" 2>&1 || echo '{"status":"error"}')
+
+	if echo "$UPDATE_RESPONSE" | jq -e '.status == "success"' >/dev/null 2>&1; then
+		echo "::notice::✓ Packagist update triggered successfully"
+	else
+		echo "::warning::Failed to trigger Packagist update via API, falling back to webhook"
+	fi
+fi
+
+echo "Waiting 30 seconds for package update..."
 sleep 30
 
 MAX_ATTEMPTS=12

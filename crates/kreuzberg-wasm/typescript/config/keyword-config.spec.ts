@@ -5,12 +5,8 @@
  * keyword extraction algorithms and parameters.
  */
 
-import { describe, it, expect } from "vitest";
-import type {
-	KeywordConfig,
-	KeywordAlgorithm,
-	ExtractionConfig,
-} from "../types";
+import { describe, expect, it } from "vitest";
+import type { ExtractionConfig, KeywordAlgorithm, KeywordConfig } from "../types";
 
 describe("WASM: KeywordConfig", () => {
 	describe("type definitions", () => {
@@ -218,11 +214,7 @@ describe("WASM: KeywordConfig", () => {
 		});
 
 		it("should handle ngram ranges", () => {
-			const configs: KeywordConfig[] = [
-				{ ngramRange: [1, 1] },
-				{ ngramRange: [1, 2] },
-				{ ngramRange: [2, 4] },
-			];
+			const configs: KeywordConfig[] = [{ ngramRange: [1, 1] }, { ngramRange: [1, 2] }, { ngramRange: [2, 4] }];
 
 			expect(configs).toHaveLength(3);
 			expect(configs[0].ngramRange).toEqual([1, 1]);

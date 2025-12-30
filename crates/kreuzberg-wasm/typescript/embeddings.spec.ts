@@ -191,7 +191,8 @@ describe("Embedding Generation (WASM Bindings)", () => {
 				},
 			};
 
-			const longText = "This is a long text that will be chunked. " +
+			const longText =
+				"This is a long text that will be chunked. " +
 				"Each chunk should have embeddings with same dimensions. " +
 				"Consistency matters for downstream processing.";
 
@@ -356,7 +357,8 @@ describe("Embedding Generation (WASM Bindings)", () => {
 				},
 			};
 
-			const text = "Consistency of normalization across multiple chunks. " +
+			const text =
+				"Consistency of normalization across multiple chunks. " +
 				"Each chunk should be properly normalized. " +
 				"This ensures uniform downstream processing.";
 
@@ -425,9 +427,7 @@ describe("Embedding Generation (WASM Bindings)", () => {
 				"Deep neural networks learn complex patterns.",
 			];
 
-			const results = texts.map((text) =>
-				extractBytesSync(new TextEncoder().encode(text), "text/plain", config)
-			);
+			const results = texts.map((text) => extractBytesSync(new TextEncoder().encode(text), "text/plain", config));
 
 			let embeddingDimension: number | null = null;
 
@@ -757,12 +757,7 @@ describe("Embedding Generation (WASM Bindings)", () => {
 			const result1 = extractBytesSync(textBytes, "text/plain", config);
 			const result2 = extractBytesSync(textBytes, "text/plain", config);
 
-			if (
-				result1.chunks &&
-				result2.chunks &&
-				result1.chunks.length > 0 &&
-				result2.chunks.length > 0
-			) {
+			if (result1.chunks && result2.chunks && result1.chunks.length > 0 && result2.chunks.length > 0) {
 				const emb1 = result1.chunks[0].embedding;
 				const emb2 = result2.chunks[0].embedding;
 

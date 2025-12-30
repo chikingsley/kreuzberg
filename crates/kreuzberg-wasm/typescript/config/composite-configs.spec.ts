@@ -5,12 +5,8 @@
  * HierarchyConfig, and FontConfig - focusing on their nesting and composition.
  */
 
-import { describe, it, expect } from "vitest";
-import type {
-	ExtractionConfig,
-	PdfConfig,
-	ImageExtractionConfig,
-} from "../types";
+import { describe, expect, it } from "vitest";
+import type { ExtractionConfig, ImageExtractionConfig, PdfConfig } from "../types";
 
 /**
  * Note: These tests are structured to work with the available config types
@@ -77,9 +73,7 @@ describe("WASM: Composite Configuration Tests", () => {
 			const cloned = structuredClone(config);
 
 			expect(cloned.pdfOptions?.extractImages).toBe(true);
-			expect(cloned.ocr?.tesseractConfig?.tesseditCharWhitelist).toBe(
-				"abc123"
-			);
+			expect(cloned.ocr?.tesseractConfig?.tesseditCharWhitelist).toBe("abc123");
 		});
 	});
 
@@ -134,11 +128,7 @@ describe("WASM: Composite Configuration Tests", () => {
 			const config: ExtractionConfig = {
 				pdfOptions: {
 					extractImages: true,
-					passwords: [
-						"password1",
-						"password2",
-						"password3",
-					],
+					passwords: ["password1", "password2", "password3"],
 					extractMetadata: true,
 				},
 			};

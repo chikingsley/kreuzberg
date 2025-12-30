@@ -237,9 +237,7 @@ describe("Batch Bytes Extraction (WASM Bindings)", () => {
 			const files = [{ data: samplePdfBytes, mimeType: "application/pdf" }];
 
 			// Create a large batch by repeating files
-			const largeBatch = Array(5)
-				.fill(files)
-				.flat();
+			const largeBatch = Array(5).fill(files).flat();
 
 			const results = await batchExtractBytes(largeBatch);
 
@@ -263,10 +261,7 @@ describe("Batch Bytes Extraction (WASM Bindings)", () => {
 			];
 
 			// Run multiple batches concurrently
-			const [results1, results2] = await Promise.all([
-				batchExtractBytes(files),
-				batchExtractBytes(files),
-			]);
+			const [results1, results2] = await Promise.all([batchExtractBytes(files), batchExtractBytes(files)]);
 
 			expect(results1.length).toBe(files.length);
 			expect(results2.length).toBe(files.length);
@@ -441,10 +436,7 @@ describe("Batch File Extraction (WASM Bindings)", () => {
 			const file1 = new File([samplePdfBytes], "test1.pdf", { type: "application/pdf" });
 			const file2 = new File([samplePdfBytes], "test2.pdf", { type: "application/pdf" });
 
-			const [results1, results2] = await Promise.all([
-				batchExtractFiles([file1]),
-				batchExtractFiles([file2]),
-			]);
+			const [results1, results2] = await Promise.all([batchExtractFiles([file1]), batchExtractFiles([file2])]);
 
 			expect(results1.length).toBe(1);
 			expect(results2.length).toBe(1);

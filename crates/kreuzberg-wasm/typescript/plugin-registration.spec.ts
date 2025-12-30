@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExtractionResult } from "./types.js";
 import {
 	clearPostProcessors,
 	clearValidators,
@@ -10,6 +9,7 @@ import {
 	unregisterPostProcessor,
 	unregisterValidator,
 } from "./plugin-registry.js";
+import type { ExtractionResult } from "./types.js";
 
 /** Mock PostProcessor for testing */
 interface MockPostProcessor {
@@ -84,33 +84,25 @@ describe("Plugin Registration System", () => {
 		});
 
 		it("should throw if post-processor is null", () => {
-			expect(() => registerPostProcessor(null as any)).toThrow(
-				"Post-processor cannot be null or undefined",
-			);
+			expect(() => registerPostProcessor(null as any)).toThrow("Post-processor cannot be null or undefined");
 		});
 
 		it("should throw if post-processor is undefined", () => {
-			expect(() => registerPostProcessor(undefined as any)).toThrow(
-				"Post-processor cannot be null or undefined",
-			);
+			expect(() => registerPostProcessor(undefined as any)).toThrow("Post-processor cannot be null or undefined");
 		});
 
 		it("should throw if post-processor missing name method", () => {
 			const invalid = {
 				process: async () => ({}),
 			};
-			expect(() => registerPostProcessor(invalid as any)).toThrow(
-				"must implement name() method",
-			);
+			expect(() => registerPostProcessor(invalid as any)).toThrow("must implement name() method");
 		});
 
 		it("should throw if post-processor missing process method", () => {
 			const invalid = {
 				name: () => "test",
 			};
-			expect(() => registerPostProcessor(invalid as any)).toThrow(
-				"must implement process() method",
-			);
+			expect(() => registerPostProcessor(invalid as any)).toThrow("must implement process() method");
 		});
 
 		it("should throw if post-processor name is empty string", () => {
@@ -118,9 +110,7 @@ describe("Plugin Registration System", () => {
 				name: () => "",
 				process: async () => ({}),
 			};
-			expect(() => registerPostProcessor(processor as any)).toThrow(
-				"Post-processor name must be a non-empty string",
-			);
+			expect(() => registerPostProcessor(processor as any)).toThrow("Post-processor name must be a non-empty string");
 		});
 
 		it("should throw if post-processor name is not a string", () => {
@@ -128,9 +118,7 @@ describe("Plugin Registration System", () => {
 				name: () => 123,
 				process: async () => ({}),
 			};
-			expect(() => registerPostProcessor(processor as any)).toThrow(
-				"Post-processor name must be a non-empty string",
-			);
+			expect(() => registerPostProcessor(processor as any)).toThrow("Post-processor name must be a non-empty string");
 		});
 
 		it("should allow overwriting existing post-processor", () => {
@@ -354,33 +342,25 @@ describe("Plugin Registration System", () => {
 		});
 
 		it("should throw if validator is null", () => {
-			expect(() => registerValidator(null as any)).toThrow(
-				"Validator cannot be null or undefined",
-			);
+			expect(() => registerValidator(null as any)).toThrow("Validator cannot be null or undefined");
 		});
 
 		it("should throw if validator is undefined", () => {
-			expect(() => registerValidator(undefined as any)).toThrow(
-				"Validator cannot be null or undefined",
-			);
+			expect(() => registerValidator(undefined as any)).toThrow("Validator cannot be null or undefined");
 		});
 
 		it("should throw if validator missing name method", () => {
 			const invalid = {
 				validate: async () => ({ valid: true, errors: [] }),
 			};
-			expect(() => registerValidator(invalid as any)).toThrow(
-				"must implement name() method",
-			);
+			expect(() => registerValidator(invalid as any)).toThrow("must implement name() method");
 		});
 
 		it("should throw if validator missing validate method", () => {
 			const invalid = {
 				name: () => "test",
 			};
-			expect(() => registerValidator(invalid as any)).toThrow(
-				"must implement validate() method",
-			);
+			expect(() => registerValidator(invalid as any)).toThrow("must implement validate() method");
 		});
 
 		it("should throw if validator name is empty string", () => {
@@ -388,9 +368,7 @@ describe("Plugin Registration System", () => {
 				name: () => "",
 				validate: async () => ({ valid: true, errors: [] }),
 			};
-			expect(() => registerValidator(validator as any)).toThrow(
-				"Validator name must be a non-empty string",
-			);
+			expect(() => registerValidator(validator as any)).toThrow("Validator name must be a non-empty string");
 		});
 
 		it("should throw if validator name is not a string", () => {
@@ -398,9 +376,7 @@ describe("Plugin Registration System", () => {
 				name: () => 123,
 				validate: async () => ({ valid: true, errors: [] }),
 			};
-			expect(() => registerValidator(validator as any)).toThrow(
-				"Validator name must be a non-empty string",
-			);
+			expect(() => registerValidator(validator as any)).toThrow("Validator name must be a non-empty string");
 		});
 
 		it("should allow overwriting existing validator", () => {
@@ -470,9 +446,7 @@ describe("Plugin Registration System", () => {
 		});
 
 		it("should throw if validator not found", async () => {
-			await expect(unregisterValidator("nonexistent")).rejects.toThrow(
-				'Validator "nonexistent" is not registered',
-			);
+			await expect(unregisterValidator("nonexistent")).rejects.toThrow('Validator "nonexistent" is not registered');
 		});
 
 		it("should call shutdown method if available", async () => {

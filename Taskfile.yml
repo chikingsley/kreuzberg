@@ -221,7 +221,7 @@ tasks:
     cmds:
       - task: _test_wf:all:ci
 
-  lint:all:
+  lint:
     desc: Run all linters with auto-fix across all languages
     cmds:
       - task: rust:lint
@@ -238,6 +238,9 @@ tasks:
   lint:check:
     desc: Run all linters in check-only mode (no modifications)
     cmds:
+      - task: toml:format:check
+      - task: shell:lint:check
+      - task: github:lint
       - task: rust:lint:check
       - task: python:lint:check
       - task: node:lint:check
