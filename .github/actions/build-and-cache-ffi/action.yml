@@ -241,14 +241,15 @@ runs:
         # Determine library name - check Cargo.toml for custom lib name
         CARGO_TOML="crates/${FFI_CRATE}/Cargo.toml"
 
-        if [[ -f "$CARGO_TOML" ]] && grep -q '^\[lib\]' "$CARGO_TOML"; then
+        if [[ -f "$CARGO_TOML" ]] && grep -q '\[lib\]' "$CARGO_TOML"; then
           # Extract custom library name from Cargo.toml if it exists
+          # Handle potential whitespace before 'name' and both single/double quotes
           CUSTOM_LIB_NAME=$(awk '
             /^\[lib\]/ { in_lib=1; next }
             /^\[/ { in_lib=0 }
-            in_lib && /^name[[:space:]]*=/ {
-              gsub(/^name[[:space:]]*=[[:space:]]*/, "");
-              gsub(/"/, "");
+            in_lib && /^[[:space:]]*name[[:space:]]*=/ {
+              gsub(/^[[:space:]]*name[[:space:]]*=[[:space:]]*/, "");
+              gsub(/["'\'']/, "");
               gsub(/[[:space:]]*$/, "");
               print;
               exit
@@ -256,13 +257,16 @@ runs:
           ' "$CARGO_TOML")
           if [[ -n "$CUSTOM_LIB_NAME" ]]; then
             LIB_NAME="$CUSTOM_LIB_NAME"
+            echo "Found custom library name in Cargo.toml: $LIB_NAME"
           else
             # Convert crate name to library name (replace hyphens with underscores)
             LIB_NAME="${FFI_CRATE//-/_}"
+            echo "Using default library name: $LIB_NAME"
           fi
         else
           # Convert crate name to library name (replace hyphens with underscores)
           LIB_NAME="${FFI_CRATE//-/_}"
+          echo "No [lib] section found, using default library name: $LIB_NAME"
         fi
 
         echo "Library name: $LIB_NAME"
