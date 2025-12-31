@@ -203,30 +203,15 @@ runs:
         echo "=== Building FFI Library ==="
         echo "Crate: $FFI_CRATE"
 
-        # Determine the build task based on FFI crate
-        case "$FFI_CRATE" in
-          kreuzberg-ffi)
-            BUILD_TASK="rust:ffi:build:ci"
-            ;;
-          kreuzberg-py)
-            BUILD_TASK="rust:ffi:build:ci"
-            ;;
-          kreuzberg-rb)
-            BUILD_TASK="rust:ffi:build:ci"
-            ;;
-          kreuzberg-php)
-            BUILD_TASK="rust:ffi:build:ci"
-            ;;
-          *)
-            echo "❌ Unknown FFI crate: $FFI_CRATE"
-            exit 1
-            ;;
-        esac
+        # Build the specified FFI crate
+        echo "Building FFI crate: $FFI_CRATE"
 
-        echo "Build task: $BUILD_TASK"
+        # Preserve existing RUSTFLAGS and add debug info
+        export RUSTFLAGS="${RUSTFLAGS:-} -C debuginfo=2"
+        echo "RUSTFLAGS: $RUSTFLAGS"
 
-        # Run the build
-        if ! task "$BUILD_TASK"; then
+        # Run the build with appropriate package flag
+        if ! cargo build --release --package "$FFI_CRATE"; then
           echo "❌ Build failed for $FFI_CRATE"
           exit 1
         fi
@@ -241,11 +226,14 @@ runs:
           RELEASE_DIR="$TARGET_DIR/release"
         fi
 
+        # Convert crate name to library name (replace hyphens with underscores)
+        LIB_NAME="${FFI_CRATE//-/_}"
+
         LIBRARY_PATH=""
-        for candidate in "$RELEASE_DIR/libkreuzberg_ffi.so" \
-                         "$RELEASE_DIR/libkreuzberg_ffi.dylib" \
-                         "$RELEASE_DIR/kreuzberg_ffi.dll" \
-                         "$RELEASE_DIR/libkreuzberg_ffi.a"; do
+        for candidate in "$RELEASE_DIR/lib${LIB_NAME}.so" \
+                         "$RELEASE_DIR/lib${LIB_NAME}.dylib" \
+                         "$RELEASE_DIR/${LIB_NAME}.dll" \
+                         "$RELEASE_DIR/lib${LIB_NAME}.a"; do
           if [[ -e "$candidate" ]]; then
             LIBRARY_PATH="$candidate"
             break
