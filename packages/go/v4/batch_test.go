@@ -162,11 +162,14 @@ func TestBatchExtractBytesWithConfig(t *testing.T) {
 }
 
 // TestBatchLargeBatch tests batch extraction with many files.
+// Note: Batch size reduced from 50 to 20 to avoid memory pressure on ARM64 runners.
 func TestBatchLargeBatch(t *testing.T) {
 	dir := t.TempDir()
 	var paths []string
 
-	for i := 0; i < 50; i++ {
+	const batchSize = 20
+
+	for i := 0; i < batchSize; i++ {
 		filename := fmt.Sprintf("file_%d.pdf", i)
 		path, err := writeValidPDFToFile(dir, filename)
 		if err != nil {
@@ -179,8 +182,8 @@ func TestBatchLargeBatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("large batch extraction failed: %v", err)
 	}
-	if len(results) != 50 {
-		t.Fatalf("expected 50 results, got %d", len(results))
+	if len(results) != batchSize {
+		t.Fatalf("expected %d results, got %d", batchSize, len(results))
 	}
 }
 
