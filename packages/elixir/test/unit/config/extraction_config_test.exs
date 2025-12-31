@@ -22,7 +22,7 @@ defmodule KreuzbergTest.Unit.Config.ExtractionConfigTest do
       config = %ExtractionConfig{}
 
       assert config.use_cache == true
-      assert config.enable_quality_processing == false
+      assert config.enable_quality_processing == true
       assert config.force_ocr == false
       assert config.chunking == nil
       assert config.ocr == nil
@@ -117,7 +117,7 @@ defmodule KreuzbergTest.Unit.Config.ExtractionConfigTest do
       assert is_map(map)
       assert map["use_cache"] == true
       assert map["chunking"] == %{"size" => 512}
-      assert map["enable_quality_processing"] == false
+      assert map["enable_quality_processing"] == true
     end
 
     @tag :unit

@@ -375,12 +375,11 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
       assert is_map(map)
     end
 
-    test "rejects raw maps in to_map" do
+    test "accepts raw maps in to_map" do
       raw_map = %{"use_cache" => false}
 
-      assert_raise FunctionClauseError, fn ->
-        Kreuzberg.ExtractionConfig.to_map(raw_map)
-      end
+      result = Kreuzberg.ExtractionConfig.to_map(raw_map)
+      assert result == raw_map
     end
 
     test "handles nil config in to_map" do

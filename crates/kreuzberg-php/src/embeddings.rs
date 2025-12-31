@@ -25,13 +25,20 @@ use ext_php_rs::prelude::*;
 /// echo "Model: {$preset->model_name}, Dims: {$preset->dimensions}\n";
 /// ```
 #[php_class]
+#[php(name = "Kreuzberg\\Embeddings\\EmbeddingPreset")]
 #[derive(Clone)]
 pub struct EmbeddingPreset {
+    #[php(prop)]
     pub name: String,
+    #[php(prop)]
     pub chunk_size: i64,
+    #[php(prop)]
     pub overlap: i64,
+    #[php(prop)]
     pub model_name: String,
+    #[php(prop)]
     pub dimensions: i64,
+    #[php(prop)]
     pub description: String,
 }
 
@@ -103,4 +110,12 @@ pub fn kreuzberg_get_embedding_preset(name: String) -> Option<EmbeddingPreset> {
         dimensions: preset.dimensions as i64,
         description: preset.description.to_string(),
     })
+}
+
+/// Returns all function builders for the embeddings module.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_list_embedding_presets),
+        wrap_function!(kreuzberg_get_embedding_preset),
+    ]
 }

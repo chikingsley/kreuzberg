@@ -13,81 +13,36 @@
   "bugs": {
     "url": "https://github.com/kreuzberg-dev/kreuzberg/issues"
   },
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "browser": {
-        "import": {
-          "types": "./dist/index.d.ts",
-          "default": "./dist/index.js"
-        },
-        "require": {
-          "types": "./dist/index.d.cts",
-          "default": "./dist/index.cjs"
-        }
-      },
-      "node": {
-        "import": {
-          "types": "./dist/index.d.ts",
-          "default": "./dist/index.js"
-        },
-        "require": {
-          "types": "./dist/index.d.cts",
-          "default": "./dist/index.cjs"
-        }
-      },
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./dist/pkg/*": "./dist/pkg/*",
     "./dist/kreuzberg_wasm.js": "./dist/kreuzberg_wasm.js",
     "./runtime": {
-      "import": {
-        "types": "./dist/runtime.d.ts",
-        "default": "./dist/runtime.js"
-      },
-      "require": {
-        "types": "./dist/runtime.d.cts",
-        "default": "./dist/runtime.cjs"
-      }
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js",
+      "default": "./dist/runtime.js"
     },
     "./adapters/wasm-adapter": {
-      "import": {
-        "types": "./dist/adapters/wasm-adapter.d.ts",
-        "default": "./dist/adapters/wasm-adapter.js"
-      },
-      "require": {
-        "types": "./dist/adapters/wasm-adapter.d.cts",
-        "default": "./dist/adapters/wasm-adapter.cjs"
-      }
+      "types": "./dist/adapters/wasm-adapter.d.ts",
+      "import": "./dist/adapters/wasm-adapter.js",
+      "default": "./dist/adapters/wasm-adapter.js"
     },
     "./ocr/registry": {
-      "import": {
-        "types": "./dist/ocr/registry.d.ts",
-        "default": "./dist/ocr/registry.js"
-      },
-      "require": {
-        "types": "./dist/ocr/registry.d.cts",
-        "default": "./dist/ocr/registry.cjs"
-      }
+      "types": "./dist/ocr/registry.d.ts",
+      "import": "./dist/ocr/registry.js",
+      "default": "./dist/ocr/registry.js"
     },
     "./ocr/tesseract-wasm-backend": {
-      "import": {
-        "types": "./dist/ocr/tesseract-wasm-backend.d.ts",
-        "default": "./dist/ocr/tesseract-wasm-backend.js"
-      },
-      "require": {
-        "types": "./dist/ocr/tesseract-wasm-backend.d.cts",
-        "default": "./dist/ocr/tesseract-wasm-backend.cjs"
-      }
+      "types": "./dist/ocr/tesseract-wasm-backend.d.ts",
+      "import": "./dist/ocr/tesseract-wasm-backend.js",
+      "default": "./dist/ocr/tesseract-wasm-backend.js"
     }
   },
   "repository": {

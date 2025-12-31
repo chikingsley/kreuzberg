@@ -731,3 +731,24 @@ pub(crate) fn call_custom_extractor(mime_type: &str, bytes: &[u8]) -> PhpResult<
         Ok(result)
     })
 }
+
+/// Returns all function builders for the plugins module.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_register_post_processor),
+        wrap_function!(kreuzberg_unregister_post_processor),
+        wrap_function!(kreuzberg_list_post_processors),
+        wrap_function!(kreuzberg_clear_post_processors),
+        wrap_function!(kreuzberg_run_post_processors),
+        wrap_function!(kreuzberg_register_validator),
+        wrap_function!(kreuzberg_unregister_validator),
+        wrap_function!(kreuzberg_list_validators),
+        wrap_function!(kreuzberg_clear_validators),
+        wrap_function!(kreuzberg_run_validators),
+        wrap_function!(kreuzberg_register_extractor),
+        wrap_function!(kreuzberg_unregister_extractor),
+        wrap_function!(kreuzberg_list_extractors),
+        wrap_function!(kreuzberg_clear_extractors),
+        wrap_function!(kreuzberg_test_plugin),
+    ]
+}

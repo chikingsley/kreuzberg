@@ -8,7 +8,9 @@ export default defineConfig({
 		"typescript/ocr/registry.ts",
 		"typescript/ocr/tesseract-wasm-backend.ts",
 	],
-	format: ["esm", "cjs"],
+	// ESM only - CJS is not supported due to top-level await in WASM initialization
+	// Modern Node.js (>= 14), Deno, and browsers all support ESM natively
+	format: ["esm"],
 	bundle: true,
 	dts: {
 		compilerOptions: {
@@ -23,13 +25,6 @@ export default defineConfig({
 	shims: false,
 	platform: "neutral",
 	target: "es2022",
-	esbuildOptions(options) {
-		// Enable top-level await support for CJS by using async wrapper
-		options.supported = {
-			...options.supported,
-			"top-level-await": true,
-		};
-	},
 	external: [
 		"@kreuzberg/core",
 		"tesseract-wasm",

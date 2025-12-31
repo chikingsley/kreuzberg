@@ -350,7 +350,12 @@ defmodule KreuzbergTest.Unit.ExtractionConfigTest do
       assert result["images"] == %{"quality" => 90}
       assert result["pages"] == %{"limit" => 100}
       assert result["token_reduction"] == %{"enabled" => false}
-      assert result["keywords"] == %{"extract" => true}
+      # Keywords field gets default values added by normalize_keywords_config
+      assert result["keywords"]["extract"] == true
+      assert result["keywords"]["algorithm"] == "yake"
+      assert result["keywords"]["max_keywords"] == 10
+      assert result["keywords"]["min_score"] == 0.0
+      assert result["keywords"]["ngram_range"] == [1, 3]
       assert result["pdf_options"] == %{"extract_metadata" => true}
       assert result["use_cache"] == false
       assert result["enable_quality_processing"] == false

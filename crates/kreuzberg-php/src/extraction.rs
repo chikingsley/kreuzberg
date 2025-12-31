@@ -363,3 +363,18 @@ pub fn kreuzberg_validate_mime_type(mime_type: String) -> PhpResult<String> {
 pub fn kreuzberg_get_extensions_for_mime(mime_type: String) -> PhpResult<Vec<String>> {
     kreuzberg::get_extensions_for_mime(&mime_type).map_err(|e| format!("Failed to get extensions: {}", e).into())
 }
+
+/// Returns all function builders for the extraction module.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_extract_file),
+        wrap_function!(kreuzberg_extract_bytes),
+        wrap_function!(kreuzberg_batch_extract_files),
+        wrap_function!(kreuzberg_batch_extract_bytes),
+        wrap_function!(kreuzberg_detect_mime_type_from_bytes),
+        wrap_function!(kreuzberg_detect_mime_type),
+        wrap_function!(kreuzberg_detect_mime_type_from_path),
+        wrap_function!(kreuzberg_validate_mime_type),
+        wrap_function!(kreuzberg_get_extensions_for_mime),
+    ]
+}

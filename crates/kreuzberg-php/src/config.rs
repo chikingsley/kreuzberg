@@ -20,10 +20,14 @@ use kreuzberg::core::config::HierarchyConfig as RustHierarchyConfig;
 /// $config->ocr->language = "eng";
 /// ```
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\ExtractionConfig")]
 #[derive(Clone, Default)]
 pub struct ExtractionConfig {
+    #[php(prop)]
     pub use_cache: bool,
+    #[php(prop)]
     pub enable_quality_processing: bool,
+    #[php(prop)]
     pub force_ocr: bool,
     pub ocr: Option<OcrConfig>,
     pub pdf_options: Option<PdfConfig>,
@@ -33,6 +37,7 @@ pub struct ExtractionConfig {
     pub language_detection: Option<LanguageDetectionConfig>,
     pub keywords: Option<KeywordConfig>,
     pub postprocessor: Option<PostProcessorConfig>,
+    #[php(prop)]
     pub max_concurrent_extractions: Option<usize>,
     pub pages: Option<PageConfig>,
 }
@@ -251,19 +256,22 @@ pub fn kreuzberg_config_merge(
 /// $ocr->language = "eng";
 /// ```
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\OcrConfig")]
 #[derive(Clone)]
 pub struct OcrConfig {
+    #[php(prop)]
     pub backend: String,
+    #[php(prop)]
     pub language: String,
     pub tesseract_config: Option<TesseractConfig>,
 }
 
 #[php_impl]
 impl OcrConfig {
-    pub fn __construct() -> Self {
+    pub fn __construct(backend: Option<String>, language: Option<String>) -> Self {
         Self {
-            backend: "tesseract".to_string(),
-            language: "eng".to_string(),
+            backend: backend.unwrap_or_else(|| "tesseract".to_string()),
+            language: language.unwrap_or_else(|| "eng".to_string()),
             tesseract_config: None,
         }
     }
@@ -289,10 +297,13 @@ impl OcrConfig {
 
 /// PDF-specific configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\PdfConfig")]
 #[derive(Clone)]
 pub struct PdfConfig {
+    #[php(prop)]
     pub extract_images: bool,
     pub passwords: Option<Vec<String>>,
+    #[php(prop)]
     pub extract_metadata: bool,
     pub hierarchy: Option<HierarchyConfig>,
 }
@@ -335,11 +346,16 @@ impl PdfConfig {
 /// clustering and semantic analysis. When enabled, hierarchical blocks are
 /// included in page content.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\HierarchyConfig")]
 #[derive(Clone, Default)]
 pub struct HierarchyConfig {
+    #[php(prop)]
     pub enabled: bool,
+    #[php(prop)]
     pub k_clusters: usize,
+    #[php(prop)]
     pub include_bbox: bool,
+    #[php(prop)]
     pub ocr_coverage_threshold: Option<f32>,
 }
 
@@ -377,11 +393,15 @@ impl HierarchyConfig {
 
 /// Chunking configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\ChunkingConfig")]
 #[derive(Clone)]
 pub struct ChunkingConfig {
+    #[php(prop)]
     pub max_chars: usize,
+    #[php(prop)]
     pub max_overlap: usize,
     pub embedding: Option<EmbeddingConfig>,
+    #[php(prop)]
     pub preset: Option<String>,
 }
 
@@ -441,10 +461,14 @@ impl ChunkingConfig {
 /// $model = EmbeddingModelType::custom("my-model", 512);
 /// ```
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\EmbeddingModelType")]
 #[derive(Clone)]
 pub struct EmbeddingModelType {
+    #[php(prop)]
     model_type: String,
+    #[php(prop)]
     name: String,
+    #[php(prop)]
     dimensions: Option<usize>,
 }
 
@@ -564,11 +588,15 @@ impl EmbeddingModelType {
 /// $config->batch_size = 32;
 /// ```
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\EmbeddingConfig")]
 #[derive(Clone)]
 pub struct EmbeddingConfig {
     pub model: Option<EmbeddingModelType>,
+    #[php(prop)]
     pub normalize: bool,
+    #[php(prop)]
     pub batch_size: usize,
+    #[php(prop)]
     pub show_download_progress: bool,
 }
 
@@ -613,13 +641,20 @@ impl EmbeddingConfig {
 
 /// Image extraction configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\ImageExtractionConfig")]
 #[derive(Clone)]
 pub struct ImageExtractionConfig {
+    #[php(prop)]
     pub extract_images: bool,
+    #[php(prop)]
     pub target_dpi: i32,
+    #[php(prop)]
     pub max_image_dimension: i32,
+    #[php(prop)]
     pub auto_adjust_dpi: bool,
+    #[php(prop)]
     pub min_dpi: i32,
+    #[php(prop)]
     pub max_dpi: i32,
 }
 
@@ -663,9 +698,12 @@ impl ImageExtractionConfig {
 
 /// Token reduction configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\TokenReductionConfig")]
 #[derive(Clone)]
 pub struct TokenReductionConfig {
+    #[php(prop)]
     pub mode: String,
+    #[php(prop)]
     pub preserve_important_words: bool,
 }
 
@@ -697,10 +735,14 @@ impl TokenReductionConfig {
 
 /// Language detection configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\LanguageDetectionConfig")]
 #[derive(Clone)]
 pub struct LanguageDetectionConfig {
+    #[php(prop)]
     pub enabled: bool,
+    #[php(prop)]
     pub min_confidence: f64,
+    #[php(prop)]
     pub detect_multiple: bool,
 }
 
@@ -735,9 +777,12 @@ impl LanguageDetectionConfig {
 
 /// Keyword extraction configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\KeywordConfig")]
 #[derive(Clone)]
 pub struct KeywordConfig {
+    #[php(prop)]
     pub max_keywords: usize,
+    #[php(prop)]
     pub min_score: f32,
     pub language: Option<String>,
 }
@@ -777,8 +822,10 @@ impl KeywordConfig {
 
 /// Post-processor configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\PostProcessorConfig")]
 #[derive(Clone)]
 pub struct PostProcessorConfig {
+    #[php(prop)]
     pub enabled: bool,
     pub enabled_processors: Option<Vec<String>>,
     pub disabled_processors: Option<Vec<String>>,
@@ -826,13 +873,20 @@ impl PostProcessorConfig {
 
 /// Tesseract-specific configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\TesseractConfig")]
 #[derive(Clone)]
 pub struct TesseractConfig {
+    #[php(prop)]
     pub language: String,
+    #[php(prop)]
     pub psm: i32,
+    #[php(prop)]
     pub output_format: String,
+    #[php(prop)]
     pub oem: i32,
+    #[php(prop)]
     pub min_confidence: f64,
+    #[php(prop)]
     pub enable_table_detection: bool,
 }
 
@@ -891,10 +945,14 @@ impl TesseractConfig {
 
 /// Page extraction configuration.
 #[php_class]
+#[php(name = "Kreuzberg\\Config\\PageConfig")]
 #[derive(Clone)]
 pub struct PageConfig {
+    #[php(prop)]
     pub extract_pages: bool,
+    #[php(prop)]
     pub insert_page_markers: bool,
+    #[php(prop)]
     pub marker_format: String,
 }
 
@@ -925,4 +983,14 @@ impl PageConfig {
             marker_format: config.marker_format,
         }
     }
+}
+
+/// Returns all function builders for the config module.
+/// This is used by the main module to register all functions.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_config_to_json),
+        wrap_function!(kreuzberg_config_get_field),
+        wrap_function!(kreuzberg_config_merge),
+    ]
 }

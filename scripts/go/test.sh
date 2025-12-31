@@ -21,13 +21,13 @@ is_ci="${CI:-}"
 # Parse command line flags
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --verbose | -v)
-      verbose_mode=true
-      shift
-      ;;
-    *)
-      shift
-      ;;
+  --verbose | -v)
+    verbose_mode=true
+    shift
+    ;;
+  *)
+    shift
+    ;;
   esac
 done
 

@@ -98,11 +98,16 @@ fn format_error_message(error: &kreuzberg::KreuzbergError) -> String {
 /// - `description` (string): Brief description of the error type
 /// - `confidence` (float): Confidence score (0.0-1.0) of the classification
 #[php_class]
+#[php(name = "Kreuzberg\\Errors\\ErrorClassification")]
 #[derive(Clone)]
 pub struct ErrorClassification {
+    #[php(prop)]
     pub code: i64,
+    #[php(prop)]
     pub name: String,
+    #[php(prop)]
     pub description: String,
+    #[php(prop)]
     pub confidence: f64,
 }
 
@@ -284,4 +289,13 @@ pub fn kreuzberg_error_code_description(code: u32) -> String {
         7 => "Internal error".to_string(),
         _ => "Unknown error code".to_string(),
     }
+}
+
+/// Returns all function builders for the error module.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_classify_error),
+        wrap_function!(kreuzberg_error_code_name),
+        wrap_function!(kreuzberg_error_code_description),
+    ]
 }

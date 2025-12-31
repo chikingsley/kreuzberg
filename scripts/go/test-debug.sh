@@ -16,7 +16,7 @@ cd "${REPO_ROOT}/packages/go/v4"
 
 # Usage information
 usage() {
-  cat << EOF
+  cat <<EOF
 Usage: $0 [OPTIONS]
 
 Debug script for running Go tests with detailed output to help identify segfaults.
@@ -55,31 +55,31 @@ list_tests=false
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -t|--test)
-      test_pattern="$2"
-      shift 2
-      ;;
-    -r|--race)
-      use_race=true
-      shift
-      ;;
-    -c|--coverage)
-      coverage=true
-      shift
-      ;;
-    -l|--list)
-      list_tests=true
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1"
-      usage
-      exit 1
-      ;;
+  -t | --test)
+    test_pattern="$2"
+    shift 2
+    ;;
+  -r | --race)
+    use_race=true
+    shift
+    ;;
+  -c | --coverage)
+    coverage=true
+    shift
+    ;;
+  -l | --list)
+    list_tests=true
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1"
+    usage
+    exit 1
+    ;;
   esac
 done
 

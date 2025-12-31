@@ -13,7 +13,7 @@ use Kreuzberg\Config\LanguageDetectionConfig;
 use Kreuzberg\Config\PdfConfig;
 use Kreuzberg\Config\PostProcessorConfig;
 use Kreuzberg\Config\TokenReductionConfig;
-use Kreuzberg\ExtractionResult;
+use Kreuzberg\Types\ExtractionResult;
 use PHPUnit\Framework\Assert;
 
 class Helpers
@@ -174,7 +174,7 @@ class Helpers
 
     public static function assertTableCount(ExtractionResult $result, ?int $minimum, ?int $maximum): void
     {
-        $count = count($result->tables ?? []);
+        $count = count($result->getTables());
 
         if ($minimum !== null) {
             Assert::assertGreaterThanOrEqual(

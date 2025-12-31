@@ -25,7 +25,7 @@ defmodule KreuzbergTest.Unit.BatchAPITest do
   describe "batch_extract_files/2" do
     @tag :unit
     test "returns error for empty paths list" do
-      {:error, reason} = BatchAPI.batch_extract_files([])
+      {:error, reason} = BatchAPI.batch_extract_files([], nil)
       assert is_binary(reason)
       assert String.contains?(reason, "empty")
     end
@@ -128,7 +128,7 @@ defmodule KreuzbergTest.Unit.BatchAPITest do
     @tag :unit
     test "raises on empty paths list" do
       assert_raise Kreuzberg.Error, fn ->
-        BatchAPI.batch_extract_files!([])
+        BatchAPI.batch_extract_files!([], nil)
       end
     end
 

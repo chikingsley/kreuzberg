@@ -336,3 +336,23 @@ pub fn kreuzberg_get_valid_token_reduction_levels() -> Vec<String> {
         "maximum".to_string(),
     ]
 }
+
+/// Returns all function builders for the validation module.
+pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'static>> {
+    vec![
+        wrap_function!(kreuzberg_validate_binarization_method),
+        wrap_function!(kreuzberg_validate_ocr_backend),
+        wrap_function!(kreuzberg_validate_language_code),
+        wrap_function!(kreuzberg_validate_token_reduction_level),
+        wrap_function!(kreuzberg_validate_tesseract_psm),
+        wrap_function!(kreuzberg_validate_tesseract_oem),
+        wrap_function!(kreuzberg_validate_output_format),
+        wrap_function!(kreuzberg_validate_confidence),
+        wrap_function!(kreuzberg_validate_dpi),
+        wrap_function!(kreuzberg_validate_chunking_params),
+        wrap_function!(kreuzberg_get_valid_binarization_methods),
+        wrap_function!(kreuzberg_get_valid_language_codes),
+        wrap_function!(kreuzberg_get_valid_ocr_backends),
+        wrap_function!(kreuzberg_get_valid_token_reduction_levels),
+    ]
+}

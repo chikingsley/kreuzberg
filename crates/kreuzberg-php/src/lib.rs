@@ -24,14 +24,6 @@ pub mod plugins;
 pub mod types;
 pub mod validation;
 
-pub use config::*;
-pub use embeddings::*;
-pub use error::*;
-pub use extraction::*;
-pub use plugins::*;
-pub use types::*;
-pub use validation::*;
-
 /// Get the Kreuzberg library version.
 ///
 /// # Returns
@@ -54,5 +46,60 @@ pub fn kreuzberg_version() -> String {
 /// Exports all extraction functions, configuration types, error handling, and plugin management.
 #[php_module]
 pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
+    // Register the main module function
+    let mut module = module.function(wrap_function!(kreuzberg_version));
+
+    // Register functions from all submodules
+    for builder in config::get_function_builders() {
+        module = module.function(builder);
+    }
+    for builder in embeddings::get_function_builders() {
+        module = module.function(builder);
+    }
+    for builder in error::get_function_builders() {
+        module = module.function(builder);
+    }
+    for builder in extraction::get_function_builders() {
+        module = module.function(builder);
+    }
+    for builder in plugins::get_function_builders() {
+        module = module.function(builder);
+    }
+    for builder in validation::get_function_builders() {
+        module = module.function(builder);
+    }
+
+    // Register all PHP classes (order matters for dependencies)
+    // Types module - base result types
+    module = module
+        .class::<types::ExtractedImage>()
+        .class::<types::ExtractedTable>()
+        .class::<types::TextChunk>()
+        .class::<types::PageResult>()
+        .class::<types::ExtractionResult>();
+
+    // Config module - configuration types (order matters for nested types)
+    module = module
+        .class::<config::TesseractConfig>()
+        .class::<config::OcrConfig>()
+        .class::<config::PdfConfig>()
+        .class::<config::HierarchyConfig>()
+        .class::<config::EmbeddingModelType>()
+        .class::<config::EmbeddingConfig>()
+        .class::<config::ChunkingConfig>()
+        .class::<config::ImageExtractionConfig>()
+        .class::<config::TokenReductionConfig>()
+        .class::<config::LanguageDetectionConfig>()
+        .class::<config::KeywordConfig>()
+        .class::<config::PostProcessorConfig>()
+        .class::<config::PageConfig>()
+        .class::<config::ExtractionConfig>();
+
+    // Embeddings module
+    module = module.class::<embeddings::EmbeddingPreset>();
+
+    // Error module
+    module = module.class::<error::ErrorClassification>();
+
     module
 }

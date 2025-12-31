@@ -72,15 +72,27 @@ runs:
     - name: Compute Rust source hash
       id: rust-hash
       shell: bash
+      env:
+        FFI_CRATE: ${{ inputs.ffi-crate }}
       run: |
         set -euo pipefail
 
         # Compute hash for all Rust source files
-        RUST_HASH=$(scripts/ci/cache/compute-hash.sh \
-          "crates/kreuzberg/**/*.rs" \
-          "crates/kreuzberg-ffi/**/*.rs" \
-          "crates/kreuzberg-tesseract/**/*.rs" \
-          2>&1 | grep "^[a-f0-9]*$")
+        # Always include core kreuzberg crates
+        HASH_PATTERNS=(
+          "crates/kreuzberg/**/*.rs"
+          "crates/kreuzberg-ffi/**/*.rs"
+          "crates/kreuzberg-tesseract/**/*.rs"
+        )
+
+        # Include FFI crate-specific sources (unless it's kreuzberg-ffi which is already included)
+        FFI_CRATE_DIR="crates/${FFI_CRATE}"
+        if [[ -d "$FFI_CRATE_DIR" && "$FFI_CRATE" != "kreuzberg-ffi" ]]; then
+          HASH_PATTERNS+=("${FFI_CRATE_DIR}/**/*.rs")
+          echo "Including FFI crate sources: ${FFI_CRATE_DIR}/**/*.rs"
+        fi
+
+        RUST_HASH=$(scripts/ci/cache/compute-hash.sh "${HASH_PATTERNS[@]}" 2>&1 | grep "^[a-f0-9]*$")
 
         if [[ -z "$RUST_HASH" ]]; then
           echo "❌ Failed to compute Rust source hash"
