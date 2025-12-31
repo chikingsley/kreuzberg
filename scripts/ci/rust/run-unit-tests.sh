@@ -60,14 +60,14 @@ TEST_LOG="/tmp/cargo-test-$$.log"
 
 if ! {
   echo "=== cargo test -p kreuzberg --features full ==="
-  cargo test -p kreuzberg --features full --verbose
+  RUST_BACKTRACE=full cargo test -p kreuzberg --features full --verbose -- --nocapture --test-threads=1
 
   echo "=== cargo test --workspace (all features, excluding kreuzberg) ==="
   extra_excludes=()
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
     extra_excludes+=(--exclude benchmark-harness)
   fi
-  cargo test \
+  RUST_BACKTRACE=full cargo test \
     --workspace \
     --exclude kreuzberg \
     --exclude kreuzberg-e2e-generator \
@@ -75,7 +75,8 @@ if ! {
     --exclude kreuzberg-node \
     ${extra_excludes[@]+"${extra_excludes[@]}"} \
     --all-features \
-    --verbose
+    --verbose \
+    -- --nocapture --test-threads=1
 } 2>&1 | tee "$TEST_LOG"; then
   echo "=== Test execution failed ==="
   echo "Last 50 lines of test output:"
