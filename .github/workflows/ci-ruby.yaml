@@ -72,8 +72,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      BUNDLE_GEMFILE: ${{ github.workspace }}/packages/ruby/Gemfile
+    # Note: BUNDLE_GEMFILE is set per-step to avoid Windows path issues.
+    # On Windows, github.workspace paths like D:/a/... get mangled to D:/d/a/... in bash shells.
     steps:
       - uses: actions/checkout@v4
 
@@ -122,6 +122,11 @@ jobs:
       - name: Install Bundler
         shell: bash
         run: scripts/ci/ruby/install-bundler.sh
+
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
 
       - name: Install Ruby dependencies
         shell: bash
@@ -355,7 +360,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RUSTC_WRAPPER: ""
-      BUNDLE_GEMFILE: ${{ github.workspace }}/packages/ruby/Gemfile
+    # Note: BUNDLE_GEMFILE is set per-step to avoid Windows path issues.
+    # On Windows, github.workspace paths like D:/a/... get mangled to D:/d/a/... in bash shells.
     steps:
       - uses: actions/checkout@v4
 
@@ -380,6 +386,11 @@ jobs:
       - name: Install Bundler
         shell: bash
         run: scripts/ci/ruby/install-bundler.sh
+
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
 
       - name: Install Ruby dependencies
         shell: bash

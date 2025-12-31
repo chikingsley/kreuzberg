@@ -26,9 +26,15 @@ Add-Content -Path $env:GITHUB_ENV -Value "GEM_HOME=C:\g"
 # Also set OUT_DIR to match CARGO_TARGET_DIR for consistency
 Add-Content -Path $env:GITHUB_ENV -Value "OUT_DIR=C:\t"
 
+# Set BUNDLE_GEMFILE using PowerShell-resolved path to avoid bash path mangling
+# On Windows, github.workspace paths like D:/a/... get mangled to D:/d/a/... in bash shells
+$gemfilePath = Join-Path $PWD.Path "packages\ruby\Gemfile"
+Add-Content -Path $env:GITHUB_ENV -Value "BUNDLE_GEMFILE=$gemfilePath"
+
 Write-Host "Windows MAX_PATH mitigation paths configured:"
 Write-Host "  CARGO_TARGET_DIR: C:\t"
 Write-Host "  OUT_DIR: C:\t"
 Write-Host "  BUNDLE_PATH: C:\b"
 Write-Host "  GEM_HOME: C:\g"
+Write-Host "  BUNDLE_GEMFILE: $gemfilePath"
 Write-Host "  Fallback build dir: C:\kz-build"

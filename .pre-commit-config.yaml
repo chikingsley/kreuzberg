@@ -106,9 +106,12 @@ repos:
   - repo: local
     hooks:
       # Go - golangci-lint needs to run in the module directory
+      # Note: CGO_ENABLED=0 is required because the FFI library is not built during
+      # pre-commit validation. This skips linters that require type-checking CGO code.
+      # Full CGO linting is done in the dedicated Go CI workflow (ci-go.yaml).
       - id: golangci-lint
         name: Check Go linting (golangci-lint)
-        entry: bash -c 'cd packages/go/v4 && golangci-lint run --fix'
+        entry: bash -c 'cd packages/go/v4 && CGO_ENABLED=0 golangci-lint run --fix'
         language: system
         files: ^packages/go/v4/.*\.go$
         pass_filenames: false

@@ -10,9 +10,13 @@ rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
 [target.aarch64-apple-darwin]
 rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
 
-[target.aarch64-unknown-linux-gnu]
-linker = "aarch64-linux-gnu-gcc"
-ar = "aarch64-linux-gnu-ar"
+# NOTE: For cross-compilation to aarch64-unknown-linux-gnu from x86_64,
+# set CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+# as an environment variable instead. The config below is commented out
+# because CI uses native ARM64 runners where the regular gcc is needed.
+# [target.aarch64-unknown-linux-gnu]
+# linker = "aarch64-linux-gnu-gcc"
+# ar = "aarch64-linux-gnu-ar"
 
 [target.x86_64-pc-windows-msvc]
 
