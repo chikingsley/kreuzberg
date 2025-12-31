@@ -59,36 +59,32 @@ class Helpers
 
         $params = [];
 
-        if (isset($config['use_cache'])) {
-            $params['useCache'] = $config['use_cache'];
-        }
-        if (isset($config['enable_quality_processing'])) {
-            $params['enableQualityProcessing'] = $config['enable_quality_processing'];
-        }
-        if (isset($config['force_ocr'])) {
-            $params['forceOcr'] = $config['force_ocr'];
-        }
+        // Note: PHP ExtractionConfig doesn't support use_cache, enable_quality_processing, or force_ocr
+        // These are handled by the Rust core but not exposed in the PHP API
 
         if (isset($config['ocr']) && is_array($config['ocr'])) {
-            $params['ocr'] = new OcrConfig(...$config['ocr']);
+            $ocrParams = [];
+            if (isset($config['ocr']['backend'])) {
+                $ocrParams['backend'] = $config['ocr']['backend'];
+            }
+            if (isset($config['ocr']['language'])) {
+                $ocrParams['language'] = $config['ocr']['language'];
+            }
+            if (!empty($ocrParams)) {
+                $params['ocr'] = new OcrConfig(...$ocrParams);
+            }
         }
         if (isset($config['chunking']) && is_array($config['chunking'])) {
             $params['chunking'] = new ChunkingConfig(...$config['chunking']);
         }
         if (isset($config['images']) && is_array($config['images'])) {
-            $params['images'] = new ImageExtractionConfig(...$config['images']);
+            $params['imageExtraction'] = new ImageExtractionConfig(...$config['images']);
         }
         if (isset($config['pdf_options']) && is_array($config['pdf_options'])) {
-            $params['pdfOptions'] = new PdfConfig(...$config['pdf_options']);
-        }
-        if (isset($config['token_reduction']) && is_array($config['token_reduction'])) {
-            $params['tokenReduction'] = new TokenReductionConfig(...$config['token_reduction']);
+            $params['pdf'] = new PdfConfig(...$config['pdf_options']);
         }
         if (isset($config['language_detection']) && is_array($config['language_detection'])) {
             $params['languageDetection'] = new LanguageDetectionConfig(...$config['language_detection']);
-        }
-        if (isset($config['postprocessor']) && is_array($config['postprocessor'])) {
-            $params['postprocessor'] = new PostProcessorConfig(...$config['postprocessor']);
         }
 
         return new ExtractionConfig(...$params);
@@ -244,11 +240,13 @@ class Helpers
         string $path,
         array $expectation
     ): void {
-        $value = self::lookupMetadataPath($result->metadata ?? [], $path);
+        // Convert Metadata object to array for lookup
+        $metadataArray = self::metadataToArray($result->metadata);
+        $value = self::lookupMetadataPath($metadataArray, $path);
 
         Assert::assertNotNull(
             $value,
-            sprintf("Metadata path '%s' missing in %s", $path, json_encode($result->metadata))
+            sprintf("Metadata path '%s' missing in %s", $path, json_encode($metadataArray))
         );
 
         if (isset($expectation['eq'])) {
@@ -308,6 +306,59 @@ class Helpers
                 Assert::fail(sprintf("Unsupported contains expectation for metadata '%s'", $path));
             }
         }
+    }
+
+    private static function metadataToArray($metadata): array
+    {
+        if (is_array($metadata)) {
+            return $metadata;
+        }
+
+        // Convert Metadata object to array
+        $result = [];
+        if (isset($metadata->language)) {
+            $result['language'] = $metadata->language;
+        }
+        if (isset($metadata->date)) {
+            $result['date'] = $metadata->date;
+        }
+        if (isset($metadata->subject)) {
+            $result['subject'] = $metadata->subject;
+        }
+        if (isset($metadata->formatType)) {
+            $result['format_type'] = $metadata->formatType;
+        }
+        if (isset($metadata->title)) {
+            $result['title'] = $metadata->title;
+        }
+        if (isset($metadata->authors)) {
+            $result['authors'] = $metadata->authors;
+        }
+        if (isset($metadata->keywords)) {
+            $result['keywords'] = $metadata->keywords;
+        }
+        if (isset($metadata->createdAt)) {
+            $result['created_at'] = $metadata->createdAt;
+        }
+        if (isset($metadata->modifiedAt)) {
+            $result['modified_at'] = $metadata->modifiedAt;
+        }
+        if (isset($metadata->createdBy)) {
+            $result['created_by'] = $metadata->createdBy;
+        }
+        if (isset($metadata->producer)) {
+            $result['producer'] = $metadata->producer;
+        }
+        if (isset($metadata->pageCount)) {
+            $result['page_count'] = $metadata->pageCount;
+        }
+        if (isset($metadata->custom) && is_array($metadata->custom)) {
+            foreach ($metadata->custom as $key => $value) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 
     private static function lookupMetadataPath(array $metadata, string $path)
@@ -999,7 +1050,9 @@ fn generate_mime_extension_lookup_test(_fixture: &Fixture, test_spec: &PluginTes
 fn generate_object_property_assertions(assertions: &PluginAssertions, buf: &mut String) -> Result<()> {
     for prop in &assertions.object_properties {
         let parts: Vec<&str> = prop.path.split('.').collect();
-        let php_path = format!("$config->{}", parts.join("->"));
+        // Convert each path segment from snake_case to camelCase for PHP property access
+        let camel_parts: Vec<String> = parts.iter().map(|p| to_camel_case(p)).collect();
+        let php_path = format!("$config->{}", camel_parts.join("->"));
 
         if let Some(exists) = prop.exists
             && exists
@@ -1035,8 +1088,12 @@ fn to_camel_case(snake_case: &str) -> String {
     for (i, ch) in snake_case.chars().enumerate() {
         if ch == '_' {
             capitalize_next = true;
-        } else if capitalize_next || i == 0 {
+        } else if i == 0 {
+            // First character is always lowercase for camelCase
             result.push(ch.to_ascii_lowercase());
+        } else if capitalize_next {
+            // Capitalize after underscore
+            result.push(ch.to_ascii_uppercase());
             capitalize_next = false;
         } else {
             result.push(ch);

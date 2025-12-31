@@ -38,7 +38,7 @@ class PluginApisTest extends TestCase
         $this->assertNotNull($config);
 
         $this->assertNotNull($config->chunking);
-        $this->assertEquals(50, $config->chunking->max_chars);
+        $this->assertEquals(50, $config->chunking->maxChars);
         chdir($oldCwd);
         unlink($configPath);
         rmdir($subdir);
@@ -57,10 +57,10 @@ class PluginApisTest extends TestCase
         $config = ExtractionConfig::fromFile($configPath);
 
         $this->assertNotNull($config->chunking);
-        $this->assertEquals(100, $config->chunking->max_chars);
-        $this->assertEquals(20, $config->chunking->max_overlap);
-        $this->assertNotNull($config->language_detection);
-        $this->assertEquals(false, $config->language_detection->enabled);
+        $this->assertEquals(100, $config->chunking->maxChars);
+        $this->assertEquals(20, $config->chunking->maxOverlap);
+        $this->assertNotNull($config->languageDetection);
+        $this->assertEquals(false, $config->languageDetection->enabled);
         unlink($configPath);
     }
 
@@ -69,8 +69,8 @@ class PluginApisTest extends TestCase
      */
     public function test_extractors_clear(): void
     {
-        Kreuzberg::cleardocumentextractors();
-        $result = Kreuzberg::listdocumentextractors();
+        Kreuzberg::clearDocumentExtractors();
+        $result = Kreuzberg::listDocumentExtractors();
         $this->assertEmpty($result);
     }
 
@@ -79,7 +79,7 @@ class PluginApisTest extends TestCase
      */
     public function test_extractors_list(): void
     {
-        $result = Kreuzberg::listdocumentextractors();
+        $result = Kreuzberg::listDocumentExtractors();
         $this->assertIsArray($result);
         foreach ($result as $item) {
             $this->assertIsString($item);
@@ -91,8 +91,8 @@ class PluginApisTest extends TestCase
      */
     public function test_extractors_unregister(): void
     {
-        Kreuzberg::unregisterdocumentextractor('nonexistent-extractor-xyz');
-        $this->assertTrue(true);
+        Kreuzberg::unregisterDocumentExtractor('nonexistent-extractor-xyz');
+        $this->assertTrue(true); // Should not throw
     }
 
     /**
@@ -101,7 +101,7 @@ class PluginApisTest extends TestCase
     public function test_mime_detect_bytes(): void
     {
         $testBytes = '%PDF-1.4\\n';
-        $result = Kreuzberg::detectmimetype($testBytes);
+        $result = Kreuzberg::detectMimeType($testBytes);
 
         $this->assertStringContainsStringIgnoringCase('pdf', $result);
     }
@@ -115,7 +115,7 @@ class PluginApisTest extends TestCase
         $testFile = $tmpDir . '/' . 'test.txt';
         file_put_contents($testFile, 'Hello, world!');
 
-        $result = Kreuzberg::detectmimetypefrompath($testFile);
+        $result = Kreuzberg::detectMimeTypeFromPath($testFile);
 
         $this->assertStringContainsStringIgnoringCase('text', $result);
         unlink($testFile);
@@ -126,7 +126,7 @@ class PluginApisTest extends TestCase
      */
     public function test_mime_get_extensions(): void
     {
-        $result = Kreuzberg::getextensionsformime('application/pdf');
+        $result = Kreuzberg::getExtensionsForMime('application/pdf');
         $this->assertIsArray($result);
         $this->assertContains('pdf', $result);
     }
@@ -136,8 +136,8 @@ class PluginApisTest extends TestCase
      */
     public function test_ocr_backends_clear(): void
     {
-        Kreuzberg::clearocrbackends();
-        $result = Kreuzberg::listocrbackends();
+        Kreuzberg::clearOcrBackends();
+        $result = Kreuzberg::listOcrBackends();
         $this->assertEmpty($result);
     }
 
@@ -146,7 +146,7 @@ class PluginApisTest extends TestCase
      */
     public function test_ocr_backends_list(): void
     {
-        $result = Kreuzberg::listocrbackends();
+        $result = Kreuzberg::listOcrBackends();
         $this->assertIsArray($result);
         foreach ($result as $item) {
             $this->assertIsString($item);
@@ -158,8 +158,8 @@ class PluginApisTest extends TestCase
      */
     public function test_ocr_backends_unregister(): void
     {
-        Kreuzberg::unregisterocrbackend('nonexistent-backend-xyz');
-        $this->assertTrue(true);
+        Kreuzberg::unregisterOcrBackend('nonexistent-backend-xyz');
+        $this->assertTrue(true); // Should not throw
     }
 
     /**
@@ -167,8 +167,8 @@ class PluginApisTest extends TestCase
      */
     public function test_post_processors_clear(): void
     {
-        Kreuzberg::clearpostprocessors();
-        $result = Kreuzberg::listpostprocessors();
+        Kreuzberg::clearPostProcessors();
+        $result = Kreuzberg::listPostProcessors();
         $this->assertEmpty($result);
     }
 
@@ -177,7 +177,7 @@ class PluginApisTest extends TestCase
      */
     public function test_post_processors_list(): void
     {
-        $result = Kreuzberg::listpostprocessors();
+        $result = Kreuzberg::listPostProcessors();
         $this->assertIsArray($result);
         foreach ($result as $item) {
             $this->assertIsString($item);
@@ -189,8 +189,8 @@ class PluginApisTest extends TestCase
      */
     public function test_validators_clear(): void
     {
-        Kreuzberg::clearvalidators();
-        $result = Kreuzberg::listvalidators();
+        Kreuzberg::clearValidators();
+        $result = Kreuzberg::listValidators();
         $this->assertEmpty($result);
     }
 
@@ -199,7 +199,7 @@ class PluginApisTest extends TestCase
      */
     public function test_validators_list(): void
     {
-        $result = Kreuzberg::listvalidators();
+        $result = Kreuzberg::listValidators();
         $this->assertIsArray($result);
         foreach ($result as $item) {
             $this->assertIsString($item);
