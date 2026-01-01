@@ -917,7 +917,7 @@ jobs:
 
           # Create bottle tarball
           cd "${bottle_dir}"
-          bottle_filename="kreuzberg--${VERSION}.${{ matrix.bottle_tag }}.bottle.tar.gz"
+          bottle_filename="kreuzberg-${VERSION}.${{ matrix.bottle_tag }}.bottle.tar.gz"
           tar -czf "${bottle_filename}" bin/
 
           # Calculate SHA256
@@ -934,7 +934,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: homebrew-bottle-${{ matrix.bottle_tag }}
-          path: kreuzberg--${{ steps.version.outputs.version }}.${{ matrix.bottle_tag }}.bottle.tar.gz
+          path: kreuzberg-${{ steps.version.outputs.version }}.${{ matrix.bottle_tag }}.bottle.tar.gz
           retention-days: 14
 
   upload-homebrew-bottles:
@@ -1134,9 +1134,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          cd packages/ruby
-          ridk exec bundle config set --local path vendor/bundle
-          ridk exec bundle check; if ($LASTEXITCODE -ne 0) { ridk exec bundle install }
+          $workspace = ridk exec bash -lc "cygpath -au '$env:GITHUB_WORKSPACE'"
+          $gemdir = "$workspace/packages/ruby"
+          ridk exec bash -lc "cd $gemdir && bundle config set --local path vendor/bundle"
+          ridk exec bash -lc "cd $gemdir && bundle check || bundle install"
 
       - name: Build gem (Windows)
         if: runner.os == 'Windows'
@@ -1655,9 +1656,9 @@ jobs:
       - name: Install Task
         uses: ./.github/actions/install-task
 
-      - name: Build PHP extension (kreuzberg-ffi)
+      - name: Build PHP extension (kreuzberg-php)
         shell: bash
-        run: task rust:ffi:build
+        run: task php:build
 
       - name: Build PIE package
         shell: bash
@@ -1907,12 +1908,13 @@ jobs:
 
   upload-csharp-release:
     name: Upload C# NuGet to GitHub Release
-    needs: [prepare, validate-versions, csharp-package]
+    needs: [prepare, validate-versions, check-nuget, csharp-package]
     if: |
       always() &&
       needs.prepare.outputs.dry_run != 'true' &&
       needs.prepare.outputs.is_tag == 'true' &&
       needs.prepare.outputs.release_csharp == 'true' &&
+      (needs.prepare.outputs.force_republish == 'true' || needs.check-nuget.outputs.exists != 'true') &&
       needs.csharp-package.result == 'success'
     runs-on: ubuntu-latest
     permissions:

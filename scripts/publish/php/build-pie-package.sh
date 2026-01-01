@@ -50,7 +50,7 @@ mkdir -p "$OUTPUT_DIR"
 WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
 PHP_DIR="${WORKSPACE}/packages/php"
 TARGET_DIR="${WORKSPACE}/target/release"
-EXT_FILE="libkreuzberg.${EXT_SUFFIX}"
+EXT_FILE="libkreuzberg_php.${EXT_SUFFIX}"
 
 if [[ ! -f "${TARGET_DIR}/${EXT_FILE}" ]]; then
   echo "::error::Extension file not found: ${TARGET_DIR}/${EXT_FILE}" >&2

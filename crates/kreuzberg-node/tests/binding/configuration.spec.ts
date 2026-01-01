@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ExtractionConfig, extractBytesSync, extractFileSync } from "../../dist/index.js";
@@ -7,7 +7,8 @@ import { getTestDocumentPath } from "../helpers/index.js";
 
 describe("Configuration Options", () => {
 	const pdfPath = getTestDocumentPath("pdf/simple.pdf");
-	const pdfBytes = new Uint8Array(readFileSync(pdfPath));
+	// Resolve symlinks to get the actual file path (important for Windows compatibility)
+	const pdfBytes = new Uint8Array(readFileSync(realpathSync(pdfPath)));
 
 	describe("Basic configuration", () => {
 		it("should handle useCache: true", () => {

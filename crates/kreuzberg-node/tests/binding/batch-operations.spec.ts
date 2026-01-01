@@ -15,7 +15,7 @@
  */
 
 import { describe, expect, it, beforeAll } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { batchExtractFiles, batchExtractFilesSync, batchExtractBytes, batchExtractBytesSync } from "../../dist/index.js";
 import type { ExtractionConfig } from "../../src/types.js";
 import { getTestDocumentPath } from "../helpers/index.js";
@@ -33,21 +33,21 @@ beforeAll(() => {
 	sampleDocxPath = getTestDocumentPath("documents/sample.docx");
 	sampleTxtPath = getTestDocumentPath("text/sample.txt");
 
-	// Read as bytes
+	// Read as bytes - Resolve symlinks for Windows compatibility
 	try {
-		samplePdfBytes = new Uint8Array(readFileSync(samplePdfPath));
+		samplePdfBytes = new Uint8Array(readFileSync(realpathSync(samplePdfPath)));
 	} catch {
 		// File may not exist
 	}
 
 	try {
-		sampleDocxBytes = new Uint8Array(readFileSync(sampleDocxPath));
+		sampleDocxBytes = new Uint8Array(readFileSync(realpathSync(sampleDocxPath)));
 	} catch {
 		// File may not exist
 	}
 
 	try {
-		sampleTxtBytes = new Uint8Array(readFileSync(sampleTxtPath));
+		sampleTxtBytes = new Uint8Array(readFileSync(realpathSync(sampleTxtPath)));
 	} catch {
 		// File may not exist
 	}

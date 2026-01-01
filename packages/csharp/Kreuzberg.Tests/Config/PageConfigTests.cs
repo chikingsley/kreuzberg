@@ -114,9 +114,10 @@ public class PageConfigTests
 
         foreach (var prop in properties)
         {
-            var hasInitOnly = prop.SetMethod.ReturnParameter?
-                .GetRequiredCustomModifiers()
-                .Any(m => m.Name == "IsExternalInit") ?? false;
+            var returnParameter = prop.SetMethod?.ReturnParameter;
+            var hasInitOnly = returnParameter != null &&
+                returnParameter.GetRequiredCustomModifiers()
+                    .Any(m => m.Name == "IsExternalInit");
 
             Assert.True(hasInitOnly, $"{prop.Name} must have init-only accessor");
         }

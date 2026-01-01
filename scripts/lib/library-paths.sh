@@ -190,7 +190,9 @@ EOF
     ;;
   Windows | MINGW* | MSYS* | CYGWIN*)
     if [ -z "${CGO_LDFLAGS:-}" ] && [ -z "${GITHUB_ENV:-}" ]; then
-      export CGO_LDFLAGS="-L${repo_root}/target/x86_64-pc-windows-gnu/release -lkreuzberg_ffi -static-libgcc -static-libstdc++ -lws2_32 -luserenv -lbcrypt"
+      # Only set library search path; ffi.go CGO directives handle -l flags
+      # This matches the approach in setup-go-cgo-env/windows.ps1
+      export CGO_LDFLAGS="-L${repo_root}/target/x86_64-pc-windows-gnu/release -L${repo_root}/target/release"
     fi
     ;;
   esac

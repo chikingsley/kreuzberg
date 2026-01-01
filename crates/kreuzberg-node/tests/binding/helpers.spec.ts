@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { extractBytesSync, extractFileSync } from "../../dist/index.js";
 import { getTestDocumentPath } from "../helpers/index.js";
@@ -90,7 +90,8 @@ describe("Helper Functions and Edge Cases", () => {
 
 		it("should require MIME type for bytes extraction", () => {
 			const pdfPath = getTestDocumentPath("pdf/simple.pdf");
-			const bytes = new Uint8Array(readFileSync(pdfPath));
+			// Resolve symlinks to get the actual file path (important for Windows compatibility)
+			const bytes = new Uint8Array(readFileSync(realpathSync(pdfPath)));
 
 			const result = extractBytesSync(bytes, "application/pdf", null);
 			expect(result.mimeType).toContain("application/pdf");
@@ -99,7 +100,8 @@ describe("Helper Functions and Edge Cases", () => {
 
 	describe("Buffer/Uint8Array conversion", () => {
 		const pdfPath = getTestDocumentPath("pdf/simple.pdf");
-		const pdfBytes = readFileSync(pdfPath);
+		// Resolve symlinks to get the actual file path (important for Windows compatibility)
+		const pdfBytes = readFileSync(realpathSync(pdfPath));
 
 		it("should handle Node.js Buffer", () => {
 			const uint8 = new Uint8Array(pdfBytes);

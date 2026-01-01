@@ -9,7 +9,7 @@
  * 5. Page content structure - Each page has correct fields (pageNumber, content, tables, images)
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ExtractionConfig, PageContent } from "../../src/types";
 import { extractBytesSync, extractFileSync } from "../../dist/index.js";
@@ -20,7 +20,8 @@ let samplePdfBytes: Uint8Array;
 
 beforeAll(() => {
 	samplePdfPath = getTestDocumentPath("pdf/simple.pdf");
-	samplePdfBytes = new Uint8Array(readFileSync(samplePdfPath));
+	// Resolve symlinks to get the actual file path (important for Windows compatibility)
+	samplePdfBytes = new Uint8Array(readFileSync(realpathSync(samplePdfPath)));
 });
 
 describe("Pages Extraction (Node.js Bindings)", () => {

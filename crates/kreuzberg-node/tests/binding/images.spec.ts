@@ -14,7 +14,7 @@
  * NAPI-RS bindings with plain object configs (NO builder pattern).
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ExtractionConfig, ExtractedImage } from "../../src/types.js";
 import { extractBytesSync, extractFileSync } from "../../dist/index.js";
@@ -27,7 +27,8 @@ let docxPath: string;
 
 beforeAll(() => {
 	samplePdfPath = getTestDocumentPath("pdfs/embedded_images_tables.pdf");
-	samplePdfBytes = new Uint8Array(readFileSync(samplePdfPath));
+	// Resolve symlinks to get the actual file path (important for Windows compatibility)
+	samplePdfBytes = new Uint8Array(readFileSync(realpathSync(samplePdfPath)));
 
 	// Get PPTX if available
 	pptxPath = getTestDocumentPath("presentations/simple.pptx");

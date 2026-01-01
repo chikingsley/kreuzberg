@@ -16,7 +16,7 @@
  * NAPI-RS bindings with plain object configs (NO builder pattern).
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ExtractionConfig, Table } from "../../src/types.js";
 import { extractBytesSync, extractFileSync } from "../../dist/index.js";
@@ -34,7 +34,8 @@ beforeAll(() => {
 	largePdfPath = getTestDocumentPath("pdfs_with_tables/large.pdf");
 
 	try {
-		tinyPdfBytes = new Uint8Array(readFileSync(tinyPdfPath));
+		// Resolve symlinks to get the actual file path (important for Windows compatibility)
+		tinyPdfBytes = new Uint8Array(readFileSync(realpathSync(tinyPdfPath)));
 	} catch {
 		// File may not be accessible
 	}

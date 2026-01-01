@@ -169,19 +169,11 @@ jobs:
           pdfium-version: ${{ env.PDFIUM_VERSION }}
           ort-version: ${{ env.ORT_VERSION }}
 
-      - name: Set pkg-config path
-        shell: bash
-        run: |
-          echo "PKG_CONFIG_PATH=${{ github.workspace }}/crates/kreuzberg-ffi:${{ github.workspace }}/target/release:$PKG_CONFIG_PATH" >> "$GITHUB_ENV"
-
-      - name: Set library path for dynamic linking
-        shell: bash
-        run: |
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            echo "LD_LIBRARY_PATH=${{ github.workspace }}/target/release:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          fi
+      - name: Setup Go CGO environment
+        uses: ./.github/actions/setup-go-cgo-env
+        with:
+          ffi-lib-dir: 'target/release'
+          enable-rpath: 'true'
 
       - name: Verify FFI build artifacts
         if: always()
@@ -201,6 +193,11 @@ jobs:
 
       - name: Build Go bindings
         run: task go:build:ci
+        env:
+          CGO_ENABLED: ${{ env.CGO_ENABLED }}
+          CGO_CFLAGS: ${{ env.CGO_CFLAGS }}
+          CGO_LDFLAGS: ${{ env.CGO_LDFLAGS }}
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
 
       - name: Upload FFI library
         uses: actions/upload-artifact@v6

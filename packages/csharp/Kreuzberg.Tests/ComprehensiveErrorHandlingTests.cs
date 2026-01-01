@@ -217,7 +217,7 @@ public class ComprehensiveErrorHandlingTests
         );
 
         Assert.NotNull(ex);
-        Assert.False(ex is AggregateException);
+        Assert.IsType<KreuzbergValidationException>(ex);
     }
 
     #endregion

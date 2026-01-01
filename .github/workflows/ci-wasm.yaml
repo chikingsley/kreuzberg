@@ -258,7 +258,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: wasm-x86_64-unknown-linux-gnu
-          path: crates/kreuzberg-wasm/
+          path: crates/kreuzberg-wasm/pkg/
 
       - name: Install Task
         uses: ./.github/actions/install-task

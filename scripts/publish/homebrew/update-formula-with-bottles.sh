@@ -21,7 +21,7 @@ echo "Artifacts: $artifacts_dir"
 declare -A bottle_hashes
 declare -a bottle_tags
 
-for bottle in "$artifacts_dir"/kreuzberg--*.bottle.tar.gz; do
+for bottle in "$artifacts_dir"/kreuzberg-*.bottle.tar.gz; do
   if [ -f "$bottle" ]; then
     filename="$(basename "$bottle")"
     without_suffix="${filename%.bottle.tar.gz}"
@@ -53,6 +53,12 @@ fi
 
 formula_content=$(<"$formula_path")
 
+# Fetch the SHA256 of the source tarball
+echo "Fetching SHA256 of source tarball..."
+tarball_url="https://github.com/kreuzberg-dev/kreuzberg/archive/$tag.tar.gz"
+tarball_sha256=$(curl -sL "$tarball_url" | shasum -a 256 | cut -d' ' -f1)
+echo "Source tarball SHA256: $tarball_sha256"
+
 bottle_block="  bottle do"
 bottle_block+=$'\n'"    root_url \"https://github.com/kreuzberg-dev/kreuzberg/releases/download/$tag\""
 
@@ -63,11 +69,14 @@ done
 
 bottle_block+=$'\n'"  end"
 
+# Update URL and sha256 (sha256 comes right after url line)
 new_formula=$(echo "$formula_content" | sed \
   -e "s|url \"https://github.com/kreuzberg-dev/kreuzberg/archive/.*\.tar\.gz\"|url \"https://github.com/kreuzberg-dev/kreuzberg/archive/$tag.tar.gz\"|" \
-  -e "s|version \"[^\"]*\"|version \"$version\"|")
+  -e "s|sha256 \"[a-f0-9]*\"|sha256 \"$tarball_sha256\"|")
 
-new_formula=$(echo "$new_formula" | sed '/# bottle do/,/# end/d')
+# Remove any existing bottle blocks (both commented and uncommented)
+new_formula=$(echo "$new_formula" | sed '/^  bottle do$/,/^  end$/d')
+new_formula=$(echo "$new_formula" | sed '/^  # bottle do$/,/^  # end$/d')
 
 # Insert bottle block before depends_on line using awk (more reliable than sed for multiline)
 new_formula=$(echo "$new_formula" | awk -v bottle="$bottle_block" '

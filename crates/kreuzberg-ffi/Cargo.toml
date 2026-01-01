@@ -43,6 +43,7 @@ kreuzberg = { path = "../kreuzberg", features = [
     "ocr",
     "language-detection",
     "chunking",
+    "embeddings",
     "quality",
     "keywords",
     "api",

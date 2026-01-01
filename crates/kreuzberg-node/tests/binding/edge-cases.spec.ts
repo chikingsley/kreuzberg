@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { getTestDocumentPath } from "../helpers/index.js";
 
@@ -120,7 +120,8 @@ describe("Edge Cases and Coverage", () => {
 		it("should convert Uint8Array to Buffer consistently", async () => {
 			const { extractBytesSync } = await import("../../dist/index.js");
 			const pdfPath = getTestDocumentPath("pdf/simple.pdf");
-			const bytes = readFileSync(pdfPath);
+			// Resolve symlinks to get the actual file path (important for Windows compatibility)
+			const bytes = readFileSync(realpathSync(pdfPath));
 
 			const uint8Array = new Uint8Array(bytes);
 			const result = extractBytesSync(uint8Array, "application/pdf", null);

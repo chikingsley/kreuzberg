@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
 	batchExtractBytes,
@@ -16,10 +16,11 @@ let sampleTextBytes: Uint8Array;
 
 beforeAll(() => {
 	samplePdfPath = getTestDocumentPath("pdf/simple.pdf");
-	samplePdfBytes = new Uint8Array(readFileSync(samplePdfPath));
+	// Resolve symlinks to get the actual file path (important for Windows compatibility)
+	samplePdfBytes = new Uint8Array(readFileSync(realpathSync(samplePdfPath)));
 
 	sampleTextPath = getTestDocumentPath("pandoc/simple_metadata.md");
-	sampleTextBytes = new Uint8Array(readFileSync(sampleTextPath));
+	sampleTextBytes = new Uint8Array(readFileSync(realpathSync(sampleTextPath)));
 });
 
 describe("extractBytesSync", () => {

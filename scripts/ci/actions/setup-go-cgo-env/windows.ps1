@@ -60,6 +60,8 @@ if (Test-Path (Join-Path $mingwBin "x86_64-w64-mingw32-gcc.exe")) {
 }
 
 $cgoEnabled = "1"
+# Note: We don't set CGO_CFLAGS here because ffi.go has #cgo windows CFLAGS directive
+# But we keep this for potential use by other tools
 $cgoCflags = "-I$msys2IncludePath"
 $importLibName = "libkreuzberg_ffi.dll.a"
 $importLibPath = Join-Path $ffiPath $importLibName
@@ -67,11 +69,10 @@ $linkerVerboseFlags = ""
 if ($env:KREUZBERG_GO_LINKER_VERBOSE -eq "1") {
   $linkerVerboseFlags = "-Wl,-v -Wl,--verbose"
 }
-if (Test-Path $importLibPath) {
-  $cgoLdflags = "-L$msys2FfiPath -l:$importLibName -lws2_32 -luserenv -lbcrypt $linkerVerboseFlags"
-} else {
-  $cgoLdflags = "-L$msys2FfiPath -lkreuzberg_ffi -lws2_32 -luserenv -lbcrypt $linkerVerboseFlags"
-}
+# Only set the library search path (-L) here. The ffi.go CGO directives
+# already specify -lkreuzberg_ffi and Windows system libraries (-lws2_32, etc)
+# Environment variable flags are prepended to CGO directive flags, so we just need -L
+$cgoLdflags = "-L$msys2FfiPath $linkerVerboseFlags".Trim()
 
 # Add libraries to PATH for runtime discovery
 Add-Content -Path $env:GITHUB_ENV -Value "PATH=$env:PATH"

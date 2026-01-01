@@ -79,7 +79,7 @@ wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/k
 tar -xzf kreuzberg-4.0.0-rc.20-linux-x86_64.tar.gz
 
 # Copy to PHP extension directory
-sudo cp kreuzberg-4.0.0-rc.20-linux-x86_64/ext/libkreuzberg.so $(php-config --extension-dir)/kreuzberg.so
+sudo cp kreuzberg-4.0.0-rc.20-linux-x86_64/ext/libkreuzberg_php.so $(php-config --extension-dir)/kreuzberg.so
 
 # Enable in php.ini
 echo "extension=kreuzberg.so" | sudo tee -a $(php --ini | grep "Loaded Configuration" | cut -d: -f2 | xargs)
@@ -102,7 +102,7 @@ wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/k
 tar -xzf kreuzberg-4.0.0-rc.20-macos-arm64.tar.gz
 
 # Copy to PHP extension directory
-sudo cp kreuzberg-4.0.0-rc.20-macos-arm64/ext/libkreuzberg.dylib $(php-config --extension-dir)/kreuzberg.so
+sudo cp kreuzberg-4.0.0-rc.20-macos-arm64/ext/libkreuzberg_php.dylib $(php-config --extension-dir)/kreuzberg.so
 
 # Enable in php.ini
 echo "extension=kreuzberg.so" | sudo tee -a $(php --ini | grep "Loaded Configuration" | cut -d: -f2 | xargs)
@@ -155,9 +155,9 @@ cd crates/kreuzberg-php
 cargo build --release
 
 # Copy to PHP extension directory
-sudo cp ../../target/release/libkreuzberg.so $(php-config --extension-dir)/kreuzberg.so
-# On macOS: libkreuzberg.dylib
-# On Windows: kreuzberg.dll
+sudo cp ../../target/release/libkreuzberg_php.so $(php-config --extension-dir)/kreuzberg.so
+# On macOS: libkreuzberg_php.dylib
+# On Windows: kreuzberg_php.dll
 
 # Enable in php.ini
 echo "extension=kreuzberg.so" | sudo tee -a $(php --ini | grep "Loaded Configuration" | cut -d: -f2 | xargs)
