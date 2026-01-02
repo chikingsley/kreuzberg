@@ -30,6 +30,48 @@ use magnus::{
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// Re-export FFI types and functions from kreuzberg_ffi crate.
+// This ensures proper linking by importing Rust symbols directly
+// instead of declaring them as external C symbols.
+pub use kreuzberg_ffi::{
+    // Types
+    CErrorDetails, CMetadataField,
+    // Panic/error handling (from panic_shield module)
+    get_last_error_code, get_last_error_message, get_last_panic_context,
+    // Error functions (from error module)
+    kreuzberg_get_error_details, kreuzberg_classify_error,
+    kreuzberg_error_code_name, kreuzberg_error_code_description,
+    // Result functions (from result module)
+    kreuzberg_result_get_page_count, kreuzberg_result_get_chunk_count,
+    kreuzberg_result_get_detected_language, kreuzberg_result_get_metadata_field,
+    // Memory and util functions (from lib.rs)
+    kreuzberg_free_string, kreuzberg_last_error, kreuzberg_last_error_code,
+    kreuzberg_last_panic_context,
+    // Validation functions (from lib.rs)
+    kreuzberg_validate_binarization_method, kreuzberg_validate_ocr_backend,
+    kreuzberg_validate_language_code, kreuzberg_validate_token_reduction_level,
+    kreuzberg_validate_tesseract_psm, kreuzberg_validate_tesseract_oem,
+    kreuzberg_validate_output_format, kreuzberg_validate_confidence,
+    kreuzberg_validate_dpi, kreuzberg_validate_chunking_params,
+    kreuzberg_get_valid_binarization_methods, kreuzberg_get_valid_language_codes,
+    kreuzberg_get_valid_ocr_backends, kreuzberg_get_valid_token_reduction_levels,
+};
+
+use std::ffi::c_char;
+
+// Config functions are not exported from the vendored kreuzberg-ffi lib.rs,
+// so we need to keep them as extern declarations. They are defined with
+// #[unsafe(no_mangle)] in config.rs but not re-exported through lib.rs.
+// We declare them here for linking at compile time.
+unsafe extern "C" {
+    pub fn kreuzberg_config_from_json(json_config: *const c_char) -> *mut std::ffi::c_void;
+    pub fn kreuzberg_config_free(config: *mut std::ffi::c_void);
+    pub fn kreuzberg_config_is_valid(json_config: *const c_char) -> i32;
+    pub fn kreuzberg_config_to_json(config: *const std::ffi::c_void) -> *mut c_char;
+    pub fn kreuzberg_config_get_field(config: *const std::ffi::c_void, field_name: *const c_char) -> *mut c_char;
+    pub fn kreuzberg_config_merge(base: *mut std::ffi::c_void, override_config: *const std::ffi::c_void) -> i32;
+}
+
 /// Keeps Ruby values alive across plugin registrations by informing the GC.
 struct GcGuardedValue {
     value: Value,
@@ -53,72 +95,6 @@ impl Drop for GcGuardedValue {
             ruby.gc_unregister_address(&self.value);
         }
     }
-}
-
-use std::ffi::c_char;
-
-/// C struct for error details from FFI (Phase 2)
-#[repr(C)]
-pub struct CErrorDetails {
-    pub message: *mut c_char,
-    pub error_code: u32,
-    pub error_type: *mut c_char,
-    pub source_file: *mut c_char,
-    pub source_function: *mut c_char,
-    pub source_line: u32,
-    pub context_info: *mut c_char,
-    pub is_panic: i32,
-}
-
-/// C struct for metadata field results from FFI
-#[repr(C)]
-pub struct CMetadataField {
-    pub name: *const c_char,
-    pub json_value: *mut c_char,
-    pub is_null: i32,
-}
-
-unsafe extern "C" {
-    pub fn kreuzberg_last_error_code() -> i32;
-    pub fn kreuzberg_last_panic_context() -> *mut c_char;
-    pub fn kreuzberg_free_string(s: *mut c_char);
-
-    pub fn kreuzberg_validate_binarization_method(method: *const c_char) -> i32;
-    pub fn kreuzberg_validate_ocr_backend(backend: *const c_char) -> i32;
-    pub fn kreuzberg_validate_language_code(code: *const c_char) -> i32;
-    pub fn kreuzberg_validate_token_reduction_level(level: *const c_char) -> i32;
-    pub fn kreuzberg_validate_tesseract_psm(psm: i32) -> i32;
-    pub fn kreuzberg_validate_tesseract_oem(oem: i32) -> i32;
-    pub fn kreuzberg_validate_output_format(format: *const c_char) -> i32;
-    pub fn kreuzberg_validate_confidence(confidence: f64) -> i32;
-    pub fn kreuzberg_validate_dpi(dpi: i32) -> i32;
-    pub fn kreuzberg_validate_chunking_params(max_chars: usize, max_overlap: usize) -> i32;
-
-    pub fn kreuzberg_get_valid_binarization_methods() -> *mut c_char;
-    pub fn kreuzberg_get_valid_language_codes() -> *mut c_char;
-    pub fn kreuzberg_get_valid_ocr_backends() -> *mut c_char;
-    pub fn kreuzberg_get_valid_token_reduction_levels() -> *mut c_char;
-    pub fn kreuzberg_get_last_error_message() -> *const c_char;
-
-    pub fn kreuzberg_config_from_json(json_config: *const c_char) -> *mut std::ffi::c_void;
-    pub fn kreuzberg_config_free(config: *mut std::ffi::c_void);
-    pub fn kreuzberg_config_is_valid(json_config: *const c_char) -> i32;
-    pub fn kreuzberg_config_to_json(config: *const std::ffi::c_void) -> *mut c_char;
-    pub fn kreuzberg_config_get_field(config: *const std::ffi::c_void, field_name: *const c_char) -> *mut c_char;
-    pub fn kreuzberg_config_merge(base: *mut std::ffi::c_void, override_config: *const std::ffi::c_void) -> i32;
-
-    pub fn kreuzberg_result_get_page_count(result: *const std::ffi::c_void) -> i32;
-    pub fn kreuzberg_result_get_chunk_count(result: *const std::ffi::c_void) -> i32;
-    pub fn kreuzberg_result_get_detected_language(result: *const std::ffi::c_void) -> *mut c_char;
-    pub fn kreuzberg_result_get_metadata_field(
-        result: *const std::ffi::c_void,
-        field_name: *const c_char,
-    ) -> CMetadataField;
-
-    pub fn kreuzberg_get_error_details() -> CErrorDetails;
-    pub fn kreuzberg_classify_error(error_message: *const c_char) -> u32;
-    pub fn kreuzberg_error_code_name(code: u32) -> *const c_char;
-    pub fn kreuzberg_error_code_description(code: u32) -> *const c_char;
 }
 
 /// Retrieve panic context from FFI if available
