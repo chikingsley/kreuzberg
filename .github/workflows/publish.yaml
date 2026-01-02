@@ -2309,11 +2309,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: scripts/publish/wait-for-package.sh npm "@kreuzberg/node-linux-x64-gnu" "${{ needs.prepare.outputs.version }}" 25
 
-      - name: Wait for npm indexing (linux arm64)
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: scripts/publish/wait-for-package.sh npm "@kreuzberg/node-linux-arm64-gnu" "${{ needs.prepare.outputs.version }}" 30
+      # TODO: Re-enable linux-arm64 npm indexing wait when arm64 builds are re-enabled
+      # (see node-bindings matrix line 622)
 
       - name: Prepare main Node package metadata
         if: ${{ needs.prepare.outputs.dry_run != 'true' }}
