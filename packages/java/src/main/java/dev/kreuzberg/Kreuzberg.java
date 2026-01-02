@@ -1181,25 +1181,37 @@ public final class Kreuzberg {
 	private record CallbackHandle(Arena arena, MemorySegment functionPointer, Object target) {
 	}
 
+	/**
+	 * Parses an extraction result from a native pointer without freeing the memory.
+	 * Used by batch operations where memory is freed collectively by
+	 * kreuzberg_free_batch_result.
+	 */
+	private static ExtractionResult parseResult(MemorySegment resultPtr) throws Throwable {
+		MemorySegment result = resultPtr.reinterpret(KreuzbergFFI.C_EXTRACTION_RESULT_LAYOUT.byteSize());
+
+		String content = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.CONTENT_OFFSET));
+		String mimeType = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.MIME_TYPE_OFFSET));
+		String tablesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.TABLES_OFFSET));
+		String detectedLanguagesJson = KreuzbergFFI
+				.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.DETECTED_LANGUAGES_OFFSET));
+		String metadataJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.METADATA_OFFSET));
+		String chunksJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.CHUNKS_OFFSET));
+		String imagesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.IMAGES_OFFSET));
+		String pageStructureJson = KreuzbergFFI
+				.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.PAGE_STRUCTURE_OFFSET));
+		boolean success = result.get(ValueLayout.JAVA_BOOLEAN, KreuzbergFFI.SUCCESS_OFFSET);
+
+		return ResultParser.parse(content, mimeType, tablesJson, detectedLanguagesJson, metadataJson, chunksJson,
+				imagesJson, pageStructureJson, success);
+	}
+
+	/**
+	 * Parses an extraction result from a native pointer and frees the memory. Used
+	 * by single extraction operations where memory must be freed individually.
+	 */
 	private static ExtractionResult parseAndFreeResult(MemorySegment resultPtr) throws Throwable {
 		try {
-			MemorySegment result = resultPtr.reinterpret(KreuzbergFFI.C_EXTRACTION_RESULT_LAYOUT.byteSize());
-
-			String content = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.CONTENT_OFFSET));
-			String mimeType = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.MIME_TYPE_OFFSET));
-			String tablesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.TABLES_OFFSET));
-			String detectedLanguagesJson = KreuzbergFFI
-					.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.DETECTED_LANGUAGES_OFFSET));
-			String metadataJson = KreuzbergFFI
-					.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.METADATA_OFFSET));
-			String chunksJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.CHUNKS_OFFSET));
-			String imagesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.IMAGES_OFFSET));
-			String pageStructureJson = KreuzbergFFI
-					.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.PAGE_STRUCTURE_OFFSET));
-			boolean success = result.get(ValueLayout.JAVA_BOOLEAN, KreuzbergFFI.SUCCESS_OFFSET);
-
-			return ResultParser.parse(content, mimeType, tablesJson, detectedLanguagesJson, metadataJson, chunksJson,
-					imagesJson, pageStructureJson, success);
+			return parseResult(resultPtr);
 		} finally {
 			KreuzbergFFI.KREUZBERG_FREE_RESULT.invoke(resultPtr);
 		}
@@ -1224,7 +1236,10 @@ public final class Kreuzberg {
 
 							Collections.emptyMap(), List.of(), List.of(), List.of(), List.of(), null, false));
 				} else {
-					results.add(parseAndFreeResult(ptr));
+					// Use parseResult (not parseAndFreeResult) to avoid double-free.
+					// Memory is freed collectively by KREUZBERG_FREE_BATCH_RESULT in the finally
+					// block.
+					results.add(parseResult(ptr));
 				}
 			}
 			return results;
