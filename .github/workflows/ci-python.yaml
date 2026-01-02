@@ -137,6 +137,18 @@ jobs:
       - name: Install Task
         uses: ./.github/actions/install-task
 
+      - name: Build CLI with features
+        shell: bash
+        run: |
+          echo "=== Building CLI Binary with Features ==="
+          cargo build --release --package kreuzberg-cli --features all
+          mkdir -p packages/python/kreuzberg
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp target/release/kreuzberg-cli.exe packages/python/kreuzberg/
+          else
+            cp target/release/kreuzberg-cli packages/python/kreuzberg/
+          fi
+
       - name: Build FFI library
         id: ffi
         shell: bash
@@ -273,21 +285,6 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: scripts/ci/python/install-spacy-model.sh
 
-      - name: Install Task
-        uses: ./.github/actions/install-task
-
-      - name: Run Python tests
-        shell: bash
-        run: task python:test:ci
-
-      - name: Upload coverage
-        if: matrix.coverage
-        uses: deepsourcelabs/test-coverage-action@master
-        with:
-          key: python
-          coverage-file: packages/python/coverage.lcov
-          dsn: ${{ secrets.DEEPSOURCE_DSN }}
-
       - name: Download PDFium
         uses: ./.github/actions/download-pdfium
         with:
@@ -302,6 +299,21 @@ jobs:
         uses: ./.github/actions/setup-onnx-runtime
         with:
           ort-version: ${{ env.ORT_VERSION }}
+
+      - name: Install Task
+        uses: ./.github/actions/install-task
+
+      - name: Run Python tests
+        shell: bash
+        run: task python:test:ci
+
+      - name: Upload coverage
+        if: matrix.coverage
+        uses: deepsourcelabs/test-coverage-action@master
+        with:
+          key: python
+          coverage-file: packages/python/coverage.lcov
+          dsn: ${{ secrets.DEEPSOURCE_DSN }}
 
       - name: Run E2E tests
         shell: bash
