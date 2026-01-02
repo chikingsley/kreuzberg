@@ -2,7 +2,7 @@ use super::error::PdfError;
 use pdfium_render::prelude::*;
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 /// Global singleton for the Pdfium instance.
 ///
@@ -20,6 +20,35 @@ use std::sync::OnceLock;
 /// 3. The `Pdfium` instance is never dropped, so `FPDF_DestroyLibrary()` is never called
 /// 4. All callers share the same `Pdfium` instance safely
 static PDFIUM_SINGLETON: OnceLock<Result<Pdfium, String>> = OnceLock::new();
+
+/// Global mutex to serialize all PDFium operations.
+///
+/// PDFium is NOT thread-safe. While the pdfium-render library provides a safe Rust API,
+/// the underlying C library can crash when accessed concurrently from multiple threads.
+/// This is especially problematic in batch processing mode where multiple `spawn_blocking`
+/// tasks may try to process PDFs simultaneously.
+///
+/// This mutex ensures that only one thread can be executing PDFium operations at any time.
+/// While this serializes PDF processing and eliminates parallelism for PDFs, it prevents
+/// crashes and ensures correctness.
+///
+/// # Performance Impact
+///
+/// In batch mode, PDFs will be processed sequentially rather than in parallel. However,
+/// other document types (text, HTML, etc.) can still be processed in parallel. For
+/// workloads with mixed document types, this provides good overall performance.
+///
+/// # Alternatives Considered
+///
+/// 1. **Process-based parallelism**: Spawn separate processes for PDF extraction.
+///    This would allow true parallelism but adds significant complexity and overhead.
+///
+/// 2. **Thread-local PDFium instances**: Not possible because the library only allows
+///    binding once per process (`FPDF_InitLibrary` can only be called once).
+///
+/// 3. **Disable batch mode for PDFs**: Would require changes to the batch orchestration
+///    to detect PDF types and process them differently.
+static PDFIUM_OPERATION_LOCK: Mutex<()> = Mutex::new(());
 
 /// Extract the bundled pdfium library and return its directory path.
 ///
@@ -83,28 +112,36 @@ fn initialize_pdfium() -> Result<Pdfium, String> {
     Ok(Pdfium::new(bindings))
 }
 
-/// A handle to the global Pdfium instance.
+/// A handle to the global Pdfium instance with exclusive access.
 ///
 /// This wrapper provides access to the singleton `Pdfium` instance. It implements
 /// `Deref<Target = Pdfium>` so it can be used anywhere a `&Pdfium` is expected.
 ///
 /// # Design
 ///
-/// The handle does not own the `Pdfium` instance - it merely provides access to
-/// the global singleton. When a `PdfiumHandle` is dropped, the underlying `Pdfium`
-/// instance continues to exist and can be accessed by future calls to `bind_pdfium()`.
+/// The handle holds an exclusive lock on PDFium operations via `PDFIUM_OPERATION_LOCK`.
+/// When the handle is dropped, the lock is released, allowing other threads to
+/// acquire PDFium access.
 ///
 /// This design ensures:
 /// - The Pdfium library is initialized exactly once
 /// - The library is never destroyed during the process lifetime
-/// - Multiple callers can safely use Pdfium concurrently (via `&Pdfium`)
-pub(crate) struct PdfiumHandle {
-    // This is a zero-sized marker type. The actual Pdfium instance
-    // is accessed via the PDFIUM_SINGLETON static.
-    _private: (),
+/// - Only one thread can access PDFium at a time (thread safety)
+/// - The lock is automatically released when the handle goes out of scope
+///
+/// # Thread Safety
+///
+/// PDFium is NOT thread-safe, so this handle serializes all PDFium operations.
+/// While this prevents parallel PDF processing, it ensures correctness and
+/// prevents crashes in batch processing scenarios.
+pub(crate) struct PdfiumHandle<'a> {
+    // Hold the mutex guard to ensure exclusive access to PDFium.
+    // The guard is automatically released when PdfiumHandle is dropped.
+    #[allow(dead_code)]
+    _guard: MutexGuard<'a, ()>,
 }
 
-impl Deref for PdfiumHandle {
+impl Deref for PdfiumHandle<'_> {
     type Target = Pdfium;
 
     fn deref(&self) -> &Self::Target {
@@ -146,10 +183,13 @@ impl Deref for PdfiumHandle {
 ///
 /// # Thread Safety
 ///
-/// This function is thread-safe. Multiple threads can call `bind_pdfium()` concurrently:
+/// This function is thread-safe but SERIALIZES access to PDFium:
 /// - The `OnceLock` ensures initialization happens exactly once
-/// - All threads receive handles to the same singleton instance
-/// - The underlying `Pdfium` instance is safe for concurrent `&self` access
+/// - The `PDFIUM_OPERATION_LOCK` mutex ensures only one thread can access PDFium at a time
+/// - The returned `PdfiumHandle` holds the mutex guard; when dropped, the lock is released
+///
+/// This serialization is necessary because PDFium is NOT thread-safe. Concurrent access
+/// to PDFium from multiple threads causes crashes (segfaults, abort traps).
 ///
 /// # Error Handling
 ///
@@ -170,13 +210,23 @@ impl Deref for PdfiumHandle {
 /// let pdfium2 = bind_pdfium(PdfError::RenderingFailed, "page rendering")?;
 /// // pdfium and pdfium2 reference the same underlying instance
 /// ```
-pub(crate) fn bind_pdfium(map_err: fn(String) -> PdfError, context: &'static str) -> Result<PdfiumHandle, PdfError> {
+pub(crate) fn bind_pdfium(
+    map_err: fn(String) -> PdfError,
+    context: &'static str,
+) -> Result<PdfiumHandle<'static>, PdfError> {
+    // Acquire exclusive lock on PDFium operations.
+    // This prevents concurrent access to PDFium which is NOT thread-safe.
+    // The lock is held for the duration of the PdfiumHandle's lifetime.
+    let guard = PDFIUM_OPERATION_LOCK
+        .lock()
+        .map_err(|e| map_err(format!("PDFium operation lock poisoned ({}): {}", context, e)))?;
+
     // Initialize the singleton on first access, or get the cached result
     let result = PDFIUM_SINGLETON.get_or_init(initialize_pdfium);
 
     // Convert the cached Result into our return type
     match result {
-        Ok(_) => Ok(PdfiumHandle { _private: () }),
+        Ok(_) => Ok(PdfiumHandle { _guard: guard }),
         Err(cached_error) => Err(map_err(format!(
             "Pdfium initialization failed ({}): {}",
             context, cached_error

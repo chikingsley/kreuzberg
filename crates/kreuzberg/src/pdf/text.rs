@@ -12,16 +12,18 @@ use pdfium_render::prelude::*;
 /// Result type for PDF text extraction with optional page tracking.
 type PdfTextExtractionResult = (String, Option<Vec<PageBoundary>>, Option<Vec<PageContent>>);
 
-pub struct PdfTextExtractor {
-    pdfium: PdfiumHandle,
+pub struct PdfTextExtractor<'a> {
+    pdfium: PdfiumHandle<'a>,
 }
 
-impl PdfTextExtractor {
+impl PdfTextExtractor<'static> {
     pub fn new() -> Result<Self> {
         let pdfium = bind_pdfium(PdfError::TextExtractionFailed, "text extraction")?;
-        Ok(Self { pdfium })
+        Ok(PdfTextExtractor { pdfium })
     }
+}
 
+impl PdfTextExtractor<'_> {
     pub fn extract_text(&self, pdf_bytes: &[u8]) -> Result<String> {
         self.extract_text_with_password(pdf_bytes, None)
     }
@@ -76,7 +78,7 @@ impl PdfTextExtractor {
     }
 }
 
-impl Default for PdfTextExtractor {
+impl Default for PdfTextExtractor<'static> {
     fn default() -> Self {
         Self::new().expect("Failed to create PDF text extractor")
     }

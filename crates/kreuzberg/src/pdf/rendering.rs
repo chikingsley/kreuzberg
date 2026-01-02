@@ -27,16 +27,18 @@ impl Default for PageRenderOptions {
     }
 }
 
-pub struct PdfRenderer {
-    pdfium: PdfiumHandle,
+pub struct PdfRenderer<'a> {
+    pdfium: PdfiumHandle<'a>,
 }
 
-impl PdfRenderer {
+impl PdfRenderer<'static> {
     pub fn new() -> Result<Self> {
         let pdfium = bind_pdfium(PdfError::RenderingFailed, "page rendering")?;
         Ok(Self { pdfium })
     }
+}
 
+impl PdfRenderer<'_> {
     pub fn render_page_to_image(
         &self,
         pdf_bytes: &[u8],
