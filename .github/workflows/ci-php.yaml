@@ -177,7 +177,11 @@ jobs:
 
       - name: Build PHP extension
         shell: bash
-        run: task php:build:ci
+        run: |
+          task php:build:ci
+
+          # Create PHP ini file for loading the extension
+          bash scripts/ci/php/create-ci-php-ini.sh
 
       - name: Cleanup Rust cache
         if: always()
