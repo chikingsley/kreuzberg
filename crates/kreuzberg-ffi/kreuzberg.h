@@ -49,212 +49,6 @@ typedef struct Option_ErrorCallback Option_ErrorCallback;
 typedef struct ResultPool ResultPool;
 
 /**
- * C-compatible extraction result structure
- *
- * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
- * Field order: 12 pointers (8 bytes each) + 1 bool + 7 bytes padding = 104 bytes total
- */
-typedef struct CExtractionResult {
-  /**
-   * Extracted text content (null-terminated UTF-8 string, must be freed with kreuzberg_free_string)
-   */
-  char *content;
-  /**
-   * Detected MIME type (null-terminated string, must be freed with kreuzberg_free_string)
-   */
-  char *mime_type;
-  /**
-   * Document language (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *language;
-  /**
-   * Document date (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *date;
-  /**
-   * Document subject (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *subject;
-  /**
-   * Tables as JSON array (null-terminated string, or NULL if no tables, must be freed with kreuzberg_free_string)
-   */
-  char *tables_json;
-  /**
-   * Detected languages as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *detected_languages_json;
-  /**
-   * Metadata as JSON object (null-terminated string, or NULL if no metadata, must be freed with kreuzberg_free_string)
-   */
-  char *metadata_json;
-  /**
-   * Text chunks as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *chunks_json;
-  /**
-   * Extracted images as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *images_json;
-  /**
-   * Page structure as JSON object (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *page_structure_json;
-  /**
-   * Per-page content as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
-   */
-  char *pages_json;
-  /**
-   * Whether extraction was successful
-   */
-  bool success;
-  /**
-   * Padding to match Java MemoryLayout (7 bytes padding to align to 8-byte boundary)
-   */
-  uint8_t _padding1[7];
-} CExtractionResult;
-
-/**
- * C-compatible structure for batch extraction results
- *
- * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
- * Field order: 1 pointer (8 bytes) + 1 usize (8 bytes) + 1 bool + 7 bytes padding = 24 bytes total
- */
-typedef struct CBatchResult {
-  /**
-   * Array of extraction results
-   */
-  struct CExtractionResult **results;
-  /**
-   * Number of results
-   */
-  uintptr_t count;
-  /**
-   * Whether batch operation was successful
-   */
-  bool success;
-  /**
-   * Padding to match Java MemoryLayout (7 bytes padding to align to 8-byte boundary)
-   */
-  uint8_t _padding2[7];
-} CBatchResult;
-
-/**
- * C-compatible structure for passing byte array with MIME type in batch operations
- *
- * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
- * Field order: 1 pointer (8 bytes) + 1 usize (8 bytes) + 1 pointer (8 bytes) = 24 bytes total
- */
-typedef struct CBytesWithMime {
-  /**
-   * Pointer to byte data
-   */
-  const uint8_t *data;
-  /**
-   * Length of byte data
-   */
-  uintptr_t data_len;
-  /**
-   * MIME type as null-terminated C string
-   */
-  const char *mime_type;
-} CBytesWithMime;
-
-/**
- * Type alias for the OCR backend callback function.
- *
- * # Parameters
- *
- * - `image_bytes`: Pointer to image data
- * - `image_length`: Length of image data in bytes
- * - `config_json`: JSON-encoded OcrConfig (null-terminated string)
- *
- * # Returns
- *
- * Null-terminated string containing extracted text (must be freed by Rust via kreuzberg_free_string),
- * or NULL on error.
- *
- * # Safety
- *
- * The callback must:
- * - Not store the image_bytes pointer (it's only valid for the duration of the call)
- * - Return a valid null-terminated UTF-8 string allocated by the caller
- * - Return NULL on error (error message should be retrievable separately)
- */
-typedef char *(*OcrBackendCallback)(const uint8_t *image_bytes,
-                                    uintptr_t image_length,
-                                    const char *config_json);
-
-/**
- * Type alias for the PostProcessor callback function.
- *
- * # Parameters
- *
- * - `result_json`: JSON-encoded ExtractionResult (null-terminated string)
- *
- * # Returns
- *
- * Null-terminated JSON string containing the processed ExtractionResult
- * (must be freed by Rust via kreuzberg_free_string), or NULL on error.
- *
- * # Safety
- *
- * The callback must:
- * - Not store the result_json pointer (it's only valid for the duration of the call)
- * - Return a valid null-terminated UTF-8 JSON string allocated by the caller
- * - Return NULL on error (error message should be retrievable separately)
- */
-typedef char *(*PostProcessorCallback)(const char *result_json);
-
-/**
- * Type alias for the DocumentExtractor callback function.
- *
- * # Parameters
- *
- * - `content`: Raw document bytes
- * - `content_len`: Length of the content array
- * - `mime_type`: MIME type of the document (null-terminated string)
- * - `config_json`: JSON-encoded ExtractionConfig (null-terminated string)
- *
- * # Returns
- *
- * Null-terminated JSON string containing the ExtractionResult, or NULL on error.
- * The returned string must be freeable by kreuzberg_free_string.
- *
- * # Safety
- *
- * The callback must:
- * - Not store the content, mime_type, or config_json pointers (only valid during the call)
- * - Return a valid null-terminated UTF-8 JSON string or NULL on error
- * - The returned string must be freeable by kreuzberg_free_string
- */
-typedef char *(*DocumentExtractorCallback)(const uint8_t *content,
-                                           uintptr_t content_len,
-                                           const char *mime_type,
-                                           const char *config_json);
-
-/**
- * Type alias for the Validator callback function.
- *
- * # Parameters
- *
- * - `result_json`: JSON-encoded ExtractionResult (null-terminated string)
- *
- * # Returns
- *
- * Null-terminated error message string if validation fails (must be freed by Rust
- * via kreuzberg_free_string), or NULL if validation passes.
- *
- * # Safety
- *
- * The callback must:
- * - Not store the result_json pointer (it's only valid for the duration of the call)
- * - Return a valid null-terminated UTF-8 string (error message) if validation fails
- * - Return NULL if validation passes
- * - The returned string must be freeable by kreuzberg_free_string
- */
-typedef char *(*ValidatorCallback)(const char *result_json);
-
-/**
  * Zero-copy view into an ExtractionResult.
  *
  * Provides direct pointers to string data without allocation or copying.
@@ -414,6 +208,237 @@ typedef struct CErrorDetails {
 } CErrorDetails;
 
 /**
+ * C-compatible extraction result structure
+ *
+ * This struct must maintain a stable ABI and memory layout for FFI compatibility.
+ *
+ * # Memory Layout
+ *
+ * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
+ * Field order: 12 pointers (8 bytes each) + 1 bool + 7 bytes padding = 104 bytes total
+ *
+ * The `#[repr(C)]` attribute ensures the struct follows C's memory layout rules:
+ * - Fields are laid out in order
+ * - Padding is added to maintain alignment
+ * - The struct has the same size and alignment on all platforms (for 64-bit)
+ *
+ * # Memory Management
+ *
+ * All pointer fields are owned by the caller and must be freed using `kreuzberg_free_string`.
+ * The struct itself must be freed using `kreuzberg_free_extraction_result`.
+ */
+typedef struct CExtractionResult {
+  /**
+   * Extracted text content (null-terminated UTF-8 string, must be freed with kreuzberg_free_string)
+   */
+  char *content;
+  /**
+   * Detected MIME type (null-terminated string, must be freed with kreuzberg_free_string)
+   */
+  char *mime_type;
+  /**
+   * Document language (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *language;
+  /**
+   * Document date (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *date;
+  /**
+   * Document subject (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *subject;
+  /**
+   * Tables as JSON array (null-terminated string, or NULL if no tables, must be freed with kreuzberg_free_string)
+   */
+  char *tables_json;
+  /**
+   * Detected languages as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *detected_languages_json;
+  /**
+   * Metadata as JSON object (null-terminated string, or NULL if no metadata, must be freed with kreuzberg_free_string)
+   */
+  char *metadata_json;
+  /**
+   * Text chunks as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *chunks_json;
+  /**
+   * Extracted images as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *images_json;
+  /**
+   * Page structure as JSON object (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *page_structure_json;
+  /**
+   * Per-page content as JSON array (null-terminated string, or NULL if not available, must be freed with kreuzberg_free_string)
+   */
+  char *pages_json;
+  /**
+   * Whether extraction was successful
+   */
+  bool success;
+  /**
+   * Padding to match Java MemoryLayout (7 bytes padding to align to 8-byte boundary)
+   */
+  uint8_t _padding1[7];
+} CExtractionResult;
+
+/**
+ * C-compatible structure for batch extraction results
+ *
+ * # Memory Layout
+ *
+ * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
+ * Field order: 1 pointer (8 bytes) + 1 usize (8 bytes) + 1 bool + 7 bytes padding = 24 bytes total
+ *
+ * The padding ensures the struct is properly aligned for 64-bit architectures.
+ *
+ * # Memory Management
+ *
+ * - The `results` array must be freed using `kreuzberg_free_batch_result`
+ * - Each individual result in the array must also be freed
+ */
+typedef struct CBatchResult {
+  /**
+   * Array of extraction results
+   */
+  struct CExtractionResult **results;
+  /**
+   * Number of results
+   */
+  uintptr_t count;
+  /**
+   * Whether batch operation was successful
+   */
+  bool success;
+  /**
+   * Padding to match Java MemoryLayout (7 bytes padding to align to 8-byte boundary)
+   */
+  uint8_t _padding2[7];
+} CBatchResult;
+
+/**
+ * C-compatible structure for passing byte array with MIME type in batch operations
+ *
+ * # Memory Layout
+ *
+ * Must be kept in sync with the Java side's MemoryLayout definition in KreuzbergFFI.java
+ * Field order: 1 pointer (8 bytes) + 1 usize (8 bytes) + 1 pointer (8 bytes) = 24 bytes total
+ *
+ * The `#[repr(C)]` attribute ensures consistent memory layout across languages.
+ *
+ * # Usage
+ *
+ * This struct is used to pass document data to batch extraction functions. The caller
+ * retains ownership of the data and mime_type pointers.
+ */
+typedef struct CBytesWithMime {
+  /**
+   * Pointer to byte data
+   */
+  const uint8_t *data;
+  /**
+   * Length of byte data
+   */
+  uintptr_t data_len;
+  /**
+   * MIME type as null-terminated C string
+   */
+  const char *mime_type;
+} CBytesWithMime;
+
+/**
+ * Type alias for the DocumentExtractor callback function.
+ *
+ * # Parameters
+ *
+ * - `content`: Pointer to document bytes (valid only during the call)
+ * - `content_len`: Length of the content in bytes
+ * - `mime_type`: Null-terminated MIME type string
+ * - `config_json`: Null-terminated JSON configuration string
+ *
+ * # Returns
+ *
+ * Null-terminated JSON string containing the ExtractionResult
+ * (must be freed by Rust via kreuzberg_free_string), or NULL on error.
+ *
+ * # Safety
+ *
+ * The callback must:
+ * - Not store the content, mime_type, or config_json pointers (only valid during the call)
+ * - Return a valid null-terminated UTF-8 JSON string or NULL on error
+ * - The returned string must be freeable by kreuzberg_free_string
+ */
+typedef char *(*DocumentExtractorCallback)(const uint8_t *content,
+                                           uintptr_t content_len,
+                                           const char *mime_type,
+                                           const char *config_json);
+
+/**
+ * Type alias for the OCR backend callback function.
+ *
+ * # Parameters
+ *
+ * - `image_bytes`: Raw image bytes
+ * - `image_length`: Length of image data in bytes
+ * - `config_json`: JSON-encoded OcrConfig (null-terminated string)
+ *
+ * # Returns
+ *
+ * Null-terminated string containing extracted text (must be freed by Rust via kreuzberg_free_string),
+ * or NULL on error.
+ *
+ * # Safety
+ *
+ * The callback must:
+ * - Not store the image_bytes pointer (it's only valid for the duration of the call)
+ * - Return a valid null-terminated UTF-8 string allocated by the caller
+ * - Return NULL on error (error message should be retrievable separately)
+ */
+typedef char *(*OcrBackendCallback)(const uint8_t *image_bytes,
+                                    uintptr_t image_length,
+                                    const char *config_json);
+
+/**
+ * Type alias for the PostProcessor callback function.
+ *
+ * # Parameters
+ *
+ * - `result_json`: JSON-encoded ExtractionResult (null-terminated string)
+ *
+ * # Returns
+ *
+ * Null-terminated JSON string containing the processed ExtractionResult
+ * (must be freed by Rust via kreuzberg_free_string), or NULL on error.
+ *
+ * # Safety
+ *
+ * The callback must:
+ * - Not store the result_json pointer (it's only valid for the duration of the call)
+ * - Return a valid null-terminated UTF-8 JSON string allocated by the caller
+ * - Return NULL on error (error message should be retrievable separately)
+ */
+typedef char *(*PostProcessorCallback)(const char *result_json);
+
+/**
+ * Validator callback function type for FFI.
+ *
+ * This is a C function pointer that validates extraction results.
+ *
+ * # Safety
+ *
+ * The callback must:
+ * - Not store the result_json pointer (it's only valid for the duration of the call)
+ * - Return a valid null-terminated UTF-8 string (error message) if validation fails
+ * - Return NULL if validation passes
+ * - The returned string must be freeable by kreuzberg_free_string
+ */
+typedef char *(*ValidatorCallback)(const char *result_json);
+
+/**
  * Metadata field accessor structure
  *
  * Returned by `kreuzberg_result_get_metadata_field()`. Contains the field value
@@ -490,947 +515,6 @@ typedef struct CStringInternStats {
    */
   uintptr_t total_memory_bytes;
 } CStringInternStats;
-
-/**
- * Extract text and metadata from a file (synchronous).
- *
- * # Safety
- *
- * - `file_path` must be a valid null-terminated C string
- * - The returned pointer must be freed with `kreuzberg_free_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- *
- * # Example (C)
- *
- * ```c
- * const char* path = "/path/to/document.pdf";
- * CExtractionResult* result = kreuzberg_extract_file_sync(path);
- * if (result != NULL && result->success) {
- *     printf("Content: %s\n", result->content);
- *     printf("MIME: %s\n", result->mime_type);
- *     kreuzberg_free_result(result);
- * } else {
- *     const char* error = kreuzberg_last_error();
- *     printf("Error: %s\n", error);
- * }
- * ```
- */
-struct CExtractionResult *kreuzberg_extract_file_sync(const char *file_path);
-
-/**
- * Detect MIME type from a file path.
- *
- * # Safety
- *
- * - `file_path` must be a valid null-terminated C string
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_detect_mime_type(const char *file_path, bool check_exists);
-
-/**
- * Validate that a MIME type is supported by Kreuzberg.
- *
- * # Safety
- *
- * - `mime_type` must be a valid null-terminated C string
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_validate_mime_type(const char *mime_type);
-
-/**
- * List available embedding preset names.
- *
- * # Safety
- *
- * - Returned string is a JSON array and must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_list_embedding_presets(void);
-
-/**
- * Get a specific embedding preset by name.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - Returned string is JSON object and must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_get_embedding_preset(const char *name);
-
-/**
- * Extract text and metadata from a file with custom configuration (synchronous).
- *
- * # Safety
- *
- * - `file_path` must be a valid null-terminated C string
- * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
- * - The returned pointer must be freed with `kreuzberg_free_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- *
- * # Example (C)
- *
- * ```c
- * const char* path = "/path/to/document.pdf";
- * const char* config = "{\"force_ocr\": true, \"ocr\": {\"language\": \"deu\"}}";
- * CExtractionResult* result = kreuzberg_extract_file_sync_with_config(path, config);
- * if (result != NULL && result->success) {
- *     printf("Content: %s\n", result->content);
- *     kreuzberg_free_result(result);
- * }
- * ```
- */
-struct CExtractionResult *kreuzberg_extract_file_sync_with_config(const char *file_path,
-                                                                  const char *config_json);
-
-/**
- * Extract text and metadata from byte array (synchronous).
- *
- * # Safety
- *
- * - `data` must be a valid pointer to a byte array of length `data_len`
- * - `mime_type` must be a valid null-terminated C string
- * - The returned pointer must be freed with `kreuzberg_free_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- *
- * # Example (C)
- *
- * ```c
- * const uint8_t* data = ...; // Document bytes
- * size_t len = ...;           // Length of data
- * const char* mime = "application/pdf";
- * CExtractionResult* result = kreuzberg_extract_bytes_sync(data, len, mime);
- * if (result != NULL && result->success) {
- *     printf("Content: %s\n", result->content);
- *     kreuzberg_free_result(result);
- * } else {
- *     const char* error = kreuzberg_last_error();
- *     printf("Error: %s\n", error);
- * }
- * ```
- */
-struct CExtractionResult *kreuzberg_extract_bytes_sync(const uint8_t *data,
-                                                       uintptr_t data_len,
-                                                       const char *mime_type);
-
-/**
- * Extract text and metadata from byte array with custom configuration (synchronous).
- *
- * # Safety
- *
- * - `data` must be a valid pointer to a byte array of length `data_len`
- * - `mime_type` must be a valid null-terminated C string
- * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
- * - The returned pointer must be freed with `kreuzberg_free_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- *
- * # Example (C)
- *
- * ```c
- * const uint8_t* data = ...; // Document bytes
- * size_t len = ...;           // Length of data
- * const char* mime = "application/pdf";
- * const char* config = "{\"force_ocr\": true, \"ocr\": {\"language\": \"deu\"}}";
- * CExtractionResult* result = kreuzberg_extract_bytes_sync_with_config(data, len, mime, config);
- * if (result != NULL && result->success) {
- *     printf("Content: %s\n", result->content);
- *     kreuzberg_free_result(result);
- * }
- * ```
- */
-struct CExtractionResult *kreuzberg_extract_bytes_sync_with_config(const uint8_t *data,
-                                                                   uintptr_t data_len,
-                                                                   const char *mime_type,
-                                                                   const char *config_json);
-
-/**
- * Batch extract text and metadata from multiple files (synchronous).
- *
- * # Safety
- *
- * - `file_paths` must be a valid pointer to an array of null-terminated C strings
- * - `count` must be the number of file paths in the array
- * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
- * - The returned pointer must be freed with `kreuzberg_free_batch_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- */
-struct CBatchResult *kreuzberg_batch_extract_files_sync(const char *const *file_paths,
-                                                        uintptr_t count,
-                                                        const char *config_json);
-
-/**
- * Batch extract text and metadata from multiple byte arrays (synchronous).
- *
- * # Safety
- *
- * - `items` must be a valid pointer to an array of CBytesWithMime structures
- * - `count` must be the number of items in the array
- * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
- * - The returned pointer must be freed with `kreuzberg_free_batch_result`
- * - Returns NULL on error (check `kreuzberg_last_error` for details)
- */
-struct CBatchResult *kreuzberg_batch_extract_bytes_sync(const struct CBytesWithMime *items,
-                                                        uintptr_t count,
-                                                        const char *config_json);
-
-/**
- * Load an extraction configuration from a TOML/YAML/JSON file.
- *
- * # Safety
- *
- * - `file_path` must be a valid null-terminated C string
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_load_extraction_config_from_file(const char *file_path);
-
-/**
- * Free a batch result returned by batch extraction functions.
- *
- * # Safety
- *
- * - `batch_result` must be a pointer previously returned by a batch extraction function
- * - `batch_result` can be NULL (no-op)
- * - `batch_result` must not be used after this call
- * - All results and strings within the batch result will be freed automatically
- */
-void kreuzberg_free_batch_result(struct CBatchResult *batch_result);
-
-/**
- * Free a string returned by Kreuzberg functions.
- *
- * # Safety
- *
- * - `s` must be a string previously returned by a Kreuzberg function
- * - `s` can be NULL (no-op)
- * - `s` must not be used after this call
- *
- * # Example (C)
- *
- * ```c
- * char* str = result->content;
- * kreuzberg_free_string(str);
- * // str is now invalid
- * ```
- */
-void kreuzberg_free_string(char *s);
-
-/**
- * Clone a null-terminated string using Rust's allocator.
- *
- * # Safety
- *
- * - `s` must be a valid null-terminated UTF-8 string
- * - Returned pointer must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- */
-char *kreuzberg_clone_string(const char *s);
-
-/**
- * Free an extraction result returned by `kreuzberg_extract_file_sync`.
- *
- * # Safety
- *
- * - `result` must be a pointer previously returned by `kreuzberg_extract_file_sync`
- * - `result` can be NULL (no-op)
- * - `result` must not be used after this call
- * - All string fields within the result will be freed automatically
- *
- * # Example (C)
- *
- * ```c
- * CExtractionResult* result = kreuzberg_extract_file_sync(path);
- * // Use result...
- * kreuzberg_free_result(result);
- * // result is now invalid
- * ```
- */
-void kreuzberg_free_result(struct CExtractionResult *result);
-
-/**
- * Get the last error message from a failed operation.
- *
- * # Safety
- *
- * - Returns a static string that does not need to be freed
- * - Returns NULL if no error has occurred
- * - The returned string is valid until the next Kreuzberg function call on the same thread
- *
- * # Example (C)
- *
- * ```c
- * CExtractionResult* result = kreuzberg_extract_file_sync(path);
- * if (result == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     if (error != NULL) {
- *         printf("Error: %s\n", error);
- *     }
- * }
- * ```
- */
-const char *kreuzberg_last_error(void);
-
-/**
- * Get the error code for the last error.
- *
- * Returns the error code as an i32. Error codes are defined in ErrorCode enum:
- * - 0: Success (no error)
- * - 1: GenericError
- * - 2: Panic
- * - 3: InvalidArgument
- * - 4: IoError
- * - 5: ParsingError
- * - 6: OcrError
- * - 7: MissingDependency
- *
- * # Safety
- *
- * This function is thread-safe and always safe to call.
- *
- * # Example (C)
- *
- * ```c
- * CExtractionResult* result = kreuzberg_extract_file_sync(path);
- * if (result == NULL) {
- *     int32_t code = kreuzberg_last_error_code();
- *     if (code == 2) {
- *         // A panic occurred
- *     }
- * }
- * ```
- */
-int32_t kreuzberg_last_error_code(void);
-
-/**
- * Get the panic context for the last error (if it was a panic).
- *
- * Returns a JSON string containing panic context information, or NULL if
- * the last error was not a panic.
- *
- * The JSON structure contains:
- * - file: Source file where panic occurred
- * - line: Line number
- * - function: Function name
- * - message: Panic message
- * - timestamp_secs: Unix timestamp (seconds since epoch)
- *
- * # Safety
- *
- * The returned string must be freed with kreuzberg_free_string().
- *
- * # Example (C)
- *
- * ```c
- * CExtractionResult* result = kreuzberg_extract_file_sync(path);
- * if (result == NULL && kreuzberg_last_error_code() == 2) {
- *     const char* context = kreuzberg_last_panic_context();
- *     if (context != NULL) {
- *         printf("Panic context: %s\n", context);
- *         kreuzberg_free_string((char*)context);
- *     }
- * }
- * ```
- */
-char *kreuzberg_last_panic_context(void);
-
-/**
- * Get the library version string.
- *
- * # Safety
- *
- * - Returns a static string that does not need to be freed
- * - The returned string is always valid
- *
- * # Example (C)
- *
- * ```c
- * const char* version = kreuzberg_version();
- * printf("Kreuzberg version: %s\n", version);
- * ```
- */
-const char *kreuzberg_version(void);
-
-/**
- * Register a custom OCR backend via FFI callback.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - `callback` must be a valid function pointer that:
- *   - Does not store the image_bytes pointer
- *   - Returns a null-terminated UTF-8 string or NULL on error
- *   - The returned string must be freeable by kreuzberg_free_string
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * char* my_ocr_backend(const uint8_t* image_bytes, size_t image_length, const char* config_json) {
- *     // Implement OCR logic here
- *     // Return allocated string with result, or NULL on error
- *     return strdup("Extracted text");
- * }
- *
- * bool success = kreuzberg_register_ocr_backend("my-ocr", my_ocr_backend);
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to register: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_register_ocr_backend(const char *name, OcrBackendCallback callback);
-
-/**
- * Register a custom OCR backend with explicit language support via FFI callback.
- *
- * # Safety
- *
- * - `languages_json` must be a null-terminated JSON array of language codes or NULL
- * - See `kreuzberg_register_ocr_backend` for additional safety notes.
- */
-bool kreuzberg_register_ocr_backend_with_languages(const char *name,
-                                                   OcrBackendCallback callback,
-                                                   const char *languages_json);
-
-/**
- * Register a custom PostProcessor via FFI callback.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - `callback` must be a valid function pointer that:
- *   - Does not store the result_json pointer
- *   - Returns a null-terminated UTF-8 JSON string or NULL on error
- *   - The returned string must be freeable by kreuzberg_free_string
- * - `priority` determines the order of execution (higher priority runs first)
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * char* my_post_processor(const char* result_json) {
- *     // Parse result_json, modify it, return JSON string
- *     return strdup("{\"content\":\"PROCESSED\"}");
- * }
- *
- * bool success = kreuzberg_register_post_processor("my-processor", my_post_processor, 100);
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to register: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_register_post_processor(const char *name,
-                                       PostProcessorCallback callback,
-                                       int32_t priority);
-
-/**
- * Register a custom PostProcessor with an explicit processing stage.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - `stage` must be a valid null-terminated C string containing "early", "middle", or "late"
- * - `callback` must be a valid function pointer that:
- *   - Does not store the result_json pointer
- *   - Returns a null-terminated UTF-8 JSON string or NULL on error
- *   - The returned string must be freeable by kreuzberg_free_string
- * - `priority` determines the order of execution within the stage (higher priority runs first)
- * - Returns true on success, false on error (check kreuzberg_last_error)
- */
-bool kreuzberg_register_post_processor_with_stage(const char *name,
-                                                  PostProcessorCallback callback,
-                                                  int32_t priority,
-                                                  const char *stage);
-
-/**
- * Unregister a PostProcessor by name.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_unregister_post_processor("my-processor");
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to unregister: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_unregister_post_processor(const char *name);
-
-/**
- * Clear all registered PostProcessors.
- *
- * # Safety
- *
- * - Removes all registered processors. Subsequent extractions will run without them.
- * - Returns true on success, false on error.
- */
-bool kreuzberg_clear_post_processors(void);
-
-/**
- * List all registered PostProcessors as a JSON array of names.
- *
- * # Safety
- *
- * - Returned string must be freed with `kreuzberg_free_string`.
- * - Returns NULL on error (check `kreuzberg_last_error`).
- */
-char *kreuzberg_list_post_processors(void);
-
-/**
- * Register a custom DocumentExtractor via FFI callback.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - `callback` must be a valid function pointer that:
- *   - Does not store the content, mime_type, or config_json pointers
- *   - Returns a null-terminated UTF-8 JSON string or NULL on error
- *   - The returned string must be freeable by kreuzberg_free_string
- * - `mime_types` must be a valid null-terminated C string containing comma-separated MIME types
- * - `priority` determines the order of selection (higher priority preferred)
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * char* my_extractor(const uint8_t* content, size_t len, const char* mime_type, const char* config) {
- *     // Extract content from bytes, return JSON ExtractionResult
- *     return strdup("{\"content\":\"extracted text\",\"mime_type\":\"text/plain\",\"metadata\":{}}");
- * }
- *
- * bool success = kreuzberg_register_document_extractor(
- *     "my-extractor",
- *     my_extractor,
- *     "application/x-custom,text/x-custom",
- *     100
- * );
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to register: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_register_document_extractor(const char *name,
-                                           DocumentExtractorCallback callback,
-                                           const char *mime_types,
-                                           int32_t priority);
-
-/**
- * Unregister a DocumentExtractor by name.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_unregister_document_extractor("my-extractor");
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to unregister: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_unregister_document_extractor(const char *name);
-
-/**
- * List all registered DocumentExtractors as a JSON array of names.
- *
- * # Safety
- *
- * - Returned string must be freed with `kreuzberg_free_string`.
- * - Returns NULL on error (check `kreuzberg_last_error`).
- */
-char *kreuzberg_list_document_extractors(void);
-
-/**
- * Register a custom Validator via FFI callback.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - `callback` must be a valid function pointer that:
- *   - Does not store the result_json pointer
- *   - Returns a null-terminated UTF-8 string (error message) if validation fails
- *   - Returns NULL if validation passes
- *   - The returned string must be freeable by kreuzberg_free_string
- * - `priority` determines the order of validation (higher priority runs first)
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * char* my_validator(const char* result_json) {
- *     // Parse result_json, validate it
- *     // Return error message if validation fails, NULL if passes
- *     if (invalid) {
- *         return strdup("Validation failed: content too short");
- *     }
- *     return NULL;
- * }
- *
- * bool success = kreuzberg_register_validator("my-validator", my_validator, 100);
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to register: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_register_validator(const char *name, ValidatorCallback callback, int32_t priority);
-
-/**
- * Unregister a Validator by name.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_unregister_validator("my-validator");
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to unregister: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_unregister_validator(const char *name);
-
-/**
- * Clear all registered Validators.
- *
- * # Safety
- *
- * - Removes all validators. Subsequent extractions will skip custom validation.
- * - Returns true on success, false on error.
- */
-bool kreuzberg_clear_validators(void);
-
-/**
- * List all registered Validators as a JSON array of names.
- *
- * # Safety
- *
- * - Returned string must be freed with `kreuzberg_free_string`.
- * - Returns NULL on error (check `kreuzberg_last_error`).
- */
-char *kreuzberg_list_validators(void);
-
-/**
- * Unregister an OCR backend by name.
- *
- * # Safety
- *
- * - `name` must be a valid null-terminated C string
- * - Returns true on success, false on error (check kreuzberg_last_error)
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_unregister_ocr_backend("custom-ocr");
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to unregister: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_unregister_ocr_backend(const char *name);
-
-/**
- * List all registered OCR backends as a JSON array of names.
- *
- * # Safety
- *
- * - Returned string must be freed with `kreuzberg_free_string`.
- * - Returns NULL on error (check `kreuzberg_last_error`).
- *
- * # Example (C)
- *
- * ```c
- * char* backends = kreuzberg_list_ocr_backends();
- * if (backends == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to list backends: %s\n", error);
- * } else {
- *     printf("OCR backends: %s\n", backends);
- *     kreuzberg_free_string(backends);
- * }
- * ```
- */
-char *kreuzberg_list_ocr_backends(void);
-
-/**
- * Clear all registered OCR backends.
- *
- * # Safety
- *
- * - Removes all registered OCR backends. Subsequent extractions will use only built-in backends.
- * - Returns true on success, false on error.
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_clear_ocr_backends();
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to clear OCR backends: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_clear_ocr_backends(void);
-
-/**
- * Clear all registered DocumentExtractors.
- *
- * # Safety
- *
- * - Removes all registered extractors. Subsequent extractions will use only built-in extractors.
- * - Returns true on success, false on error.
- *
- * # Example (C)
- *
- * ```c
- * bool success = kreuzberg_clear_document_extractors();
- * if (!success) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to clear document extractors: %s\n", error);
- * }
- * ```
- */
-bool kreuzberg_clear_document_extractors(void);
-
-/**
- * Detect MIME type from raw bytes.
- *
- * # Safety
- *
- * - `bytes` must be a valid pointer to byte data
- * - `len` must be the correct length of the byte array
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * const char* pdf_bytes = "%PDF-1.4\n";
- * char* mime = kreuzberg_detect_mime_type_from_bytes((const uint8_t*)pdf_bytes, strlen(pdf_bytes));
- * if (mime == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to detect MIME type: %s\n", error);
- * } else {
- *     printf("MIME type: %s\n", mime);
- *     kreuzberg_free_string(mime);
- * }
- * ```
- */
-char *kreuzberg_detect_mime_type_from_bytes(const uint8_t *bytes, uintptr_t len);
-
-/**
- * Detect MIME type from file path (checks extension and reads file content).
- *
- * # Safety
- *
- * - `file_path` must be a valid null-terminated C string
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * char* mime = kreuzberg_detect_mime_type_from_path("document.pdf");
- * if (mime == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to detect MIME type: %s\n", error);
- * } else {
- *     printf("MIME type: %s\n", mime);
- *     kreuzberg_free_string(mime);
- * }
- * ```
- */
-char *kreuzberg_detect_mime_type_from_path(const char *file_path);
-
-/**
- * Get file extensions for a MIME type.
- *
- * # Safety
- *
- * - `mime_type` must be a valid null-terminated C string
- * - The returned string is a JSON array of extensions (must be freed with `kreuzberg_free_string`)
- * - Returns NULL on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * char* extensions = kreuzberg_get_extensions_for_mime("application/pdf");
- * if (extensions == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to get extensions: %s\n", error);
- * } else {
- *     printf("Extensions: %s\n", extensions);
- *     kreuzberg_free_string(extensions);
- * }
- * ```
- */
-char *kreuzberg_get_extensions_for_mime(const char *mime_type);
-
-/**
- * Load an ExtractionConfig from a file.
- *
- * Automatically detects the file format based on extension:
- * - `.toml` - TOML format
- * - `.yaml`, `.yml` - YAML format
- * - `.json` - JSON format
- *
- * # Safety
- *
- * - `path` must be a valid null-terminated C string representing a file path
- * - Returns a pointer to ExtractionConfig on success, NULL on error
- * - The returned config must be freed with `kreuzberg_free_config`
- * - Check `kreuzberg_last_error` on NULL return
- *
- * # Example (C)
- *
- * ```c
- * ExtractionConfig* config = kreuzberg_config_from_file("kreuzberg.toml");
- * if (config == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     printf("Failed to load config: %s\n", error);
- *     return 1;
- * }
- *
- * // Use config...
- * char* result = kreuzberg_extract_file_with_config_sync("document.pdf", config);
- *
- * kreuzberg_free_config(config);
- * ```
- */
-ExtractionConfig *kreuzberg_config_from_file(const char *path);
-
-/**
- * Discover and load an ExtractionConfig by searching parent directories.
- *
- * Searches the current directory and all parent directories for:
- * - `kreuzberg.toml`
- * - `kreuzberg.yaml`
- * - `kreuzberg.yml`
- * - `kreuzberg.json`
- *
- * Returns the first config file found as JSON, or NULL if none found.
- *
- * # Safety
- *
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL if no config found or on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * char* config_json = kreuzberg_config_discover();
- * if (config_json == NULL) {
- *     const char* error = kreuzberg_last_error();
- *     if (error != NULL && strlen(error) > 0) {
- *         printf("Error discovering config: %s\n", error);
- *         return 1;
- *     }
- *     // No config found, use defaults
- *     printf("No config file found\n");
- * } else {
- *     printf("Config: %s\n", config_json);
- *     kreuzberg_free_string(config_json);
- * }
- * ```
- */
-char *kreuzberg_config_discover(void);
-
-/**
- * Get supported languages for an OCR backend.
- *
- * Returns a JSON array of supported language codes for the given backend.
- * Supported backends: "easyocr", "paddleocr", "tesseract"
- *
- * # Safety
- *
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL if backend not found or on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * char* languages = kreuzberg_get_ocr_languages("easyocr");
- * if (languages != NULL) {
- *     printf("EasyOCR languages: %s\n", languages);
- *     kreuzberg_free_string(languages);
- * }
- * ```
- */
-char *kreuzberg_get_ocr_languages(const char *backend);
-
-/**
- * Check if a language is supported by an OCR backend.
- *
- * Returns 1 (true) if the language is supported, 0 (false) otherwise.
- *
- * # Arguments
- *
- * * `backend` - Backend name (e.g., "easyocr", "paddleocr", "tesseract")
- * * `language` - Language code to check
- *
- * # Returns
- *
- * 1 if supported, 0 if not supported or backend not found.
- *
- * # Example (C)
- *
- * ```c
- * int is_supported = kreuzberg_is_language_supported("easyocr", "en");
- * if (is_supported) {
- *     printf("English is supported by EasyOCR\n");
- * }
- * ```
- *
- * # Safety
- *
- * - `backend` and `language` must be valid pointers to valid UTF-8 C strings.
- * - Both pointers can be checked for NULL; returns 0 if either is NULL.
- * - The C strings must remain valid for the duration of the function call.
- */
-int32_t kreuzberg_is_language_supported(const char *backend, const char *language);
-
-/**
- * Get list of all registered OCR backends with language support.
- *
- * Returns a JSON object mapping backend names to language counts.
- * Example: `{"easyocr": 80, "paddleocr": 14, "tesseract": 100}`
- *
- * # Safety
- *
- * - The returned string must be freed with `kreuzberg_free_string`
- * - Returns NULL on error (check `kreuzberg_last_error`)
- *
- * # Example (C)
- *
- * ```c
- * char* backends = kreuzberg_list_ocr_backends_with_languages();
- * if (backends != NULL) {
- *     printf("Available backends: %s\n", backends);
- *     kreuzberg_free_string(backends);
- * }
- * ```
- */
-char *kreuzberg_list_ocr_backends_with_languages(void);
 
 /**
  * Extract multiple files in streaming mode with callback-based result delivery.
@@ -1785,6 +869,88 @@ char *kreuzberg_config_get_field(const ExtractionConfig *config, const char *fie
 int32_t kreuzberg_config_merge(ExtractionConfig *base, const ExtractionConfig *override_config);
 
 /**
+ * Load an ExtractionConfig from a file.
+ *
+ * Returns a JSON string representing the loaded configuration.
+ *
+ * # Safety
+ *
+ * - `file_path` must be a valid null-terminated C string
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_load_extraction_config_from_file(const char *file_path);
+
+/**
+ * Load an ExtractionConfig from a file (returns pointer to config struct).
+ *
+ * # Safety
+ *
+ * - `path` must be a valid null-terminated C string
+ * - The returned pointer must be freed with `kreuzberg_config_free`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * ExtractionConfig* config = kreuzberg_config_from_file("config.toml");
+ * if (config == NULL) {
+ *     printf("Error: %s\n", kreuzberg_last_error());
+ *     return 1;
+ * }
+ * kreuzberg_config_free(config);
+ * ```
+ */
+ExtractionConfig *kreuzberg_config_from_file(const char *path);
+
+/**
+ * Discover and load an ExtractionConfig by searching parent directories.
+ *
+ * Searches the current directory and all parent directories for:
+ * - `kreuzberg.toml`
+ * - `kreuzberg.json`
+ *
+ * Returns the first config file found as a JSON string.
+ *
+ * # Safety
+ *
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL if no config is found or on error
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* config_json = kreuzberg_config_discover();
+ * if (config_json != NULL) {
+ *     printf("Discovered config: %s\n", config_json);
+ *     kreuzberg_free_string(config_json);
+ * }
+ * ```
+ */
+char *kreuzberg_config_discover(void);
+
+/**
+ * List available embedding preset names.
+ *
+ * # Safety
+ *
+ * - Returned string is a JSON array and must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_list_embedding_presets(void);
+
+/**
+ * Get a specific embedding preset by name.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - Returned string is JSON object and must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_get_embedding_preset(const char *name);
+
+/**
  * Returns the validation error code (0).
  *
  * # C Signature
@@ -2042,6 +1208,790 @@ struct CErrorDetails kreuzberg_get_error_details(void);
  * ```
  */
 uint32_t kreuzberg_classify_error(const char *error_message);
+
+/**
+ * Extract text and metadata from a file (synchronous).
+ *
+ * # Safety
+ *
+ * - `file_path` must be a valid null-terminated C string
+ * - The returned pointer must be freed with `kreuzberg_free_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * const char* path = "/path/to/document.pdf";
+ * CExtractionResult* result = kreuzberg_extract_file_sync(path);
+ * if (result != NULL && result->success) {
+ *     printf("Content: %s\n", result->content);
+ *     printf("MIME: %s\n", result->mime_type);
+ *     kreuzberg_free_result(result);
+ * } else {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Error: %s\n", error);
+ * }
+ * ```
+ */
+struct CExtractionResult *kreuzberg_extract_file_sync(const char *file_path);
+
+/**
+ * Extract text and metadata from a file with custom configuration (synchronous).
+ *
+ * # Safety
+ *
+ * - `file_path` must be a valid null-terminated C string
+ * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
+ * - The returned pointer must be freed with `kreuzberg_free_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * const char* path = "/path/to/document.pdf";
+ * const char* config = "{\"force_ocr\": true, \"ocr\": {\"language\": \"deu\"}}";
+ * CExtractionResult* result = kreuzberg_extract_file_sync_with_config(path, config);
+ * if (result != NULL && result->success) {
+ *     printf("Content: %s\n", result->content);
+ *     kreuzberg_free_result(result);
+ * }
+ * ```
+ */
+struct CExtractionResult *kreuzberg_extract_file_sync_with_config(const char *file_path,
+                                                                  const char *config_json);
+
+/**
+ * Extract text and metadata from byte array (synchronous).
+ *
+ * # Safety
+ *
+ * - `data` must be a valid pointer to a byte array of length `data_len`
+ * - `mime_type` must be a valid null-terminated C string
+ * - The returned pointer must be freed with `kreuzberg_free_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * const uint8_t* data = ...; // Document bytes
+ * size_t len = ...;           // Length of data
+ * const char* mime = "application/pdf";
+ * CExtractionResult* result = kreuzberg_extract_bytes_sync(data, len, mime);
+ * if (result != NULL && result->success) {
+ *     printf("Content: %s\n", result->content);
+ *     kreuzberg_free_result(result);
+ * } else {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Error: %s\n", error);
+ * }
+ * ```
+ */
+struct CExtractionResult *kreuzberg_extract_bytes_sync(const uint8_t *data,
+                                                       uintptr_t data_len,
+                                                       const char *mime_type);
+
+/**
+ * Extract text and metadata from byte array with custom configuration (synchronous).
+ *
+ * # Safety
+ *
+ * - `data` must be a valid pointer to a byte array of length `data_len`
+ * - `mime_type` must be a valid null-terminated C string
+ * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
+ * - The returned pointer must be freed with `kreuzberg_free_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * const uint8_t* data = ...; // Document bytes
+ * size_t len = ...;           // Length of data
+ * const char* mime = "application/pdf";
+ * const char* config = "{\"force_ocr\": true, \"ocr\": {\"language\": \"deu\"}}";
+ * CExtractionResult* result = kreuzberg_extract_bytes_sync_with_config(data, len, mime, config);
+ * if (result != NULL && result->success) {
+ *     printf("Content: %s\n", result->content);
+ *     kreuzberg_free_result(result);
+ * }
+ * ```
+ */
+struct CExtractionResult *kreuzberg_extract_bytes_sync_with_config(const uint8_t *data,
+                                                                   uintptr_t data_len,
+                                                                   const char *mime_type,
+                                                                   const char *config_json);
+
+/**
+ * Batch extract text and metadata from multiple files (synchronous).
+ *
+ * # Safety
+ *
+ * - `file_paths` must be a valid pointer to an array of null-terminated C strings
+ * - `count` must be the number of file paths in the array
+ * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
+ * - The returned pointer must be freed with `kreuzberg_free_batch_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Critical Memory Management
+ *
+ * This function has special memory management requirements due to the need to allocate
+ * an array of result pointers:
+ *
+ * 1. Results are collected in a Vec<*mut CExtractionResult>
+ * 2. The vec is converted to a boxed slice (changes allocation metadata)
+ * 3. The boxed slice pointer is cast to *mut *mut CExtractionResult
+ * 4. This pointer is stored in CBatchResult
+ * 5. Deallocation must reverse this process using slice_from_raw_parts
+ *
+ * The Go segfault issue was caused by incorrect deallocation in the memory module.
+ * This allocation pattern must be perfectly mirrored in the free function.
+ */
+struct CBatchResult *kreuzberg_batch_extract_files_sync(const char *const *file_paths,
+                                                        uintptr_t count,
+                                                        const char *config_json);
+
+/**
+ * Batch extract text and metadata from multiple byte arrays (synchronous).
+ *
+ * # Safety
+ *
+ * - `items` must be a valid pointer to an array of CBytesWithMime structures
+ * - `count` must be the number of items in the array
+ * - `config_json` must be a valid null-terminated C string containing JSON, or NULL for default config
+ * - The returned pointer must be freed with `kreuzberg_free_batch_result`
+ * - Returns NULL on error (check `kreuzberg_last_error` for details)
+ *
+ * # Critical Memory Management
+ *
+ * This function shares the same critical memory management pattern as
+ * `kreuzberg_batch_extract_files_sync`. See that function's documentation
+ * for details on the Box/Vec/slice allocation pattern.
+ */
+struct CBatchResult *kreuzberg_batch_extract_bytes_sync(const struct CBytesWithMime *items,
+                                                        uintptr_t count,
+                                                        const char *config_json);
+
+/**
+ * Free a batch result returned by batch extraction functions.
+ *
+ * # Safety
+ *
+ * - `batch_result` must be a pointer previously returned by a batch extraction function
+ * - `batch_result` can be NULL (no-op)
+ * - `batch_result` must not be used after this call
+ * - All individual results in the batch will be freed automatically
+ *
+ * # Memory Layout
+ *
+ * CRITICAL: The results array is allocated as `Box<[*mut CExtractionResult]>` (boxed slice),
+ * NOT as `Vec<*mut CExtractionResult>`. We must use `Box::from_raw` with a slice pointer,
+ * not `Vec::from_raw_parts`, to avoid Box/Vec mismatch that causes segfaults.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CBatchResult* batch = kreuzberg_extract_batch_sync(paths, count);
+ * // Use batch...
+ * kreuzberg_free_batch_result(batch);
+ * // batch is now invalid
+ * ```
+ */
+void kreuzberg_free_batch_result(struct CBatchResult *batch_result);
+
+/**
+ * Free a string returned by Kreuzberg functions.
+ *
+ * # Safety
+ *
+ * - `s` must be a string previously returned by a Kreuzberg function
+ * - `s` can be NULL (no-op)
+ * - `s` must not be used after this call
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* str = result->content;
+ * kreuzberg_free_string(str);
+ * // str is now invalid
+ * ```
+ */
+void kreuzberg_free_string(char *s);
+
+/**
+ * Clone a null-terminated string using Rust's allocator.
+ *
+ * # Safety
+ *
+ * - `s` must be a valid null-terminated UTF-8 string
+ * - Returned pointer must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_clone_string(const char *s);
+
+/**
+ * Free an extraction result returned by `kreuzberg_extract_file_sync`.
+ *
+ * # Safety
+ *
+ * - `result` must be a pointer previously returned by `kreuzberg_extract_file_sync`
+ * - `result` can be NULL (no-op)
+ * - `result` must not be used after this call
+ * - All string fields within the result will be freed automatically
+ *
+ * # Memory Layout
+ *
+ * This function frees all 12 string fields in CExtractionResult:
+ * 1. content
+ * 2. mime_type
+ * 3. language
+ * 4. date
+ * 5. subject
+ * 6. tables_json
+ * 7. detected_languages_json
+ * 8. metadata_json
+ * 9. chunks_json
+ * 10. images_json
+ * 11. page_structure_json (FIXED: was missing before PR #3)
+ * 12. pages_json (FIXED: was missing before PR #3)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CExtractionResult* result = kreuzberg_extract_file_sync(path);
+ * // Use result...
+ * kreuzberg_free_result(result);
+ * // result is now invalid
+ * ```
+ */
+void kreuzberg_free_result(struct CExtractionResult *result);
+
+/**
+ * Detect MIME type from a file path.
+ *
+ * # Safety
+ *
+ * - `file_path` must be a valid null-terminated C string
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_detect_mime_type(const char *file_path, bool check_exists);
+
+/**
+ * Validate that a MIME type is supported by Kreuzberg.
+ *
+ * # Safety
+ *
+ * - `mime_type` must be a valid null-terminated C string
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ */
+char *kreuzberg_validate_mime_type(const char *mime_type);
+
+/**
+ * Detect MIME type from raw bytes.
+ *
+ * # Safety
+ *
+ * - `bytes` must point to a valid buffer of at least `len` bytes
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * uint8_t data[512];
+ * // ... read data ...
+ * char* mime = kreuzberg_detect_mime_type_from_bytes(data, 512);
+ * if (mime != NULL) {
+ *     printf("Detected MIME type: %s\n", mime);
+ *     kreuzberg_free_string(mime);
+ * }
+ * ```
+ */
+char *kreuzberg_detect_mime_type_from_bytes(const uint8_t *bytes, uintptr_t len);
+
+/**
+ * Detect MIME type from file path (checks extension and reads file content).
+ *
+ * # Safety
+ *
+ * - `file_path` must be a valid null-terminated C string
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* mime = kreuzberg_detect_mime_type_from_path("document.pdf");
+ * if (mime == NULL) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to detect MIME type: %s\n", error);
+ * } else {
+ *     printf("MIME type: %s\n", mime);
+ *     kreuzberg_free_string(mime);
+ * }
+ * ```
+ */
+char *kreuzberg_detect_mime_type_from_path(const char *file_path);
+
+/**
+ * Get file extensions for a MIME type.
+ *
+ * Returns a JSON array of file extensions (e.g., ["pdf"] for "application/pdf").
+ *
+ * # Safety
+ *
+ * - `mime_type` must be a valid null-terminated C string
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* extensions = kreuzberg_get_extensions_for_mime("application/pdf");
+ * if (extensions != NULL) {
+ *     printf("Extensions: %s\n", extensions);
+ *     kreuzberg_free_string(extensions);
+ * }
+ * ```
+ */
+char *kreuzberg_get_extensions_for_mime(const char *mime_type);
+
+/**
+ * Register a custom DocumentExtractor via FFI callback.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - `callback` must be a valid function pointer that:
+ *   - Does not store the content, mime_type, or config_json pointers
+ *   - Returns a null-terminated UTF-8 JSON string or NULL on error
+ *   - The returned string must be freeable by kreuzberg_free_string
+ * - `mime_types` must be a valid null-terminated C string containing comma-separated MIME types
+ * - `priority` determines the order of selection (higher priority preferred)
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* my_extractor(const uint8_t* content, size_t len, const char* mime_type, const char* config) {
+ *     // Extract content from bytes, return JSON ExtractionResult
+ *     return strdup("{\"content\":\"extracted text\",\"mime_type\":\"text/plain\",\"metadata\":{}}");
+ * }
+ *
+ * bool success = kreuzberg_register_document_extractor(
+ *     "my-extractor",
+ *     my_extractor,
+ *     "application/x-custom,text/x-custom",
+ *     100
+ * );
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to register: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_register_document_extractor(const char *name,
+                                           DocumentExtractorCallback callback,
+                                           const char *mime_types,
+                                           int32_t priority);
+
+/**
+ * Unregister a DocumentExtractor by name.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_unregister_document_extractor("my-extractor");
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to unregister: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_unregister_document_extractor(const char *name);
+
+/**
+ * List all registered DocumentExtractors as a JSON array of names.
+ *
+ * # Safety
+ *
+ * - Returned string must be freed with `kreuzberg_free_string`.
+ * - Returns NULL on error (check `kreuzberg_last_error`).
+ */
+char *kreuzberg_list_document_extractors(void);
+
+/**
+ * Clear all registered DocumentExtractors.
+ *
+ * # Safety
+ *
+ * - Removes all registered extractors. Subsequent extractions will use only built-in extractors.
+ * - Returns true on success, false on error.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_clear_document_extractors();
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to clear document extractors: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_clear_document_extractors(void);
+
+/**
+ * Register a custom OCR backend via FFI callback.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - `callback` must be a valid function pointer that:
+ *   - Does not store the image_bytes pointer
+ *   - Returns a null-terminated UTF-8 string or NULL on error
+ *   - The returned string must be freeable by kreuzberg_free_string
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* my_ocr_backend(const uint8_t* image_bytes, size_t image_length, const char* config_json) {
+ *     // Implement OCR logic here
+ *     // Return allocated string with result, or NULL on error
+ *     return strdup("Extracted text");
+ * }
+ *
+ * bool success = kreuzberg_register_ocr_backend("my-ocr", my_ocr_backend);
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to register: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_register_ocr_backend(const char *name, OcrBackendCallback callback);
+
+/**
+ * Register a custom OCR backend with explicit language support via FFI callback.
+ *
+ * # Safety
+ *
+ * - `languages_json` must be a null-terminated JSON array of language codes or NULL
+ * - See `kreuzberg_register_ocr_backend` for additional safety notes.
+ */
+bool kreuzberg_register_ocr_backend_with_languages(const char *name,
+                                                   OcrBackendCallback callback,
+                                                   const char *languages_json);
+
+/**
+ * Unregister an OCR backend by name.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_unregister_ocr_backend("custom-ocr");
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to unregister: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_unregister_ocr_backend(const char *name);
+
+/**
+ * List all registered OCR backends as a JSON array of names.
+ *
+ * # Safety
+ *
+ * - Returned string must be freed with `kreuzberg_free_string`.
+ * - Returns NULL on error (check `kreuzberg_last_error`).
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* backends = kreuzberg_list_ocr_backends();
+ * if (backends == NULL) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to list backends: %s\n", error);
+ * } else {
+ *     printf("OCR backends: %s\n", backends);
+ *     kreuzberg_free_string(backends);
+ * }
+ * ```
+ */
+char *kreuzberg_list_ocr_backends(void);
+
+/**
+ * Clear all registered OCR backends.
+ *
+ * # Safety
+ *
+ * - Removes all registered OCR backends. Subsequent extractions will use only built-in backends.
+ * - Returns true on success, false on error.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_clear_ocr_backends();
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to clear OCR backends: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_clear_ocr_backends(void);
+
+/**
+ * Get supported languages for an OCR backend.
+ *
+ * Returns a JSON array of supported language codes for the given backend.
+ * Supported backends: "easyocr", "paddleocr", "tesseract"
+ *
+ * # Safety
+ *
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL if backend not found or on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* languages = kreuzberg_get_ocr_languages("easyocr");
+ * if (languages != NULL) {
+ *     printf("EasyOCR languages: %s\n", languages);
+ *     kreuzberg_free_string(languages);
+ * }
+ * ```
+ */
+char *kreuzberg_get_ocr_languages(const char *backend);
+
+/**
+ * Check if a language is supported by an OCR backend.
+ *
+ * Returns 1 (true) if the language is supported, 0 (false) otherwise.
+ *
+ * # Arguments
+ *
+ * * `backend` - Backend name (e.g., "easyocr", "paddleocr", "tesseract")
+ * * `language` - Language code to check
+ *
+ * # Returns
+ *
+ * 1 if supported, 0 if not supported or backend not found.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * int is_supported = kreuzberg_is_language_supported("easyocr", "en");
+ * if (is_supported) {
+ *     printf("English is supported by EasyOCR\n");
+ * }
+ * ```
+ *
+ * # Safety
+ *
+ * - `backend` and `language` must be valid pointers to valid UTF-8 C strings.
+ * - Both pointers can be checked for NULL; returns 0 if either is NULL.
+ * - The C strings must remain valid for the duration of the function call.
+ */
+int32_t kreuzberg_is_language_supported(const char *backend, const char *language);
+
+/**
+ * Get list of all registered OCR backends with language support.
+ *
+ * Returns a JSON object mapping backend names to language counts.
+ * Example: `{"easyocr": 80, "paddleocr": 14, "tesseract": 100}`
+ *
+ * # Safety
+ *
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL on error (check `kreuzberg_last_error`)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* backends = kreuzberg_list_ocr_backends_with_languages();
+ * if (backends != NULL) {
+ *     printf("Available backends: %s\n", backends);
+ *     kreuzberg_free_string(backends);
+ * }
+ * ```
+ */
+char *kreuzberg_list_ocr_backends_with_languages(void);
+
+/**
+ * Register a custom PostProcessor via FFI callback.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - `callback` must be a valid function pointer that:
+ *   - Does not store the result_json pointer
+ *   - Returns a null-terminated UTF-8 JSON string or NULL on error
+ *   - The returned string must be freeable by kreuzberg_free_string
+ * - `priority` determines the order of execution (higher priority runs first)
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* my_post_processor(const char* result_json) {
+ *     // Parse result_json, modify it, return JSON string
+ *     return strdup("{\"content\":\"PROCESSED\"}");
+ * }
+ *
+ * bool success = kreuzberg_register_post_processor("my-processor", my_post_processor, 100);
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to register: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_register_post_processor(const char *name,
+                                       PostProcessorCallback callback,
+                                       int32_t priority);
+
+/**
+ * Register a custom PostProcessor with an explicit processing stage.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - `stage` must be a valid null-terminated C string containing "early", "middle", or "late"
+ * - `callback` must be a valid function pointer that:
+ *   - Does not store the result_json pointer
+ *   - Returns a null-terminated UTF-8 JSON string or NULL on error
+ *   - The returned string must be freeable by kreuzberg_free_string
+ * - `priority` determines the order of execution within the stage (higher priority runs first)
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ */
+bool kreuzberg_register_post_processor_with_stage(const char *name,
+                                                  PostProcessorCallback callback,
+                                                  int32_t priority,
+                                                  const char *stage);
+
+/**
+ * Unregister a PostProcessor by name.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_unregister_post_processor("my-processor");
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to unregister: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_unregister_post_processor(const char *name);
+
+/**
+ * Clear all registered PostProcessors.
+ *
+ * # Safety
+ *
+ * - Removes all registered processors. Subsequent extractions will run without them.
+ * - Returns true on success, false on error.
+ */
+bool kreuzberg_clear_post_processors(void);
+
+/**
+ * List all registered PostProcessors as a JSON array of names.
+ *
+ * # Safety
+ *
+ * - Returned string must be freed with `kreuzberg_free_string`.
+ * - Returns NULL on error (check `kreuzberg_last_error`).
+ */
+char *kreuzberg_list_post_processors(void);
+
+/**
+ * Register a custom Validator via FFI callback.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - `callback` must be a valid function pointer that:
+ *   - Does not store the result_json pointer
+ *   - Returns a null-terminated UTF-8 string (error message) if validation fails
+ *   - Returns NULL if validation passes
+ *   - The returned string must be freeable by kreuzberg_free_string
+ * - `priority` determines the order of validation (higher priority runs first)
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * char* my_validator(const char* result_json) {
+ *     // Parse result_json, validate it
+ *     // Return error message if validation fails, NULL if passes
+ *     if (invalid) {
+ *         return strdup("Validation failed: content too short");
+ *     }
+ *     return NULL;
+ * }
+ *
+ * bool success = kreuzberg_register_validator("my-validator", my_validator, 100);
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to register: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_register_validator(const char *name, ValidatorCallback callback, int32_t priority);
+
+/**
+ * Unregister a Validator by name.
+ *
+ * # Safety
+ *
+ * - `name` must be a valid null-terminated C string
+ * - Returns true on success, false on error (check kreuzberg_last_error)
+ *
+ * # Example (C)
+ *
+ * ```c
+ * bool success = kreuzberg_unregister_validator("my-validator");
+ * if (!success) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Failed to unregister: %s\n", error);
+ * }
+ * ```
+ */
+bool kreuzberg_unregister_validator(const char *name);
+
+/**
+ * Clear all registered Validators.
+ *
+ * # Safety
+ *
+ * - Removes all validators. Subsequent extractions will skip custom validation.
+ * - Returns true on success, false on error.
+ */
+bool kreuzberg_clear_validators(void);
+
+/**
+ * List all registered Validators as a JSON array of names.
+ *
+ * # Safety
+ *
+ * - Returned string must be freed with `kreuzberg_free_string`.
+ * - Returns NULL on error (check `kreuzberg_last_error`).
+ */
+char *kreuzberg_list_validators(void);
 
 /**
  * Get page count from extraction result.
@@ -2644,6 +2594,105 @@ struct CStringInternStats kreuzberg_string_intern_stats(void);
  * - Thread-safe but can race with concurrent intern operations
  */
 void kreuzberg_string_intern_reset(void);
+
+/**
+ * Get the last error message from a failed operation.
+ *
+ * # Safety
+ *
+ * - Returns a static string that does not need to be freed
+ * - Returns NULL if no error has occurred
+ * - The returned string is valid until the next Kreuzberg function call on the same thread
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CExtractionResult* result = kreuzberg_extract_file_sync(path);
+ * if (result == NULL) {
+ *     const char* error = kreuzberg_last_error();
+ *     printf("Error: %s\n", error);
+ * }
+ * ```
+ */
+const char *kreuzberg_last_error(void);
+
+/**
+ * Get the error code for the last error.
+ *
+ * Returns the error code as an i32. Error codes are defined in ErrorCode enum:
+ * - 0: Success (no error)
+ * - 1: GenericError
+ * - 2: Panic
+ * - 3: InvalidArgument
+ * - 4: IoError
+ * - 5: ParsingError
+ * - 6: OcrError
+ * - 7: MissingDependency
+ *
+ * # Safety
+ *
+ * This function is thread-safe and always safe to call.
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CExtractionResult* result = kreuzberg_extract_file_sync(path);
+ * if (result == NULL) {
+ *     int32_t code = kreuzberg_last_error_code();
+ *     if (code == 2) {
+ *         // A panic occurred
+ *     }
+ * }
+ * ```
+ */
+int32_t kreuzberg_last_error_code(void);
+
+/**
+ * Get the panic context for the last error (if it was a panic).
+ *
+ * Returns a JSON object with panic details including:
+ * - file: Source file where panic occurred
+ * - line: Line number in source file
+ * - function: Name of the function that panicked
+ * - message: Panic message
+ * - timestamp_secs: Unix timestamp when panic occurred
+ *
+ * # Safety
+ *
+ * - The returned string must be freed with `kreuzberg_free_string`
+ * - Returns NULL if the last error was not a panic or no error has occurred
+ *
+ * # Example (C)
+ *
+ * ```c
+ * CExtractionResult* result = kreuzberg_extract_file_sync(path);
+ * if (result == NULL && kreuzberg_last_error_code() == 2) {
+ *     char* context = kreuzberg_last_panic_context();
+ *     if (context != NULL) {
+ *         printf("Panic context: %s\n", context);
+ *         kreuzberg_free_string(context);
+ *     }
+ * }
+ * ```
+ */
+char *kreuzberg_last_panic_context(void);
+
+/**
+ * Get the library version string.
+ *
+ * # Safety
+ *
+ * - Returns a static string that does not need to be freed
+ * - The returned string is always valid
+ *
+ * # Example (C)
+ *
+ * ```c
+ * const char* version = kreuzberg_version();
+ * printf("Kreuzberg version: %s\n", version);
+ * ```
+ */
+const char *kreuzberg_version(void);
 
 /**
  * Validates a binarization method string.

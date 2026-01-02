@@ -10,10 +10,14 @@
 //! - Elimination of drift/inconsistencies
 //! - Better performance (no JSON round-trips in language bindings)
 
-use crate::{clear_last_error, set_last_error};
+use crate::ffi_panic_guard;
+use crate::helpers::{clear_last_error, set_last_error, string_to_c_string};
+use kreuzberg::KreuzbergError;
 use kreuzberg::core::config::ExtractionConfig;
-use std::ffi::CStr;
+use serde::Serialize;
+use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::path::Path;
 use std::ptr;
 
 type FfiResult<T> = std::result::Result<T, String>;
@@ -771,6 +775,265 @@ fn parse_extraction_config_from_json(json_str: &str) -> FfiResult<ExtractionConf
     Ok(config)
 }
 
+/// SerializableEmbeddingPreset for FFI serialization.
+#[derive(Serialize)]
+struct SerializableEmbeddingPreset<'a> {
+    name: &'a str,
+    chunk_size: usize,
+    overlap: usize,
+    model_name: String,
+    dimensions: usize,
+    description: &'a str,
+}
+
+/// Load an ExtractionConfig from a file.
+///
+/// Returns a JSON string representing the loaded configuration.
+///
+/// # Safety
+///
+/// - `file_path` must be a valid null-terminated C string
+/// - The returned string must be freed with `kreuzberg_free_string`
+/// - Returns NULL on error (check `kreuzberg_last_error`)
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_load_extraction_config_from_file(file_path: *const c_char) -> *mut c_char {
+    ffi_panic_guard!("kreuzberg_load_extraction_config_from_file", {
+        clear_last_error();
+
+        if file_path.is_null() {
+            set_last_error("file_path cannot be NULL".to_string());
+            return ptr::null_mut();
+        }
+
+        let path_str = match unsafe { CStr::from_ptr(file_path) }.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                set_last_error(format!("Invalid UTF-8 in file path: {}", e));
+                return ptr::null_mut();
+            }
+        };
+
+        match ExtractionConfig::from_file(path_str) {
+            Ok(config) => match serde_json::to_string(&config) {
+                Ok(json) => match CString::new(json) {
+                    Ok(cstr) => cstr.into_raw(),
+                    Err(e) => {
+                        set_last_error(format!("Failed to create C string: {}", e));
+                        ptr::null_mut()
+                    }
+                },
+                Err(e) => {
+                    set_last_error(format!("Failed to serialize config to JSON: {}", e));
+                    ptr::null_mut()
+                }
+            },
+            Err(e) => {
+                set_last_error(e.to_string());
+                ptr::null_mut()
+            }
+        }
+    })
+}
+
+/// Load an ExtractionConfig from a file (returns pointer to config struct).
+///
+/// # Safety
+///
+/// - `path` must be a valid null-terminated C string
+/// - The returned pointer must be freed with `kreuzberg_config_free`
+/// - Returns NULL on error (check `kreuzberg_last_error`)
+///
+/// # Example (C)
+///
+/// ```c
+/// ExtractionConfig* config = kreuzberg_config_from_file("config.toml");
+/// if (config == NULL) {
+///     printf("Error: %s\n", kreuzberg_last_error());
+///     return 1;
+/// }
+/// kreuzberg_config_free(config);
+/// ```
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_config_from_file(path: *const c_char) -> *mut ExtractionConfig {
+    ffi_panic_guard!("kreuzberg_config_from_file", {
+        clear_last_error();
+
+        if path.is_null() {
+            set_last_error("Config path cannot be NULL".to_string());
+            return ptr::null_mut();
+        }
+
+        let path_str = match unsafe { CStr::from_ptr(path) }.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                set_last_error(format!("Invalid UTF-8 in config path: {}", e));
+                return ptr::null_mut();
+            }
+        };
+
+        let path_buf = Path::new(path_str);
+
+        match ExtractionConfig::from_file(path_buf) {
+            Ok(config) => Box::into_raw(Box::new(config)),
+            Err(e) => {
+                match &e {
+                    KreuzbergError::Io(io_err) => {
+                        set_last_error(format!("IO error loading config: {}", io_err));
+                    }
+                    _ => {
+                        set_last_error(format!("Failed to load config from file: {}", e));
+                    }
+                }
+                ptr::null_mut()
+            }
+        }
+    })
+}
+
+/// Discover and load an ExtractionConfig by searching parent directories.
+///
+/// Searches the current directory and all parent directories for:
+/// - `kreuzberg.toml`
+/// - `kreuzberg.json`
+///
+/// Returns the first config file found as a JSON string.
+///
+/// # Safety
+///
+/// - The returned string must be freed with `kreuzberg_free_string`
+/// - Returns NULL if no config is found or on error
+///
+/// # Example (C)
+///
+/// ```c
+/// char* config_json = kreuzberg_config_discover();
+/// if (config_json != NULL) {
+///     printf("Discovered config: %s\n", config_json);
+///     kreuzberg_free_string(config_json);
+/// }
+/// ```
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_config_discover() -> *mut c_char {
+    ffi_panic_guard!("kreuzberg_config_discover", {
+        clear_last_error();
+
+        match ExtractionConfig::discover() {
+            Ok(Some(config)) => match serde_json::to_string(&config) {
+                Ok(json) => match CString::new(json) {
+                    Ok(cstr) => cstr.into_raw(),
+                    Err(e) => {
+                        set_last_error(format!("Failed to serialize config: {}", e));
+                        ptr::null_mut()
+                    }
+                },
+                Err(e) => {
+                    set_last_error(format!("Failed to serialize config: {}", e));
+                    ptr::null_mut()
+                }
+            },
+            Ok(None) => ptr::null_mut(),
+            Err(e) => {
+                match &e {
+                    KreuzbergError::Io(io_err) => {
+                        set_last_error(format!("IO error discovering config: {}", io_err));
+                    }
+                    _ => {
+                        set_last_error(format!("Failed to discover config: {}", e));
+                    }
+                }
+                ptr::null_mut()
+            }
+        }
+    })
+}
+
+/// List available embedding preset names.
+///
+/// # Safety
+///
+/// - Returned string is a JSON array and must be freed with `kreuzberg_free_string`
+/// - Returns NULL on error (check `kreuzberg_last_error`)
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_list_embedding_presets() -> *mut c_char {
+    ffi_panic_guard!("kreuzberg_list_embedding_presets", {
+        clear_last_error();
+
+        let presets = kreuzberg::embeddings::list_presets();
+        match serde_json::to_string(&presets) {
+            Ok(json) => match string_to_c_string(json) {
+                Ok(ptr) => ptr,
+                Err(e) => {
+                    set_last_error(e);
+                    ptr::null_mut()
+                }
+            },
+            Err(e) => {
+                set_last_error(format!("Failed to serialize presets: {}", e));
+                ptr::null_mut()
+            }
+        }
+    })
+}
+
+/// Get a specific embedding preset by name.
+///
+/// # Safety
+///
+/// - `name` must be a valid null-terminated C string
+/// - Returned string is JSON object and must be freed with `kreuzberg_free_string`
+/// - Returns NULL on error (check `kreuzberg_last_error`)
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_get_embedding_preset(name: *const c_char) -> *mut c_char {
+    ffi_panic_guard!("kreuzberg_get_embedding_preset", {
+        clear_last_error();
+
+        if name.is_null() {
+            set_last_error("preset name cannot be NULL".to_string());
+            return ptr::null_mut();
+        }
+
+        let preset_name = match unsafe { CStr::from_ptr(name) }.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                set_last_error(format!("Invalid UTF-8 in preset name: {}", e));
+                return ptr::null_mut();
+            }
+        };
+
+        let preset = match kreuzberg::embeddings::get_preset(preset_name) {
+            Some(preset) => preset,
+            None => {
+                set_last_error(format!("Unknown embedding preset: {}", preset_name));
+                return ptr::null_mut();
+            }
+        };
+
+        let model_name = format!("{:?}", preset.model);
+        let serializable = SerializableEmbeddingPreset {
+            name: preset.name,
+            chunk_size: preset.chunk_size,
+            overlap: preset.overlap,
+            model_name,
+            dimensions: preset.dimensions,
+            description: preset.description,
+        };
+
+        match serde_json::to_string(&serializable) {
+            Ok(json) => match string_to_c_string(json) {
+                Ok(ptr) => ptr,
+                Err(e) => {
+                    set_last_error(e);
+                    ptr::null_mut()
+                }
+            },
+            Err(e) => {
+                set_last_error(format!("Failed to serialize embedding preset: {}", e));
+                ptr::null_mut()
+            }
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1020,6 +1283,59 @@ mod tests {
         unsafe {
             kreuzberg_config_free(base_ptr);
             kreuzberg_config_free(override_ptr);
+        }
+    }
+
+    #[test]
+    fn test_list_embedding_presets() {
+        let result = unsafe { kreuzberg_list_embedding_presets() };
+        assert!(!result.is_null());
+
+        let presets_str = unsafe { CStr::from_ptr(result).to_str().unwrap() };
+        assert!(presets_str.starts_with('['));
+        assert!(presets_str.ends_with(']'));
+
+        unsafe {
+            crate::kreuzberg_free_string(result);
+        }
+    }
+
+    #[test]
+    fn test_get_embedding_preset_null() {
+        let result = unsafe { kreuzberg_get_embedding_preset(ptr::null()) };
+        assert!(result.is_null());
+    }
+
+    #[test]
+    fn test_get_embedding_preset_unknown() {
+        let name = CString::new("nonexistent_preset").unwrap();
+        let result = unsafe { kreuzberg_get_embedding_preset(name.as_ptr()) };
+        assert!(result.is_null());
+    }
+
+    #[test]
+    fn test_get_embedding_preset_valid() {
+        let name = CString::new("fast").unwrap();
+        let result = unsafe { kreuzberg_get_embedding_preset(name.as_ptr()) };
+        assert!(!result.is_null());
+
+        let preset_str = unsafe { CStr::from_ptr(result).to_str().unwrap() };
+        assert!(preset_str.contains("name"));
+        assert!(preset_str.contains("chunk_size"));
+
+        unsafe {
+            crate::kreuzberg_free_string(result);
+        }
+    }
+
+    #[test]
+    fn test_config_discover_null_safe() {
+        let result = unsafe { kreuzberg_config_discover() };
+        // Result can be null if no config found, which is valid
+        if !result.is_null() {
+            unsafe {
+                crate::kreuzberg_free_string(result);
+            }
         }
     }
 }
