@@ -1,7 +1,7 @@
 defmodule Kreuzberg.MixProject do
   use Mix.Project
 
-  @version "4.0.0-rc.22"
+  @version "4.0.0-rc.26"
   @source_url "https://github.com/kreuzberg-dev/kreuzberg"
 
   def project do
@@ -41,7 +41,6 @@ defmodule Kreuzberg.MixProject do
     [
       licenses: ["MIT"],
       links: %{GitHub: @source_url},
-      organization: "kreuzberg_dev",
       files: ~w(
         lib
         native/kreuzberg_rustler/src

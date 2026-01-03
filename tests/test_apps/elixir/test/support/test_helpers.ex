@@ -3,6 +3,8 @@ defmodule KreuzbergTestApp.TestHelpers do
   Helper functions for Kreuzberg test suite.
   """
 
+  import ExUnit.Assertions
+
   @doc """
   Get the path to a test document.
   """

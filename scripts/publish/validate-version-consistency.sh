@@ -119,10 +119,17 @@ echo "packages/php/composer.json: $php_version"
   errors=$((errors + 1))
 }
 
+elixir_version="$(grep '@version' packages/elixir/mix.exs | head -1 | cut -d'"' -f2)"
+echo "packages/elixir/mix.exs: $elixir_version"
+[ "$elixir_version" = "$expected" ] || {
+  echo "❌ Elixir mix.exs mismatch"
+  errors=$((errors + 1))
+}
+
 echo "----------------------------------------"
 if [ "$errors" -gt 0 ]; then
   echo "❌ $errors version mismatches found"
   exit 1
 fi
 
-echo "✅ All 10 version sources consistent: $expected"
+echo "✅ All 11 version sources consistent: $expected"

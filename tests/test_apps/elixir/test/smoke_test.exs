@@ -85,8 +85,8 @@ defmodule KreuzbergTestApp.SmokeTest do
     end
 
     test "can validate MIME type" do
-      assert Kreuzberg.validate_mime_type("application/pdf") == :ok
-      assert Kreuzberg.validate_mime_type("text/plain") == :ok
+      assert {:ok, "application/pdf"} = Kreuzberg.validate_mime_type("application/pdf")
+      assert {:ok, "text/plain"} = Kreuzberg.validate_mime_type("text/plain")
     end
   end
 end

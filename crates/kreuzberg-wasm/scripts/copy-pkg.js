@@ -15,6 +15,13 @@ const distPkg = path.join(dist, "pkg");
 if (fs.existsSync(pkg)) {
 	fs.cpSync(pkg, distPkg, { recursive: true, force: true });
 	console.log("Copied pkg directory to dist/pkg");
+
+	// Remove .gitignore files created by wasm-pack to prevent npm from excluding WASM binaries
+	const gitignorePath = path.join(distPkg, ".gitignore");
+	if (fs.existsSync(gitignorePath)) {
+		fs.unlinkSync(gitignorePath);
+		console.log("Removed .gitignore from dist/pkg to allow npm publishing");
+	}
 } else {
 	console.warn("pkg directory not found");
 	process.exit(1);

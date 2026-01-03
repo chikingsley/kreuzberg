@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0-rc.26] - 2026-01-03
+
+### Fixed
+
+#### Publishing & Distribution
+- **Node.js macOS Bindings**: Re-enabled macOS ARM64 builds in publish workflow (fixes npm package installation on macOS)
+- **WASM npm Package**: Fixed missing WASM binaries by removing .gitignore from dist/pkg directory during build
+- **Elixir hex.pm**: Removed private organization configuration and added version validation to enable public publishing
+- **Homebrew Bottles**: Fixed bottle upload pattern from double-dash to single-dash to match build filename format
+
+#### CI/CD
+- **PHP CI**: Fixed core extension loading by removing -n flag from test commands
+- **Ruby Windows CI**: Added bindgen blocklists for intrinsic headers to resolve GCC/Clang conflicts
+- **Node.js macOS CI**: Increased test timeout from 30s to 60s for embedding tests
+- **Elixir CI**: Fixed try-catch-rescue clause ordering in async operations tests
+- **C# Windows CI**: Skipped flaky timing-based concurrent test
+- **Docker Build**: Added kreuzberg_rustler to sed exclusion list in Dockerfile
+- **Benchmark Harness**: Fixed execute permissions on downloaded artifacts
+- **Rust Linting**: Resolved Rust 2024 edition compatibility with pre-commit hooks
+- **PHP PIE Builds**: Fixed macOS linker flags and Windows sha256sum command compatibility
+
+#### Version Management
+- **Elixir Validation**: Added packages/elixir/mix.exs to version consistency validation script
+
 ## [4.0.0-rc.25] - 2026-01-03
 
 ### Fixed
