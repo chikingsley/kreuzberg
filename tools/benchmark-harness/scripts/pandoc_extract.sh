@@ -16,7 +16,17 @@ fi
 
 START=$(date +%s%N)
 
-CONTENT=$(pandoc "$FILE_PATH" --to=plain --wrap=none --strip-comments 2>/dev/null || echo "")
+# Use timeout command to ensure pandoc doesn't hang indefinitely
+# The benchmark harness will also apply its own timeout, but this provides defense in depth
+if command -v timeout &>/dev/null; then
+  CONTENT=$(timeout 60s pandoc "$FILE_PATH" --to=plain --wrap=none --strip-comments 2>/dev/null || echo "")
+elif command -v gtimeout &>/dev/null; then
+  # macOS with coreutils installed
+  CONTENT=$(gtimeout 60s pandoc "$FILE_PATH" --to=plain --wrap=none --strip-comments 2>/dev/null || echo "")
+else
+  # Fallback without timeout wrapper
+  CONTENT=$(pandoc "$FILE_PATH" --to=plain --wrap=none --strip-comments 2>/dev/null || echo "")
+fi
 
 END=$(date +%s%N)
 DURATION_MS=$(((END - START) / 1000000))
