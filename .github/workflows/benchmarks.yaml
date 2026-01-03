@@ -725,7 +725,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -815,7 +830,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -906,7 +936,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -1001,7 +1046,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -1097,7 +1157,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -1182,7 +1257,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -1416,7 +1506,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
@@ -1502,7 +1607,22 @@ jobs:
         run: |
           echo "=== Building FFI Library ==="
           echo "Building kreuzberg-ffi from source (no caching)"
-          cargo build --release --package kreuzberg-ffi
+
+          # Try building with sccache first (if enabled)
+          if cargo build --release --package kreuzberg-ffi 2>&1 | tee /tmp/build.log; then
+            echo "✓ Build succeeded"
+          else
+            # Check if it was an sccache error (DNS failures, cache storage issues)
+            if grep -q "sccache.*error" /tmp/build.log || grep -q "cache storage failed" /tmp/build.log || grep -q "dns error" /tmp/build.log; then
+              echo "⚠️  sccache failed (likely transient network issue), retrying without cache..."
+              export RUSTC_WRAPPER=""
+              export SCCACHE_GHA_ENABLED=false
+              cargo build --release --package kreuzberg-ffi
+            else
+              # Not an sccache error, propagate the failure
+              exit 1
+            fi
+          fi
 
       - name: Set library paths for FFI
         shell: bash
