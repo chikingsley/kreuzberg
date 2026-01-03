@@ -30,6 +30,9 @@ license = "MIT"
 repository = "https://github.com/kreuzberg-dev/kreuzberg"
 homepage = "https://kreuzberg.dev"
 
+[workspace.lints.clippy]
+collapsible_if = "allow"
+
 [workspace.dependencies]
 tokio = { version = "1.49.0", features = [
     "rt",

@@ -2,6 +2,7 @@
 name = "kreuzberg-tesseract"
 version.workspace = true
 edition.workspace = true
+lints.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 description = "Rust bindings for Tesseract OCR with cross-compilation, C++17, and caching improvements"

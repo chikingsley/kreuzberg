@@ -522,7 +522,8 @@ pub fn cluster_font_sizes(blocks: &[TextBlock], k: usize) -> Result<Vec<FontSize
             centroids.push(interpolated);
         }
 
-        centroids.sort_by(|a, b| b.partial_cmp(a).expect("Failed to compare centroids during sorting")); // Keep sorted descending
+        centroids.sort_by(|a, b| b.partial_cmp(a).expect("Failed to compare centroids during sorting"));
+        // Keep sorted descending
     }
 
     // Run k-means clustering for a fixed number of iterations

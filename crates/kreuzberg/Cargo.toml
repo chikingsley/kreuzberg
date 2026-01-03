@@ -2,6 +2,7 @@
 name = "kreuzberg"
 version.workspace = true
 edition.workspace = true
+lints.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 description = "High-performance document intelligence library for Rust. Extract text, metadata, and structured data from PDFs, Office documents, images, and 50+ formats with async/sync APIs."

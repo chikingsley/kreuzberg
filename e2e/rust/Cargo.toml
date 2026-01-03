@@ -2,6 +2,7 @@
 name = "e2e-rust"
 version.workspace = true
 edition.workspace = true
+lints.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true

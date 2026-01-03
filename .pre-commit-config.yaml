@@ -55,11 +55,9 @@ repos:
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
-      - id: fmt
-        files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
       - id: clippy
         files: ^(crates|tools|e2e/rust)/.*\.rs$|^(Cargo\.toml|Cargo\.lock|crates/.*/Cargo\.toml|tools/.*/Cargo\.toml|e2e/rust/Cargo\.toml|packages/ruby/ext/kreuzberg_rb/native/Cargo\.toml)$
-        args: ["--workspace", "--all-features", "--all-targets", "--", "-D", "warnings"]
+        args: ["--workspace", "--all-features", "--all-targets", "--", "-D", "warnings", "-A", "clippy::collapsible_if"]
 
   - repo: https://github.com/EmbarkStudios/cargo-deny
     rev: 0.18.9
@@ -105,6 +103,16 @@ repos:
   # Local hooks for unsupported languages (Ruby, Java, C#, PHP) and custom configurations
   - repo: local
     hooks:
+      # Rust - cargo fmt needs nightly features for Rust 2024 edition
+      - id: cargo-fmt
+        name: Check Rust formatting (cargo fmt)
+        entry: cargo fmt --all -- --check
+        language: system
+        files: ^(crates|tools|e2e/rust)/.*\.rs$
+        pass_filenames: false
+        require_serial: true
+        stages: [commit]
+
       # Go - golangci-lint needs to run in the module directory
       # Note: CGO_ENABLED=0 is required because the FFI library is not built during
       # pre-commit validation. This skips linters that require type-checking CGO code.
