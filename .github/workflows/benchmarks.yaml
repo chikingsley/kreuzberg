@@ -102,12 +102,20 @@ jobs:
       - name: Log disk space before artifact upload
         run: scripts/ci/validate/show-disk-space.sh "Disk space before artifact upload"
 
-      - name: Upload target artifact
+      - name: Upload full build artifacts (for Kreuzberg jobs)
         uses: actions/upload-artifact@v6
         with:
           name: benchmarks-target
           path: |
             target/release
+          retention-days: 7
+
+      - name: Upload benchmark harness binary (for third-party jobs)
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-harness-binary
+          path: |
+            target/release/benchmark-harness
           retention-days: 7
 
       - name: Log disk space after artifact upload
@@ -1669,36 +1677,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-docling
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -1738,36 +1727,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-docling-batch
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -1807,36 +1777,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-markitdown
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -1876,36 +1827,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-pandoc
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -1951,36 +1883,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-unstructured
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -2020,25 +1933,11 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-tika-sync
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -2046,11 +1945,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Run benchmark
         env:
@@ -2087,25 +1981,11 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-tika-batch
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -2113,11 +1993,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Run benchmark
         env:
@@ -2154,36 +2029,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-pymupdf4llm
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -2223,36 +2079,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-pdfplumber
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -2292,36 +2129,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-pdfplumber-batch
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -2361,36 +2179,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-mineru
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
@@ -2430,36 +2229,17 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
+      - name: Download benchmark harness binary
         uses: actions/download-artifact@v7
         with:
-          name: ${{ needs.setup.outputs.artifact-name }}
+          name: benchmark-harness-binary
           path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Setup OpenSSL
-        uses: ./.github/actions/setup-openssl
-
-      - name: Setup Rust toolchain
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: benchmarks-mineru-batch
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
           cache-prefix: benchmark-python
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
 
       - name: Sync benchmark dependencies
         run: uv sync --group benchmark --no-install-workspace
