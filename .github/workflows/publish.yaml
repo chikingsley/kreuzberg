@@ -1757,7 +1757,7 @@ jobs:
         run: scripts/publish/csharp/verify-nuget-native-assets.sh
 
       - name: Upload NuGet artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: csharp-nuget
           path: artifacts/csharp/*.nupkg
