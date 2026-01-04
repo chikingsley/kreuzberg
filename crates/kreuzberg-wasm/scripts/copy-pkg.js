@@ -43,7 +43,12 @@ for (const file of files) {
 		let content = fs.readFileSync(file, "utf-8");
 		const original = content;
 
+		// Fix both single-line and multi-line import() statements
+		// Handles: import("../pkg/kreuzberg_wasm.js")
 		content = content.replace(/import\("\.\.\/pkg\/kreuzberg_wasm\.js"\)/g, 'import("./pkg/kreuzberg_wasm.js")');
+
+		// Handles multi-line: import(\n  /* comment */\n  "../pkg/kreuzberg_wasm.js"\n)
+		content = content.replace(/"\.\.\/pkg\/kreuzberg_wasm\.js"/g, '"./pkg/kreuzberg_wasm.js"');
 
 		if (content !== original) {
 			fs.writeFileSync(file, content);
