@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-scale-set-name:
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     steps:
       - run: echo 'Testing with scale set name benchmark'
       - run: hostname

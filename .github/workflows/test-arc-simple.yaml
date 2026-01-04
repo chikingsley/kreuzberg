@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     steps:
       - run: echo "Hello from ARC runner!"
       - run: hostname

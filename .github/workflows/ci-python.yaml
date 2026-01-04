@@ -69,7 +69,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: build-heavy
+          - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             platform: linux-x86_64
           - os: ubuntu-24.04-arm
@@ -240,7 +240,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - os: build-heavy
+          - os: ubuntu-latest
             coverage: true
           - os: ubuntu-24.04-arm
             coverage: false

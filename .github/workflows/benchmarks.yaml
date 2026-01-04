@@ -43,7 +43,7 @@ defaults:
 jobs:
   setup:
     name: Build harness + native libs
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -124,7 +124,7 @@ jobs:
   bench-native:
     name: kreuzberg-native (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -184,7 +184,7 @@ jobs:
   bench-python-sync:
     name: kreuzberg-python-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -256,7 +256,7 @@ jobs:
   bench-python-async:
     name: kreuzberg-python-async (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -328,7 +328,7 @@ jobs:
   bench-python-batch:
     name: kreuzberg-python-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -400,7 +400,7 @@ jobs:
   bench-node-async:
     name: kreuzberg-node-async (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -475,7 +475,7 @@ jobs:
   bench-node-batch:
     name: kreuzberg-node-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -550,7 +550,7 @@ jobs:
   bench-wasm-async:
     name: kreuzberg-wasm-async (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -614,7 +614,7 @@ jobs:
   bench-wasm-batch:
     name: kreuzberg-wasm-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -678,7 +678,7 @@ jobs:
   bench-ruby-sync:
     name: kreuzberg-ruby-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -783,7 +783,7 @@ jobs:
   bench-ruby-batch:
     name: kreuzberg-ruby-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -888,7 +888,7 @@ jobs:
   bench-go-sync:
     name: kreuzberg-go-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -998,7 +998,7 @@ jobs:
   bench-go-batch:
     name: kreuzberg-go-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1108,7 +1108,7 @@ jobs:
   bench-java-sync:
     name: kreuzberg-java-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1210,7 +1210,7 @@ jobs:
   bench-csharp-sync:
     name: kreuzberg-csharp-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1310,7 +1310,7 @@ jobs:
   bench-elixir-sync:
     name: kreuzberg-elixir-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1384,7 +1384,7 @@ jobs:
   bench-elixir-batch:
     name: kreuzberg-elixir-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1458,7 +1458,7 @@ jobs:
   bench-php-sync:
     name: kreuzberg-php-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1559,7 +1559,7 @@ jobs:
   bench-php-batch:
     name: kreuzberg-php-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1661,7 +1661,7 @@ jobs:
   bench-docling:
     name: docling (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1714,7 +1714,7 @@ jobs:
   bench-docling-batch:
     name: docling-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1767,7 +1767,7 @@ jobs:
   bench-markitdown:
     name: markitdown (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1820,7 +1820,7 @@ jobs:
   bench-pandoc:
     name: pandoc (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1879,7 +1879,7 @@ jobs:
   bench-unstructured:
     name: unstructured (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1932,7 +1932,7 @@ jobs:
   bench-tika-sync:
     name: tika-sync (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -1983,7 +1983,7 @@ jobs:
   bench-tika-batch:
     name: tika-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2034,7 +2034,7 @@ jobs:
   bench-pymupdf4llm:
     name: pymupdf4llm (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2087,7 +2087,7 @@ jobs:
   bench-pdfplumber:
     name: pdfplumber (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2140,7 +2140,7 @@ jobs:
   bench-pdfplumber-batch:
     name: pdfplumber-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2193,7 +2193,7 @@ jobs:
   bench-mineru:
     name: mineru (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2246,7 +2246,7 @@ jobs:
   bench-mineru-batch:
     name: mineru-batch (${{ matrix.mode }})
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: read
@@ -2299,7 +2299,7 @@ jobs:
   aggregate-results:
     name: Aggregate Results & Generate Visualizations
     needs: [setup, bench-native, bench-python-sync, bench-python-async, bench-python-batch, bench-node-async, bench-node-batch, bench-wasm-async, bench-wasm-batch, bench-ruby-sync, bench-ruby-batch, bench-go-sync, bench-go-batch, bench-java-sync, bench-csharp-sync, bench-elixir-sync, bench-elixir-batch, bench-php-sync, bench-php-batch, bench-docling, bench-docling-batch, bench-markitdown, bench-pandoc, bench-unstructured, bench-tika-sync, bench-tika-batch, bench-pymupdf4llm, bench-pdfplumber, bench-pdfplumber-batch, bench-mineru, bench-mineru-batch]
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read

@@ -26,7 +26,7 @@ defaults:
 jobs:
   setup:
     name: Build harness + native libs (with profiling)
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
       contents: read
@@ -91,7 +91,7 @@ jobs:
   bench-native:
     name: kreuzberg-native (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -159,7 +159,7 @@ jobs:
   bench-python-sync:
     name: kreuzberg-python-sync (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -239,7 +239,7 @@ jobs:
   bench-python-async:
     name: kreuzberg-python-async (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -319,7 +319,7 @@ jobs:
   bench-python-batch:
     name: kreuzberg-python-batch (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -399,7 +399,7 @@ jobs:
   bench-node-async:
     name: kreuzberg-node-async (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -481,7 +481,7 @@ jobs:
   bench-node-batch:
     name: kreuzberg-node-batch (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -563,7 +563,7 @@ jobs:
   bench-wasm-async:
     name: kreuzberg-wasm-async (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -635,7 +635,7 @@ jobs:
   bench-wasm-batch:
     name: kreuzberg-wasm-batch (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -707,7 +707,7 @@ jobs:
   bench-ruby-sync:
     name: kreuzberg-ruby-sync (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -807,7 +807,7 @@ jobs:
   bench-ruby-batch:
     name: kreuzberg-ruby-batch (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -907,7 +907,7 @@ jobs:
   bench-go-sync:
     name: kreuzberg-go-sync (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -992,7 +992,7 @@ jobs:
   bench-go-batch:
     name: kreuzberg-go-batch (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -1077,7 +1077,7 @@ jobs:
   bench-java-sync:
     name: kreuzberg-java-sync (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
@@ -1161,7 +1161,7 @@ jobs:
   bench-csharp-sync:
     name: kreuzberg-csharp-sync (${{ matrix.mode }}) [profiling]
     needs: setup
-    runs-on: benchmark
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
