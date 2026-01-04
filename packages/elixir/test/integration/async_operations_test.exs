@@ -245,13 +245,16 @@ defmodule KreuzbergTest.Integration.AsyncOperationsTest do
       task = Kreuzberg.extract_async(String.duplicate("word ", 10_000), "text/plain")
 
       # Await with minimal timeout (but not 0 to avoid issues)
-      case Task.await(task, 1) do
-        {:error, error} ->
-          # Timeout error expected
-          assert is_tuple(error) or is_binary(error)
-
-        {:ok, _result} ->
-          # May succeed if fast enough
+      # Task.await raises an exit exception on timeout, not an error tuple
+      try do
+        case Task.await(task, 1) do
+          {:ok, _result} ->
+            # May succeed if fast enough
+            assert true
+        end
+      catch
+        :exit, {:timeout, _} ->
+          # Timeout is expected behavior
           assert true
       end
     end
@@ -381,7 +384,8 @@ defmodule KreuzbergTest.Integration.AsyncOperationsTest do
 
         assert is_list(results)
       after
-        Enum.each(temp_files, &File.rm!/1)
+        # Use File.rm/1 (non-raising) to avoid errors if files don't exist
+        Enum.each(temp_files, &File.rm/1)
       end
     end
 
