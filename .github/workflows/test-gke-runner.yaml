@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, benchmark]
+    runs-on: benchmark
     steps:
       - run: echo "Running on GKE self-hosted runner!"
       - run: kubectl version || echo "kubectl not available"
