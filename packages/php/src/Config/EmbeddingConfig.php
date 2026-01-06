@@ -133,11 +133,40 @@ readonly class EmbeddingConfig
      */
     public function toArray(): array
     {
+        // Convert model string to proper enum format
+        // PHP models like 'all-MiniLM-L6-v2' map to FastEmbed { model, dimensions }
+        $modelArray = $this->convertModelToArray($this->model);
+
         return array_filter([
-            'model' => $this->model,
+            'model' => $modelArray,
             'normalize' => $this->normalize,
             'batch_size' => $this->batchSize,
         ], static fn ($value): bool => $value !== null);
+    }
+
+    /**
+     * Convert model string to the proper enum format expected by Rust.
+     *
+     * @param string $model
+     * @return array<string, mixed>
+     */
+    private static function convertModelToArray(string $model): array
+    {
+        // Map of model names to FastEmbed model configurations
+        $modelMap = [
+            'all-MiniLM-L6-v2' => ['model' => 'all-MiniLM-L6-v2', 'dimensions' => 384],
+            'all-MiniLM-L12-v2' => ['model' => 'all-MiniLM-L12-v2', 'dimensions' => 384],
+            'all-mpnet-base-v2' => ['model' => 'all-mpnet-base-v2', 'dimensions' => 768],
+            'paraphrase-MiniLM-L6-v2' => ['model' => 'paraphrase-MiniLM-L6-v2', 'dimensions' => 384],
+            'multi-qa-MiniLM-L6-cos-v1' => ['model' => 'multi-qa-MiniLM-L6-cos-v1', 'dimensions' => 384],
+        ];
+
+        if (isset($modelMap[$model])) {
+            return array_merge(['type' => 'fast_embed'], $modelMap[$model]);
+        }
+
+        // Default to preset if not in map
+        return ['type' => 'preset', 'name' => $model];
     }
 
     /**

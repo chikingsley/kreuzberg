@@ -100,29 +100,17 @@ pub struct ExtractionResult {
 
 #[php_impl]
 impl ExtractionResult {
-    /// Get metadata as an associative array.
+    /// Get metadata as a Metadata object.
     ///
-    /// Returns the metadata field which contains nested format information.
-    /// Access via $result->getMetadata() or use the metadata property if available.
-    pub fn get_metadata(&self) -> PhpResult<HashMap<String, Zval>> {
-        let metadata_value: serde_json::Value =
-            serde_json::from_str(&self.metadata_json).map_err(|e| format!("Failed to deserialize metadata: {}", e))?;
-
-        if let serde_json::Value::Object(obj) = metadata_value {
-            let mut result = HashMap::new();
-            for (k, v) in obj {
-                result.insert(k, json_value_to_php(&v)?);
-            }
-            Ok(result)
-        } else {
-            Ok(HashMap::new())
-        }
+    /// Returns a Metadata object with common fields accessible as properties.
+    pub fn get_metadata(&self) -> PhpResult<Metadata> {
+        Metadata::from_json(&self.metadata_json)
     }
 
     /// Magic getter for accessing metadata as a property.
     ///
     /// Allows access like $result->metadata instead of $result->getMetadata().
-    pub fn __get(&self, name: &str) -> PhpResult<Option<HashMap<String, Zval>>> {
+    pub fn __get(&self, name: &str) -> PhpResult<Option<Metadata>> {
         if name == "metadata" {
             Ok(Some(self.get_metadata()?))
         } else {
@@ -208,12 +196,21 @@ impl ExtractionResult {
             metadata_obj.insert("modified_by".to_string(), json!(modified_by));
         }
 
-        // Add pages metadata (nested structure)
-        if let Some(pages) = &result.metadata.pages {
-            // Add pageCount at root level for convenience (PHP tests expect this)
-            metadata_obj.insert("pageCount".to_string(), json!(pages.total_count));
+        // Add page count - try multiple sources
+        let page_count = if let Some(pages_meta) = &result.metadata.pages {
+            // Prefer page structure metadata if available
+            Some(pages_meta.total_count)
+        } else {
+            // Fallback to counting pages array
+            result.pages.as_ref().map(|pages_array| pages_array.len())
+        };
 
-            // Also add full pages structure for detailed access
+        if let Some(count) = page_count {
+            metadata_obj.insert("pageCount".to_string(), json!(count));
+        }
+
+        // Add pages metadata structure if available
+        if let Some(pages) = &result.metadata.pages {
             let pages_json = serde_json::to_value(pages).map_err(|e| format!("Failed to serialize pages: {}", e))?;
             metadata_obj.insert("pages".to_string(), pages_json);
         }
@@ -312,6 +309,7 @@ impl ExtractionResult {
 #[derive(Clone)]
 pub struct ExtractedTable {
     /// Table cells as nested arrays
+    #[php(prop)]
     pub cells: Vec<Vec<String>>,
 
     /// Markdown representation
@@ -324,7 +322,13 @@ pub struct ExtractedTable {
 }
 
 #[php_impl]
-impl ExtractedTable {}
+impl ExtractedTable {
+    /// Get the table cells as nested arrays.
+    #[php(name = "getCells")]
+    pub fn get_cells(&self) -> Vec<Vec<String>> {
+        self.cells.clone()
+    }
+}
 
 impl ExtractedTable {
     /// Convert from Rust Table to PHP ExtractedTable.
@@ -351,6 +355,7 @@ impl ExtractedTable {
 #[php(name = "Kreuzberg\\Types\\ExtractedImage")]
 #[derive(Clone)]
 pub struct ExtractedImage {
+    #[php(prop)]
     pub data: Vec<u8>,
     #[php(prop)]
     pub format: String,
@@ -373,7 +378,13 @@ pub struct ExtractedImage {
 }
 
 #[php_impl]
-impl ExtractedImage {}
+impl ExtractedImage {
+    /// Get the binary image data.
+    #[php(name = "getData")]
+    pub fn get_data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+}
 
 impl ExtractedImage {
     pub fn from_rust(img: kreuzberg::ExtractedImage) -> PhpResult<Self> {
@@ -408,6 +419,7 @@ impl ExtractedImage {
 pub struct TextChunk {
     #[php(prop)]
     pub content: String,
+    #[php(prop)]
     pub embedding: Option<Vec<f32>>,
     #[php(prop)]
     pub byte_start: usize,
@@ -465,7 +477,19 @@ pub struct PageResult {
 }
 
 #[php_impl]
-impl PageResult {}
+impl PageResult {
+    /// Get all tables on this page.
+    #[php(name = "getTables")]
+    pub fn get_tables(&self) -> Vec<ExtractedTable> {
+        self.tables.clone()
+    }
+
+    /// Get all images on this page.
+    #[php(name = "getImages")]
+    pub fn get_images(&self) -> Vec<ExtractedImage> {
+        self.images.clone()
+    }
+}
 
 impl PageResult {
     pub fn from_rust(page: kreuzberg::PageContent) -> PhpResult<Self> {
@@ -493,5 +517,135 @@ impl PageResult {
             tables,
             images,
         })
+    }
+}
+
+/// Document metadata object.
+///
+/// Provides access to common metadata fields as properties.
+/// Additional fields are accessible via the additional property.
+#[php_class]
+#[php(name = "Kreuzberg\\Types\\Metadata")]
+#[derive(Clone)]
+pub struct Metadata {
+    /// Document title
+    #[php(prop)]
+    pub title: Option<String>,
+
+    /// Document subject
+    #[php(prop)]
+    pub subject: Option<String>,
+
+    /// Authors list
+    #[php(prop)]
+    pub authors: Option<Vec<String>>,
+
+    /// Keywords list
+    #[php(prop)]
+    pub keywords: Option<Vec<String>>,
+
+    /// Language code
+    #[php(prop)]
+    pub language: Option<String>,
+
+    /// Creation timestamp
+    #[php(prop)]
+    pub created_at: Option<String>,
+
+    /// Modification timestamp
+    #[php(prop)]
+    pub modified_at: Option<String>,
+
+    /// Creator name
+    #[php(prop)]
+    pub created_by: Option<String>,
+
+    /// Modifier name
+    #[php(prop)]
+    pub modified_by: Option<String>,
+
+    /// Page count (convenience field)
+    #[php(prop)]
+    pub page_count: Option<usize>,
+
+    /// Additional metadata fields (stored as JSON for now)
+    additional_json: String,
+}
+
+#[php_impl]
+impl Metadata {
+    /// Create Metadata from JSON string.
+    pub fn from_json(json: &str) -> PhpResult<Self> {
+        let value: serde_json::Value =
+            serde_json::from_str(json).map_err(|e| format!("Failed to parse metadata JSON: {}", e))?;
+
+        let obj = value.as_object().ok_or("Metadata must be a JSON object")?;
+
+        Ok(Self {
+            title: obj.get("title").and_then(|v| v.as_str()).map(String::from),
+            subject: obj.get("subject").and_then(|v| v.as_str()).map(String::from),
+            authors: obj.get("authors").and_then(|v| {
+                v.as_array()
+                    .map(|arr| arr.iter().filter_map(|item| item.as_str().map(String::from)).collect())
+            }),
+            keywords: obj.get("keywords").and_then(|v| {
+                v.as_array()
+                    .map(|arr| arr.iter().filter_map(|item| item.as_str().map(String::from)).collect())
+            }),
+            language: obj.get("language").and_then(|v| v.as_str()).map(String::from),
+            created_at: obj.get("created_at").and_then(|v| v.as_str()).map(String::from),
+            modified_at: obj.get("modified_at").and_then(|v| v.as_str()).map(String::from),
+            created_by: obj.get("created_by").and_then(|v| v.as_str()).map(String::from),
+            modified_by: obj.get("modified_by").and_then(|v| v.as_str()).map(String::from),
+            page_count: obj.get("page_count").and_then(|v| v.as_u64()).map(|n| n as usize),
+            additional_json: json.to_string(),
+        })
+    }
+
+    /// Get additional metadata fields as associative array.
+    pub fn get_additional(&self) -> PhpResult<HashMap<String, Zval>> {
+        let value: serde_json::Value = serde_json::from_str(&self.additional_json)
+            .map_err(|e| format!("Failed to parse additional JSON: {}", e))?;
+
+        if let serde_json::Value::Object(obj) = value {
+            let mut result = HashMap::new();
+            // Exclude the common fields we already exposed
+            let excluded = [
+                "title",
+                "subject",
+                "authors",
+                "keywords",
+                "language",
+                "created_at",
+                "modified_at",
+                "created_by",
+                "modified_by",
+                "page_count",
+            ];
+            for (k, v) in obj {
+                if !excluded.contains(&k.as_str()) {
+                    result.insert(k, json_value_to_php(&v)?);
+                }
+            }
+            Ok(result)
+        } else {
+            Ok(HashMap::new())
+        }
+    }
+
+    /// Get all metadata as associative array (for backwards compatibility).
+    pub fn to_array(&self) -> PhpResult<HashMap<String, Zval>> {
+        let value: serde_json::Value =
+            serde_json::from_str(&self.additional_json).map_err(|e| format!("Failed to parse JSON: {}", e))?;
+
+        if let serde_json::Value::Object(obj) = value {
+            let mut result = HashMap::new();
+            for (k, v) in obj {
+                result.insert(k, json_value_to_php(&v)?);
+            }
+            Ok(result)
+        } else {
+            Ok(HashMap::new())
+        }
     }
 }

@@ -109,7 +109,7 @@ readonly class ExtractionConfig
          * @var KeywordConfig|null
          * @default null
          */
-        public ?KeywordConfig $keyword = null,
+        public ?KeywordConfig $keywords = null,
 
         /**
          * Enable image extraction from documents.
@@ -243,11 +243,11 @@ readonly class ExtractionConfig
             $languageDetection = LanguageDetectionConfig::fromArray($languageDetectionData);
         }
 
-        $keyword = null;
-        if (isset($data['keyword']) && is_array($data['keyword'])) {
-            /** @var array<string, mixed> $keywordData */
-            $keywordData = $data['keyword'];
-            $keyword = KeywordConfig::fromArray($keywordData);
+        $keywords = null;
+        if (isset($data['keywords']) && is_array($data['keywords'])) {
+            /** @var array<string, mixed> $keywordsData */
+            $keywordsData = $data['keywords'];
+            $keywords = KeywordConfig::fromArray($keywordsData);
         }
 
         return new self(
@@ -258,7 +258,7 @@ readonly class ExtractionConfig
             imageExtraction: $imageExtraction,
             page: $page,
             languageDetection: $languageDetection,
-            keyword: $keyword,
+            keywords: $keywords,
             extractImages: $extractImages,
             extractTables: $extractTables,
             preserveFormatting: $preserveFormatting,
@@ -418,15 +418,24 @@ readonly class ExtractionConfig
      */
     public function toArray(): array
     {
+        // Build chunking config with embedded embedding config if present
+        $chunking = null;
+        if ($this->chunking !== null) {
+            $chunking = $this->chunking->toArray();
+            // Nest embedding config inside chunking config if present
+            if ($this->embedding !== null) {
+                $chunking['embedding'] = $this->embedding->toArray();
+            }
+        }
+
         return array_filter([
             'ocr' => $this->ocr?->toArray(),
             'pdf' => $this->pdf?->toArray(),
-            'chunking' => $this->chunking?->toArray(),
-            'embedding' => $this->embedding?->toArray(),
+            'chunking' => $chunking,
             'image_extraction' => $this->imageExtraction?->toArray(),
             'page' => $this->page?->toArray(),
             'language_detection' => $this->languageDetection?->toArray(),
-            'keyword' => $this->keyword?->toArray(),
+            'keywords' => $this->keywords?->toArray(),
             'extract_images' => $this->extractImages,
             'extract_tables' => $this->extractTables,
             'preserve_formatting' => $this->preserveFormatting,
