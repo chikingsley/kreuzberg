@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { FileTypeFilter } from '@/components/filters/FileTypeFilter'
+import { formatFramework } from '@/transformers/chartTransformers'
 
 type SortField = 'framework' | 'mode' | 'fileType' | 'ocrMode' | 'throughputP50' | 'throughputP95' | 'throughputP99' | 'memoryP50' | 'memoryP95' | 'memoryP99' | 'durationP50' | 'durationP95' | 'durationP99' | 'coldStart' | 'diskSize'
 type SortOrder = 'asc' | 'desc'
@@ -322,7 +323,7 @@ export function DetailedComparisonsPage() {
                     className={index % 2 === 0 ? 'bg-background hover:bg-muted text-foreground' : 'bg-muted hover:bg-background text-foreground'}
                   >
                     <TableCell className="font-medium" data-testid={`cell-framework-${row.key}`}>
-                      {row.framework}
+                      {formatFramework(row.framework)}
                     </TableCell>
                     <TableCell data-testid={`cell-mode-${row.key}`}>{row.mode}</TableCell>
                     <TableCell data-testid={`cell-fileType-${row.key}`}>{row.fileType}</TableCell>

@@ -36,11 +36,24 @@ export interface ChartTransformFilters {
 }
 
 /**
- * Format framework name to title case
- * Examples: 'python' -> 'Python', 'rust' -> 'Rust'
+ * Format framework name to display name
+ * Maps framework identifiers to their full display names
+ * Examples: 'python' -> 'Kreuzberg (Python)', 'rust' -> 'Kreuzberg (Rust)'
  */
-function formatFramework(framework: string): string {
-  return framework.charAt(0).toUpperCase() + framework.slice(1)
+export function formatFramework(framework: string): string {
+  const frameworkMap: Record<string, string> = {
+    python: 'Kreuzberg (Python)',
+    node: 'Kreuzberg (Node.js)',
+    rust: 'Kreuzberg (Rust)',
+    go: 'Kreuzberg (Go)',
+    ruby: 'Kreuzberg (Ruby)',
+    java: 'Kreuzberg (Java)',
+    csharp: 'Kreuzberg (C#)',
+    elixir: 'Kreuzberg (Elixir)',
+    php: 'Kreuzberg (PHP)',
+  }
+
+  return frameworkMap[framework.toLowerCase()] || framework
 }
 
 /**

@@ -14,8 +14,8 @@ import { DiskSizeChart } from '@/components/charts/DiskSizeChart'
 export function PerformanceChartsPage() {
   const { data, loading, error } = useBenchmark()
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([])
-  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([])
-  const [ocrMode, setOcrMode] = useState<'' | 'no_ocr' | 'with_ocr'>('')
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>(['pdf']) // Default to PDF
+  const [ocrMode, setOcrMode] = useState<'' | 'no_ocr' | 'with_ocr'>('no_ocr') // Default to no OCR
 
   if (loading) {
     return (

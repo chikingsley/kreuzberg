@@ -2,6 +2,7 @@ import type {
   AggregatedBenchmarkData,
   FrameworkModeData,
 } from '@/types/benchmark'
+import { formatFramework } from '@/transformers/chartTransformers'
 
 export interface FrameworkPerformance {
   frameworkMode: string
@@ -59,9 +60,10 @@ export function getFastestFramework(
   if (!fastest) return null
 
   const ocrText = ocrMode === 'with_ocr' ? 'with OCR' : 'without OCR'
+  const formattedFramework = formatFramework(fastest.framework)
   return {
     title: `Fastest for ${fileType.toUpperCase()} ${ocrText}`,
-    description: `${fastest.framework} (${fastest.mode}) achieves ${fastest.throughput.toFixed(1)} MB/s (p50)`,
+    description: `${formattedFramework} (${fastest.mode}) achieves ${fastest.throughput.toFixed(1)} MB/s (p50)`,
     context: `${fileType} ${ocrText}`,
     value: `${fastest.throughput.toFixed(1)} MB/s`,
   }
@@ -110,9 +112,10 @@ export function getMostMemoryEfficient(
   if (!mostEfficient) return null
 
   const ocrText = ocrMode === 'with_ocr' ? 'with OCR' : 'without OCR'
+  const formattedFramework = formatFramework(mostEfficient.framework)
   return {
     title: `Most Memory Efficient for ${fileType.toUpperCase()} ${ocrText}`,
-    description: `${mostEfficient.framework} (${mostEfficient.mode}) uses only ${mostEfficient.memory.toFixed(1)} MB (p50)`,
+    description: `${formattedFramework} (${mostEfficient.mode}) uses only ${mostEfficient.memory.toFixed(1)} MB (p50)`,
     context: `${fileType} ${ocrText}`,
     value: `${mostEfficient.memory.toFixed(1)} MB`,
   }
@@ -148,10 +151,11 @@ export function calculateOcrOverhead(
   const withOcrThroughput = fileTypeMetrics.with_ocr.throughput.p50
   const overhead =
     ((noOcrThroughput - withOcrThroughput) / noOcrThroughput) * 100
+  const formattedFramework = formatFramework(framework)
 
   return {
-    title: `OCR Impact on ${framework}`,
-    description: `OCR reduces ${framework} throughput by ${overhead.toFixed(0)}% (${noOcrThroughput.toFixed(1)} → ${withOcrThroughput.toFixed(1)} MB/s) for ${fileType}`,
+    title: `OCR Impact on ${formattedFramework}`,
+    description: `OCR reduces ${formattedFramework} throughput by ${overhead.toFixed(0)}% (${noOcrThroughput.toFixed(1)} → ${withOcrThroughput.toFixed(1)} MB/s) for ${fileType}`,
     context: `${fileType}`,
     value: `${overhead.toFixed(0)}% overhead`,
   }
@@ -193,9 +197,10 @@ export function getEfficiencyScore(
   const score = metrics.throughput.p50 / metrics.memory.p50
 
   const ocrText = ocrMode === 'with_ocr' ? 'with OCR' : 'without OCR'
+  const formattedFramework = formatFramework(framework)
   return {
-    title: `Efficiency Score: ${framework}`,
-    description: `${framework} (${targetMode}) achieves ${score.toFixed(2)} MB/s per MB for ${fileType} ${ocrText}`,
+    title: `Efficiency Score: ${formattedFramework}`,
+    description: `${formattedFramework} (${targetMode}) achieves ${score.toFixed(2)} MB/s per MB for ${fileType} ${ocrText}`,
     context: `${fileType} ${ocrText}`,
     value: score.toFixed(2),
   }
@@ -227,9 +232,10 @@ export function getFastestColdStart(
 
   if (!fastest) return null
 
+  const formattedFramework = formatFramework(fastest.framework)
   return {
     title: 'Fastest Cold Start',
-    description: `${fastest.framework} (${fastest.mode}) has fastest cold start at ${fastest.time.toFixed(0)}ms (p50)`,
+    description: `${formattedFramework} (${fastest.mode}) has fastest cold start at ${fastest.time.toFixed(0)}ms (p50)`,
     context: 'Cold start performance',
     value: `${fastest.time.toFixed(0)}ms`,
   }

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useBenchmark } from '@/context/BenchmarkContext'
+import { formatFramework } from '@/transformers/chartTransformers'
 
 /**
  * Tooltip payload structure for recharts
@@ -77,7 +78,7 @@ export function DiskSizeChart() {
 
     // Transform disk_sizes data to chart format
     const transformed = Object.entries(data.disk_sizes).map(([framework, info]) => ({
-      name: framework,
+      name: formatFramework(framework),
       sizeInMb: info.size_bytes / (1024 * 1024),
       description: info.description,
     }))
