@@ -84,8 +84,8 @@ for crate_dir in kreuzberg kreuzberg-tesseract; do
   sed -i.bak 's/^authors.workspace = true/authors = ["Na'\''aman Hirschfeld <nhirschfeld@gmail.com>"]/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
   sed -i.bak 's/^license.workspace = true/license = "MIT"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
 
-  # Fix reqwest features - remove "rustls" and keep only "json" since rustls-tls is in workspace
-  sed -i.bak 's/"rustls",/"rustls-tls",/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
+  # Fix reqwest features - ensure "rustls" is used (reqwest 0.13.0+ renamed rustls-tls to rustls)
+  sed -i.bak 's/"rustls-tls",/"rustls",/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
 
   rm -f "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml.bak"
 done
@@ -148,7 +148,7 @@ toml = "${TOML_VERSION}"
 num_cpus = "${NUM_CPUS_VERSION}"
 once_cell = "${ONCE_CELL_VERSION}"
 html-to-markdown-rs = { version = "${HTML_TO_MARKDOWN_VERSION}", default-features = false }
-reqwest = { version = "${REQWEST_VERSION}", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "${REQWEST_VERSION}", default-features = false, features = ["json", "rustls"] }
 image = { version = "${IMAGE_VERSION}", default-features = false }
 lzma-rust2 = { version = "${LZMA_RUST_VERSION}" }
 
