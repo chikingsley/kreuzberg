@@ -11,56 +11,88 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useBenchmark } from '@/context/BenchmarkContext'
+import { transformForColdStartChart } from '@/transformers/chartTransformers'
 import type { AggregatedBenchmarkData } from '@/types/benchmark'
 
 interface ColdStartChartProps {
-  data: AggregatedBenchmarkData | null
-  loading: boolean
-  error: Error | null
-  frameworks?: string[]
+  data?: AggregatedBenchmarkData | null
+  loading?: boolean
+  error?: Error | null
+  framework: string
 }
 
-interface ChartDataPoint {
+/**
+ * Color palette for percentiles that works in both light and dark themes
+ * Using colors with good contrast and visual distinction
+ */
+const PERCENTILE_COLORS = {
+  p50: '#3b82f6', // Blue - median/typical case
+  p95: '#f59e0b', // Amber - 95th percentile
+  p99: '#ef4444', // Red - worst case (99th percentile)
+}
+
+/**
+ * Tooltip payload structure for recharts
+ */
+interface TooltipPayload {
   name: string
-  [key: string]: string | number
+  value: number
+  dataKey?: string
+  color?: string
+  fill?: string
+  payload?: { name: string }
+}
+
+/**
+ * Tooltip props structure for recharts custom tooltip components
+ */
+interface TooltipProps {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}
+
+/**
+ * Custom tooltip to show full identifier and percentile information
+ */
+const CustomTooltip = ({ active, payload }: TooltipProps) => {
+  if (active && payload && payload.length) {
+    // Get the full name from the first payload item (all items share the same data point)
+    const fullName = (payload[0].payload as any)?.fullName || 'Unknown'
+
+    return (
+      <div className="bg-slate-900 text-white p-3 rounded-lg border border-slate-700 shadow-lg">
+        <p className="font-semibold text-sm">{fullName}</p>
+        {payload.map((entry: TooltipPayload, index: number) => (
+          <p key={`item-${index}`} style={{ color: entry.color }} className="text-sm">
+            {entry.name}: {entry.value.toFixed(2)} ms
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
 }
 
 export function ColdStartChart({
-  data,
-  loading,
-  error,
-  frameworks = [],
+  data: externalData,
+  loading: externalLoading,
+  error: externalError,
+  framework,
 }: ColdStartChartProps) {
+  // Use context data if not provided externally
+  const contextData = useBenchmark()
+  const data = externalData ?? contextData.data
+  const loading = externalLoading ?? contextData.loading
+  const error = externalError ?? contextData.error
+
   const chartData = useMemo(() => {
     if (!data) return []
 
-    const points: ChartDataPoint[] = []
-
-    Object.entries(data.by_framework_mode).forEach(([, frameworkData]) => {
-      // Apply framework filter
-      if (frameworks.length > 0 && !frameworks.includes(frameworkData.framework)) {
-        return
-      }
-
-      // Check if cold start data exists
-      if (!frameworkData.cold_start) {
-        return
-      }
-
-      const dataKey = `${frameworkData.framework} (${frameworkData.mode})`
-      const pointName = frameworkData.framework
-
-      let point = points.find(p => p.name === pointName)
-      if (!point) {
-        point = { name: pointName }
-        points.push(point)
-      }
-
-      point[dataKey] = parseFloat(frameworkData.cold_start.p50_ms.toFixed(2))
-    })
-
-    return points
-  }, [data, frameworks])
+    // Transform data using the dedicated transformer
+    return transformForColdStartChart(data, { framework })
+  }, [data, framework])
 
   if (loading) {
     return (
@@ -112,42 +144,80 @@ export function ColdStartChart({
     <Card data-testid="chart-cold-start">
       <CardHeader>
         <CardTitle>Cold Start Time (ms)</CardTitle>
+        <p className="text-sm text-muted-foreground mt-2">
+          Comparing p50 (median), p95, and p99 (worst case) cold start times across frameworks
+        </p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={chartData}
-            margin={{ top: 20, right: 30, left: 0, bottom: 60 }}
+            margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
             data-testid="cold-start-barchart"
           >
             <XAxis
               dataKey="name"
               angle={-45}
               textAnchor="end"
-              height={100}
+              height={120}
               interval={0}
               tick={{ fontSize: 12 }}
             />
-            <YAxis label={{ value: 'ms', angle: -90, position: 'insideLeft' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', border: 'none' }}
-              formatter={(value: number) => value.toFixed(2)}
-              data-testid="cold-start-tooltip"
+            <YAxis
+              label={{ value: 'Cold Start Time (ms)', angle: -90, position: 'insideLeft' }}
+              tick={{ fontSize: 12 }}
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-            {chartData.length > 0 &&
-              Object.keys(chartData[0])
-                .filter(key => key !== 'name')
-                .map((key, index) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    fill={`hsl(${(index * 360) / 10}, 70%, 50%)`}
-                    data-testid={`bar-cold-start-${key}`}
-                  />
-                ))}
+            <Tooltip
+              content={<CustomTooltip />}
+              data-testid="cold-start-tooltip"
+              cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+            />
+            <Legend
+              wrapperStyle={{ paddingTop: '20px' }}
+              data-testid="cold-start-legend"
+              formatter={value => {
+                const labels: Record<string, string> = {
+                  p50: 'p50 (Median)',
+                  p95: 'p95 (95th Percentile)',
+                  p99: 'p99 (99th Percentile)',
+                }
+                return labels[value] || value
+              }}
+            />
+            <Bar
+              dataKey="p50"
+              fill={PERCENTILE_COLORS.p50}
+              data-testid="bar-cold-start-p50"
+              name="p50"
+            />
+            <Bar
+              dataKey="p95"
+              fill={PERCENTILE_COLORS.p95}
+              data-testid="bar-cold-start-p95"
+              name="p95"
+            />
+            <Bar
+              dataKey="p99"
+              fill={PERCENTILE_COLORS.p99}
+              data-testid="bar-cold-start-p99"
+              name="p99"
+            />
           </BarChart>
         </ResponsiveContainer>
+        <div className="mt-6 grid grid-cols-3 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: PERCENTILE_COLORS.p50 }} />
+            <span className="text-muted-foreground">p50: Median response time</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: PERCENTILE_COLORS.p95 }} />
+            <span className="text-muted-foreground">p95: 95% of requests faster</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: PERCENTILE_COLORS.p99 }} />
+            <span className="text-muted-foreground">p99: Worst case scenario</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

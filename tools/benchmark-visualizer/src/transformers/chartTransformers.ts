@@ -1,8 +1,6 @@
 import type {
   AggregatedBenchmarkData,
-  FrameworkModeData,
   PerformanceMetrics,
-  ColdStartMetrics,
   FileTypeMetrics,
 } from '@/types/benchmark'
 
@@ -12,6 +10,73 @@ import type {
  */
 export interface ChartDataPoint {
   [key: string]: string | number
+}
+
+/**
+ * Percentile-based chart data point
+ * Contains p50, p95, p99 percentile values
+ * name: Display label with line break (e.g., "Python\n(single)")
+ * fullName: Full identifier for tooltips (e.g., "python_single_pdf_no_ocr")
+ */
+export interface PercentileChartDataPoint {
+  name: string
+  fullName: string
+  p50: number
+  p95: number
+  p99: number
+}
+
+/**
+ * Filter options for transforming chart data
+ */
+export interface ChartTransformFilters {
+  framework?: string
+  fileType?: string
+  ocrMode?: 'no_ocr' | 'with_ocr'
+}
+
+/**
+ * Format framework name to title case
+ * Examples: 'python' -> 'Python', 'rust' -> 'Rust'
+ */
+function formatFramework(framework: string): string {
+  return framework.charAt(0).toUpperCase() + framework.slice(1)
+}
+
+/**
+ * Format mode to title case
+ * Examples: 'single' -> 'single', 'batch' -> 'batch'
+ */
+function formatMode(mode: string): string {
+  return mode.toLowerCase()
+}
+
+/**
+ * Generate readable display label from framework and mode
+ * Examples:
+ * - 'python' + 'single' -> 'Python\n(single)'
+ * - 'rust' + 'batch' -> 'Rust\n(batch)'
+ */
+export function generateDisplayLabel(framework: string, mode: string): string {
+  return `${formatFramework(framework)}\n(${formatMode(mode)})`
+}
+
+/**
+ * Extract framework and mode from full identifier key
+ * Examples:
+ * - 'python_single_pdf_no_ocr' -> { framework: 'python', mode: 'single', ... }
+ */
+export function parseFrameworkModeKey(key: string): {
+  framework: string
+  mode: string
+} {
+  const parts = key.split('_')
+  if (parts.length >= 2) {
+    const framework = parts[0]
+    const mode = parts[1]
+    return { framework, mode }
+  }
+  return { framework: key, mode: 'unknown' }
 }
 
 /**
@@ -214,4 +279,190 @@ function getValidMetrics(fileTypeMetrics: FileTypeMetrics): PerformanceMetrics |
   if (fileTypeMetrics.no_ocr) return fileTypeMetrics.no_ocr
   if (fileTypeMetrics.with_ocr) return fileTypeMetrics.with_ocr
   return null
+}
+
+/**
+ * Transform benchmark data for throughput charts with all percentiles (p50, p95, p99)
+ * Groups data by framework/mode and file type
+ * Generates readable display labels for chart axes while preserving full identifiers for tooltips
+ *
+ * @param data - Aggregated benchmark data
+ * @param filters - Optional filters to narrow down results by framework, fileType, or ocrMode
+ * @returns Array of objects with readable name for display and fullName for tooltips
+ *
+ * @example
+ * const chartData = transformForThroughputChart(data, { framework: 'rust', fileType: 'pdf' })
+ * // Returns: [{ name: 'Rust\n(single)', fullName: 'rust_single_pdf_no_ocr', p50: 100, ... }]
+ */
+export function transformForThroughputChart(
+  data: AggregatedBenchmarkData,
+  filters?: ChartTransformFilters
+): PercentileChartDataPoint[] {
+  return transformPercentileData(data, 'throughput', filters)
+}
+
+/**
+ * Transform benchmark data for memory charts with all percentiles (p50, p95, p99)
+ * Groups data by framework/mode and file type
+ *
+ * @param data - Aggregated benchmark data
+ * @param filters - Optional filters to narrow down results by framework, fileType, or ocrMode
+ * @returns Array of objects with name, p50, p95, p99 values suitable for Recharts
+ *
+ * @example
+ * const chartData = transformForMemoryChart(data, { framework: 'python', ocrMode: 'with_ocr' })
+ */
+export function transformForMemoryChart(
+  data: AggregatedBenchmarkData,
+  filters?: ChartTransformFilters
+): PercentileChartDataPoint[] {
+  return transformPercentileData(data, 'memory', filters)
+}
+
+/**
+ * Transform benchmark data for duration charts with all percentiles (p50, p95, p99)
+ * Groups data by framework/mode and file type
+ *
+ * @param data - Aggregated benchmark data
+ * @param filters - Optional filters to narrow down results by framework, fileType, or ocrMode
+ * @returns Array of objects with name, p50, p95, p99 values suitable for Recharts
+ *
+ * @example
+ * const chartData = transformForDurationChart(data, { fileType: 'image' })
+ */
+export function transformForDurationChart(
+  data: AggregatedBenchmarkData,
+  filters?: ChartTransformFilters
+): PercentileChartDataPoint[] {
+  return transformPercentileData(data, 'duration', filters)
+}
+
+/**
+ * Transform benchmark data for cold start charts with all percentiles (p50, p95, p99)
+ * Filters for frameworks/modes that have cold start data
+ * Generates readable display labels for chart axes while preserving full identifiers
+ *
+ * @param data - Aggregated benchmark data
+ * @param filters - Optional filters to narrow down results by framework
+ * @returns Array of objects with readable name and fullName for cold start metrics
+ *
+ * @example
+ * const chartData = transformForColdStartChart(data, { framework: 'rust' })
+ * // Returns: [{ name: 'Rust\n(single)', fullName: 'rust_single', p50: 100, ... }]
+ */
+export function transformForColdStartChart(
+  data: AggregatedBenchmarkData,
+  filters?: ChartTransformFilters
+): PercentileChartDataPoint[] {
+  const chartData: PercentileChartDataPoint[] = []
+
+  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+    // Apply framework filter if provided
+    if (filters?.framework && frameworkData.framework !== filters.framework) {
+      return
+    }
+
+    // Cold start data doesn't have file type or OCR mode distinction
+    if (!frameworkData.cold_start) return
+
+    const coldStart = frameworkData.cold_start
+
+    // Generate readable display label for axis
+    const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode)
+
+    const dataPoint: PercentileChartDataPoint = {
+      name: displayLabel,
+      fullName: frameworkModeKey,
+      p50: roundValue(coldStart.p50_ms),
+      p95: roundValue(coldStart.p95_ms),
+      p99: roundValue(coldStart.p99_ms),
+    }
+
+    chartData.push(dataPoint)
+  })
+
+  return chartData
+}
+
+/**
+ * Generic percentile data transformer
+ * Handles transformation of any metric type with percentile values
+ * Generates readable display labels while preserving full identifiers
+ *
+ * @param data - Aggregated benchmark data
+ * @param metricType - The metric to extract: 'throughput', 'memory', or 'duration'
+ * @param filters - Optional filters for framework, fileType, or ocrMode
+ * @returns Array of percentile chart data points with readable names and full identifiers
+ */
+function transformPercentileData(
+  data: AggregatedBenchmarkData,
+  metricType: 'throughput' | 'memory' | 'duration',
+  filters?: ChartTransformFilters
+): PercentileChartDataPoint[] {
+  const chartData: PercentileChartDataPoint[] = []
+
+  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+    // Apply framework filter if provided
+    if (filters?.framework && frameworkData.framework !== filters.framework) {
+      return
+    }
+
+    // Get file types to process
+    const fileTypeKeys = filters?.fileType
+      ? [filters.fileType]
+      : Object.keys(frameworkData.by_file_type)
+
+    fileTypeKeys.forEach(fileType => {
+      const fileTypeMetrics = frameworkData.by_file_type[fileType]
+      if (!fileTypeMetrics) return
+
+      // Get the appropriate metrics based on OCR mode filter
+      let metrics: PerformanceMetrics | null = null
+
+      if (filters?.ocrMode === 'no_ocr') {
+        metrics = fileTypeMetrics.no_ocr
+      } else if (filters?.ocrMode === 'with_ocr') {
+        metrics = fileTypeMetrics.with_ocr
+      } else {
+        // If no OCR mode specified, prioritize no_ocr
+        metrics = fileTypeMetrics.no_ocr || fileTypeMetrics.with_ocr
+      }
+
+      if (!metrics) return
+
+      // Extract the appropriate metric type
+      const metricValues = metrics[metricType]
+      if (!metricValues) return
+
+      // Generate full identifier for tooltip
+      const fullName = `${frameworkModeKey}_${fileType}${filters?.ocrMode ? `_${filters.ocrMode}` : ''}`
+
+      // Generate readable display label for axis
+      const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode)
+
+      const dataPoint: PercentileChartDataPoint = {
+        name: displayLabel,
+        fullName: fullName,
+        p50: roundValue(metricValues.p50),
+        p95: roundValue(metricValues.p95),
+        p99: roundValue(metricValues.p99),
+      }
+
+      chartData.push(dataPoint)
+    })
+  })
+
+  return chartData
+}
+
+/**
+ * Round a numeric value to 2 decimal places
+ * Handles null/undefined values by returning 0
+ *
+ * @param value - The value to round
+ * @returns Rounded value or 0 if value is null/undefined
+ */
+function roundValue(value: number | null | undefined): number {
+  if (value === null || value === undefined) return 0
+  return Math.round(value * 100) / 100
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useBenchmark } from '@/context/BenchmarkContext'
 import {
   Table,
@@ -11,6 +11,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { FileTypeFilter } from '@/components/filters/FileTypeFilter'
 
 type SortField = 'framework' | 'mode' | 'fileType' | 'ocrMode' | 'throughputP50' | 'throughputP95' | 'throughputP99' | 'memoryP50' | 'memoryP95' | 'memoryP99' | 'durationP50' | 'durationP95' | 'durationP99' | 'coldStart' | 'diskSize'
 type SortOrder = 'asc' | 'desc'
@@ -34,10 +35,15 @@ interface TableRow {
   diskSize: number | null
 }
 
+const ROWS_PER_PAGE = 50
+
 export function DetailedComparisonsPage() {
   const { data, loading, error } = useBenchmark()
   const [sortField, setSortField] = useState<SortField>('framework')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [frameworkFilter, setFrameworkFilter] = useState('')
 
   const tableData = useMemo(() => {
     if (!data) return []
@@ -45,50 +51,60 @@ export function DetailedComparisonsPage() {
     const rows: TableRow[] = []
 
     Object.entries(data.by_framework_mode).forEach(([, frameworkData]) => {
+      // Filter by framework name
+      if (frameworkFilter && !frameworkData.framework.toLowerCase().includes(frameworkFilter.toLowerCase())) {
+        return
+      }
+
       Object.entries(frameworkData.by_file_type).forEach(([fileType, fileTypeMetrics]) => {
-        if (!fileTypeMetrics.no_ocr || !fileTypeMetrics.with_ocr) {
+        // Filter by selected file types
+        if (selectedFileTypes.length > 0 && !selectedFileTypes.includes(fileType)) {
           return
         }
 
-        // Add row for no_ocr
-        rows.push({
-          key: `${frameworkData.framework}-${frameworkData.mode}-${fileType}-no_ocr`,
-          framework: frameworkData.framework,
-          mode: frameworkData.mode,
-          fileType,
-          ocrMode: 'no_ocr',
-          throughputP50: fileTypeMetrics.no_ocr.throughput.p50,
-          throughputP95: fileTypeMetrics.no_ocr.throughput.p95,
-          throughputP99: fileTypeMetrics.no_ocr.throughput.p99,
-          memoryP50: fileTypeMetrics.no_ocr.memory.p50,
-          memoryP95: fileTypeMetrics.no_ocr.memory.p95,
-          memoryP99: fileTypeMetrics.no_ocr.memory.p99,
-          durationP50: fileTypeMetrics.no_ocr.duration.p50,
-          durationP95: fileTypeMetrics.no_ocr.duration.p95,
-          durationP99: fileTypeMetrics.no_ocr.duration.p99,
-          coldStart: frameworkData.cold_start?.p50_ms ?? null,
-          diskSize: data.disk_sizes[frameworkData.framework]?.size_bytes ?? null,
-        })
+        // Add row for no_ocr if it exists
+        if (fileTypeMetrics.no_ocr) {
+          rows.push({
+            key: `${frameworkData.framework}-${frameworkData.mode}-${fileType}-no_ocr`,
+            framework: frameworkData.framework,
+            mode: frameworkData.mode,
+            fileType,
+            ocrMode: 'no_ocr',
+            throughputP50: fileTypeMetrics.no_ocr.throughput.p50,
+            throughputP95: fileTypeMetrics.no_ocr.throughput.p95,
+            throughputP99: fileTypeMetrics.no_ocr.throughput.p99,
+            memoryP50: fileTypeMetrics.no_ocr.memory.p50,
+            memoryP95: fileTypeMetrics.no_ocr.memory.p95,
+            memoryP99: fileTypeMetrics.no_ocr.memory.p99,
+            durationP50: fileTypeMetrics.no_ocr.duration.p50,
+            durationP95: fileTypeMetrics.no_ocr.duration.p95,
+            durationP99: fileTypeMetrics.no_ocr.duration.p99,
+            coldStart: frameworkData.cold_start?.p50_ms ?? null,
+            diskSize: data.disk_sizes[frameworkData.framework]?.size_bytes ?? null,
+          })
+        }
 
-        // Add row for with_ocr
-        rows.push({
-          key: `${frameworkData.framework}-${frameworkData.mode}-${fileType}-with_ocr`,
-          framework: frameworkData.framework,
-          mode: frameworkData.mode,
-          fileType,
-          ocrMode: 'with_ocr',
-          throughputP50: fileTypeMetrics.with_ocr.throughput.p50,
-          throughputP95: fileTypeMetrics.with_ocr.throughput.p95,
-          throughputP99: fileTypeMetrics.with_ocr.throughput.p99,
-          memoryP50: fileTypeMetrics.with_ocr.memory.p50,
-          memoryP95: fileTypeMetrics.with_ocr.memory.p95,
-          memoryP99: fileTypeMetrics.with_ocr.memory.p99,
-          durationP50: fileTypeMetrics.with_ocr.duration.p50,
-          durationP95: fileTypeMetrics.with_ocr.duration.p95,
-          durationP99: fileTypeMetrics.with_ocr.duration.p99,
-          coldStart: frameworkData.cold_start?.p50_ms ?? null,
-          diskSize: data.disk_sizes[frameworkData.framework]?.size_bytes ?? null,
-        })
+        // Add row for with_ocr if it exists
+        if (fileTypeMetrics.with_ocr) {
+          rows.push({
+            key: `${frameworkData.framework}-${frameworkData.mode}-${fileType}-with_ocr`,
+            framework: frameworkData.framework,
+            mode: frameworkData.mode,
+            fileType,
+            ocrMode: 'with_ocr',
+            throughputP50: fileTypeMetrics.with_ocr.throughput.p50,
+            throughputP95: fileTypeMetrics.with_ocr.throughput.p95,
+            throughputP99: fileTypeMetrics.with_ocr.throughput.p99,
+            memoryP50: fileTypeMetrics.with_ocr.memory.p50,
+            memoryP95: fileTypeMetrics.with_ocr.memory.p95,
+            memoryP99: fileTypeMetrics.with_ocr.memory.p99,
+            durationP50: fileTypeMetrics.with_ocr.duration.p50,
+            durationP95: fileTypeMetrics.with_ocr.duration.p95,
+            durationP99: fileTypeMetrics.with_ocr.duration.p99,
+            coldStart: frameworkData.cold_start?.p50_ms ?? null,
+            diskSize: data.disk_sizes[frameworkData.framework]?.size_bytes ?? null,
+          })
+        }
       })
     })
 
@@ -109,24 +125,25 @@ export function DetailedComparisonsPage() {
     })
 
     return sorted
-  }, [data, sortField, sortOrder])
+  }, [data, sortField, sortOrder, selectedFileTypes, frameworkFilter])
 
-  const handleSort = (field: SortField) => {
+  const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortField(field)
       setSortOrder('asc')
     }
-  }
+    setCurrentPage(1) // Reset to first page on sort
+  }, [sortField, sortOrder])
 
-  const formatBytes = (bytes: number) => {
+  const formatBytes = useCallback((bytes: number) => {
     if (bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+  }, [])
 
   const SortButton = ({ field, label }: { field: SortField; label: string }) => (
     <Button
@@ -134,11 +151,29 @@ export function DetailedComparisonsPage() {
       size="sm"
       onClick={() => handleSort(field)}
       className="h-auto p-0 font-semibold hover:bg-transparent"
+      data-testid={`sort-button-${field}`}
     >
       {label}
       {sortField === field && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
     </Button>
   )
+
+  // Calculate pagination
+  const totalRows = tableData.length
+  const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE
+  const endIndex = startIndex + ROWS_PER_PAGE
+  const paginatedData = tableData.slice(startIndex, endIndex)
+
+  const handleFileTypesChange = useCallback((fileTypes: string[]) => {
+    setSelectedFileTypes(fileTypes)
+    setCurrentPage(1) // Reset to first page on filter
+  }, [])
+
+  const handleFrameworkFilterChange = useCallback((value: string) => {
+    setFrameworkFilter(value)
+    setCurrentPage(1) // Reset to first page on filter
+  }, [])
 
   if (loading) {
     return (
@@ -167,112 +202,200 @@ export function DetailedComparisonsPage() {
     <div data-testid="page-comparisons" className="container mx-auto p-4">
       <h1 className="text-4xl font-bold mb-6">Detailed Comparisons</h1>
 
+      {/* Filter Section */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+        <FileTypeFilter
+          selectedFileTypes={selectedFileTypes}
+          onFileTypesChange={handleFileTypesChange}
+          data-testid="filters-file-type"
+        />
+        <div className="flex-1">
+          <label htmlFor="framework-search" className="block text-sm font-medium mb-2 text-foreground">
+            Search Framework
+          </label>
+          <input
+            id="framework-search"
+            type="text"
+            placeholder="Filter by framework name..."
+            value={frameworkFilter}
+            onChange={(e) => handleFrameworkFilterChange(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            data-testid="framework-search-input"
+          />
+        </div>
+        {(selectedFileTypes.length > 0 || frameworkFilter) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedFileTypes([])
+              setFrameworkFilter('')
+              setCurrentPage(1)
+            }}
+            data-testid="clear-filters-button"
+          >
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground" data-testid="results-counter">
+          Showing {paginatedData.length} of {totalRows} results
+          {selectedFileTypes.length > 0 && ` (filtered)`}
+        </div>
+        {totalRows === 0 && (
+          <div className="text-sm text-muted-foreground">
+            No data available for the selected filters
+          </div>
+        )}
+      </div>
+
+      {/* Table Section */}
       <div className="rounded-md border overflow-x-auto">
-        <Table data-testid="table-comparisons">
-          <TableHeader>
-            <TableRow>
-              <TableHead data-testid="table-header-framework" className="min-w-32">
-                <SortButton field="framework" label="Framework" />
-              </TableHead>
-              <TableHead data-testid="table-header-mode" className="min-w-24">
-                <SortButton field="mode" label="Mode" />
-              </TableHead>
-              <TableHead data-testid="table-header-file-type" className="min-w-24">
-                <SortButton field="fileType" label="File Type" />
-              </TableHead>
-              <TableHead data-testid="table-header-ocr-mode" className="min-w-24">
-                <SortButton field="ocrMode" label="OCR Mode" />
-              </TableHead>
-              <TableHead data-testid="table-header-throughput-p50" className="min-w-32 text-right">
-                <SortButton field="throughputP50" label="Throughput p50 (MB/s)" />
-              </TableHead>
-              <TableHead data-testid="table-header-throughput-p95" className="min-w-32 text-right">
-                <SortButton field="throughputP95" label="Throughput p95 (MB/s)" />
-              </TableHead>
-              <TableHead data-testid="table-header-throughput-p99" className="min-w-32 text-right">
-                <SortButton field="throughputP99" label="Throughput p99 (MB/s)" />
-              </TableHead>
-              <TableHead data-testid="table-header-memory-p50" className="min-w-28 text-right">
-                <SortButton field="memoryP50" label="Memory p50 (MB)" />
-              </TableHead>
-              <TableHead data-testid="table-header-memory-p95" className="min-w-28 text-right">
-                <SortButton field="memoryP95" label="Memory p95 (MB)" />
-              </TableHead>
-              <TableHead data-testid="table-header-memory-p99" className="min-w-28 text-right">
-                <SortButton field="memoryP99" label="Memory p99 (MB)" />
-              </TableHead>
-              <TableHead data-testid="table-header-duration-p50" className="min-w-28 text-right">
-                <SortButton field="durationP50" label="Duration p50 (ms)" />
-              </TableHead>
-              <TableHead data-testid="table-header-duration-p95" className="min-w-28 text-right">
-                <SortButton field="durationP95" label="Duration p95 (ms)" />
-              </TableHead>
-              <TableHead data-testid="table-header-duration-p99" className="min-w-28 text-right">
-                <SortButton field="durationP99" label="Duration p99 (ms)" />
-              </TableHead>
-              <TableHead data-testid="table-header-cold-start" className="min-w-28 text-right">
-                <SortButton field="coldStart" label="Cold Start (ms)" />
-              </TableHead>
-              <TableHead data-testid="table-header-disk-size" className="min-w-24 text-right">
-                <SortButton field="diskSize" label="Disk Size" />
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tableData.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={15} className="text-center text-muted-foreground py-4">
-                  No benchmark data available
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table data-testid="table-comparisons" className="w-full">
+            <TableHeader className="bg-background dark:bg-background sticky top-0 z-10 border-b-2 border-border">
+              <TableRow className="">
+                <TableHead data-testid="table-header-framework" className="min-w-32 font-semibold text-foreground">
+                  <SortButton field="framework" label="Framework" />
+                </TableHead>
+                <TableHead data-testid="table-header-mode" className="min-w-24 font-semibold text-foreground">
+                  <SortButton field="mode" label="Mode" />
+                </TableHead>
+                <TableHead data-testid="table-header-file-type" className="min-w-24 font-semibold text-foreground">
+                  <SortButton field="fileType" label="File Type" />
+                </TableHead>
+                <TableHead data-testid="table-header-ocr-mode" className="min-w-24 font-semibold text-foreground">
+                  <SortButton field="ocrMode" label="OCR Mode" />
+                </TableHead>
+                <TableHead data-testid="table-header-throughput-p50" className="min-w-32 text-right font-semibold text-foreground">
+                  <SortButton field="throughputP50" label="Throughput p50 (MB/s)" />
+                </TableHead>
+                <TableHead data-testid="table-header-throughput-p95" className="min-w-32 text-right font-semibold text-foreground">
+                  <SortButton field="throughputP95" label="Throughput p95 (MB/s)" />
+                </TableHead>
+                <TableHead data-testid="table-header-throughput-p99" className="min-w-32 text-right font-semibold text-foreground">
+                  <SortButton field="throughputP99" label="Throughput p99 (MB/s)" />
+                </TableHead>
+                <TableHead data-testid="table-header-memory-p50" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="memoryP50" label="Memory p50 (MB)" />
+                </TableHead>
+                <TableHead data-testid="table-header-memory-p95" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="memoryP95" label="Memory p95 (MB)" />
+                </TableHead>
+                <TableHead data-testid="table-header-memory-p99" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="memoryP99" label="Memory p99 (MB)" />
+                </TableHead>
+                <TableHead data-testid="table-header-duration-p50" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="durationP50" label="Duration p50 (ms)" />
+                </TableHead>
+                <TableHead data-testid="table-header-duration-p95" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="durationP95" label="Duration p95 (ms)" />
+                </TableHead>
+                <TableHead data-testid="table-header-duration-p99" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="durationP99" label="Duration p99 (ms)" />
+                </TableHead>
+                <TableHead data-testid="table-header-cold-start" className="min-w-28 text-right font-semibold text-foreground">
+                  <SortButton field="coldStart" label="Cold Start (ms)" />
+                </TableHead>
+                <TableHead data-testid="table-header-disk-size" className="min-w-24 text-right font-semibold text-foreground">
+                  <SortButton field="diskSize" label="Disk Size" />
+                </TableHead>
               </TableRow>
-            ) : (
-              tableData.map(row => (
-                <TableRow key={row.key} data-testid={`table-row-${row.key}`}>
-                  <TableCell className="font-medium" data-testid={`cell-framework-${row.key}`}>
-                    {row.framework}
-                  </TableCell>
-                  <TableCell data-testid={`cell-mode-${row.key}`}>{row.mode}</TableCell>
-                  <TableCell data-testid={`cell-fileType-${row.key}`}>{row.fileType}</TableCell>
-                  <TableCell data-testid={`cell-ocrMode-${row.key}`}>{row.ocrMode === 'no_ocr' ? 'No OCR' : 'With OCR'}</TableCell>
-                  <TableCell className="text-right" data-testid={`cell-throughputP50-${row.key}`}>
-                    {row.throughputP50.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-throughputP95-${row.key}`}>
-                    {row.throughputP95.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-throughputP99-${row.key}`}>
-                    {row.throughputP99.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-memoryP50-${row.key}`}>
-                    {row.memoryP50.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-memoryP95-${row.key}`}>
-                    {row.memoryP95.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-memoryP99-${row.key}`}>
-                    {row.memoryP99.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-durationP50-${row.key}`}>
-                    {row.durationP50.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-durationP95-${row.key}`}>
-                    {row.durationP95.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-durationP99-${row.key}`}>
-                    {row.durationP99.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-coldStart-${row.key}`}>
-                    {row.coldStart !== null ? row.coldStart.toFixed(2) : '—'}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`cell-diskSize-${row.key}`}>
-                    {row.diskSize !== null ? formatBytes(row.diskSize) : '—'}
+            </TableHeader>
+            <TableBody>
+              {paginatedData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={15} className="text-center text-muted-foreground py-8">
+                    {totalRows === 0
+                      ? 'No benchmark data available'
+                      : 'No results match your filter criteria'}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                paginatedData.map((row, index) => (
+                  <TableRow
+                    key={row.key}
+                    data-testid={`table-row-${row.key}`}
+                    className={index % 2 === 0 ? 'bg-background hover:bg-muted text-foreground' : 'bg-muted hover:bg-background text-foreground'}
+                  >
+                    <TableCell className="font-medium" data-testid={`cell-framework-${row.key}`}>
+                      {row.framework}
+                    </TableCell>
+                    <TableCell data-testid={`cell-mode-${row.key}`}>{row.mode}</TableCell>
+                    <TableCell data-testid={`cell-fileType-${row.key}`}>{row.fileType}</TableCell>
+                    <TableCell data-testid={`cell-ocrMode-${row.key}`}>{row.ocrMode === 'no_ocr' ? 'No OCR' : 'With OCR'}</TableCell>
+                    <TableCell className="text-right" data-testid={`cell-throughputP50-${row.key}`}>
+                      {row.throughputP50.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-throughputP95-${row.key}`}>
+                      {row.throughputP95.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-throughputP99-${row.key}`}>
+                      {row.throughputP99.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-memoryP50-${row.key}`}>
+                      {row.memoryP50.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-memoryP95-${row.key}`}>
+                      {row.memoryP95.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-memoryP99-${row.key}`}>
+                      {row.memoryP99.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-durationP50-${row.key}`}>
+                      {row.durationP50.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-durationP95-${row.key}`}>
+                      {row.durationP95.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-durationP99-${row.key}`}>
+                      {row.durationP99.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-coldStart-${row.key}`}>
+                      {row.coldStart !== null ? row.coldStart.toFixed(2) : '—'}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`cell-diskSize-${row.key}`}>
+                      {row.diskSize !== null ? formatBytes(row.diskSize) : '—'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground" data-testid="pagination-info">
+            Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              data-testid="pagination-prev"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              data-testid="pagination-next"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

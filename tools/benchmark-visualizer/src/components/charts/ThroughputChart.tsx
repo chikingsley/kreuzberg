@@ -11,84 +11,132 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import type { AggregatedBenchmarkData } from '@/types/benchmark'
+import { useBenchmark } from '@/context/BenchmarkContext'
+import { transformForThroughputChart } from '@/transformers/chartTransformers'
+import type { PercentileChartDataPoint } from '@/transformers/chartTransformers'
 
+/**
+ * Props for ThroughputChart component
+ */
 interface ThroughputChartProps {
-  data: AggregatedBenchmarkData | null
-  loading: boolean
-  error: Error | null
-  frameworks?: string[]
-  fileTypes?: string[]
-  ocrModes?: ('no_ocr' | 'with_ocr')[]
+  framework: string
+  fileType: string
+  ocrMode: 'no_ocr' | 'with_ocr'
 }
 
-interface ChartDataPoint {
+/**
+ * Color palette for percentile bars
+ * Colors that work well in both light and dark themes
+ */
+const PERCENTILE_COLORS = {
+  p50: '#3b82f6',  // Blue - median
+  p95: '#8b5cf6',  // Purple - 95th percentile
+  p99: '#ef4444',  // Red - 99th percentile
+}
+
+/**
+ * Tooltip payload structure for recharts
+ */
+interface TooltipPayload {
   name: string
-  [key: string]: string | number
+  value: number
+  dataKey?: string
+  color?: string
+  fill?: string
+  payload?: { name: string }
 }
 
+/**
+ * Tooltip props structure for recharts custom tooltip components
+ */
+interface TooltipProps {
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}
+
+/**
+ * Custom tooltip component for displaying detailed percentile information
+ * Shows full identifier and percentile details
+ */
+const ThroughputTooltip = ({ active, payload }: TooltipProps) => {
+  if (!active || !payload || payload.length === 0) {
+    return null
+  }
+
+  // Get the full name from the first payload item (all items share the same data point)
+  const fullName = (payload[0].payload as any)?.fullName || 'Unknown'
+
+  return (
+    <div
+      className="rounded-lg border border-border bg-card p-3 shadow-lg"
+      data-testid="throughput-tooltip-content"
+    >
+      <p className="font-semibold text-foreground text-sm">{fullName}</p>
+      {payload.map((entry: TooltipPayload, index: number) => (
+        <p key={index} style={{ color: entry.color }} className="text-sm">
+          <span className="font-medium">{entry.name}:</span> {entry.value?.toFixed(2)} MB/s
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * ThroughputChart Component
+ *
+ * Displays throughput metrics (MB/s) with grouped bars showing p50, p95, and p99 percentiles.
+ * Integrates with the BenchmarkContext to fetch data and uses transformForThroughputChart
+ * to prepare data for visualization.
+ *
+ * Features:
+ * - Real-time data integration using useBenchmark hook
+ * - Percentile-based comparison (p50, p95, p99)
+ * - Responsive design with ResponsiveContainer
+ * - Light/dark theme support
+ * - Loading skeleton while data is fetching
+ * - Error alerts for failed data loads
+ * - Empty state messaging
+ * - Detailed tooltips showing exact values
+ *
+ * @example
+ * ```tsx
+ * <ThroughputChart
+ *   framework="rust"
+ *   fileType="pdf"
+ *   ocrMode="no_ocr"
+ * />
+ * ```
+ */
 export function ThroughputChart({
-  data,
-  loading,
-  error,
-  frameworks = [],
-  fileTypes = [],
-  ocrModes = ['no_ocr', 'with_ocr'],
+  framework,
+  fileType,
+  ocrMode,
 }: ThroughputChartProps) {
-  const chartData = useMemo(() => {
+  // Get benchmark data from context
+  const { data, loading, error } = useBenchmark()
+
+  // Transform raw benchmark data into chart-ready format
+  const chartData = useMemo<PercentileChartDataPoint[]>(() => {
     if (!data) return []
 
-    const points: ChartDataPoint[] = []
-    const processedCombos = new Set<string>()
-
-    Object.entries(data.by_framework_mode).forEach(([, frameworkData]) => {
-      // Apply framework filter
-      if (frameworks.length > 0 && !frameworks.includes(frameworkData.framework)) {
-        return
-      }
-
-      // Process file types
-      Object.entries(frameworkData.by_file_type).forEach(([fileType, fileTypeMetrics]) => {
-        // Apply file type filter
-        if (fileTypes.length > 0 && !fileTypes.includes(fileType)) {
-          return
-        }
-
-        // Process OCR modes
-        ocrModes.forEach(ocrMode => {
-          const metrics = ocrMode === 'no_ocr' ? fileTypeMetrics.no_ocr : fileTypeMetrics.with_ocr
-
-          if (!metrics || !metrics.throughput) {
-            return
-          }
-
-          const comboKey = `${frameworkData.framework}:${frameworkData.mode}:${fileType}:${ocrMode}`
-          if (processedCombos.has(comboKey)) {
-            return
-          }
-          processedCombos.add(comboKey)
-
-          const dataKey = `${frameworkData.framework} (${frameworkData.mode})`
-          let point = points.find(p => p.name === `${fileType} - ${ocrMode}`)
-
-          if (!point) {
-            point = { name: `${fileType} - ${ocrMode}` }
-            points.push(point)
-          }
-
-          point[dataKey] = parseFloat(metrics.throughput.p50.toFixed(2))
-        })
-      })
+    // Transform data using the dedicated transformer
+    // This handles percentile extraction and proper filtering
+    const transformed = transformForThroughputChart(data, {
+      framework,
+      fileType,
+      ocrMode,
     })
 
-    return points
-  }, [data, frameworks, fileTypes, ocrModes])
+    return transformed
+  }, [data, framework, fileType, ocrMode])
 
+  // Loading state
   if (loading) {
     return (
       <Card data-testid="chart-throughput">
         <CardHeader>
-          <CardTitle>Throughput (MB/s)</CardTitle>
+          <CardTitle className="text-lg font-semibold">Throughput (MB/s)</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-80 w-full" data-testid="skeleton-throughput-chart" />
@@ -97,49 +145,57 @@ export function ThroughputChart({
     )
   }
 
+  // Error state
   if (error) {
     return (
       <Card data-testid="chart-throughput-error">
         <CardHeader>
-          <CardTitle>Throughput (MB/s)</CardTitle>
+          <CardTitle className="text-lg font-semibold">Throughput (MB/s)</CardTitle>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive" data-testid="error-throughput-chart">
-            <AlertDescription>Error loading chart: {error.message}</AlertDescription>
+            <AlertDescription>
+              Error loading throughput data: {error.message}
+            </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
     )
   }
 
+  // Empty state
   if (chartData.length === 0) {
     return (
       <Card data-testid="chart-throughput-empty">
         <CardHeader>
-          <CardTitle>Throughput (MB/s)</CardTitle>
+          <CardTitle className="text-lg font-semibold">Throughput (MB/s)</CardTitle>
         </CardHeader>
         <CardContent>
           <div
-            className="flex items-center justify-center h-80 text-muted-foreground"
+            className="flex h-80 items-center justify-center text-muted-foreground"
             data-testid="empty-throughput-chart"
           >
-            No data available for the selected filters
+            No throughput data available for the selected filters
           </div>
         </CardContent>
       </Card>
     )
   }
 
+  // Main chart render
   return (
     <Card data-testid="chart-throughput">
       <CardHeader>
-        <CardTitle>Throughput (MB/s)</CardTitle>
+        <CardTitle className="text-lg font-semibold">Throughput (MB/s)</CardTitle>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Median (p50), 95th percentile (p95), and 99th percentile (p99) throughput values
+        </p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={chartData}
-            margin={{ top: 20, right: 30, left: 0, bottom: 60 }}
+            margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
             data-testid="throughput-barchart"
           >
             <XAxis
@@ -149,27 +205,91 @@ export function ThroughputChart({
               height={100}
               interval={0}
               tick={{ fontSize: 12 }}
+              className="text-muted-foreground"
             />
-            <YAxis label={{ value: 'MB/s', angle: -90, position: 'insideLeft' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', border: 'none' }}
-              formatter={(value: number) => value.toFixed(2)}
-              data-testid="throughput-tooltip"
+            <YAxis
+              label={{
+                value: 'Throughput (MB/s)',
+                angle: -90,
+                position: 'insideLeft',
+                offset: 10,
+              }}
+              className="text-muted-foreground"
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-            {chartData.length > 0 &&
-              Object.keys(chartData[0])
-                .filter(key => key !== 'name')
-                .map((key, index) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    fill={`hsl(${(index * 360) / 10}, 70%, 50%)`}
-                    data-testid={`bar-throughput-${key}`}
-                  />
-                ))}
+            <Tooltip content={<ThroughputTooltip />} />
+            <Legend
+              wrapperStyle={{ paddingTop: '20px' }}
+              className="text-sm text-muted-foreground"
+            />
+
+            {/* P50 Bar - Blue (Median/50th percentile) */}
+            <Bar
+              dataKey="p50"
+              name="P50 (Median)"
+              fill={PERCENTILE_COLORS.p50}
+              data-testid="bar-throughput-p50"
+              radius={[4, 4, 0, 0]}
+            />
+
+            {/* P95 Bar - Purple (95th percentile) */}
+            <Bar
+              dataKey="p95"
+              name="P95 (95th Percentile)"
+              fill={PERCENTILE_COLORS.p95}
+              data-testid="bar-throughput-p95"
+              radius={[4, 4, 0, 0]}
+            />
+
+            {/* P99 Bar - Red (99th percentile) */}
+            <Bar
+              dataKey="p99"
+              name="P99 (99th Percentile)"
+              fill={PERCENTILE_COLORS.p99}
+              data-testid="bar-throughput-p99"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
+
+        {/* Legend explanation */}
+        <div className="mt-6 grid grid-cols-3 gap-4 rounded-lg bg-muted/50 p-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded"
+                style={{ backgroundColor: PERCENTILE_COLORS.p50 }}
+              />
+              <span className="text-sm font-medium">P50 (Median)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Typical throughput for 50% of requests
+            </p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded"
+                style={{ backgroundColor: PERCENTILE_COLORS.p95 }}
+              />
+              <span className="text-sm font-medium">P95 (95th %ile)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Throughput for 95% of requests
+            </p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded"
+                style={{ backgroundColor: PERCENTILE_COLORS.p99 }}
+              />
+              <span className="text-sm font-medium">P99 (99th %ile)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Throughput for slowest 1% of requests
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

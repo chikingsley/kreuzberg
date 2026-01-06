@@ -4,15 +4,18 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FrameworkFilter } from '@/components/filters/FrameworkFilter'
 import { FileTypeFilter } from '@/components/filters/FileTypeFilter'
+import { OCRModeFilter } from '@/components/filters/OCRModeFilter'
 import { ThroughputChart } from '@/components/charts/ThroughputChart'
 import { MemoryChart } from '@/components/charts/MemoryChart'
 import { DurationChart } from '@/components/charts/DurationChart'
 import { ColdStartChart } from '@/components/charts/ColdStartChart'
+import { DiskSizeChart } from '@/components/charts/DiskSizeChart'
 
 export function PerformanceChartsPage() {
   const { data, loading, error } = useBenchmark()
-  const [selectedFramework, setSelectedFramework] = useState<string>('')
-  const [selectedFileType, setSelectedFileType] = useState<string>('')
+  const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([])
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([])
+  const [ocrMode, setOcrMode] = useState<'' | 'no_ocr' | 'with_ocr'>('')
 
   if (loading) {
     return (
@@ -37,8 +40,12 @@ export function PerformanceChartsPage() {
     return null
   }
 
-  const frameworks = selectedFramework ? [selectedFramework] : []
-  const fileTypes = selectedFileType ? [selectedFileType] : []
+  // Get the first selected framework and file type for charts
+  const selectedFramework = selectedFrameworks[0]
+  const selectedFileType = selectedFileTypes[0]
+
+  // Check if minimum required filters are selected
+  const hasRequiredFilters = selectedFileType && ocrMode
 
   return (
     <div data-testid="page-charts" className="container mx-auto p-4">
@@ -46,53 +53,54 @@ export function PerformanceChartsPage() {
 
       <div className="mb-6 flex gap-4">
         <FrameworkFilter
-          value={selectedFramework}
-          onChange={setSelectedFramework}
+          selectedFrameworks={selectedFrameworks}
+          onFrameworksChange={setSelectedFrameworks}
           data-testid="filters-framework"
         />
         <FileTypeFilter
-          value={selectedFileType}
-          onChange={setSelectedFileType}
+          selectedFileTypes={selectedFileTypes}
+          onFileTypesChange={setSelectedFileTypes}
           data-testid="filters-file-type"
         />
-      </div>
-
-      <div className="space-y-6">
-        <ThroughputChart
-          data={data}
-          loading={false}
-          error={null}
-          frameworks={frameworks}
-          fileTypes={fileTypes}
-          data-testid="chart-throughput"
-        />
-
-        <MemoryChart
-          data={data}
-          loading={false}
-          error={null}
-          frameworks={frameworks}
-          fileTypes={fileTypes}
-          data-testid="chart-memory"
-        />
-
-        <DurationChart
-          data={data}
-          loading={false}
-          error={null}
-          frameworks={frameworks}
-          fileTypes={fileTypes}
-          data-testid="chart-duration"
-        />
-
-        <ColdStartChart
-          data={data}
-          loading={false}
-          error={null}
-          frameworks={frameworks}
-          data-testid="chart-cold-start"
+        <OCRModeFilter
+          selectedOCRMode={ocrMode}
+          onOCRModeChange={setOcrMode}
+          data-testid="filter-ocr"
         />
       </div>
+
+      {!hasRequiredFilters ? (
+        <Alert data-testid="validation-message">
+          <AlertDescription>
+            Select a file type and OCR mode to view charts
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="space-y-6">
+          <ThroughputChart
+            framework={selectedFramework}
+            fileType={selectedFileType}
+            ocrMode={ocrMode}
+          />
+
+          <MemoryChart
+            framework={selectedFramework}
+            fileType={selectedFileType}
+            ocrMode={ocrMode}
+          />
+
+          <DurationChart
+            fileType={selectedFileType}
+            ocrMode={ocrMode}
+          />
+
+          <ColdStartChart
+            framework={selectedFramework}
+          />
+
+          <DiskSizeChart />
+        </div>
+      )}
     </div>
   )
 }
