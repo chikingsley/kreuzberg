@@ -36,6 +36,7 @@ public static class TestHelpers
             dir = Directory.GetParent(candidate)?.FullName;
         }
 
+        // Fallback to legacy two-levels-up resolution
         var cwd = Directory.GetCurrentDirectory();
         return Path.GetFullPath(Path.Combine(cwd, "..", ".."));
     }
@@ -87,31 +88,21 @@ public static class TestHelpers
         return path;
     }
 
-    public static bool ShouldSkipLegacyOffice(string relativePath)
-    {
-        var flag = Environment.GetEnvironmentVariable("KREUZBERG_SKIP_LEGACY_OFFICE");
-        var skipLegacy = !string.IsNullOrWhiteSpace(flag) && (flag == "1" || flag.Equals("true", StringComparison.OrdinalIgnoreCase));
-
-        if (!skipLegacy)
-        {
-            return false;
-        }
-
-        var ext = Path.GetExtension(relativePath).ToLowerInvariant();
-        return ext == ".ppt" || ext == ".doc" || ext == ".xls";
-    }
-
     public static void SkipIfLegacyOfficeDisabled(string relativePath)
     {
-        if (ShouldSkipLegacyOffice(relativePath))
+        var flag = Environment.GetEnvironmentVariable("KREUZBERG_SKIP_LEGACY_OFFICE");
+        if (string.IsNullOrWhiteSpace(flag) || !OperatingSystem.IsWindows())
         {
-            // Skip the test - simply return without executing the test body
-            // The test will pass but won't verify anything for legacy formats
             return;
+        }
+        var ext = Path.GetExtension(relativePath).ToLowerInvariant();
+        if (ext == ".ppt" || ext == ".doc" || ext == ".xls")
+        {
+            throw new SkipException();
         }
     }
 
-    public static void SkipIfOfficeTestsOnWindows(string relativePath)
+    public static void SkipIfOfficeTestOnWindows(string relativePath)
     {
         // Office tests timeout on Windows due to LibreOffice conversion delays
         if (OperatingSystem.IsWindows())
@@ -120,8 +111,7 @@ public static class TestHelpers
             var isOfficeFormat = ext is ".docx" or ".pptx" or ".xlsx" or ".doc" or ".ppt" or ".xls";
             if (isOfficeFormat)
             {
-                // Throw SkipTestException to properly skip the test in xUnit
-                throw new SkipTestException("Office tests are skipped on Windows due to LibreOffice conversion delays causing timeouts");
+                throw new SkipException();
             }
         }
     }
@@ -298,28 +288,28 @@ public static class TestHelpers
             throw new XunitException($"Invalid expectation for {path}: {expectationJson}");
         }
 
-        if (spec.TryGetPropertyValue("eq", out var eq) && eq is not null)
+        if (spec.TryGetPropertyValue("eq", out var eq))
         {
             if (!JsonEquals(value, eq))
             {
                 throw new XunitException($"Expected metadata {path} == {eq}, got {value}");
             }
         }
-        if (spec.TryGetPropertyValue("gte", out var gte) && gte is not null)
+        if (spec.TryGetPropertyValue("gte", out var gte))
         {
             if (!CompareFloat(value, gte, true))
             {
                 throw new XunitException($"Expected metadata {path} >= {gte}, got {value}");
             }
         }
-        if (spec.TryGetPropertyValue("lte", out var lte) && lte is not null)
+        if (spec.TryGetPropertyValue("lte", out var lte))
         {
             if (!CompareFloat(value, lte, false))
             {
                 throw new XunitException($"Expected metadata {path} <= {lte}, got {value}");
             }
         }
-        if (spec.TryGetPropertyValue("contains", out var contains) && contains is not null)
+        if (spec.TryGetPropertyValue("contains", out var contains))
         {
             if (!ValueContains(value, contains))
             {

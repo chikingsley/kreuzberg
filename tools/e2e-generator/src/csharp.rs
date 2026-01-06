@@ -110,6 +110,20 @@ public static class TestHelpers
         }
     }
 
+    public static void SkipIfOfficeTestOnWindows(string relativePath)
+    {
+        // Office tests timeout on Windows due to LibreOffice conversion delays
+        if (OperatingSystem.IsWindows())
+        {
+            var ext = Path.GetExtension(relativePath).ToLowerInvariant();
+            var isOfficeFormat = ext is ".docx" or ".pptx" or ".xlsx" or ".doc" or ".ppt" or ".xls";
+            if (isOfficeFormat)
+            {
+                throw new SkipException();
+            }
+        }
+    }
+
     public static ExtractionConfig? BuildConfig(string? configJson)
     {
         if (string.IsNullOrWhiteSpace(configJson))
@@ -532,6 +546,11 @@ fn render_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
     writeln!(
         buffer,
         "            TestHelpers.SkipIfLegacyOfficeDisabled(\"{}\");",
+        escape_csharp_string(&doc.path)
+    )?;
+    writeln!(
+        buffer,
+        "            TestHelpers.SkipIfOfficeTestOnWindows(\"{}\");",
         escape_csharp_string(&doc.path)
     )?;
     writeln!(

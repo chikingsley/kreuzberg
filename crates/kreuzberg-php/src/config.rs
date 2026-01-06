@@ -3,9 +3,9 @@
 //! Provides PHP-friendly wrappers around the Rust configuration structs.
 
 use ext_php_rs::prelude::*;
+use ext_php_rs::types::{ZendHashTable, Zval};
 use kreuzberg::core::config::HierarchyConfig as RustHierarchyConfig;
 use std::collections::HashMap;
-use ext_php_rs::types::{ZendHashTable, Zval};
 
 /// Convert PHP HashTable to HashMap for easier manipulation
 /// Returns a mapping of string keys to references to Zval values
@@ -52,9 +52,7 @@ fn get_i32_or_default(data: &HashMap<String, Zval>, key: &str, default: i32) -> 
 
 /// Extract boolean value from HashMap with default
 fn get_bool_or_default(data: &HashMap<String, Zval>, key: &str, default: bool) -> bool {
-    data.get(key)
-        .and_then(|v| v.bool())
-        .unwrap_or(default)
+    data.get(key).and_then(|v| v.bool()).unwrap_or(default)
 }
 
 /// Extract usize value from HashMap with default
@@ -75,11 +73,8 @@ fn get_f32_or_default(data: &HashMap<String, Zval>, key: &str, default: f32) -> 
 
 /// Extract f64 value from HashMap with default
 fn get_f64_or_default(data: &HashMap<String, Zval>, key: &str, default: f64) -> f64 {
-    data.get(key)
-        .and_then(|v| v.double())
-        .unwrap_or(default)
+    data.get(key).and_then(|v| v.double()).unwrap_or(default)
 }
-
 
 /// Main extraction configuration.
 ///

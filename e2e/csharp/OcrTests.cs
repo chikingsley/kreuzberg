@@ -12,6 +12,7 @@ namespace Kreuzberg.E2E.Ocr {
         public void OcrImageHelloWorld()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("images/test_hello_world.png");
+            TestHelpers.SkipIfOfficeTestOnWindows("images/test_hello_world.png");
             var result = TestHelpers.RunExtraction("images/test_hello_world.png", "{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
             TestHelpers.AssertExpectedMime(result, new[] { "image/png" });
             TestHelpers.AssertMinContentLength(result, 5);
@@ -22,6 +23,7 @@ namespace Kreuzberg.E2E.Ocr {
         public void OcrImageNoText()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("images/flower_no_text.jpg");
+            TestHelpers.SkipIfOfficeTestOnWindows("images/flower_no_text.jpg");
             var result = TestHelpers.RunExtraction("images/flower_no_text.jpg", "{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
             TestHelpers.AssertExpectedMime(result, new[] { "image/jpeg" });
             TestHelpers.AssertMaxContentLength(result, 200);
@@ -31,6 +33,7 @@ namespace Kreuzberg.E2E.Ocr {
         public void OcrPdfImageOnlyGerman()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("pdfs/image_only_german_pdf.pdf");
+            TestHelpers.SkipIfOfficeTestOnWindows("pdfs/image_only_german_pdf.pdf");
             var result = TestHelpers.RunExtraction("pdfs/image_only_german_pdf.pdf", "{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
             TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });
             TestHelpers.AssertMinContentLength(result, 20);
@@ -42,6 +45,7 @@ namespace Kreuzberg.E2E.Ocr {
         public void OcrPdfRotated90()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("pdfs/ocr_test_rotated_90.pdf");
+            TestHelpers.SkipIfOfficeTestOnWindows("pdfs/ocr_test_rotated_90.pdf");
             var result = TestHelpers.RunExtraction("pdfs/ocr_test_rotated_90.pdf", "{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
             TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });
             TestHelpers.AssertMinContentLength(result, 10);
@@ -51,6 +55,7 @@ namespace Kreuzberg.E2E.Ocr {
         public void OcrPdfTesseract()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("pdfs/ocr_test.pdf");
+            TestHelpers.SkipIfOfficeTestOnWindows("pdfs/ocr_test.pdf");
             var result = TestHelpers.RunExtraction("pdfs/ocr_test.pdf", "{\"force_ocr\":true,\"ocr\":{\"backend\":\"tesseract\",\"language\":\"eng\"}}");
             TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });
             TestHelpers.AssertMinContentLength(result, 20);

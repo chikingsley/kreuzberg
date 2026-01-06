@@ -12,6 +12,7 @@ namespace Kreuzberg.E2E.Html {
         public void HtmlComplexLayout()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("web/taylor_swift.html");
+            TestHelpers.SkipIfOfficeTestOnWindows("web/taylor_swift.html");
             var result = TestHelpers.RunExtraction("web/taylor_swift.html", null);
             TestHelpers.AssertExpectedMime(result, new[] { "text/html" });
             TestHelpers.AssertMinContentLength(result, 1000);
@@ -21,6 +22,7 @@ namespace Kreuzberg.E2E.Html {
         public void HtmlSimpleTable()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("web/simple_table.html");
+            TestHelpers.SkipIfOfficeTestOnWindows("web/simple_table.html");
             var result = TestHelpers.RunExtraction("web/simple_table.html", null);
             TestHelpers.AssertExpectedMime(result, new[] { "text/html" });
             TestHelpers.AssertMinContentLength(result, 100);
