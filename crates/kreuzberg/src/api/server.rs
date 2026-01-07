@@ -509,8 +509,10 @@ mod tests {
     fn test_server_config_cors_handling() {
         let extraction_config = ExtractionConfig::default();
         let limits = ApiSizeLimits::default();
-        let mut server_config = ServerConfig::default();
-        server_config.cors_origins = vec!["https://example.com".to_string()];
+        let server_config = ServerConfig {
+            cors_origins: vec!["https://example.com".to_string()],
+            ..Default::default()
+        };
         let _router = create_router_with_limits_and_server_config(extraction_config, limits, server_config);
     }
 }
