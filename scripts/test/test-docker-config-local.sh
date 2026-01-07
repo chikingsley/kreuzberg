@@ -22,7 +22,6 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$(cd "$SCRIPT_DIR/../../docker" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Color codes
 RED='\033[0;31m'
@@ -82,7 +81,8 @@ log_debug() {
 
 start_test() {
   TOTAL_TESTS=$((TOTAL_TESTS + 1))
-  local test_num=$(printf "%02d" $TOTAL_TESTS)
+  local test_num
+  test_num=$(printf "%02d" $TOTAL_TESTS)
   echo ""
   echo -e "${CYAN}Test $test_num:${NC} $*"
 }
@@ -101,6 +101,7 @@ fail_test() {
   fi
 }
 
+# shellcheck disable=SC2329  # Function is invoked via trap EXIT
 cleanup() {
   log_info "Cleaning up test environment..."
 
@@ -295,7 +296,7 @@ wait_for_health() {
 
   log_debug "Waiting for service on port $port (timeout: ${max_wait}s)"
 
-  while [ $elapsed -lt $max_wait ]; do
+  while [ "$elapsed" -lt "$max_wait" ]; do
     if curl -sf "http://localhost:$port/health" &>/dev/null; then
       log_debug "Service became healthy after ${elapsed}s"
       return 0
@@ -332,7 +333,8 @@ test_etc_kreuzberg_mount() {
   local variant="$1"
   start_test "Volume mount to /etc/kreuzberg/kreuzberg.toml (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-etc-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/kreuzberg.toml"
@@ -381,7 +383,8 @@ test_app_config_mount() {
   local variant="$1"
   start_test "Volume mount to /app/.config/kreuzberg/config.toml (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-app-config-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/config.toml"
@@ -427,7 +430,8 @@ test_custom_path_with_flag() {
   local variant="$1"
   start_test "Custom path with --config flag (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-custom-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/custom-config.toml"
@@ -476,7 +480,8 @@ test_env_var_overrides() {
   local variant="$1"
   start_test "Environment variable overrides with config file (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-env-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/env-config.toml"
@@ -523,7 +528,8 @@ test_toml_format() {
   local variant="$1"
   start_test "TOML config format (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-toml-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/config.toml"
@@ -553,7 +559,8 @@ test_yaml_format() {
   local variant="$1"
   start_test "YAML config format (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-yaml-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/config.yaml"
@@ -583,7 +590,8 @@ test_json_format() {
   local variant="$1"
   start_test "JSON config format (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-json-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/config.json"
@@ -613,7 +621,8 @@ test_readonly_mount() {
   local variant="$1"
   start_test "Read-only mount (variant: $variant)"
 
-  local image="$(get_image_name "$variant")"
+  local image
+  image="$(get_image_name "$variant")"
   local port=$((PORT_BASE + TOTAL_TESTS))
   local container_name="kreuzberg-config-test-readonly-${variant}-$$"
   local config_file="$TEST_TEMP_DIR/readonly-config.toml"

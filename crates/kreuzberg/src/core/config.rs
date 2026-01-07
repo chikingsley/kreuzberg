@@ -1682,14 +1682,16 @@ enable_quality_processing: false
         let original_overlap = std::env::var("KREUZBERG_CHUNKING_MAX_OVERLAP").ok();
 
         set_env("KREUZBERG_CHUNKING_MAX_OVERLAP", "1500");
-        let mut config = ExtractionConfig::default();
         // Set chunking with max_chars = 1000
-        config.chunking = Some(ChunkingConfig {
-            max_chars: 1000,
-            max_overlap: 200,
-            embedding: None,
-            preset: None,
-        });
+        let mut config = ExtractionConfig {
+            chunking: Some(ChunkingConfig {
+                max_chars: 1000,
+                max_overlap: 200,
+                embedding: None,
+                preset: None,
+            }),
+            ..Default::default()
+        };
 
         let result = config.apply_env_overrides();
         assert!(result.is_err());
@@ -1705,8 +1707,10 @@ enable_quality_processing: false
         let original_cache = std::env::var("KREUZBERG_CACHE_ENABLED").ok();
 
         set_env("KREUZBERG_CACHE_ENABLED", "true");
-        let mut config = ExtractionConfig::default();
-        config.use_cache = false;
+        let mut config = ExtractionConfig {
+            use_cache: false,
+            ..Default::default()
+        };
 
         config.apply_env_overrides().unwrap();
         assert!(config.use_cache);
@@ -1720,8 +1724,10 @@ enable_quality_processing: false
         let original_cache = std::env::var("KREUZBERG_CACHE_ENABLED").ok();
 
         set_env("KREUZBERG_CACHE_ENABLED", "false");
-        let mut config = ExtractionConfig::default();
-        config.use_cache = true;
+        let mut config = ExtractionConfig {
+            use_cache: true,
+            ..Default::default()
+        };
 
         config.apply_env_overrides().unwrap();
         assert!(!config.use_cache);
@@ -1735,8 +1741,10 @@ enable_quality_processing: false
         let original_cache = std::env::var("KREUZBERG_CACHE_ENABLED").ok();
 
         set_env("KREUZBERG_CACHE_ENABLED", "TRUE");
-        let mut config = ExtractionConfig::default();
-        config.use_cache = false;
+        let mut config = ExtractionConfig {
+            use_cache: false,
+            ..Default::default()
+        };
 
         config.apply_env_overrides().unwrap();
         assert!(config.use_cache);
@@ -1887,13 +1895,15 @@ enable_quality_processing: false
         let original_max_chars = std::env::var("KREUZBERG_CHUNKING_MAX_CHARS").ok();
 
         set_env("KREUZBERG_CHUNKING_MAX_CHARS", "500");
-        let mut config = ExtractionConfig::default();
-        config.chunking = Some(ChunkingConfig {
-            max_chars: 1000,
-            max_overlap: 600, // Valid: < 1000
-            embedding: None,
-            preset: None,
-        });
+        let mut config = ExtractionConfig {
+            chunking: Some(ChunkingConfig {
+                max_chars: 1000,
+                max_overlap: 600, // Valid: < 1000
+                embedding: None,
+                preset: None,
+            }),
+            ..Default::default()
+        };
 
         let result = config.apply_env_overrides();
         assert!(result.is_err());

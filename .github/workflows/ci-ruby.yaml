@@ -209,7 +209,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
+          # AWS_LC_SYS_NO_ASM=1 disables assembly code compilation in aws-lc-sys.
+          # This avoids the CMake/jitterentropy build race condition on Windows where ar.exe
+          # tries to read object files before CMake finishes compiling them.
+          # The error manifests as: "error reading jitterentropy-health.c.obj: No such file"
+          # While this impacts crypto performance, it's acceptable for CI testing.
+          # See: https://github.com/aws/aws-lc-rs/issues/428
           {
+            echo "AWS_LC_SYS_NO_ASM=1"
             echo "CMAKE_BUILD_PARALLEL_LEVEL=1"
           } >> "$GITHUB_ENV"
 
@@ -596,6 +603,21 @@ jobs:
       - name: Install gem
         shell: bash
         run: scripts/ci/ruby/install-gem.sh
+
+      - name: Configure aws-lc-sys for Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # AWS_LC_SYS_NO_ASM=1 disables assembly code compilation in aws-lc-sys.
+          # This avoids the CMake/jitterentropy build race condition on Windows where ar.exe
+          # tries to read object files before CMake finishes compiling them.
+          # The error manifests as: "error reading jitterentropy-health.c.obj: No such file"
+          # While this impacts crypto performance, it's acceptable for CI testing.
+          # See: https://github.com/aws/aws-lc-rs/issues/428
+          {
+            echo "AWS_LC_SYS_NO_ASM=1"
+            echo "CMAKE_BUILD_PARALLEL_LEVEL=1"
+          } >> "$GITHUB_ENV"
 
       - name: Configure Tesseract build environment (Windows)
         if: runner.os == 'Windows'

@@ -502,9 +502,11 @@ mod tests {
 
     #[test]
     fn test_listen_addr_custom() {
-        let mut config = ServerConfig::default();
-        config.host = "0.0.0.0".to_string();
-        config.port = 3000;
+        let config = ServerConfig {
+            host: "0.0.0.0".to_string(),
+            port: 3000,
+            ..Default::default()
+        };
         assert_eq!(config.listen_addr(), "0.0.0.0:3000");
     }
 
@@ -547,8 +549,10 @@ mod tests {
 
     #[test]
     fn test_max_bytes_to_mb_rounding() {
-        let mut config = ServerConfig::default();
-        config.max_request_body_bytes = 1_048_576; // 1 MB
+        let mut config = ServerConfig {
+            max_request_body_bytes: 1_048_576, // 1 MB
+            ..Default::default()
+        };
         assert_eq!(config.max_request_body_mb(), 1);
 
         config.max_request_body_bytes = 1_048_577; // 1 MB + 1 byte
@@ -557,8 +561,10 @@ mod tests {
 
     #[test]
     fn test_normalize_legacy_max_upload_mb() {
-        let mut config = ServerConfig::default();
-        config.max_upload_mb = Some(50);
+        let mut config = ServerConfig {
+            max_upload_mb: Some(50),
+            ..Default::default()
+        };
 
         config.normalize_legacy_fields();
 
@@ -567,8 +573,10 @@ mod tests {
 
     #[test]
     fn test_normalize_legacy_max_upload_mb_zero() {
-        let mut config = ServerConfig::default();
-        config.max_upload_mb = Some(0);
+        let mut config = ServerConfig {
+            max_upload_mb: Some(0),
+            ..Default::default()
+        };
 
         config.normalize_legacy_fields();
 
@@ -974,8 +982,10 @@ max_upload_mb = 50
 
     #[test]
     fn test_serde_with_max_upload_mb_serialization() {
-        let mut config = ServerConfig::default();
-        config.max_upload_mb = Some(50);
+        let config = ServerConfig {
+            max_upload_mb: Some(50),
+            ..Default::default()
+        };
         let json = serde_json::to_string(&config).unwrap();
 
         // Should serialize with max_upload_mb when Some
