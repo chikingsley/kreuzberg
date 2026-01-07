@@ -69,14 +69,6 @@ func TestErrorWithPanicContext(t *testing.T) {
 }
 
 func TestExtractBytesSyncValidationErrors(t *testing.T) {
-	if _, err := ExtractBytesSync(nil, "text/plain", nil); err == nil {
-		t.Fatalf("expected error for empty data")
-	} else {
-		if _, ok := err.(*ValidationError); !ok {
-			t.Fatalf("expected ValidationError for empty data, got %T", err)
-		}
-	}
-
 	if _, err := ExtractBytesSync([]byte("hello"), "", nil); err == nil {
 		t.Fatalf("expected error for empty mime type")
 	} else {

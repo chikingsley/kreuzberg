@@ -128,10 +128,6 @@ func ExtractFileSync(path string, config *ExtractionConfig) (*ExtractionResult, 
 
 // ExtractBytesSync extracts content and metadata from a byte array with the given MIME type.
 func ExtractBytesSync(data []byte, mimeType string, config *ExtractionConfig) (*ExtractionResult, error) {
-	if len(data) == 0 {
-		return nil, newValidationErrorWithContext("data cannot be empty", nil, ErrorCodeValidation, nil)
-	}
-
 	if mimeType == "" {
 		return nil, newValidationErrorWithContext("mimeType is required", nil, ErrorCodeValidation, nil)
 	}
