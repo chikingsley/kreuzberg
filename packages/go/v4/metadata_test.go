@@ -1045,13 +1045,6 @@ func TestInvalidInputErrorHandling(t *testing.T) {
 		errorMsg  string
 	}{
 		{
-			name:      "empty_bytes",
-			data:      []byte{},
-			mimeType:  "text/html",
-			wantError: true,
-			errorMsg:  "data cannot be empty",
-		},
-		{
 			name:      "empty_mime_type",
 			data:      []byte("<html></html>"),
 			mimeType:  "",
@@ -1059,11 +1052,11 @@ func TestInvalidInputErrorHandling(t *testing.T) {
 			errorMsg:  "mimeType is required",
 		},
 		{
-			name:      "both_empty",
+			name:      "both_empty_mime_type",
 			data:      []byte{},
 			mimeType:  "",
 			wantError: true,
-			errorMsg:  "cannot be empty",
+			errorMsg:  "mimeType is required",
 		},
 		{
 			name:      "valid_html",

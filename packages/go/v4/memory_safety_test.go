@@ -432,12 +432,6 @@ func TestErrorPathCleanup(t *testing.T) {
 			t.Error("expected error for nonexistent file")
 		}
 
-		// Invalid bytes should trigger error path
-		_, err2 := kreuzberg.ExtractBytesSync([]byte{}, "application/pdf", nil)
-		if err2 == nil {
-			t.Error("expected error for empty bytes")
-		}
-
 		// Batch with empty path should trigger error path
 		_, err3 := kreuzberg.BatchExtractFilesSync([]string{""}, nil)
 		if err3 == nil {

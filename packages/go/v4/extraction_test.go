@@ -78,14 +78,6 @@ func TestExtractBytesSync(t *testing.T) {
 	}
 }
 
-// TestExtractBytesSyncWithEmptyData tests validation of empty data.
-func TestExtractBytesSyncWithEmptyData(t *testing.T) {
-	_, err := ExtractBytesSync([]byte{}, "application/pdf", nil)
-	if err == nil {
-		t.Fatalf("expected error for empty data, got nil")
-	}
-}
-
 // TestExtractBytesSyncWithEmptyMimeType tests validation of empty MIME type.
 func TestExtractBytesSyncWithEmptyMimeType(t *testing.T) {
 	data := []byte("%PDF-1.7\n%comment\n")

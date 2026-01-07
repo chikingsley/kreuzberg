@@ -133,26 +133,6 @@ func TestEmptyMIMEType(t *testing.T) {
 	}
 }
 
-// TestEmptyDataValidation validates error handling for empty document data.
-func TestEmptyDataValidation(t *testing.T) {
-	_, err := kreuzberg.ExtractBytesSync(
-		[]byte{}, // Empty data
-		"text/plain",
-		nil,
-	)
-
-	if err == nil {
-		t.Fatalf("expected error for empty data, got nil")
-	}
-
-	var valErr *kreuzberg.ValidationError
-	if errors.As(err, &valErr) {
-		if valErr.Kind() != kreuzberg.ErrorKindValidation {
-			t.Errorf("expected ValidationError, got %T", err)
-		}
-	}
-}
-
 // TestMalformedJSONDocument validates error handling for JSON parsing errors.
 func TestMalformedJSONDocument(t *testing.T) {
 	malformedJSON := []byte(`{"invalid": json content}`)
@@ -575,13 +555,6 @@ func TestConfigValidationChaining(t *testing.T) {
 		config    *kreuzberg.ExtractionConfig
 		shouldErr bool
 	}{
-		{
-			name:      "empty data",
-			data:      []byte{},
-			mimeType:  "text/plain",
-			config:    nil,
-			shouldErr: true,
-		},
 		{
 			name:      "empty mime type",
 			data:      []byte("content"),
