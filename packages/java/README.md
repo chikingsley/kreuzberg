@@ -70,14 +70,14 @@ Install via one of the supported package managers:
 <dependency>
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
-    <version>4.0.0-rc.28</version>
+    <version>4.0.0-rc.29</version>
 </dependency>
 ```
 
 **Gradle:**
 
 ```gradle
-implementation 'dev.kreuzberg:kreuzberg:4.0.0-rc.28'
+implementation 'dev.kreuzberg:kreuzberg:4.0.0-rc.29'
 ```
 
 **Maven with Specific Classifier (if needed):**
@@ -88,7 +88,7 @@ For platform-specific native libraries, Maven handles automatic classifier selec
 <dependency>
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
-    <version>4.0.0-rc.28</version>
+    <version>4.0.0-rc.29</version>
     <!-- Classifiers: linux-x86_64, linux-aarch64, macos-aarch64, windows-x86_64 -->
 </dependency>
 ```

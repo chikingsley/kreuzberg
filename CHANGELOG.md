@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0-rc.29] - 2026-01-08
+
+### Added
+
+#### Documentation
+- **Platform Support Documentation**: Added comprehensive platform support sections to all READMEs
+  - Main README now includes platform support table showing Linux x86_64, Linux aarch64, macOS ARM64, and Windows x64 coverage for all language bindings
+  - Python, Node.js, TypeScript, Ruby, Elixir, Go, Java, C#, and PHP READMEs now document precompiled binary availability
+  - Installation guide includes architecture support section highlighting aarch64 availability
+  - CONTRIBUTING.md includes new cross-architecture testing section explaining ubuntu-24.04-arm CI runners
+  - All documentation correctly reflects macOS support is Apple Silicon only (no Intel)
+  - Corrected Ruby platform documentation (no Windows support currently)
+
 ## [4.0.0-rc.28] - 2026-01-07
 
 ### Added
