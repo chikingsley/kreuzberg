@@ -89,7 +89,7 @@ For platform-specific native libraries, Maven handles automatic classifier selec
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
     <version>4.0.0-rc.28</version>
-    <!-- Classifiers: linux-x86_64, macos-aarch64, macos-x86_64, windows-x86_64 -->
+    <!-- Classifiers: linux-x86_64, linux-aarch64, macos-aarch64, windows-x86_64 -->
 </dependency>
 ```
 
@@ -99,6 +99,17 @@ For platform-specific native libraries, Maven handles automatic classifier selec
 - **FFM API** enabled by default (no additional flags needed in Java 21+)
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+
+### Platform Support
+
+Precompiled native libraries are bundled in the Maven artifact for the following platforms:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+The appropriate native library is automatically loaded at runtime based on your platform.
 
 ### FFM API (Foreign Function & Memory API)
 

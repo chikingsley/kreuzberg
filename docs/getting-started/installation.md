@@ -24,6 +24,15 @@ Kreuzberg is available in multiple formats optimized for different runtimes: nat
 
 Choose **native bindings** for server-side applications requiring maximum performance. Choose **WASM** for browser/edge environments or when avoiding native dependencies is essential.
 
+## Architecture Support
+
+All Kreuzberg packages support both x86_64 and aarch64 (ARM64) architectures:
+
+- **x86_64**: Linux, Windows
+- **aarch64 (ARM64)**: Linux, macOS (Apple Silicon)
+
+Precompiled binaries are available for all major platform combinations. On aarch64 systems, installation is as fast as on x86_64—no compilation required.
+
 ## System Dependencies
 
 System dependencies vary by package:
@@ -59,6 +68,8 @@ pip install 'kreuzberg[easyocr]'
 pip install 'kreuzberg[paddleocr]'
 ```
 
+PyPI wheels include precompiled binaries for Linux (x86_64, aarch64), macOS (Apple Silicon), and Windows.
+
 Next steps: [Python Quick Start](quickstart.md) • [Python API Reference](../reference/api-python.md)
 
 ## TypeScript (Node.js / Bun) - Native
@@ -77,7 +88,9 @@ pnpm add @kreuzberg/node
 yarn add @kreuzberg/node
 ```
 
-The package ships with prebuilt N-API binaries for Linux, macOS (Intel/Apple Silicon), and Windows. If you need to build from source, ensure Rust is available on your PATH and rerun the install command.
+The package ships with prebuilt N-API binaries for Linux, macOS (Apple Silicon), and Windows. If you need to build from source, ensure Rust is available on your PATH and rerun the install command.
+
+N-API binaries support Linux x86_64, Linux aarch64, macOS (Apple Silicon), and Windows.
 
 **Note for pnpm workspaces**: If you're using pnpm in a monorepo/workspace setup, you may need to configure automatic peer dependency installation. Add the following to your `.npmrc` file in the workspace root:
 
@@ -268,7 +281,9 @@ Then install:
 mix deps.get
 ```
 
-The package ships with prebuilt native binaries for Linux, macOS (Intel/Apple Silicon), and Windows via RustlerPrecompiled. If prebuilt binaries are unavailable for your platform, the package will automatically fall back to compiling from source, which requires Rust to be available on your PATH.
+The package ships with prebuilt native binaries for Linux, macOS (Apple Silicon), and Windows via RustlerPrecompiled. If prebuilt binaries are unavailable for your platform, the package will automatically fall back to compiling from source, which requires Rust to be available on your PATH.
+
+Precompiled NIF binaries for Linux (x86_64, aarch64), macOS (Apple Silicon), and Windows.
 
 **Performance**: Native NIF bindings provide ~100% performance through Rustler compiled bindings.
 

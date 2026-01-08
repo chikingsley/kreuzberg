@@ -98,9 +98,30 @@ Each language binding provides comprehensive documentation with examples and bes
 **Command-Line:**
 - **[CLI](https://kreuzberg.dev/cli/usage/)** – Cross-platform binary, batch processing, MCP server mode
 
+> All language bindings include precompiled binaries for both x86_64 and aarch64 architectures on Linux and macOS.
+
 **Docker:**
 - **[Docker](https://kreuzberg.dev/guides/docker/)** - Two images `core` and `full`. Available for both x86 and ARM
 
+## Platform Support
+
+Complete architecture coverage across all language bindings:
+
+| Language | Linux x86_64 | Linux aarch64 | macOS ARM64 | Windows x64 |
+|----------|:------------:|:-------------:|:-----------:|:-----------:|
+| Python | ✅ | ✅ | ✅ | ✅ |
+| Node.js | ✅ | ✅ | ✅ | ✅ |
+| Ruby | ✅ | ✅ | ✅ | - |
+| Elixir | ✅ | ✅ | ✅ | ✅ |
+| Go | ✅ | ✅ | ✅ | ✅ |
+| Java | ✅ | ✅ | ✅ | ✅ |
+| C# | ✅ | ✅ | ✅ | ✅ |
+| PHP | ✅ | ✅ | ✅ | ✅ |
+| Rust | ✅ | ✅ | ✅ | ✅ |
+| CLI | ✅ | ✅ | ✅ | ✅ |
+| Docker | ✅ | ✅ | ✅ | - |
+
+**Note**: ✅ = Precompiled binaries available with instant installation. All platforms are tested in CI. macOS support is Apple Silicon only.
 
 ### Embeddings Support (Optional)
 

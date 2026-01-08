@@ -82,6 +82,16 @@ gem 'kreuzberg'
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
+### Platform Support
+
+Precompiled native extensions are available for the following platforms, providing instant installation without compilation:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+
+On these platforms, no C compiler or Rust toolchain is required for installation.
+
 ## Quick Start
 
 ### Basic Extraction

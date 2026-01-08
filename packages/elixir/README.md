@@ -92,18 +92,32 @@ Then run:
 mix deps.get
 ```
 
-The package will automatically compile the Rust NIF using Rustler precompiled binaries.
+### Precompiled Binaries
+
+Rustler automatically downloads precompiled binaries for supported platforms, providing instant installation without compilation:
+
+**Supported Platforms**:
+- ✅ Linux x86_64 (glibc, musl)
+- ✅ Linux aarch64 (glibc, musl)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+**NIF Versions**: 2.16, 2.17
+
+On these platforms, installation completes in seconds without requiring Rust or a C compiler.
 
 ### System Requirements
 
 - **Elixir 1.14+** and **Erlang/OTP 24+**
-- C compiler (gcc, clang, or MSVC)
+- **C compiler** (gcc, clang, or MSVC) - Only needed if building from source
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
-### Native Build
+> **Note**: Most users receive precompiled binaries and don't need a compiler installed.
 
-If precompiled binaries are unavailable for your platform, Rustler will automatically compile from source:
+### Building from Source
+
+If precompiled binaries are unavailable for your specific platform, OS version, or Erlang version combination, Rustler will automatically compile from source:
 
 ```bash
 # Install Rust if not already installed

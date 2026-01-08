@@ -98,6 +98,17 @@ pip install -e .
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime) version 1.22.x for vector embeddings
 - Optional: [FFmpeg](https://ffmpeg.org/download.html) for audio/video extraction
 
+### Platform Support
+
+PyPI wheels include precompiled binaries for the following platforms, providing instant installation without compilation:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+On these platforms, no Rust toolchain is required for installation.
+
 ### Dependency Installation by Platform
 
 **macOS:**

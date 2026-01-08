@@ -87,7 +87,16 @@ Install-Package Goldziher.Kreuzberg
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
+### Platform Support
 
+Precompiled native libraries are bundled in the NuGet package for the following platforms:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+The appropriate native library is automatically loaded at runtime based on your platform.
 
 ## Quick Start
 

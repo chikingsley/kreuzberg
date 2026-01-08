@@ -31,6 +31,17 @@ Command-line interface with configuration and caching
 - **Version Command**: Display version information in text or JSON format
 - **Configuration**: TOML, YAML, or JSON config files with auto-discovery
 
+### Platform Support
+
+The CLI is tested and officially supported on:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+All platforms receive precompiled binaries through GitHub releases and are tested in continuous integration.
+
 ## Installation
 
 ### From Source
@@ -81,6 +92,8 @@ For `.doc` and `.ppt` file extraction:
 - **Ubuntu/Debian**: `sudo apt-get install libreoffice`
 
 ## Quick Start
+
+> The CLI is available for Linux (x86_64/aarch64), macOS (Apple Silicon), and Windows with consistent behavior across all platforms.
 
 ### Basic Text Extraction
 

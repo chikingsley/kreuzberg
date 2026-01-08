@@ -121,9 +121,19 @@ export DYLD_FALLBACK_LIBRARY_PATH="$PWD/target/release"  # macOS
 ### System Requirements
 
 - **Go 1.19+** required
-- **Platform**: Linux (x86_64), macOS (arm64/x86_64), Windows (x86_64)
 - **Optional**: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) for embeddings support
 - **Optional**: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
+
+### Platform Support
+
+Precompiled FFI libraries are available for the following platforms through GitHub releases:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+On these platforms, the automated installer can download prebuilt binaries. For other platforms, the library will be built from source.
 
 ## Quick Start
 

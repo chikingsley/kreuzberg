@@ -384,6 +384,26 @@ BUILD_PROFILE=ci task build:all:ci
 
 This helps catch issues before your PR reaches CI.
 
+### Cross-Architecture Testing
+
+Kreuzberg maintains continuous integration testing across multiple architectures:
+
+- **x86_64**: Standard Linux and Windows runners
+- **aarch64**: Linux ARM64 (`ubuntu-24.04-arm`) and macOS ARM64 (Apple Silicon) runners
+
+Each language binding is tested on aarch64 to ensure:
+- Native compilation works correctly
+- Precompiled binaries function as expected
+- No architecture-specific regressions
+- Performance characteristics match expectations
+
+**When Contributing**:
+- Changes affecting platform-specific code: Monitor CI results for aarch64 jobs
+- Binary packaging changes: Ensure CI matrix includes aarch64 testing
+- System dependencies: Verify availability on both x86_64 and aarch64
+
+The CI pipeline automatically tests your changes on all supported architectures.
+
 ## Code Quality
 
 ### Formatting

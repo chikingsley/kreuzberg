@@ -88,6 +88,17 @@ yarn add @kreuzberg/node
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
+### Platform Support
+
+Precompiled N-API binaries are available for the following platforms, providing instant installation without compilation:
+
+- ✅ Linux x86_64
+- ✅ Linux aarch64 (ARM64)
+- ✅ macOS aarch64 (Apple Silicon)
+- ✅ Windows x86_64
+
+On these platforms, no Rust toolchain is required for installation.
+
 ## Quick Start
 
 ### Basic Extraction
