@@ -1,46 +1,42 @@
-import '@/App.css'
-import { useEffect } from 'react'
-import { RouterProvider } from '@tanstack/react-router'
-import { router } from '@/router'
-import { BenchmarkProvider } from '@/context/BenchmarkContext'
-import { ThemeProvider, useTheme } from '@/context/ThemeContext'
-import ErrorBoundary from '@/components/ErrorBoundary'
+import "@/App.css";
+import { RouterProvider } from "@tanstack/react-router";
+import { useEffect } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { BenchmarkProvider } from "@/context/BenchmarkContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { router } from "@/router";
 
 /**
  * Inner app component with theme sync capability
  * Listens for postMessage events from parent docs page to sync theme
  */
 function AppContent(): React.ReactElement {
-  const { setTheme } = useTheme()
+	const { setTheme } = useTheme();
 
-  useEffect(() => {
-    const handleThemeMessage = (event: MessageEvent) => {
-      // Validate origin for security (allow production + dev environments)
-      const allowedOrigins = [
-        'https://kreuzberg.dev',
-        'http://localhost',
-        'http://127.0.0.1',
-      ]
-      const isAllowed = allowedOrigins.some((origin) => event.origin.startsWith(origin))
+	useEffect(() => {
+		const handleThemeMessage = (event: MessageEvent) => {
+			// Validate origin for security (allow production + dev environments)
+			const allowedOrigins = ["https://kreuzberg.dev", "http://localhost", "http://127.0.0.1"];
+			const isAllowed = allowedOrigins.some((origin) => event.origin.startsWith(origin));
 
-      if (!isAllowed) {
-        return
-      }
+			if (!isAllowed) {
+				return;
+			}
 
-      // Handle theme change messages from parent
-      if (event.data?.type === 'theme' && event.data?.value) {
-        const theme = event.data.value
-        if (theme === 'dark' || theme === 'light') {
-          setTheme(theme)
-        }
-      }
-    }
+			// Handle theme change messages from parent
+			if (event.data?.type === "theme" && event.data?.value) {
+				const theme = event.data.value;
+				if (theme === "dark" || theme === "light") {
+					setTheme(theme);
+				}
+			}
+		};
 
-    window.addEventListener('message', handleThemeMessage)
-    return () => window.removeEventListener('message', handleThemeMessage)
-  }, [setTheme])
+		window.addEventListener("message", handleThemeMessage);
+		return () => window.removeEventListener("message", handleThemeMessage);
+	}, [setTheme]);
 
-  return <RouterProvider router={router} />
+	return <RouterProvider router={router} />;
 }
 
 /**
@@ -50,15 +46,15 @@ function AppContent(): React.ReactElement {
  * Also provides theme context for light/dark mode support with parent sync capability.
  */
 function App(): React.ReactElement {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <BenchmarkProvider>
-          <AppContent />
-        </BenchmarkProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  )
+	return (
+		<ErrorBoundary>
+			<ThemeProvider>
+				<BenchmarkProvider>
+					<AppContent />
+				</BenchmarkProvider>
+			</ThemeProvider>
+		</ErrorBoundary>
+	);
 }
 
-export default App
+export default App;

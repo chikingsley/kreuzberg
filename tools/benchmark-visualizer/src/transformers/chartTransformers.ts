@@ -1,15 +1,11 @@
-import type {
-  AggregatedBenchmarkData,
-  PerformanceMetrics,
-  FileTypeMetrics,
-} from '@/types/benchmark'
+import type { AggregatedBenchmarkData, FileTypeMetrics, PerformanceMetrics } from "@/types/benchmark";
 
 /**
  * Recharts-compatible data point interface
  * All values are strings or numbers for proper chart rendering
  */
 export interface ChartDataPoint {
-  [key: string]: string | number
+	[key: string]: string | number;
 }
 
 /**
@@ -19,20 +15,20 @@ export interface ChartDataPoint {
  * fullName: Full identifier for tooltips (e.g., "python_single_pdf_no_ocr")
  */
 export interface PercentileChartDataPoint {
-  name: string
-  fullName: string
-  p50: number
-  p95: number
-  p99: number
+	name: string;
+	fullName: string;
+	p50: number;
+	p95: number;
+	p99: number;
 }
 
 /**
  * Filter options for transforming chart data
  */
 export interface ChartTransformFilters {
-  framework?: string
-  fileType?: string
-  ocrMode?: 'no_ocr' | 'with_ocr'
+	framework?: string;
+	fileType?: string;
+	ocrMode?: "no_ocr" | "with_ocr";
 }
 
 /**
@@ -41,19 +37,19 @@ export interface ChartTransformFilters {
  * Examples: 'python' -> 'Kreuzberg (Python)', 'rust' -> 'Kreuzberg (Rust)'
  */
 export function formatFramework(framework: string): string {
-  const frameworkMap: Record<string, string> = {
-    python: 'Kreuzberg (Python)',
-    node: 'Kreuzberg (Node.js)',
-    rust: 'Kreuzberg (Rust)',
-    go: 'Kreuzberg (Go)',
-    ruby: 'Kreuzberg (Ruby)',
-    java: 'Kreuzberg (Java)',
-    csharp: 'Kreuzberg (C#)',
-    elixir: 'Kreuzberg (Elixir)',
-    php: 'Kreuzberg (PHP)',
-  }
+	const frameworkMap: Record<string, string> = {
+		python: "Kreuzberg (Python)",
+		node: "Kreuzberg (Node.js)",
+		rust: "Kreuzberg (Rust)",
+		go: "Kreuzberg (Go)",
+		ruby: "Kreuzberg (Ruby)",
+		java: "Kreuzberg (Java)",
+		csharp: "Kreuzberg (C#)",
+		elixir: "Kreuzberg (Elixir)",
+		php: "Kreuzberg (PHP)",
+	};
 
-  return frameworkMap[framework.toLowerCase()] || framework
+	return frameworkMap[framework.toLowerCase()] || framework;
 }
 
 /**
@@ -61,7 +57,7 @@ export function formatFramework(framework: string): string {
  * Examples: 'single' -> 'single', 'batch' -> 'batch'
  */
 function formatMode(mode: string): string {
-  return mode.toLowerCase()
+	return mode.toLowerCase();
 }
 
 /**
@@ -71,7 +67,7 @@ function formatMode(mode: string): string {
  * - 'rust' + 'batch' -> 'Rust\n(batch)'
  */
 export function generateDisplayLabel(framework: string, mode: string): string {
-  return `${formatFramework(framework)}\n(${formatMode(mode)})`
+	return `${formatFramework(framework)}\n(${formatMode(mode)})`;
 }
 
 /**
@@ -80,16 +76,16 @@ export function generateDisplayLabel(framework: string, mode: string): string {
  * - 'python_single_pdf_no_ocr' -> { framework: 'python', mode: 'single', ... }
  */
 export function parseFrameworkModeKey(key: string): {
-  framework: string
-  mode: string
+	framework: string;
+	mode: string;
 } {
-  const parts = key.split('_')
-  if (parts.length >= 2) {
-    const framework = parts[0]
-    const mode = parts[1]
-    return { framework, mode }
-  }
-  return { framework: key, mode: 'unknown' }
+	const parts = key.split("_");
+	if (parts.length >= 2) {
+		const framework = parts[0];
+		const mode = parts[1];
+		return { framework, mode };
+	}
+	return { framework: key, mode: "unknown" };
 }
 
 /**
@@ -100,36 +96,33 @@ export function parseFrameworkModeKey(key: string): {
  * @param fileTypes - Optional array of file types to include (e.g., ['no_ocr', 'with_ocr'])
  * @returns Array of objects compatible with Recharts, with string keys and number values
  */
-export function transformThroughputData(
-  data: AggregatedBenchmarkData,
-  fileTypes?: string[]
-): ChartDataPoint[] {
-  const chartData: ChartDataPoint[] = []
+export function transformThroughputData(data: AggregatedBenchmarkData, fileTypes?: string[]): ChartDataPoint[] {
+	const chartData: ChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    const dataPoint: ChartDataPoint = {
-      name: frameworkModeKey,
-    }
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		const dataPoint: ChartDataPoint = {
+			name: frameworkModeKey,
+		};
 
-    const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type)
+		const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type);
 
-    typesToProcess.forEach(fileType => {
-      const fileTypeMetrics = frameworkData.by_file_type[fileType]
-      if (!fileTypeMetrics) return
+		typesToProcess.forEach((fileType) => {
+			const fileTypeMetrics = frameworkData.by_file_type[fileType];
+			if (!fileTypeMetrics) return;
 
-      const throughput = extractThroughputMetric(fileTypeMetrics)
-      if (throughput !== null) {
-        dataPoint[fileType] = Math.round(throughput * 100) / 100 // Round to 2 decimals
-      }
-    })
+			const throughput = extractThroughputMetric(fileTypeMetrics);
+			if (throughput !== null) {
+				dataPoint[fileType] = Math.round(throughput * 100) / 100; // Round to 2 decimals
+			}
+		});
 
-    // Only add data point if it has metrics beyond the name
-    if (Object.keys(dataPoint).length > 1) {
-      chartData.push(dataPoint)
-    }
-  })
+		// Only add data point if it has metrics beyond the name
+		if (Object.keys(dataPoint).length > 1) {
+			chartData.push(dataPoint);
+		}
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -140,36 +133,33 @@ export function transformThroughputData(
  * @param fileTypes - Optional array of file types to include (e.g., ['no_ocr', 'with_ocr'])
  * @returns Array of objects compatible with Recharts, with string keys and number values
  */
-export function transformMemoryData(
-  data: AggregatedBenchmarkData,
-  fileTypes?: string[]
-): ChartDataPoint[] {
-  const chartData: ChartDataPoint[] = []
+export function transformMemoryData(data: AggregatedBenchmarkData, fileTypes?: string[]): ChartDataPoint[] {
+	const chartData: ChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    const dataPoint: ChartDataPoint = {
-      name: frameworkModeKey,
-    }
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		const dataPoint: ChartDataPoint = {
+			name: frameworkModeKey,
+		};
 
-    const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type)
+		const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type);
 
-    typesToProcess.forEach(fileType => {
-      const fileTypeMetrics = frameworkData.by_file_type[fileType]
-      if (!fileTypeMetrics) return
+		typesToProcess.forEach((fileType) => {
+			const fileTypeMetrics = frameworkData.by_file_type[fileType];
+			if (!fileTypeMetrics) return;
 
-      const memory = extractMemoryMetric(fileTypeMetrics)
-      if (memory !== null) {
-        dataPoint[fileType] = Math.round(memory * 100) / 100 // Round to 2 decimals
-      }
-    })
+			const memory = extractMemoryMetric(fileTypeMetrics);
+			if (memory !== null) {
+				dataPoint[fileType] = Math.round(memory * 100) / 100; // Round to 2 decimals
+			}
+		});
 
-    // Only add data point if it has metrics beyond the name
-    if (Object.keys(dataPoint).length > 1) {
-      chartData.push(dataPoint)
-    }
-  })
+		// Only add data point if it has metrics beyond the name
+		if (Object.keys(dataPoint).length > 1) {
+			chartData.push(dataPoint);
+		}
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -180,36 +170,33 @@ export function transformMemoryData(
  * @param fileTypes - Optional array of file types to include (e.g., ['no_ocr', 'with_ocr'])
  * @returns Array of objects compatible with Recharts, with string keys and number values
  */
-export function transformDurationData(
-  data: AggregatedBenchmarkData,
-  fileTypes?: string[]
-): ChartDataPoint[] {
-  const chartData: ChartDataPoint[] = []
+export function transformDurationData(data: AggregatedBenchmarkData, fileTypes?: string[]): ChartDataPoint[] {
+	const chartData: ChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    const dataPoint: ChartDataPoint = {
-      name: frameworkModeKey,
-    }
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		const dataPoint: ChartDataPoint = {
+			name: frameworkModeKey,
+		};
 
-    const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type)
+		const typesToProcess = fileTypes || Object.keys(frameworkData.by_file_type);
 
-    typesToProcess.forEach(fileType => {
-      const fileTypeMetrics = frameworkData.by_file_type[fileType]
-      if (!fileTypeMetrics) return
+		typesToProcess.forEach((fileType) => {
+			const fileTypeMetrics = frameworkData.by_file_type[fileType];
+			if (!fileTypeMetrics) return;
 
-      const duration = extractDurationMetric(fileTypeMetrics)
-      if (duration !== null) {
-        dataPoint[fileType] = Math.round(duration * 100) / 100 // Round to 2 decimals
-      }
-    })
+			const duration = extractDurationMetric(fileTypeMetrics);
+			if (duration !== null) {
+				dataPoint[fileType] = Math.round(duration * 100) / 100; // Round to 2 decimals
+			}
+		});
 
-    // Only add data point if it has metrics beyond the name
-    if (Object.keys(dataPoint).length > 1) {
-      chartData.push(dataPoint)
-    }
-  })
+		// Only add data point if it has metrics beyond the name
+		if (Object.keys(dataPoint).length > 1) {
+			chartData.push(dataPoint);
+		}
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -220,23 +207,23 @@ export function transformDurationData(
  * @returns Array of objects compatible with Recharts with cold start metrics
  */
 export function transformColdStartData(data: AggregatedBenchmarkData): ChartDataPoint[] {
-  const chartData: ChartDataPoint[] = []
+	const chartData: ChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    if (!frameworkData.cold_start) return
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		if (!frameworkData.cold_start) return;
 
-    const coldStart = frameworkData.cold_start
-    const dataPoint: ChartDataPoint = {
-      name: frameworkModeKey,
-      p50: coldStart.p50_ms !== null ? Math.round(coldStart.p50_ms * 100) / 100 : 0,
-      p95: coldStart.p95_ms !== null ? Math.round(coldStart.p95_ms * 100) / 100 : 0,
-      p99: coldStart.p99_ms !== null ? Math.round(coldStart.p99_ms * 100) / 100 : 0,
-    }
+		const coldStart = frameworkData.cold_start;
+		const dataPoint: ChartDataPoint = {
+			name: frameworkModeKey,
+			p50: coldStart.p50_ms !== null ? Math.round(coldStart.p50_ms * 100) / 100 : 0,
+			p95: coldStart.p95_ms !== null ? Math.round(coldStart.p95_ms * 100) / 100 : 0,
+			p99: coldStart.p99_ms !== null ? Math.round(coldStart.p99_ms * 100) / 100 : 0,
+		};
 
-    chartData.push(dataPoint)
-  })
+		chartData.push(dataPoint);
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -247,10 +234,10 @@ export function transformColdStartData(data: AggregatedBenchmarkData): ChartData
  * @returns Throughput value in MB/s or null if not available
  */
 function extractThroughputMetric(fileTypeMetrics: FileTypeMetrics): number | null {
-  const metrics = getValidMetrics(fileTypeMetrics)
-  if (!metrics) return null
+	const metrics = getValidMetrics(fileTypeMetrics);
+	if (!metrics) return null;
 
-  return metrics.throughput.p50 ?? null
+	return metrics.throughput.p50 ?? null;
 }
 
 /**
@@ -261,10 +248,10 @@ function extractThroughputMetric(fileTypeMetrics: FileTypeMetrics): number | nul
  * @returns Memory value in MB or null if not available
  */
 function extractMemoryMetric(fileTypeMetrics: FileTypeMetrics): number | null {
-  const metrics = getValidMetrics(fileTypeMetrics)
-  if (!metrics) return null
+	const metrics = getValidMetrics(fileTypeMetrics);
+	if (!metrics) return null;
 
-  return metrics.memory.p50 ?? null
+	return metrics.memory.p50 ?? null;
 }
 
 /**
@@ -275,10 +262,10 @@ function extractMemoryMetric(fileTypeMetrics: FileTypeMetrics): number | null {
  * @returns Duration value in milliseconds or null if not available
  */
 function extractDurationMetric(fileTypeMetrics: FileTypeMetrics): number | null {
-  const metrics = getValidMetrics(fileTypeMetrics)
-  if (!metrics) return null
+	const metrics = getValidMetrics(fileTypeMetrics);
+	if (!metrics) return null;
 
-  return metrics.duration.p50 ?? null
+	return metrics.duration.p50 ?? null;
 }
 
 /**
@@ -289,9 +276,9 @@ function extractDurationMetric(fileTypeMetrics: FileTypeMetrics): number | null 
  * @returns Valid PerformanceMetrics or null if neither variant has data
  */
 function getValidMetrics(fileTypeMetrics: FileTypeMetrics): PerformanceMetrics | null {
-  if (fileTypeMetrics.no_ocr) return fileTypeMetrics.no_ocr
-  if (fileTypeMetrics.with_ocr) return fileTypeMetrics.with_ocr
-  return null
+	if (fileTypeMetrics.no_ocr) return fileTypeMetrics.no_ocr;
+	if (fileTypeMetrics.with_ocr) return fileTypeMetrics.with_ocr;
+	return null;
 }
 
 /**
@@ -308,10 +295,10 @@ function getValidMetrics(fileTypeMetrics: FileTypeMetrics): PerformanceMetrics |
  * // Returns: [{ name: 'Rust\n(single)', fullName: 'rust_single_pdf_no_ocr', p50: 100, ... }]
  */
 export function transformForThroughputChart(
-  data: AggregatedBenchmarkData,
-  filters?: ChartTransformFilters
+	data: AggregatedBenchmarkData,
+	filters?: ChartTransformFilters,
 ): PercentileChartDataPoint[] {
-  return transformPercentileData(data, 'throughput', filters)
+	return transformPercentileData(data, "throughput", filters);
 }
 
 /**
@@ -326,10 +313,10 @@ export function transformForThroughputChart(
  * const chartData = transformForMemoryChart(data, { framework: 'python', ocrMode: 'with_ocr' })
  */
 export function transformForMemoryChart(
-  data: AggregatedBenchmarkData,
-  filters?: ChartTransformFilters
+	data: AggregatedBenchmarkData,
+	filters?: ChartTransformFilters,
 ): PercentileChartDataPoint[] {
-  return transformPercentileData(data, 'memory', filters)
+	return transformPercentileData(data, "memory", filters);
 }
 
 /**
@@ -344,10 +331,10 @@ export function transformForMemoryChart(
  * const chartData = transformForDurationChart(data, { fileType: 'image' })
  */
 export function transformForDurationChart(
-  data: AggregatedBenchmarkData,
-  filters?: ChartTransformFilters
+	data: AggregatedBenchmarkData,
+	filters?: ChartTransformFilters,
 ): PercentileChartDataPoint[] {
-  return transformPercentileData(data, 'duration', filters)
+	return transformPercentileData(data, "duration", filters);
 }
 
 /**
@@ -364,37 +351,37 @@ export function transformForDurationChart(
  * // Returns: [{ name: 'Rust\n(single)', fullName: 'rust_single', p50: 100, ... }]
  */
 export function transformForColdStartChart(
-  data: AggregatedBenchmarkData,
-  filters?: ChartTransformFilters
+	data: AggregatedBenchmarkData,
+	filters?: ChartTransformFilters,
 ): PercentileChartDataPoint[] {
-  const chartData: PercentileChartDataPoint[] = []
+	const chartData: PercentileChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    // Apply framework filter if provided
-    if (filters?.framework && frameworkData.framework !== filters.framework) {
-      return
-    }
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		// Apply framework filter if provided
+		if (filters?.framework && frameworkData.framework !== filters.framework) {
+			return;
+		}
 
-    // Cold start data doesn't have file type or OCR mode distinction
-    if (!frameworkData.cold_start) return
+		// Cold start data doesn't have file type or OCR mode distinction
+		if (!frameworkData.cold_start) return;
 
-    const coldStart = frameworkData.cold_start
+		const coldStart = frameworkData.cold_start;
 
-    // Generate readable display label for axis
-    const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode)
+		// Generate readable display label for axis
+		const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode);
 
-    const dataPoint: PercentileChartDataPoint = {
-      name: displayLabel,
-      fullName: frameworkModeKey,
-      p50: roundValue(coldStart.p50_ms),
-      p95: roundValue(coldStart.p95_ms),
-      p99: roundValue(coldStart.p99_ms),
-    }
+		const dataPoint: PercentileChartDataPoint = {
+			name: displayLabel,
+			fullName: frameworkModeKey,
+			p50: roundValue(coldStart.p50_ms),
+			p95: roundValue(coldStart.p95_ms),
+			p99: roundValue(coldStart.p99_ms),
+		};
 
-    chartData.push(dataPoint)
-  })
+		chartData.push(dataPoint);
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -408,64 +395,62 @@ export function transformForColdStartChart(
  * @returns Array of percentile chart data points with readable names and full identifiers
  */
 function transformPercentileData(
-  data: AggregatedBenchmarkData,
-  metricType: 'throughput' | 'memory' | 'duration',
-  filters?: ChartTransformFilters
+	data: AggregatedBenchmarkData,
+	metricType: "throughput" | "memory" | "duration",
+	filters?: ChartTransformFilters,
 ): PercentileChartDataPoint[] {
-  const chartData: PercentileChartDataPoint[] = []
+	const chartData: PercentileChartDataPoint[] = [];
 
-  Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
-    // Apply framework filter if provided
-    if (filters?.framework && frameworkData.framework !== filters.framework) {
-      return
-    }
+	Object.entries(data.by_framework_mode).forEach(([frameworkModeKey, frameworkData]) => {
+		// Apply framework filter if provided
+		if (filters?.framework && frameworkData.framework !== filters.framework) {
+			return;
+		}
 
-    // Get file types to process
-    const fileTypeKeys = filters?.fileType
-      ? [filters.fileType]
-      : Object.keys(frameworkData.by_file_type)
+		// Get file types to process
+		const fileTypeKeys = filters?.fileType ? [filters.fileType] : Object.keys(frameworkData.by_file_type);
 
-    fileTypeKeys.forEach(fileType => {
-      const fileTypeMetrics = frameworkData.by_file_type[fileType]
-      if (!fileTypeMetrics) return
+		fileTypeKeys.forEach((fileType) => {
+			const fileTypeMetrics = frameworkData.by_file_type[fileType];
+			if (!fileTypeMetrics) return;
 
-      // Get the appropriate metrics based on OCR mode filter
-      let metrics: PerformanceMetrics | null = null
+			// Get the appropriate metrics based on OCR mode filter
+			let metrics: PerformanceMetrics | null = null;
 
-      if (filters?.ocrMode === 'no_ocr') {
-        metrics = fileTypeMetrics.no_ocr
-      } else if (filters?.ocrMode === 'with_ocr') {
-        metrics = fileTypeMetrics.with_ocr
-      } else {
-        // If no OCR mode specified, prioritize no_ocr
-        metrics = fileTypeMetrics.no_ocr || fileTypeMetrics.with_ocr
-      }
+			if (filters?.ocrMode === "no_ocr") {
+				metrics = fileTypeMetrics.no_ocr;
+			} else if (filters?.ocrMode === "with_ocr") {
+				metrics = fileTypeMetrics.with_ocr;
+			} else {
+				// If no OCR mode specified, prioritize no_ocr
+				metrics = fileTypeMetrics.no_ocr || fileTypeMetrics.with_ocr;
+			}
 
-      if (!metrics) return
+			if (!metrics) return;
 
-      // Extract the appropriate metric type
-      const metricValues = metrics[metricType]
-      if (!metricValues) return
+			// Extract the appropriate metric type
+			const metricValues = metrics[metricType];
+			if (!metricValues) return;
 
-      // Generate full identifier for tooltip
-      const fullName = `${frameworkModeKey}_${fileType}${filters?.ocrMode ? `_${filters.ocrMode}` : ''}`
+			// Generate full identifier for tooltip
+			const fullName = `${frameworkModeKey}_${fileType}${filters?.ocrMode ? `_${filters.ocrMode}` : ""}`;
 
-      // Generate readable display label for axis
-      const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode)
+			// Generate readable display label for axis
+			const displayLabel = generateDisplayLabel(frameworkData.framework, frameworkData.mode);
 
-      const dataPoint: PercentileChartDataPoint = {
-        name: displayLabel,
-        fullName: fullName,
-        p50: roundValue(metricValues.p50),
-        p95: roundValue(metricValues.p95),
-        p99: roundValue(metricValues.p99),
-      }
+			const dataPoint: PercentileChartDataPoint = {
+				name: displayLabel,
+				fullName: fullName,
+				p50: roundValue(metricValues.p50),
+				p95: roundValue(metricValues.p95),
+				p99: roundValue(metricValues.p99),
+			};
 
-      chartData.push(dataPoint)
-    })
-  })
+			chartData.push(dataPoint);
+		});
+	});
 
-  return chartData
+	return chartData;
 }
 
 /**
@@ -476,6 +461,6 @@ function transformPercentileData(
  * @returns Rounded value or 0 if value is null/undefined
  */
 function roundValue(value: number | null | undefined): number {
-  if (value === null || value === undefined) return 0
-  return Math.round(value * 100) / 100
+	if (value === null || value === undefined) return 0;
+	return Math.round(value * 100) / 100;
 }

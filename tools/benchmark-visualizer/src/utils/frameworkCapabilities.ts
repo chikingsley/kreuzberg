@@ -1,11 +1,11 @@
-import type { AggregatedBenchmarkData } from '@/types/benchmark'
+import type { AggregatedBenchmarkData } from "@/types/benchmark";
 
 /**
  * Threshold for determining if a framework supports a file type.
  * If p50 duration is greater than this value (in milliseconds),
  * we consider the framework doesn't support that file type.
  */
-const UNSUPPORTED_THRESHOLD_MS = 10000 // 10 seconds
+const UNSUPPORTED_THRESHOLD_MS = 10000; // 10 seconds
 
 /**
  * Analyzes benchmark data to determine which frameworks support which file types.
@@ -21,33 +21,29 @@ const UNSUPPORTED_THRESHOLD_MS = 10000 // 10 seconds
  * const rustSingleSupports = capabilities.get('rust-single')
  * // rustSingleSupports might be: Set { 'pdf', 'docx', 'txt' }
  */
-export function getFrameworkCapabilities(
-  data: AggregatedBenchmarkData
-): Map<string, Set<string>> {
-  const capabilities = new Map<string, Set<string>>()
+export function getFrameworkCapabilities(data: AggregatedBenchmarkData): Map<string, Set<string>> {
+	const capabilities = new Map<string, Set<string>>();
 
-  // Iterate through each framework-mode combination
-  Object.entries(data.by_framework_mode).forEach(([key, frameworkData]) => {
-    const supportedFileTypes = new Set<string>()
+	// Iterate through each framework-mode combination
+	Object.entries(data.by_framework_mode).forEach(([key, frameworkData]) => {
+		const supportedFileTypes = new Set<string>();
 
-    // Check each file type for this framework-mode
-    Object.entries(frameworkData.by_file_type).forEach(([fileType, metrics]) => {
-      // Check both OCR modes - if either mode works, the file type is supported
-      const noOcrSupported =
-        metrics.no_ocr && metrics.no_ocr.duration.p50 < UNSUPPORTED_THRESHOLD_MS
-      const withOcrSupported =
-        metrics.with_ocr && metrics.with_ocr.duration.p50 < UNSUPPORTED_THRESHOLD_MS
+		// Check each file type for this framework-mode
+		Object.entries(frameworkData.by_file_type).forEach(([fileType, metrics]) => {
+			// Check both OCR modes - if either mode works, the file type is supported
+			const noOcrSupported = metrics.no_ocr && metrics.no_ocr.duration.p50 < UNSUPPORTED_THRESHOLD_MS;
+			const withOcrSupported = metrics.with_ocr && metrics.with_ocr.duration.p50 < UNSUPPORTED_THRESHOLD_MS;
 
-      // If at least one OCR mode works, consider the file type supported
-      if (noOcrSupported || withOcrSupported) {
-        supportedFileTypes.add(fileType)
-      }
-    })
+			// If at least one OCR mode works, consider the file type supported
+			if (noOcrSupported || withOcrSupported) {
+				supportedFileTypes.add(fileType);
+			}
+		});
 
-    capabilities.set(key, supportedFileTypes)
-  })
+		capabilities.set(key, supportedFileTypes);
+	});
 
-  return capabilities
+	return capabilities;
 }
 
 /**
@@ -67,21 +63,21 @@ export function getFrameworkCapabilities(
  * // jpgFrameworks might be: ['rust-single', 'python-single'] (excluding pandoc)
  */
 export function filterFrameworksByFileType(
-  frameworkKeys: string[],
-  fileType: string,
-  capabilities: Map<string, Set<string>>
+	frameworkKeys: string[],
+	fileType: string,
+	capabilities: Map<string, Set<string>>,
 ): string[] {
-  return frameworkKeys.filter((key) => {
-    const supportedTypes = capabilities.get(key)
+	return frameworkKeys.filter((key) => {
+		const supportedTypes = capabilities.get(key);
 
-    // Defensive: if we don't have capability data for this framework, include it
-    if (!supportedTypes) {
-      return true
-    }
+		// Defensive: if we don't have capability data for this framework, include it
+		if (!supportedTypes) {
+			return true;
+		}
 
-    // Check if this framework supports the file type
-    return supportedTypes.has(fileType)
-  })
+		// Check if this framework supports the file type
+		return supportedTypes.has(fileType);
+	});
 }
 
 /**
@@ -92,17 +88,17 @@ export function filterFrameworksByFileType(
  * @returns Object containing the count of supporting frameworks and total frameworks
  */
 export function getFileTypeSupport(
-  fileType: string,
-  capabilities: Map<string, Set<string>>
+	fileType: string,
+	capabilities: Map<string, Set<string>>,
 ): { supporting: number; total: number } {
-  const total = capabilities.size
-  let supporting = 0
+	const total = capabilities.size;
+	let supporting = 0;
 
-  capabilities.forEach((supportedTypes) => {
-    if (supportedTypes.has(fileType)) {
-      supporting++
-    }
-  })
+	capabilities.forEach((supportedTypes) => {
+		if (supportedTypes.has(fileType)) {
+			supporting++;
+		}
+	});
 
-  return { supporting, total }
+	return { supporting, total };
 }
