@@ -169,7 +169,7 @@ echo $result->content . "\n\n";
 $multilingualConfig = new ExtractionConfig(
     ocr: new OcrConfig(
         backend: 'tesseract',
-        language: 'eng+fra+deu'  
+        language: 'eng+fra+deu'
     )
 );
 
@@ -325,7 +325,7 @@ if (!empty($files)) {
 
 $config = new ExtractionConfig(
     extractTables: true,
-    extractImages: false  
+    extractImages: false
 );
 
 $kreuzberg = new Kreuzberg($config);
@@ -572,7 +572,7 @@ echo $result->content . "\n\n";
 $multilingualConfig = new ExtractionConfig(
     ocr: new OcrConfig(
         backend: 'tesseract',
-        language: 'eng+fra+deu'  
+        language: 'eng+fra+deu'
     )
 );
 
@@ -740,7 +740,7 @@ if (!empty($files)) {
 
 $config = new ExtractionConfig(
     extractTables: true,
-    extractImages: false  
+    extractImages: false
 );
 
 $kreuzberg = new Kreuzberg($config);
