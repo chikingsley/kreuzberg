@@ -462,7 +462,7 @@ func LibraryVersion() string
 
 **Returns:**
 
-- `string`: Version string (e.g., "4.0.0-rc.1")
+- `string`: Version string (e.g., "4.0.0")
 
 **Example:**
 

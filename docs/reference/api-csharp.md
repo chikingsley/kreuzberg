@@ -8,7 +8,7 @@ Add the NuGet package to your `.csproj`:
 
 ```xml title=".csproj"
 <ItemGroup>
-    <PackageReference Include="Kreuzberg" Version="4.0.0-rc.1" />
+    <PackageReference Include="Kreuzberg" Version="4.0.0" />
 </ItemGroup>
 ```
 
@@ -551,7 +551,7 @@ public static string GetVersion()
 
 **Returns:**
 
-- `string`: Version string in format "4.0.0-rc1" or similar
+- `string`: Version string in format "4.0.0" or similar
 
 **Example:**
 

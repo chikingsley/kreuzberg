@@ -73,7 +73,6 @@ import (
 // ffiMutex serializes all FFI calls to prevent concurrent access to PDFium.
 // PDFium is not thread-safe, and concurrent calls from multiple goroutines
 // cause signal stack crashes on macOS (SIGTRAP) and other platforms.
-// See: https://github.com/kreuzberg-dev/kreuzberg/issues/XXX
 var ffiMutex sync.Mutex
 
 // BytesWithMime represents an in-memory document and its MIME type.

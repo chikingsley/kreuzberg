@@ -582,6 +582,67 @@ def main():
             r'(PackageReference Include="Kreuzberg" Version=")([^"]+)(")',
             rf"\g<1>{version}\g<3>",
         ),
+        # README config for generated READMEs
+        (
+            repo_root / "scripts/readme_config.yaml",
+            r'^(version:\s*")[^"]+(")$',
+            rf"\g<1>{version}\g<2>",
+        ),
+        # PHP package.xml
+        (
+            repo_root / "packages/php/package.xml",
+            r'(<release>)[^<]+(</release>)',
+            rf"\g<1>{version}\g<2>",
+        ),
+        (
+            repo_root / "packages/php/package.xml",
+            r'(<api>)[^<]+(</api>)',
+            rf"\g<1>{version}\g<2>",
+        ),
+        # E2E Java pom.xml kreuzberg.version property
+        (
+            repo_root / "e2e/java/pom.xml",
+            r'(<kreuzberg\.version>)[^<]+(</kreuzberg\.version>)',
+            rf"\g<1>{version}\g<2>",
+        ),
+        # E2E generator template kreuzberg.version property
+        (
+            repo_root / "tools/e2e-generator/e2e/java/pom.xml",
+            r'(<kreuzberg\.version>)[^<]+(</kreuzberg\.version>)',
+            rf"\g<1>{version}\g<2>",
+        ),
+        (
+            repo_root / "tools/e2e-generator/src/java.rs",
+            r'(<kreuzberg\.version>)[^<]+(</kreuzberg\.version>)',
+            rf"\g<1>{version}\g<2>",
+        ),
+        # Doc API reference version examples
+        (
+            repo_root / "docs/reference/api-csharp.md",
+            r'(PackageReference Include="Kreuzberg" Version=")([^"]+)(")',
+            rf"\g<1>{version}\g<3>",
+        ),
+        (
+            repo_root / "docs/reference/api-go.md",
+            r'(\d+\.\d+\.\d+-rc\.\d+)',
+            version,
+        ),
+        (
+            repo_root / "docs/reference/api-java.md",
+            r'(\d+\.\d+\.\d+-rc\.\d+)',
+            version,
+        ),
+        # Test app descriptions
+        (
+            repo_root / "tests/test_apps/rust/Cargo.toml",
+            r'(description = "Comprehensive API coverage test for Kreuzberg )[\d\.\-rcRC]+( Rust library")',
+            rf"\g<1>{version}\g<2>",
+        ),
+        (
+            repo_root / "tests/test_apps/python/pyproject.toml",
+            r'(description = "Comprehensive API coverage test for Kreuzberg )[\d\.\-rcRC]+( Python bindings")',
+            rf"\g<1>{version}\g<2>",
+        ),
     ]
 
     for path, pattern, repl in text_targets:

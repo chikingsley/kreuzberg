@@ -49,7 +49,7 @@ def get_workspace_version(repo_root: Path) -> str:
     """Extract version from workspace.package."""
     cargo_toml_path = repo_root / "Cargo.toml"
     data = read_toml(cargo_toml_path)
-    return data.get("workspace", {}).get("package", {}).get("version", "4.0.0-rc.10")
+    return data.get("workspace", {}).get("package", {}).get("version", "4.0.0")
 
 
 def format_dependency(name: str, dep_spec: object) -> str:

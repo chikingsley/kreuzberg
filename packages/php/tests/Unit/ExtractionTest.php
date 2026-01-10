@@ -53,7 +53,7 @@ final class ExtractionTest extends TestCase
     #[Test]
     public function it_has_correct_version_constant(): void
     {
-        $this->assertSame('4.0.0-rc.20', Kreuzberg::VERSION);
+        $this->assertSame('4.0.0', Kreuzberg::VERSION);
     }
 
     #[Test]

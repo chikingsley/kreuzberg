@@ -18,18 +18,18 @@
   <date>2025-01-01</date>
   <time>00:00:00</time>
   <version>
-    <release>4.0.0-rc.20</release>
+    <release>4.0.0</release>
     <api>4.0.0</api>
   </version>
   <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>stable</release>
+    <api>stable</api>
   </stability>
   <license uri="https://opensource.org/licenses/MIT">MIT</license>
   <notes>
-    Release Candidate 20 for version 4.0.0
+    Version 4.0.0 Stable Release
 
-    This pre-release version includes:
+    This release includes:
     - Full support for 56+ file formats (PDF, DOCX, XLSX, PPTX, images, etc.)
     - OCR support via Tesseract integration
     - Table extraction from PDFs and documents
@@ -113,7 +113,7 @@
   <changelog>
     <release>
       <version>
-        <release>4.0.0-rc.20</release>
+        <release>4.0.0</release>
         <api>4.0.0</api>
       </version>
       <stability>

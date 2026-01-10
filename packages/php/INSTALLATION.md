@@ -73,13 +73,13 @@ Download pre-compiled binaries from the [releases page](https://github.com/kreuz
 
 ```bash
 # Download for your platform
-wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/kreuzberg-4.0.0-rc.20-linux-x86_64.tar.gz
+wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0/kreuzberg-4.0.0-linux-x86_64.tar.gz
 
 # Extract
-tar -xzf kreuzberg-4.0.0-rc.20-linux-x86_64.tar.gz
+tar -xzf kreuzberg-4.0.0-linux-x86_64.tar.gz
 
 # Copy to PHP extension directory
-sudo cp kreuzberg-4.0.0-rc.20-linux-x86_64/ext/libkreuzberg_php.so $(php-config --extension-dir)/kreuzberg.so
+sudo cp kreuzberg-4.0.0-linux-x86_64/ext/libkreuzberg_php.so $(php-config --extension-dir)/kreuzberg.so
 
 # Enable in php.ini
 echo "extension=kreuzberg.so" | sudo tee -a $(php --ini | grep "Loaded Configuration" | cut -d: -f2 | xargs)
@@ -93,16 +93,16 @@ composer require kreuzberg/kreuzberg
 ```bash
 # Download for your architecture
 # For Apple Silicon (M1/M2/M3):
-wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/kreuzberg-4.0.0-rc.20-macos-arm64.tar.gz
+wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0/kreuzberg-4.0.0-macos-arm64.tar.gz
 
 # For Intel:
-wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/kreuzberg-4.0.0-rc.20-macos-x86_64.tar.gz
+wget https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0/kreuzberg-4.0.0-macos-x86_64.tar.gz
 
 # Extract (adjust filename for your architecture)
-tar -xzf kreuzberg-4.0.0-rc.20-macos-arm64.tar.gz
+tar -xzf kreuzberg-4.0.0-macos-arm64.tar.gz
 
 # Copy to PHP extension directory
-sudo cp kreuzberg-4.0.0-rc.20-macos-arm64/ext/libkreuzberg_php.dylib $(php-config --extension-dir)/kreuzberg.so
+sudo cp kreuzberg-4.0.0-macos-arm64/ext/libkreuzberg_php.dylib $(php-config --extension-dir)/kreuzberg.so
 
 # Enable in php.ini
 echo "extension=kreuzberg.so" | sudo tee -a $(php --ini | grep "Loaded Configuration" | cut -d: -f2 | xargs)
@@ -115,7 +115,7 @@ composer require kreuzberg/kreuzberg
 
 ```powershell
 # Download
-Invoke-WebRequest -Uri "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0-rc.20/kreuzberg-4.0.0-rc.20-windows-x86_64.zip" -OutFile "kreuzberg.zip"
+Invoke-WebRequest -Uri "https://github.com/kreuzberg-dev/kreuzberg/releases/download/v4.0.0/kreuzberg-4.0.0-windows-x86_64.zip" -OutFile "kreuzberg.zip"
 
 # Extract
 Expand-Archive -Path kreuzberg.zip -DestinationPath kreuzberg
@@ -183,7 +183,7 @@ Should output: `kreuzberg`
 php -r "echo kreuzberg_version();"
 ```
 
-Should output: `4.0.0-rc.20`
+Should output: `4.0.0`
 
 ### Test Basic Functionality
 

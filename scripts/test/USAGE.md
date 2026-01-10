@@ -16,7 +16,7 @@ The `test-docker-config-local.sh` script provides comprehensive testing for Dock
 Before running tests, build the Docker images:
 
 ```bash
-cd /Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg
+cd .
 
 # Build core variant
 docker build -f docker/Dockerfile.core -t goldziher/kreuzberg:core .
@@ -498,13 +498,13 @@ test_app_config_mount "$variant"
 For detailed documentation:
 
 ```bash
-cat /Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/scripts/test/README.md
+cat ./scripts/test/README.md
 ```
 
 ## Related Files
 
-- **Script**: `/Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/scripts/test/test-docker-config-local.sh`
-- **Documentation**: `/Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/scripts/test/README.md`
-- **This Guide**: `/Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/scripts/test/USAGE.md`
-- **Docker Files**: `/Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/docker/Dockerfile.core`
-- **Docker Files**: `/Users/naamanhirschfeld/workspace/kreuzberg-dev/kreuzberg/docker/Dockerfile.full`
+- **Script**: `./scripts/test/test-docker-config-local.sh`
+- **Documentation**: `./scripts/test/README.md`
+- **This Guide**: `./scripts/test/USAGE.md`
+- **Docker Files**: `./docker/Dockerfile.core`
+- **Docker Files**: `./docker/Dockerfile.full`

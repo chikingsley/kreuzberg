@@ -121,7 +121,7 @@ To test PIE installation during development:
 
 2. Create a PIE package:
    ```bash
-   VERSION=4.0.0-rc.20 ./scripts/publish/php/build-pie-package.sh linux-x86_64 ./dist
+   VERSION=4.0.0 ./scripts/publish/php/build-pie-package.sh linux-x86_64 ./dist
    ```
 
 3. Test local installation (not yet supported by PIE, but you can manually extract and install)

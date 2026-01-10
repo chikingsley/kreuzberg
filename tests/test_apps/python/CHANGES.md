@@ -319,7 +319,7 @@ All changes are backward compatible:
 
 ## Summary
 
-The Python test app has been successfully verified as a comprehensive API coverage test suite for Kreuzberg 4.0.0-rc.16+. All requirements have been met:
+The Python test app has been successfully verified as a comprehensive API coverage test suite for Kreuzberg 4.0.0. All requirements have been met:
 
 ✓ 87/87 public APIs tested (100%)
 ✓ 103/108 tests passing (95.4%)

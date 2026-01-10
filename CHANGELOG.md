@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0] - 2026-01-10
+
+### Highlights
+
+This is the first stable release of Kreuzberg v4, a complete rewrite of the document intelligence library with a Rust core and polyglot bindings for Python, TypeScript, Ruby, PHP, Java, Go, C#, Elixir, and WebAssembly.
 
 ### Removed
 
@@ -17,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cleaned up workspace configuration references
   - V3 users should migrate to v4 using the [migration guide](https://docs.kreuzberg.dev/migration/v3-to-v4/)
   - V3 package remains available on PyPI for legacy installations
+
+### Fixed
+
+#### CI/Build
+- **WASM TypeScript Typecheck**: Fixed TypeScript typecheck failing in CI when WASM module not yet built by using dynamic imports
+- **Go Windows CI**: Added Windows platform support for Go task commands using PowerShell equivalents
+- **Documentation Build**: Removed benchmark visualizer from docs deployment (temporarily disabled)
 
 ## [4.0.0-rc.29] - 2026-01-08
 
