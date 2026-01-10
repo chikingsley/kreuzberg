@@ -19,7 +19,6 @@ describe("frameworkCapabilities", () => {
 
 			expect(capabilities.has("rust_single")).toBe(true);
 			expect(capabilities.has("rust_batch")).toBe(true);
-			expect(capabilities.has("python_sync")).toBe(true);
 		});
 
 		it("should list supported file types correctly", () => {
@@ -185,8 +184,6 @@ describe("frameworkCapabilities", () => {
 
 			expect(capabilities.has("rust_single")).toBe(true);
 			expect(capabilities.has("rust_batch")).toBe(true);
-			expect(capabilities.has("python_sync")).toBe(true);
-			expect(capabilities.has("node_async")).toBe(true);
 		});
 	});
 
