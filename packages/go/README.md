@@ -620,11 +620,11 @@ func main() {
 
 ### Next Steps
 
-- **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
-- **[API Documentation](https://kreuzberg.dev/api/)** - Complete API reference
-- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
-- **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+- **[Installation Guide](https://docs.kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
+- **[API Documentation](https://docs.kreuzberg.dev/api/)** - Complete API reference
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)** - Full code examples and usage guides
+- **[Configuration Guide](https://docs.kreuzberg.dev/configuration/)** - Advanced configuration options
+- **[Troubleshooting](https://docs.kreuzberg.dev/troubleshooting/)** - Common issues and solutions
 
 ## Features
 
@@ -673,7 +673,7 @@ func main() {
 | **Scientific** | `.tex`, `.latex`, `.typst`, `.jats`, `.ipynb`, `.docbook` | LaTeX, Jupyter notebooks, PubMed JATS |
 | **Documentation** | `.opml`, `.pod`, `.mdoc`, `.troff` | Technical documentation formats |
 
-**[Complete Format Reference](https://kreuzberg.dev/reference/formats/)**
+**[Complete Format Reference](https://docs.kreuzberg.dev/reference/formats/)**
 
 ### Key Capabilities
 
@@ -792,7 +792,7 @@ Extract text, tables, and metadata from 56+ file formats:
 **Email & Archives**: EML, MSG, ZIP, TAR, 7Z
 **Academic**: LaTeX, Jupyter notebooks, citations
 
-[Complete format reference](https://kreuzberg.dev/reference/formats/)
+[Complete format reference](https://docs.kreuzberg.dev/reference/formats/)
 
 ### Core Capabilities
 
@@ -955,8 +955,8 @@ For more help:
 
 - **[Official Site](https://kreuzberg.dev/)** - Complete documentation
 - **[GoDoc](https://pkg.go.dev/github.com/kreuzberg-dev/kreuzberg/packages/go/v4)** - API reference
-- **[Format Support](https://kreuzberg.dev/reference/formats/)** - All supported formats
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Detailed option reference
+- **[Format Support](https://docs.kreuzberg.dev/reference/formats/)** - All supported formats
+- **[Configuration Guide](https://docs.kreuzberg.dev/configuration/)** - Detailed option reference
 - **[Examples](https://github.com/kreuzberg-dev/kreuzberg/tree/main/examples/go)** - Code examples
 
 ## Contributing

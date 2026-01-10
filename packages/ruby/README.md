@@ -140,7 +140,7 @@ puts "Used OCR backend: tesseract"
 
 #### Table Extraction
 
-See [Table Extraction Guide](https://kreuzberg.dev/features/table-extraction/) for detailed examples.
+See [Table Extraction Guide](https://docs.kreuzberg.dev/features/table-extraction/) for detailed examples.
 
 #### Processing Multiple Files
 
@@ -175,11 +175,11 @@ puts "Processing time: #{result.metadata&.dig('processing_time')}ms"
 
 ### Next Steps
 
-- **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
-- **[API Documentation](https://kreuzberg.dev/api/)** - Complete API reference
-- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
-- **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+- **[Installation Guide](https://docs.kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
+- **[API Documentation](https://docs.kreuzberg.dev/api/)** - Complete API reference
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)** - Full code examples and usage guides
+- **[Configuration Guide](https://docs.kreuzberg.dev/configuration/)** - Advanced configuration options
+- **[Troubleshooting](https://docs.kreuzberg.dev/troubleshooting/)** - Common issues and solutions
 
 ## Features
 
@@ -228,7 +228,7 @@ puts "Processing time: #{result.metadata&.dig('processing_time')}ms"
 | **Scientific** | `.tex`, `.latex`, `.typst`, `.jats`, `.ipynb`, `.docbook` | LaTeX, Jupyter notebooks, PubMed JATS |
 | **Documentation** | `.opml`, `.pod`, `.mdoc`, `.troff` | Technical documentation formats |
 
-**[Complete Format Reference](https://kreuzberg.dev/reference/formats/)**
+**[Complete Format Reference](https://docs.kreuzberg.dev/reference/formats/)**
 
 ### Key Capabilities
 
@@ -313,13 +313,13 @@ puts "Processing time: #{result.metadata&.dig('processing_time')}ms"
 
 Kreuzberg supports extensible post-processing plugins for custom text transformation and filtering.
 
-For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/plugins/).
+For detailed plugin documentation, visit [Plugin System Guide](https://docs.kreuzberg.dev/plugins/).
 
 ## Embeddings Support
 
 Generate vector embeddings for extracted text using the built-in ONNX Runtime support. Requires ONNX Runtime installation.
 
-**[Embeddings Guide](https://kreuzberg.dev/features/#embeddings)**
+**[Embeddings Guide](https://docs.kreuzberg.dev/features/#embeddings)**
 
 ## Advanced Examples
 
@@ -754,17 +754,17 @@ puts "Installation verified! Extracted #{result.content.length} characters"
 
 For advanced configuration options including language detection, table extraction, OCR settings, and more:
 
-**[Configuration Guide](https://kreuzberg.dev/configuration/)**
+**[Configuration Guide](https://docs.kreuzberg.dev/configuration/)**
 
 ## Documentation
 
 - **[Official Documentation](https://kreuzberg.dev/)**
-- **[API Reference](https://kreuzberg.dev/reference/api-ruby/)**
-- **[Examples & Guides](https://kreuzberg.dev/guides/)**
+- **[API Reference](https://docs.kreuzberg.dev/reference/api-ruby/)**
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)**
 
 ## Troubleshooting
 
-For common issues and solutions, visit [Troubleshooting Guide](https://kreuzberg.dev/troubleshooting/).
+For common issues and solutions, visit [Troubleshooting Guide](https://docs.kreuzberg.dev/troubleshooting/).
 
 ## Contributing
 

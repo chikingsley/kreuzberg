@@ -42,18 +42,18 @@ function AppContent(): React.ReactElement {
 /**
  * Main Application Component
  * Provides both the benchmark data context and router to the entire application.
- * Wrapped in ErrorBoundary to catch and gracefully handle any React component errors.
- * Also provides theme context for light/dark mode support with parent sync capability.
+ * ThemeProvider wraps everything (including ErrorBoundary) so theme context is available
+ * even in error fallback UI. ErrorBoundary catches and gracefully handles React errors.
  */
 function App(): React.ReactElement {
 	return (
-		<ErrorBoundary>
-			<ThemeProvider>
+		<ThemeProvider>
+			<ErrorBoundary>
 				<BenchmarkProvider>
 					<AppContent />
 				</BenchmarkProvider>
-			</ThemeProvider>
-		</ErrorBoundary>
+			</ErrorBoundary>
+		</ThemeProvider>
 	);
 }
 

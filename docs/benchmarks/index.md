@@ -1,4 +1,5 @@
 # Benchmarks
+{: style="display: none;" }
 
 <div class="full-width-iframe" markdown="1">
 <iframe src="/benchmarks/app/"
@@ -6,7 +7,7 @@
         height="100vh"
         frameborder="0"
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-        style="border: none; display: block; min-height: calc(100vh - 100px);"
+        style="border: none; display: block; min-height: calc(100vh - 64px); height: calc(100vh - 64px);"
         title="Interactive Benchmark Visualizer">
   <p>Your browser does not support iframes. Please visit the <a href="/benchmarks/app/">interactive benchmark visualizer</a> directly.</p>
 </iframe>

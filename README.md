@@ -93,15 +93,15 @@ Each language binding provides comprehensive documentation with examples and bes
 - **[Rust](https://github.com/kreuzberg-dev/kreuzberg/tree/main/crates/kreuzberg)** – Core library, flexible feature flags, zero-copy APIs
 
 **Containers:**
-- **[Docker](https://kreuzberg.dev/guides/docker/)** – Official images with API, CLI, and MCP server modes (Core: ~1.0-1.3GB, Full: ~1.5-2.1GB with LibreOffice)
+- **[Docker](https://docs.kreuzberg.dev/guides/docker/)** – Official images with API, CLI, and MCP server modes (Core: ~1.0-1.3GB, Full: ~1.5-2.1GB with LibreOffice)
 
 **Command-Line:**
-- **[CLI](https://kreuzberg.dev/cli/usage/)** – Cross-platform binary, batch processing, MCP server mode
+- **[CLI](https://docs.kreuzberg.dev/cli/usage/)** – Cross-platform binary, batch processing, MCP server mode
 
 > All language bindings include precompiled binaries for both x86_64 and aarch64 architectures on Linux and macOS.
 
 **Docker:**
-- **[Docker](https://kreuzberg.dev/guides/docker/)** - Two images `core` and `full`. Available for both x86 and ARM
+- **[Docker](https://docs.kreuzberg.dev/guides/docker/)** - Two images `core` and `full`. Available for both x86 and ARM
 
 ## Platform Support
 
@@ -132,7 +132,7 @@ To use embeddings functionality:
    - macOS: `brew install onnxruntime`
    - Windows: Download from [ONNX Runtime releases](https://github.com/microsoft/onnxruntime/releases)
 
-2. Use embeddings in your code - see [Embeddings Guide](https://kreuzberg.dev/features/#embeddings)
+2. Use embeddings in your code - see [Embeddings Guide](https://docs.kreuzberg.dev/features/#embeddings)
 
 **Note:** Kreuzberg requires ONNX Runtime version 1.22.x for embeddings. All other Kreuzberg features work without ONNX Runtime.
 
@@ -181,7 +181,7 @@ To use embeddings functionality:
 | **Scientific** | `.tex`, `.latex`, `.typst`, `.jats`, `.ipynb`, `.docbook` | LaTeX, Jupyter notebooks, PubMed JATS |
 | **Documentation** | `.opml`, `.pod`, `.mdoc`, `.troff` | Technical documentation formats |
 
-**[Complete Format Reference →](https://kreuzberg.dev/reference/formats/)**
+**[Complete Format Reference →](https://docs.kreuzberg.dev/reference/formats/)**
 
 ## Key Features
 
@@ -190,7 +190,7 @@ To use embeddings functionality:
 
 Multiple OCR backends (Tesseract, EasyOCR, PaddleOCR) with intelligent table detection and reconstruction. Extract structured data from scanned documents and images with configurable accuracy thresholds.
 
-**[OCR Backend Documentation →](https://kreuzberg.dev/guides/ocr/)**
+**[OCR Backend Documentation →](https://docs.kreuzberg.dev/guides/ocr/)**
 
 </details>
 
@@ -199,7 +199,7 @@ Multiple OCR backends (Tesseract, EasyOCR, PaddleOCR) with intelligent table det
 
 Process multiple documents concurrently with configurable parallelism. Optimize throughput for large-scale document processing workloads with automatic resource management.
 
-**[Batch Processing Guide →](https://kreuzberg.dev/features/#batch-processing)**
+**[Batch Processing Guide →](https://docs.kreuzberg.dev/features/#batch-processing)**
 
 </details>
 
@@ -208,7 +208,7 @@ Process multiple documents concurrently with configurable parallelism. Optimize 
 
 Handle encrypted PDFs with single or multiple password attempts. Supports both RC4 and AES encryption with automatic fallback strategies.
 
-**[PDF Configuration →](https://kreuzberg.dev/migration/v3-to-v4/#password-protected-pdfs)**
+**[PDF Configuration →](https://docs.kreuzberg.dev/migration/v3-to-v4/#password-protected-pdfs)**
 
 </details>
 
@@ -217,7 +217,7 @@ Handle encrypted PDFs with single or multiple password attempts. Supports both R
 
 Automatic language detection in extracted text using fast-langdetect. Configure confidence thresholds and access per-language statistics.
 
-**[Language Detection Guide →](https://kreuzberg.dev/features/#language-detection)**
+**[Language Detection Guide →](https://docs.kreuzberg.dev/features/#language-detection)**
 
 </details>
 
@@ -226,19 +226,19 @@ Automatic language detection in extracted text using fast-langdetect. Configure 
 
 Extract comprehensive metadata from all supported formats: authors, titles, creation dates, page counts, EXIF data, and format-specific properties.
 
-**[Metadata Guide →](https://kreuzberg.dev/reference/types/#metadata)**
+**[Metadata Guide →](https://docs.kreuzberg.dev/reference/types/#metadata)**
 
 </details>
 
 ## Documentation
 
-- **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** – Setup and dependencies
-- **[User Guide](https://kreuzberg.dev/guides/extraction/)** – Comprehensive usage guide
-- **[API Reference](https://kreuzberg.dev/reference/api-python/)** – Complete API documentation
-- **[Format Support](https://kreuzberg.dev/reference/formats/)** – Supported file formats
-- **[OCR Backends](https://kreuzberg.dev/guides/ocr/)** – OCR engine setup
-- **[CLI Guide](https://kreuzberg.dev/cli/usage/)** – Command-line usage
-- **[Migration Guide](https://kreuzberg.dev/migration/v3-to-v4/)** – Upgrading from v3
+- **[Installation Guide](https://docs.kreuzberg.dev/getting-started/installation/)** – Setup and dependencies
+- **[User Guide](https://docs.kreuzberg.dev/guides/extraction/)** – Comprehensive usage guide
+- **[API Reference](https://docs.kreuzberg.dev/reference/api-python/)** – Complete API documentation
+- **[Format Support](https://docs.kreuzberg.dev/reference/formats/)** – Supported file formats
+- **[OCR Backends](https://docs.kreuzberg.dev/guides/ocr/)** – OCR engine setup
+- **[CLI Guide](https://docs.kreuzberg.dev/cli/usage/)** – Command-line usage
+- **[Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/)** – Upgrading from v3
 
 ## Contributing
 

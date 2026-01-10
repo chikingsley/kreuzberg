@@ -668,7 +668,7 @@ RUST_LOG=debug cargo test -p kreuzberg-cli -- --nocapture
 ## References
 
 - **Kreuzberg Core**: `../kreuzberg/`
-- **Main Documentation**: https://kreuzberg.dev
+- **Main Documentation**: https://docs.kreuzberg.dev
 - **GitHub Repository**: https://github.com/kreuzberg-dev/kreuzberg
 - **Configuration Guide**: See example configuration sections above
 

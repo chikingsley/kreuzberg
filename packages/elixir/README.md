@@ -348,7 +348,7 @@ IO.puts("Metadata: #{inspect(result.metadata)}")
 
 #### Table Extraction
 
-See [Table Extraction Guide](https://kreuzberg.dev/features/table-extraction/) for detailed examples.
+See [Table Extraction Guide](https://docs.kreuzberg.dev/features/table-extraction/) for detailed examples.
 
 #### Processing Multiple Files
 
@@ -387,11 +387,11 @@ end
 
 ### Next Steps
 
-- **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
-- **[API Documentation](https://kreuzberg.dev/api/)** - Complete API reference
-- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
-- **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+- **[Installation Guide](https://docs.kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
+- **[API Documentation](https://docs.kreuzberg.dev/api/)** - Complete API reference
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)** - Full code examples and usage guides
+- **[Configuration Guide](https://docs.kreuzberg.dev/configuration/)** - Advanced configuration options
+- **[Troubleshooting](https://docs.kreuzberg.dev/troubleshooting/)** - Common issues and solutions
 
 ## Features
 
@@ -633,7 +633,7 @@ end
 | **Scientific** | `.tex`, `.latex`, `.typst`, `.jats`, `.ipynb`, `.docbook` | LaTeX, Jupyter notebooks, PubMed JATS |
 | **Documentation** | `.opml`, `.pod`, `.mdoc`, `.troff` | Technical documentation formats |
 
-**[Complete Format Reference](https://kreuzberg.dev/reference/formats/)**
+**[Complete Format Reference](https://docs.kreuzberg.dev/reference/formats/)**
 
 ### Key Capabilities
 
@@ -971,7 +971,7 @@ end
 
 Kreuzberg supports extensible post-processing plugins for custom text transformation and filtering.
 
-For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/plugins/).
+For detailed plugin documentation, visit [Plugin System Guide](https://docs.kreuzberg.dev/plugins/).
 
 ### Plugin Example
 
@@ -1057,7 +1057,7 @@ IO.inspect(processors, label: "Registered Post-Processors")
 
 Generate vector embeddings for extracted text using the built-in ONNX Runtime support. Requires ONNX Runtime installation.
 
-**[Embeddings Guide](https://kreuzberg.dev/features/#embeddings)**
+**[Embeddings Guide](https://docs.kreuzberg.dev/features/#embeddings)**
 
 ## NIF Integration
 
@@ -1136,7 +1136,7 @@ IO.puts("Total files processed: #{length(results)}")
 
 For advanced configuration options including language detection, table extraction, OCR settings, and more:
 
-**[Configuration Guide](https://kreuzberg.dev/configuration/)**
+**[Configuration Guide](https://docs.kreuzberg.dev/configuration/)**
 
 ## Testing
 
@@ -1209,8 +1209,8 @@ mix test --only :e2e
 ## Documentation
 
 - **[Official Documentation](https://kreuzberg.dev/)**
-- **[API Reference](https://kreuzberg.dev/reference/api-elixir/)**
-- **[Examples & Guides](https://kreuzberg.dev/guides/)**
+- **[API Reference](https://docs.kreuzberg.dev/reference/api-elixir/)**
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)**
 - **[Rustler Documentation](https://hexdocs.pm/rustler/)**
 
 ## Troubleshooting
@@ -1236,7 +1236,7 @@ mix compile
 # Max timeout is configured per operation
 ```
 
-For detailed troubleshooting: [Troubleshooting Guide](https://kreuzberg.dev/troubleshooting/)
+For detailed troubleshooting: [Troubleshooting Guide](https://docs.kreuzberg.dev/troubleshooting/)
 
 ## Contributing
 

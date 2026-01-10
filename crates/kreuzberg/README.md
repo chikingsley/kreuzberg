@@ -256,7 +256,7 @@ For detailed information, see the [PDFium Linking Guide](../../docs/guides/pdfiu
 
 **[API Documentation](https://docs.rs/kreuzberg)** – Complete API reference with examples
 
-**[https://kreuzberg.dev](https://kreuzberg.dev)** – User guide and tutorials
+**[https://docs.kreuzberg.dev](https://docs.kreuzberg.dev)** – User guide and tutorials
 
 ## License
 

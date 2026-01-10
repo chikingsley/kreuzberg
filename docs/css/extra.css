@@ -18,7 +18,7 @@ html {
 	--md-primary-fg-color--dark: #1a1926;
 
 	--md-accent-fg-color: #da2ae0;
-	--md-accent-fg-color-opposite: #58fbda;
+	--md-accent-fg-color-opposite: #60a5fa;
 
 	--md-default-fg-color: #323040;
 	--md-default-fg-color--light: #323040;
@@ -37,7 +37,7 @@ html {
 	--md-primary-fg-color--light: #4a4858;
 	--md-primary-fg-color--dark: #1a1926;
 
-	--md-accent-fg-color: #58fbda;
+	--md-accent-fg-color: #60a5fa;
 	--md-accent-fg-color-opposite: #da2ae0;
 
 	--md-default-fg-color: #ffffff;
@@ -78,7 +78,7 @@ html {
 
 [data-md-color-scheme="slate"] .highlight {
 	position: relative;
-	background: #ffffff;
+	background: #323040;
 	border-radius: 12px;
 	padding: 16px 16px 0 16px;
 	margin-bottom: 1.5rem;
@@ -89,7 +89,7 @@ html {
 }
 
 [data-md-color-scheme="slate"] .highlight .filename {
-	color: rgba(50, 48, 64, 0.6);
+	color: rgba(255, 255, 255, 0.6);
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-style: normal;
@@ -104,7 +104,7 @@ html {
 
 [data-md-color-scheme="slate"] .highlight pre {
 	background-color: transparent;
-	color: #323040;
+	color: #ffffff;
 	margin: 0;
 	font-family: Inter, sans-serif;
 	font-size: 14px;
@@ -117,7 +117,7 @@ html {
 
 [data-md-color-scheme="slate"] .highlight code {
 	background-color: transparent;
-	color: #323040;
+	color: #ffffff;
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-style: normal;
@@ -132,7 +132,7 @@ html {
 
 [data-md-color-scheme="default"] .highlight {
 	position: relative;
-	background: #323040;
+	background: #ffffff;
 	border-radius: 12px;
 	padding: 16px 16px 0 16px;
 	margin-bottom: 1.5rem;
@@ -143,7 +143,7 @@ html {
 }
 
 [data-md-color-scheme="default"] .highlight .filename {
-	color: rgba(255, 255, 255, 0.6);
+	color: rgba(50, 48, 64, 0.6);
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-style: normal;
@@ -158,7 +158,7 @@ html {
 
 [data-md-color-scheme="default"] .highlight pre {
 	background-color: transparent;
-	color: #ffffff;
+	color: #323040;
 	margin: 0;
 	font-family: Inter, sans-serif;
 	font-size: 14px;
@@ -171,7 +171,7 @@ html {
 
 [data-md-color-scheme="default"] .highlight code {
 	background-color: transparent;
-	color: #ffffff;
+	color: #323040;
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-style: normal;
@@ -197,7 +197,7 @@ html {
 
 [data-md-color-scheme="slate"] code {
 	background-color: #3c3a4a;
-	color: #58fbda;
+	color: #60a5fa;
 	padding: 0.2em 0.4em;
 	border-radius: 4px;
 }
@@ -242,7 +242,7 @@ html {
 
 [data-md-color-scheme="slate"] .highlight .nf,
 [data-md-color-scheme="slate"] .highlight .nc {
-	color: #58fbda;
+	color: #60a5fa;
 }
 
 [data-md-color-scheme="default"] .highlight .k,
@@ -278,7 +278,7 @@ html {
 
 [data-md-color-scheme="default"] .highlight .nf,
 [data-md-color-scheme="default"] .highlight .nc {
-	color: #58fbda;
+	color: #60a5fa;
 }
 
 .highlight .language-bash,
@@ -365,7 +365,7 @@ html {
 }
 
 [data-md-color-scheme="slate"] .md-button--primary:hover {
-	background-color: #58fbda;
+	background-color: #60a5fa;
 	color: #000000;
 }
 
@@ -374,7 +374,7 @@ html {
 }
 
 [data-md-color-scheme="slate"] .md-top:hover {
-	background-color: #58fbda;
+	background-color: #60a5fa;
 	color: #000000;
 }
 
@@ -461,13 +461,13 @@ html {
 }
 
 [data-md-color-scheme="slate"] .tabbed-labels > label:hover {
-	background-color: rgba(88, 251, 218, 0.1);
-	border-color: var(--md-accent-fg-color-opposite);
-	color: var(--md-accent-fg-color-opposite);
+	background-color: rgba(96, 165, 250, 0.1);
+	border-color: var(--md-accent-fg-color);
+	color: var(--md-accent-fg-color);
 }
 
 [data-md-color-scheme="slate"] .tabbed-labels > label:hover a {
-	color: var(--md-accent-fg-color-opposite);
+	color: var(--md-accent-fg-color);
 	text-decoration: none;
 }
 
@@ -484,13 +484,13 @@ html {
 }
 
 [data-md-color-scheme="slate"] .tabbed-labels > label[for][aria-selected="true"] {
-	background-color: rgba(88, 251, 218, 0.1);
-	border-color: var(--md-accent-fg-color-opposite);
-	color: var(--md-accent-fg-color-opposite);
+	background-color: rgba(96, 165, 250, 0.15);
+	border-color: var(--md-accent-fg-color);
+	color: var(--md-accent-fg-color);
 }
 
 [data-md-color-scheme="slate"] .tabbed-labels > label[for][aria-selected="true"] a {
-	color: var(--md-accent-fg-color-opposite);
+	color: var(--md-accent-fg-color);
 	text-decoration: none;
 }
 
@@ -620,7 +620,7 @@ label[for="__palette_1"] svg {
 }
 
 [data-md-color-scheme="slate"] .md-typeset a {
-	color: #58fbda;
+	color: #60a5fa;
 }
 
 [data-md-color-scheme="slate"] .md-typeset a code {
@@ -671,7 +671,7 @@ strong {
 .md-tabs__link:hover,
 .md-tabs__link:focus,
 .md-tabs__item--active .md-tabs__link {
-	color: #58fbda;
+	color: #60a5fa;
 }
 
 .md-tabs__item {
@@ -685,7 +685,7 @@ strong {
 	left: 0;
 	right: 0;
 	height: 2px;
-	background-color: #58fbda;
+	background-color: #60a5fa;
 }
 
 .md-tabs__item:hover::after {
@@ -695,7 +695,7 @@ strong {
 	left: 0;
 	right: 0;
 	height: 2px;
-	background-color: #58fbda;
+	background-color: #60a5fa;
 	opacity: 0.5;
 }
 
@@ -724,7 +724,7 @@ strong {
 }
 
 .md-nav__link.md-nav__link--active {
-	background: linear-gradient(90deg, rgba(88, 251, 218, 0.1) 0%, rgba(218, 42, 224, 0.1) 100%);
+	background: linear-gradient(90deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
 	border-radius: 4px;
 	padding: 8px 12px;
 	color: #323040;
@@ -742,7 +742,7 @@ strong {
 }
 
 [data-md-color-scheme="slate"] .md-nav__link.md-nav__link--active {
-	background: linear-gradient(90deg, rgba(88, 251, 218, 0.1) 0%, rgba(218, 42, 224, 0.1) 100%);
+	background: linear-gradient(90deg, rgba(96, 165, 250, 0.2) 0%, rgba(96, 165, 250, 0.1) 100%);
 	border-radius: 4px;
 	padding: 8px 12px;
 	color: #ffffff;
@@ -763,7 +763,7 @@ strong {
 .md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link,
 .md-nav--lifted > .md-nav__list > .md-nav__item--active > label.md-nav__link,
 .md-nav--lifted > .md-nav__list > .md-nav__item--active > a.md-nav__link {
-	background: linear-gradient(90deg, rgba(88, 251, 218, 0.1) 0%, rgba(218, 42, 224, 0.1) 100%);
+	background: linear-gradient(90deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%);
 	box-shadow: none;
 	border-radius: 4px;
 	padding: 8px 60px 8px 12px;
@@ -879,7 +879,7 @@ nav.md-nav--secondary > .md-nav__list > .md-nav__item > .md-nav__link {
 }
 
 [data-md-color-scheme="slate"] .md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
-	background-color: #58fbda;
+	background-color: #60a5fa;
 	border-radius: 3px;
 }
 
@@ -889,7 +889,7 @@ nav.md-nav--secondary > .md-nav__list > .md-nav__item > .md-nav__link {
 
 [data-md-color-scheme="slate"] .md-sidebar__scrollwrap {
 	scrollbar-width: thin;
-	scrollbar-color: #58fbda transparent;
+	scrollbar-color: #60a5fa transparent;
 }
 
 [data-md-color-scheme="default"] .highlight .s {
@@ -1027,11 +1027,11 @@ nav.md-nav--secondary > .md-nav__list > .md-nav__item > .md-nav > .md-nav__list 
 }
 
 [data-md-color-scheme="slate"] .md-typeset .task-list-indicator::before {
-	background-color: #58fbda;
+	background-color: #60a5fa;
 }
 
 [data-md-color-scheme="slate"] .md-typeset .task-list-control [type="checkbox"]:checked + .task-list-indicator::before {
-	background-color: #58fbda;
+	background-color: #60a5fa;
 }
 
 [data-md-color-scheme="slate"] .mermaid {
@@ -1118,4 +1118,46 @@ nav.md-nav--secondary > .md-nav__list > .md-nav__item > .md-nav > .md-nav__list 
 
 [data-md-color-scheme="slate"] .md-typeset h2 a {
 	color: var(--md-accent-fg-color-opposite);
+}
+
+/* Hide sidebar on benchmarks page and make content full-width */
+/* Target the page using the full-width-iframe class we already have in the markdown */
+.full-width-iframe {
+	width: 100vw !important;
+	margin-left: calc(-50vw + 50%) !important;
+	margin-right: calc(-50vw + 50%) !important;
+	max-width: 100vw !important;
+}
+
+/* Hide sidebars when full-width-iframe is present */
+body:has(.full-width-iframe) .md-sidebar--primary,
+body:has(.full-width-iframe) .md-sidebar--secondary {
+	display: none !important;
+}
+
+/* Make content area full width when full-width-iframe is present */
+body:has(.full-width-iframe) .md-content {
+	max-width: none !important;
+	margin: 0 !important;
+}
+
+body:has(.full-width-iframe) .md-content__inner {
+	max-width: none !important;
+	margin: 0 !important;
+	padding: 1rem !important;
+}
+
+body:has(.full-width-iframe) .md-main__inner {
+	margin: 0 !important;
+	max-width: none !important;
+}
+
+body:has(.full-width-iframe) .md-grid {
+	max-width: none !important;
+}
+
+/* Make the article itself full width */
+body:has(.full-width-iframe) article {
+	max-width: none !important;
+	margin: 0 !important;
 }

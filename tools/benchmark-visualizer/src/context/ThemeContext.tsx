@@ -77,11 +77,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		applyTheme(resolved);
 	};
 
-	// Prevent flash of unstyled content
-	if (!mounted) {
-		return <>{children}</>;
-	}
-
+	// Always provide the context, even before mounting
+	// This prevents "useTheme must be used within ThemeProvider" errors during initial render
 	return <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>{children}</ThemeContext.Provider>;
 }
 

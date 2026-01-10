@@ -757,10 +757,10 @@ asyncio.run(main())
 
 ### Next Steps
 
-- **[Complete API Reference](https://kreuzberg.dev/reference/api-python/)** - All classes and methods
-- **[Configuration Documentation](https://kreuzberg.dev/configuration/)** - Detailed configuration guide
-- **[Examples & Guides](https://kreuzberg.dev/guides/)** - Real-world examples
-- **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+- **[Complete API Reference](https://docs.kreuzberg.dev/reference/api-python/)** - All classes and methods
+- **[Configuration Documentation](https://docs.kreuzberg.dev/configuration/)** - Detailed configuration guide
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)** - Real-world examples
+- **[Troubleshooting](https://docs.kreuzberg.dev/troubleshooting/)** - Common issues and solutions
 
 ## Testing
 
@@ -864,7 +864,7 @@ async def test_custom_feature():
 | **Scientific** | `.tex`, `.latex`, `.typst`, `.jats`, `.ipynb`, `.docbook` | LaTeX, Jupyter notebooks, PubMed JATS |
 | **Documentation** | `.opml`, `.pod`, `.mdoc`, `.troff` | Technical documentation formats |
 
-**[Complete Format Reference](https://kreuzberg.dev/reference/formats/)**
+**[Complete Format Reference](https://docs.kreuzberg.dev/reference/formats/)**
 
 ### Key Capabilities
 
@@ -950,13 +950,13 @@ asyncio.run(main())
 
 Kreuzberg supports extensible post-processing plugins for custom text transformation and filtering.
 
-For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/plugins/).
+For detailed plugin documentation, visit [Plugin System Guide](https://docs.kreuzberg.dev/plugins/).
 
 ## Embeddings Support
 
 Generate vector embeddings for extracted text using the built-in ONNX Runtime support. Requires ONNX Runtime installation.
 
-**[Embeddings Guide](https://kreuzberg.dev/features/#embeddings)**
+**[Embeddings Guide](https://docs.kreuzberg.dev/features/#embeddings)**
 
 ## Batch Processing
 
@@ -986,17 +986,17 @@ asyncio.run(main())
 
 For advanced configuration options including language detection, table extraction, OCR settings, and more:
 
-**[Configuration Guide](https://kreuzberg.dev/configuration/)**
+**[Configuration Guide](https://docs.kreuzberg.dev/configuration/)**
 
 ## Documentation
 
 - **[Official Documentation](https://kreuzberg.dev/)**
-- **[API Reference](https://kreuzberg.dev/reference/api-python/)**
-- **[Examples & Guides](https://kreuzberg.dev/guides/)**
+- **[API Reference](https://docs.kreuzberg.dev/reference/api-python/)**
+- **[Examples & Guides](https://docs.kreuzberg.dev/guides/)**
 
 ## Troubleshooting
 
-For common issues and solutions, visit [Troubleshooting Guide](https://kreuzberg.dev/troubleshooting/).
+For common issues and solutions, visit [Troubleshooting Guide](https://docs.kreuzberg.dev/troubleshooting/).
 
 ## Contributing
 

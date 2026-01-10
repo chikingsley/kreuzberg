@@ -4,13 +4,13 @@ Kreuzberg v4 represents a complete architectural rewrite with a Rust-first desig
 
 ---
 
-## RC.10 to RC.11 Migration (Embeddings Breaking Change)
+## Embeddings Breaking Change in v4
 
-**⚠️ BREAKING CHANGE**: RC.11 switches embeddings from bundled ONNX Runtime to dynamic loading, requiring separate installation.
+**⚠️ BREAKING CHANGE**: v4 switches embeddings from bundled ONNX Runtime to dynamic loading, requiring separate installation.
 
 ### Overview
 
-RC.11 replaces the `ort-download-binaries` dependency with `ort-load-dynamic` for ONNX Runtime. This change:
+v4 replaces the `ort-download-binaries` dependency with `ort-load-dynamic` for ONNX Runtime. This change:
 
 - **Reduces package sizes** by 150-200MB per platform
 - **Enables Windows MSVC support** for embeddings (previously unavailable)
@@ -182,26 +182,26 @@ ONNX Runtime is not available in Alpine repositories. Use Debian/Ubuntu base or 
 
 ### Rollback Plan
 
-If you encounter issues with RC.11, you can roll back to RC.10:
+If you encounter issues with v4, you can roll back to v3:
 
 ```bash title="Terminal"
 # Python
-pip install kreuzberg==4.0.0-rc.10
+pip install kreuzberg==3.22.0
 
 # Rust
-kreuzberg = "=4.0.0-rc.10"
+kreuzberg = "=3.22.0"
 
 # TypeScript
-npm install @kreuzberg/node@4.0.0-rc.10
+npm install @kreuzberg/node@3.22.0
 
 # Ruby
-gem install kreuzberg -v 4.0.0-rc.10
+gem install kreuzberg -v 3.22.0
 
 # Java
-<version>4.0.0-rc.10</version>
+<version>3.22.0</version>
 
 # Go
-go get github.com/kreuzberg-dev/kreuzberg/packages/go/v4@v4.0.0-rc.10
+go get github.com/kreuzberg-dev/kreuzberg/packages/go/v4@v3.22.0
 ```
 
 Report issues at [GitHub Issues](https://github.com/kreuzberg-dev/kreuzberg/issues) with:
@@ -780,7 +780,7 @@ if let Some(date) = metadata.date {
     println!("Date: {}", date);
 }
 
-// After (v4.0.0-rc.19+)
+// After (v4.0.0+)
 if let Some(created_at) = metadata.created_at {
     println!("Created: {}", created_at);
 }
@@ -796,7 +796,7 @@ date = result.metadata.get("date")
 if date:
     print(f"Date: {date}")
 
-# After (v4.0.0-rc.19+)
+# After (v4.0.0+)
 created_at = result.metadata.get("created_at")
 if created_at:
     print(f"Created: {created_at}")
@@ -813,7 +813,7 @@ if (metadata.date) {
     console.log("Date:", metadata.date);
 }
 
-// After (v4.0.0-rc.19+)
+// After (v4.0.0+)
 if (metadata.createdAt) {
     console.log("Created:", metadata.createdAt);
 }
@@ -829,7 +829,7 @@ metadata.date().ifPresent(date ->
     System.out.println("Date: " + date)
 );
 
-// After (v4.0.0-rc.19+)
+// After (v4.0.0+)
 metadata.createdAt().ifPresent(created ->
     System.out.println("Created: " + created)
 );
@@ -845,7 +845,7 @@ if metadata.Date != nil {
     fmt.Println("Date:", *metadata.Date)
 }
 
-// After (v4.0.0-rc.19+)
+// After (v4.0.0+)
 if metadata.CreatedAt != nil {
     fmt.Println("Created:", *metadata.CreatedAt)
 }
@@ -861,7 +861,7 @@ if result.metadata["date"]
   puts "Date: #{result.metadata["date"]}"
 end
 
-# After (v4.0.0-rc.19+)
+# After (v4.0.0+)
 if result.metadata["created_at"]
   puts "Created: #{result.metadata["created_at"]}"
 end
@@ -878,7 +878,7 @@ if (metadata.Date != null)
     Console.WriteLine($"Date: {metadata.Date}");
 }
 
-// After (v4.0.0-rc.19+)
+// After (v4.0.0+)
 if (metadata.CreatedAt != null)
 {
     Console.WriteLine($"Created: {metadata.CreatedAt}");
@@ -1544,7 +1544,7 @@ print(f"Batch (100 files): {time.time() - start:.2f}s")
 
 ## PDF Hierarchy Detection Feature
 
-**Release**: v4.1.0+
+**Available**: v4.0.0+
 
 PDF Hierarchy Detection is a new feature in v4 that automatically extracts document structure from PDFs using K-means clustering to identify semantic hierarchies of content blocks.
 
@@ -1839,4 +1839,4 @@ A: Yes, set `hierarchy_detection=HierarchyDetectionConfig(enabled=False)` in Pdf
 - **v4.0**: Current stable release
 - **v3 EOL**: June 2025 (no further updates)
 
-We recommend migrating to v4 as soon as possible to benefit from performance improvements and new features.
+Users should migrate to v4 as soon as possible to benefit from performance improvements and new features.
