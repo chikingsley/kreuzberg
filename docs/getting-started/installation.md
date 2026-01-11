@@ -14,6 +14,10 @@ Kreuzberg is available in multiple formats optimized for different runtimes: nat
 | **Python** | `kreuzberg` | ⚡ Fastest (native) | Server-side Python, native performance |
 | **Ruby** | `kreuzberg` | ⚡ Fastest (native) | Ruby applications, native performance |
 | **Elixir** | `kreuzberg` | ⚡ Fastest (native) | Elixir/Phoenix apps, BEAM runtime |
+| **Java** | `dev.kreuzberg:kreuzberg` | ⚡ Fastest (native) | Server-side Java apps, FFM API |
+| **Go** | `github.com/.../go/v4` | ⚡ Fastest (native) | Server-side Go, cgo bindings |
+| **PHP** | `kreuzberg/kreuzberg` | ⚡ Fastest (native) | PHP applications, ext-ffi |
+| **C#/.NET** | `Kreuzberg` (NuGet) | ⚡ Fastest (native) | .NET applications, P/Invoke |
 | **Rust** | `kreuzberg` crate | ⚡ Fastest (native) | Rust projects, full control |
 | **CLI/Docker** | `kreuzberg-cli` | ⚡ Fastest (native) | Command-line usage, batch processing |
 
@@ -220,7 +224,6 @@ WASM bindings work in:
 - Modern browsers (Chrome 74+, Firefox 79+, Safari 14+, Edge 79+)
 - Node.js 22+
 - Deno 1.35+
-- Bun 0.6+
 - Cloudflare Workers
 - Other JavaScript runtimes with WebAssembly support
 
@@ -288,6 +291,76 @@ Precompiled NIF binaries for Linux (x86_64, aarch64), macOS (Apple Silicon), and
 **Performance**: Native NIF bindings provide ~100% performance through Rustler compiled bindings.
 
 Next steps: [Elixir Quick Start](quickstart.md) • [Elixir API Reference](../reference/api-elixir.md)
+
+## Java
+
+Add to Maven `pom.xml`:
+
+```xml title="pom.xml"
+<dependency>
+    <groupId>dev.kreuzberg</groupId>
+    <artifactId>kreuzberg</artifactId>
+    <version>4.0.0</version>
+</dependency>
+```
+
+Or Gradle:
+
+```gradle title="build.gradle"
+implementation 'dev.kreuzberg:kreuzberg:4.0.0'
+```
+
+**Requirements:** Java 25+ (FFM/Panama API)
+
+The package bundles native libraries for Linux (x86_64, aarch64), macOS (Apple Silicon), and Windows.
+
+View on [Maven Central](https://central.sonatype.com/artifact/dev.kreuzberg/kreuzberg).
+
+Next steps: [Java Quick Start](quickstart.md) • [Java API Reference](../reference/api-java.md)
+
+## Go
+
+```bash title="Terminal"
+go get github.com/kreuzberg-dev/kreuzberg/packages/go/v4@latest
+```
+
+**Requirements:** Go 1.25+ with cgo, C compiler, libkreuzberg_ffi.a static library at build time
+
+Kreuzberg Go binaries are **statically linked** — once built, they are self-contained and require no runtime library dependencies.
+
+For external projects, download pre-built static libraries from [GitHub Releases](https://github.com/kreuzberg-dev/kreuzberg/releases) or build from source.
+
+Next steps: [Go Quick Start](quickstart.md) • [Go API Reference](../reference/api-go.md)
+
+## PHP
+
+```bash title="Terminal"
+composer require kreuzberg/kreuzberg
+```
+
+**Requirements:** PHP 8.2+, ext-ffi enabled
+
+The package includes prebuilt native extensions for Linux (x86_64, aarch64), macOS (Apple Silicon), and Windows.
+
+Next steps: [PHP Quick Start](quickstart.md) • [PHP API Reference](../reference/api-php.md)
+
+## C# / .NET
+
+```bash title="Terminal"
+dotnet add package Kreuzberg
+```
+
+Or via Package Manager Console:
+
+```powershell title="Package Manager Console"
+Install-Package Kreuzberg
+```
+
+**Requirements:** .NET 10.0+
+
+The package includes prebuilt native libraries for Linux (x86_64, aarch64), macOS (Apple Silicon), and Windows.
+
+Next steps: [C# Quick Start](quickstart.md) • [C# API Reference](../reference/api-csharp.md) • [C# Bindings Guide](../guides/csharp.md)
 
 ## CLI
 

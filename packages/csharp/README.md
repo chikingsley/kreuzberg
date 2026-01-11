@@ -79,7 +79,7 @@ Install-Package Goldziher.Kreuzberg
 
 ### System Requirements
 
-- **.NET 6.0+** required
+- **.NET 10.0+** required
 - Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.22.x for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
@@ -252,8 +252,7 @@ class Program
 - **[Installation Guide](https://kreuzberg.dev/getting-started/installation/)** - Platform-specific setup
 - **[API Documentation](https://kreuzberg.dev/api/)** - Complete API reference
 - **[Examples & Guides](https://kreuzberg.dev/guides/)** - Full code examples and usage guides
-- **[Configuration Guide](https://kreuzberg.dev/configuration/)** - Advanced configuration options
-- **[Troubleshooting](https://kreuzberg.dev/troubleshooting/)** - Common issues and solutions
+- **[Configuration Guide](https://kreuzberg.dev/guides/configuration/)** - Advanced configuration options
 
 
 
@@ -419,7 +418,7 @@ class Program
 
 Kreuzberg supports extensible post-processing plugins for custom text transformation and filtering.
 
-For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/plugins/).
+For detailed plugin documentation, visit [Plugin System Guide](https://kreuzberg.dev/guides/plugins/).
 
 
 
@@ -492,17 +491,13 @@ class Program
 
 For advanced configuration options including language detection, table extraction, OCR settings, and more:
 
-**[Configuration Guide](https://kreuzberg.dev/configuration/)**
+**[Configuration Guide](https://kreuzberg.dev/guides/configuration/)**
 
 ## Documentation
 
 - **[Official Documentation](https://kreuzberg.dev/)**
 - **[API Reference](https://kreuzberg.dev/reference/api-csharp/)**
 - **[Examples & Guides](https://kreuzberg.dev/guides/)**
-
-## Troubleshooting
-
-For common issues and solutions, visit [Troubleshooting Guide](https://kreuzberg.dev/troubleshooting/).
 
 ## Contributing
 

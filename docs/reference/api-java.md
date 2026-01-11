@@ -27,6 +27,8 @@ dependencies {
 - libkreuzberg_ffi native library (auto-loaded)
 - Optional: Tesseract or EasyOCR/PaddleOCR for OCR functionality
 
+View package on [Maven Central](https://central.sonatype.com/artifact/dev.kreuzberg/kreuzberg).
+
 ---
 
 ## Core Functions
