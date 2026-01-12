@@ -1,4 +1,4 @@
-```php
+```php title="tesseract_config.php"
 <?php
 
 declare(strict_types=1);

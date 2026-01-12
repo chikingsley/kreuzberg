@@ -19,7 +19,7 @@ Environment variables are ideal for:
 
 For complex configurations with many settings, configuration files are recommended:
 
-```toml
+```toml title="Example Configuration File"
 # kreuzberg.toml is cleaner for multiple settings
 [ocr]
 language = "eng"
@@ -42,7 +42,7 @@ These variables control the Kreuzberg server's network behavior and request hand
 
 The server bind address. Use `0.0.0.0` to listen on all interfaces.
 
-```bash
+```bash title="Server Bind Address Examples"
 # Listen only on localhost (default)
 export KREUZBERG_HOST=127.0.0.1
 
@@ -60,7 +60,7 @@ export KREUZBERG_HOST=192.168.1.100
 
 The server port number.
 
-```bash
+```bash title="Server Port Examples"
 export KREUZBERG_PORT=3000
 export KREUZBERG_PORT=8080
 ```
@@ -78,7 +78,7 @@ KREUZBERG_PORT must be a valid u16 number, got 'invalid': invalid digit found in
 
 Whitelist of allowed CORS origins. When empty, the server accepts requests from any origin.
 
-```bash
+```bash title="CORS Origins Configuration"
 # Allow all origins (default)
 # unset KREUZBERG_CORS_ORIGINS
 
@@ -91,7 +91,7 @@ export KREUZBERG_CORS_ORIGINS="https://trusted.com"
 
 **Security Warning**: Be explicit with CORS origins in production. Allowing all origins (`*`) means any website can call your API on behalf of users. In Kreuzberg, an empty list allows all origins - be intentional about this choice.
 
-```bash
+```bash title="CORS Security Best Practices"
 # Production: Restrict to known origins
 export KREUZBERG_CORS_ORIGINS="https://app.mycompany.com, https://admin.mycompany.com"
 
@@ -106,7 +106,7 @@ export KREUZBERG_CORS_ORIGINS="https://app.mycompany.com, https://admin.mycompan
 
 Maximum size of HTTP request bodies. Prevents oversized requests from consuming server resources.
 
-```bash
+```bash title="Max Request Body Size Examples"
 # 50 MB
 export KREUZBERG_MAX_REQUEST_BODY_BYTES=52428800
 
@@ -126,7 +126,7 @@ export KREUZBERG_MAX_REQUEST_BODY_BYTES=524288000
 
 Maximum size of individual multipart form fields. Controls the size of file uploads in multipart requests.
 
-```bash
+```bash title="Max Multipart Field Size Examples"
 # 100 MB (default)
 export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=104857600
 
@@ -145,14 +145,14 @@ export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=1073741824
 
 Legacy environment variable for backward compatibility. Converts to `KREUZBERG_MAX_MULTIPART_FIELD_BYTES` automatically.
 
-```bash
+```bash title="Deprecated Upload Size Setting"
 # Deprecated: Use KREUZBERG_MAX_MULTIPART_FIELD_BYTES instead
 export KREUZBERG_MAX_UPLOAD_SIZE_MB=100
 ```
 
 **Migration**: If you're using this, switch to `KREUZBERG_MAX_MULTIPART_FIELD_BYTES`:
 
-```bash
+```bash title="Migration to New Upload Size Setting"
 # Old (deprecated)
 export KREUZBERG_MAX_UPLOAD_SIZE_MB=100
 
@@ -171,7 +171,7 @@ These variables control document extraction behavior, including OCR, text chunki
 
 OCR language for scanned documents. Must be a valid language code recognized by the OCR backend.
 
-```bash
+```bash title="OCR Language Configuration"
 # English (default)
 export KREUZBERG_OCR_LANGUAGE=eng
 
@@ -201,7 +201,7 @@ export KREUZBERG_OCR_LANGUAGE=jpn
 
 OCR engine to use for text extraction from images and scanned documents.
 
-```bash
+```bash title="OCR Backend Selection"
 # Tesseract (open source, good for English)
 export KREUZBERG_OCR_BACKEND=tesseract
 
@@ -224,7 +224,7 @@ export KREUZBERG_OCR_BACKEND=paddleocr
 
 Maximum number of characters per text chunk. Smaller chunks are useful for LLM context windows.
 
-```bash
+```bash title="Chunk Size Configuration"
 # Small chunks for token-constrained LLMs
 export KREUZBERG_CHUNKING_MAX_CHARS=512
 
@@ -247,7 +247,7 @@ export KREUZBERG_CHUNKING_MAX_CHARS=4000
 
 Character overlap between consecutive chunks. Maintains context across chunk boundaries.
 
-```bash
+```bash title="Chunk Overlap Configuration"
 # No overlap (creates discontinuities)
 export KREUZBERG_CHUNKING_MAX_OVERLAP=0
 
@@ -276,7 +276,7 @@ Chunking overlap (500) cannot be greater than or equal to max_chars (1000)
 
 Enable or disable extraction result caching. Cache stores results to avoid reprocessing identical documents.
 
-```bash
+```bash title="Cache Enable/Disable"
 # Enable cache (default, recommended for production)
 export KREUZBERG_CACHE_ENABLED=true
 
@@ -296,7 +296,7 @@ export KREUZBERG_CACHE_ENABLED=False
 
 Token reduction aggressiveness for compressing extracted text while preserving meaning. Useful when working with token-limited LLMs.
 
-```bash
+```bash title="Token Reduction Mode Options"
 # No reduction (keep all text as-is)
 export KREUZBERG_TOKEN_REDUCTION_MODE=off
 
@@ -334,7 +334,7 @@ Control cache location, debug output, and runtime behavior.
 
 Custom directory for storing extraction cache and intermediate files. Useful for managing disk usage across multiple Kreuzberg instances.
 
-```bash
+```bash title="Cache Directory Configuration"
 # Default: cache in current directory
 # unset KREUZBERG_CACHE_DIR  # Uses .kreuzberg/
 
@@ -364,7 +364,7 @@ $KREUZBERG_CACHE_DIR/
 
 Enable detailed debug logging for CI environments. Outputs step-by-step timing and parameter information for OCR operations.
 
-```bash
+```bash title="Enable CI Debug Logging"
 # Enable CI debug output
 export KREUZBERG_CI_DEBUG=1
 export KREUZBERG_CI_DEBUG=true
@@ -388,7 +388,7 @@ export KREUZBERG_CI_DEBUG=yes
 
 Enable OCR-specific debug output. Outputs diagnostic information about OCR decisions, fallbacks, and text coverage metrics.
 
-```bash
+```bash title="Enable OCR Debug Logging"
 # Enable OCR debug logging
 export KREUZBERG_DEBUG_OCR=1
 
@@ -414,7 +414,7 @@ Configure caching for string encoding operations to optimize performance.
 
 Maximum number of strings cached in the encoding cache. Each entry consumes memory proportional to string length.
 
-```bash
+```bash title="Encoding Cache Entry Limit"
 # Default: reasonable for most applications
 export KREUZBERG_ENCODING_CACHE_MAX_ENTRIES=10000
 
@@ -432,7 +432,7 @@ export KREUZBERG_ENCODING_CACHE_MAX_ENTRIES=1000
 
 Maximum total size of cached strings in bytes. Once exceeded, least-used entries are evicted.
 
-```bash
+```bash title="Encoding Cache Size Limit"
 # Default: 100 MB
 export KREUZBERG_ENCODING_CACHE_MAX_BYTES=104857600
 
@@ -455,7 +455,7 @@ Variables for development, testing, and quality assurance.
 
 Enable expensive OCR quality tests. These tests perform full OCR on large documents and are slow (can take minutes).
 
-```bash
+```bash title="Enable Full OCR Tests"
 # Skip expensive OCR tests (default, fast test runs)
 # unset KREUZBERG_RUN_FULL_OCR
 
@@ -477,7 +477,7 @@ export KREUZBERG_RUN_FULL_OCR=1
 
 ### Basic Configuration
 
-```yaml
+```yaml title="Docker Compose - Basic Setup"
 version: '3.8'
 services:
   kreuzberg:
@@ -493,7 +493,7 @@ services:
 
 ### Production Configuration
 
-```yaml
+```yaml title="Docker Compose - Production Setup"
 version: '3.8'
 services:
   kreuzberg:
@@ -522,7 +522,7 @@ volumes:
 
 ### Multilingual Configuration
 
-```yaml
+```yaml title="Docker Compose - Multilingual Setup"
 version: '3.8'
 services:
   kreuzberg:
@@ -539,7 +539,7 @@ services:
 
 ### Development Configuration
 
-```yaml
+```yaml title="Docker Compose - Development Setup"
 version: '3.8'
 services:
   kreuzberg:
@@ -565,7 +565,7 @@ Kreuzberg applies environment variables in this order:
 
 This ensures environment variables always win over file configuration:
 
-```rust
+```rust title="Rust - Applying Environment Overrides"
 let mut config = ExtractionConfig::from_file("kreuzberg.toml")?;
 config.apply_env_overrides()?;  // Overrides file values
 ```
@@ -576,7 +576,7 @@ config.apply_env_overrides()?;  // Overrides file values
 
 Combine files with environment overrides for flexibility:
 
-```bash
+```bash title="Combining Config Files with Env Overrides"
 # Load base config from file
 # Override specific values for this deployment
 export KREUZBERG_OCR_LANGUAGE=deu
@@ -586,7 +586,7 @@ kreuzberg --config kreuzberg.toml
 
 ### Shell Script Initialization
 
-```bash
+```bash title="Environment-Based Shell Script"
 #!/bin/bash
 # Load deployment-specific settings
 
@@ -606,7 +606,7 @@ kreuzberg
 
 ### Kubernetes ConfigMap
 
-```yaml
+```yaml title="Kubernetes ConfigMap and Pod Configuration"
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,4 +1,4 @@
-```typescript
+```typescript title="disk_cache.ts"
 import { extractFile, type ExtractionConfig } from "@kreuzberg/node";
 
 const config: ExtractionConfig = { useCache: true };

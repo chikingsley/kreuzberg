@@ -1,4 +1,4 @@
-```php
+```php title="error_handling_extract.php"
 <?php
 
 declare(strict_types=1);

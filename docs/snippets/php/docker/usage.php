@@ -1,4 +1,4 @@
-```php
+```php title="usage.php"
 <?php
 
 declare(strict_types=1);

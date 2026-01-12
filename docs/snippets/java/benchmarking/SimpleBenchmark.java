@@ -1,4 +1,4 @@
-```java
+```java title="SimpleBenchmark.java"
 import com.kreuzberg.*;
 import java.util.ArrayList;
 import java.util.List;

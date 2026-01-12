@@ -1,4 +1,4 @@
-```python
+```python title="simple_benchmark.py"
 import time
 import asyncio
 from pathlib import Path

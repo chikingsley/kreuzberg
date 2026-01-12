@@ -1,4 +1,4 @@
-```python
+```python title="basic_cli.py"
 import subprocess
 import json
 import sys

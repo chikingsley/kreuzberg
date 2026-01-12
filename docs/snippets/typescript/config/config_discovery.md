@@ -2,7 +2,7 @@
 
 Use `ExtractionConfig.discover()` to automatically find and load configuration files from the current directory or parent directories:
 
-```typescript
+```typescript title="config_discovery.ts"
 import { ExtractionConfig, extractFile } from '@kreuzberg/node';
 
 const config = ExtractionConfig.discover();

@@ -1,4 +1,4 @@
-```php
+```php title="language_detection.php"
 <?php
 
 declare(strict_types=1);

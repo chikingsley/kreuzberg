@@ -1,4 +1,4 @@
-```java
+```java title="DiskCache.java"
 import com.kreuzberg.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;

@@ -1,4 +1,4 @@
-```php
+```php title="pie_install.php"
 <?php
 
 declare(strict_types=1);

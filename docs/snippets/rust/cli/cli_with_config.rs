@@ -1,4 +1,4 @@
-```rust
+```rust title="cli_with_config.rs"
 use std::process::Command;
 use anyhow::Result;
 

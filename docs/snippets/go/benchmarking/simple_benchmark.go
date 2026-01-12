@@ -1,4 +1,4 @@
-```go
+```go title="simple_benchmark.go"
 package main
 
 import (

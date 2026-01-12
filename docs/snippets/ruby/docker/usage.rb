@@ -1,4 +1,4 @@
-```ruby
+```ruby title="usage.rb"
 require 'open3'
 require 'net/http'
 require 'json'

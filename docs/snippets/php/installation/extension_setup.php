@@ -1,4 +1,4 @@
-```php
+```php title="extension_setup.php"
 <?php
 
 declare(strict_types=1);

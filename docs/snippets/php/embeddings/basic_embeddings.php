@@ -1,4 +1,4 @@
-```php
+```php title="basic_embeddings.php"
 <?php
 
 declare(strict_types=1);

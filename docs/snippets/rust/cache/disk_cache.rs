@@ -1,4 +1,4 @@
-```rust
+```rust title="disk_cache.rs"
 use kreuzberg::{Kreuzberg, ExtractionConfig, CacheConfig};
 use std::path::PathBuf;
 

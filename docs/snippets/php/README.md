@@ -137,7 +137,7 @@ Benchmark extraction performance across different configurations.
 ## Usage Patterns
 
 ### Basic Extraction
-```php
+```php title="Basic Extraction"
 use Kreuzberg\Kreuzberg;
 
 $kreuzberg = new Kreuzberg();
@@ -146,7 +146,7 @@ echo $result->content;
 ```
 
 ### With Configuration
-```php
+```php title="With Configuration"
 use Kreuzberg\Config\ExtractionConfig;
 use Kreuzberg\Config\OcrConfig;
 
@@ -160,7 +160,7 @@ $result = $kreuzberg->extractFile('scanned.pdf');
 ```
 
 ### Procedural API
-```php
+```php title="Procedural API"
 use function Kreuzberg\extract_file;
 
 $result = extract_file('document.pdf');
@@ -168,7 +168,7 @@ echo $result->content;
 ```
 
 ### Batch Processing
-```php
+```php title="Batch Processing"
 use function Kreuzberg\batch_extract_files;
 
 $files = ['doc1.pdf', 'doc2.docx', 'doc3.xlsx'];

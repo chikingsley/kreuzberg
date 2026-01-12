@@ -1,4 +1,4 @@
-```python
+```python title="disk_cache.py"
 from pathlib import Path
 from kreuzberg import Kreuzberg, ExtractionConfig, CacheConfig
 

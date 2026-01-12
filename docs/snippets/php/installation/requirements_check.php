@@ -1,4 +1,4 @@
-```php
+```php title="requirements_check.php"
 <?php
 
 declare(strict_types=1);

@@ -1,4 +1,4 @@
-```go
+```go title="basic_cli.go"
 package main
 
 import (

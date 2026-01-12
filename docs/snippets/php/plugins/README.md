@@ -56,7 +56,7 @@ Until the plugin system is implemented, you can:
 
 Instead of registering a post-processor plugin, process the extraction result directly:
 
-```php
+```php title="Post-Process Results"
 <?php
 
 declare(strict_types=1);
@@ -89,7 +89,7 @@ $processed = postProcessResult($result);
 
 PHP bindings support all built-in OCR backends:
 
-```php
+```php title="Built-in OCR Backends"
 <?php
 
 declare(strict_types=1);
@@ -113,7 +113,7 @@ $result = $kreuzberg->extractFile('scanned.pdf');
 
 Instead of validator plugins, validate extraction results directly:
 
-```php
+```php title="Validate Results"
 <?php
 
 declare(strict_types=1);
@@ -140,7 +140,7 @@ validateResult($result);
 
 For application-specific functionality, extend the main class:
 
-```php
+```php title="Extend Kreuzberg Class"
 <?php
 
 declare(strict_types=1);

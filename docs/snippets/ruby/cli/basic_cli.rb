@@ -1,4 +1,4 @@
-```ruby
+```ruby title="basic_cli.rb"
 require 'json'
 require 'open3'
 

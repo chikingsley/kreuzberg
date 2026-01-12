@@ -1,4 +1,4 @@
-```csharp
+```csharp title="cli_with_config.cs"
 using System;
 using System.CommandLine;
 using System.Text.Json;

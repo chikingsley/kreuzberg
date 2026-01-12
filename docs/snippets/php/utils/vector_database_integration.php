@@ -1,4 +1,4 @@
-```php
+```php title="vector_database_integration.php"
 <?php
 
 declare(strict_types=1);

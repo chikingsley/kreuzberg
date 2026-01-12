@@ -65,7 +65,7 @@ Kreuzberg provides two proven algorithms:
 
 Extract key concepts from scientific papers automatically:
 
-```python
+```python title="Research Paper Keyword Extraction"
 from kreuzberg import ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
 config = ExtractionConfig(
@@ -88,7 +88,7 @@ keywords = result.metadata.additional.get("keywords", [])
 
 Extract product features and characteristics from descriptions:
 
-```python
+```python title="Product Catalog Feature Extraction"
 config = ExtractionConfig(
     keywords=KeywordConfig(
         algorithm=KeywordAlgorithm.RAKE,  # Better for features
@@ -108,7 +108,7 @@ result = await extract_file("product_catalog.pdf", config=config)
 
 Extract relevant legal terms and concepts:
 
-```python
+```python title="Legal Document Keyword Extraction"
 config = ExtractionConfig(
     keywords=KeywordConfig(
         algorithm=KeywordAlgorithm.RAKE,
@@ -126,7 +126,7 @@ result = await extract_file("contract.pdf", config=config)
 
 Automatically tag documents for knowledge management:
 
-```python
+```python title="Content Tagging Configuration"
 config = ExtractionConfig(
     keywords=KeywordConfig(
         algorithm=KeywordAlgorithm.YAKE,
@@ -183,7 +183,7 @@ Score Range:
 
 The `window_size` parameter controls the context window for co-occurrence analysis:
 
-```python
+```python title="YAKE Window Size Configuration"
 from kreuzberg import KeywordConfig, KeywordAlgorithm, YakeParams
 
 # Small context window (more specific phrases)
@@ -255,7 +255,7 @@ Typical Range:
 
 #### RAKE Tuning Parameters
 
-```python
+```python title="RAKE Parameter Configuration"
 from kreuzberg import KeywordConfig, KeywordAlgorithm, RakeParams
 
 # Strict phrase extraction
@@ -312,7 +312,7 @@ config = KeywordConfig(
 
 Extract single important terms only:
 
-```python
+```python title="Single-Word Keyword Configuration"
 from kreuzberg import ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
 config = ExtractionConfig(
@@ -331,7 +331,7 @@ config = ExtractionConfig(
 
 Extract both single terms and multi-word phrases:
 
-```python
+```python title="Balanced Terms and Phrases Configuration"
 config = ExtractionConfig(
     keywords=KeywordConfig(
         algorithm=KeywordAlgorithm.YAKE,
@@ -348,7 +348,7 @@ config = ExtractionConfig(
 
 Extract longer, more specific phrases:
 
-```python
+```python title="Deep Phrase Extraction Configuration"
 from kreuzberg import KeywordConfig, KeywordAlgorithm, RakeParams
 
 config = ExtractionConfig(
@@ -372,7 +372,7 @@ config = ExtractionConfig(
 
 Configure for different languages and stopword sets:
 
-```python
+```python title="Multi-Language Keyword Configuration"
 # German technical document
 config = ExtractionConfig(
     keywords=KeywordConfig(
@@ -398,7 +398,7 @@ config = ExtractionConfig(
 
 Extract only high-confidence keywords:
 
-```python
+```python title="High-Quality Keyword Filtering"
 config = ExtractionConfig(
     keywords=KeywordConfig(
         algorithm=KeywordAlgorithm.YAKE,
@@ -421,7 +421,7 @@ config = ExtractionConfig(
 
 Extract research concepts and methodologies:
 
-```python
+```python title="Research Paper Analysis Function"
 import asyncio
 from kreuzberg import ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
@@ -458,7 +458,7 @@ result = asyncio.run(analyze_research_paper("neural_networks.pdf"))
 
 Extract product features for search and filtering:
 
-```python
+```python title="Product Feature Extraction with Tiered Scoring"
 from kreuzberg import (
     ExtractionConfig,
     KeywordConfig,
@@ -511,7 +511,7 @@ features = asyncio.run(extract_product_features("product_catalog.pdf"))
 
 Automatically tag documents for knowledge management:
 
-```python
+```python title="Document Tagging Pipeline Class"
 import asyncio
 from kreuzberg import ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
@@ -568,7 +568,7 @@ asyncio.run(main())
 
 See how algorithms differ on the same text:
 
-```python
+```python title="YAKE vs RAKE Algorithm Comparison"
 import asyncio
 from kreuzberg import (
     ExtractionConfig,
@@ -652,7 +652,7 @@ asyncio.run(compare_algorithms("document.pdf"))
 
 The `max_keywords` parameter determines how many candidates to extract before filtering:
 
-```python
+```python title="max_keywords Parameter Values"
 # For high-precision tagging (most relevant only)
 max_keywords = 5    # Extremely selective
 
@@ -674,7 +674,7 @@ Score thresholds depend on your algorithm and document type:
 
 **For YAKE** (inverse scoring: lower = better):
 
-```python
+```python title="YAKE min_score Thresholds"
 # Very selective (top 1-2 keywords)
 min_score = 0.5    # Only core concepts
 
@@ -690,7 +690,7 @@ min_score = 0.1    # Include rare terms
 
 **For RAKE** (higher = better):
 
-```python
+```python title="RAKE min_score Thresholds"
 # Very selective (top 1-3 keywords)
 min_score = 20.0   # Only core features
 
@@ -708,7 +708,7 @@ min_score = 0.1    # Include minor features
 
 **Short documents** (< 500 words):
 
-```python
+```python title="Short Document Configuration"
 # Less context means fewer meaningful keywords
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.YAKE,
@@ -720,7 +720,7 @@ config = KeywordConfig(
 
 **Medium documents** (500-5000 words):
 
-```python
+```python title="Medium Document Configuration"
 # Standard configuration works well
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.YAKE,
@@ -732,7 +732,7 @@ config = KeywordConfig(
 
 **Long documents** (5000+ words):
 
-```python
+```python title="Long Document Configuration"
 # More context allows comprehensive extraction
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.RAKE,
@@ -746,7 +746,7 @@ config = KeywordConfig(
 
 **Technical Documentation**:
 
-```python
+```python title="Technical Documentation Configuration"
 # Technical docs benefit from phrase extraction
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.RAKE,
@@ -762,7 +762,7 @@ config = KeywordConfig(
 
 **News Articles**:
 
-```python
+```python title="News Article Configuration"
 # News needs balanced term/phrase mix
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.YAKE,
@@ -774,7 +774,7 @@ config = KeywordConfig(
 
 **Academic Papers**:
 
-```python
+```python title="Academic Paper Configuration"
 # Papers need comprehensive concept extraction
 config = KeywordConfig(
     algorithm=KeywordAlgorithm.YAKE,
@@ -789,7 +789,7 @@ config = KeywordConfig(
 
 Always test your configuration on a sample of documents:
 
-```python
+```python title="Configuration Benchmark Function"
 import asyncio
 from statistics import mean, stdev
 
@@ -849,7 +849,7 @@ asyncio.run(main())
 
 Keywords extracted from the same document may contain duplicates or near-duplicates:
 
-```python
+```python title="Keywords with Deduplication Post-Processing"
 from kreuzberg import ExtractionConfig, KeywordConfig, KeywordAlgorithm
 
 config = ExtractionConfig(
@@ -872,7 +872,7 @@ config = ExtractionConfig(
 
 Typical workflow combining multiple features:
 
-```python
+```python title="Full Keyword Extraction Pipeline"
 async def keyword_pipeline(doc_path: str):
     config = ExtractionConfig(
         # Clean extraction with quality processing
@@ -921,7 +921,7 @@ result = asyncio.run(keyword_pipeline("document.pdf"))
 
 For LLM processing, combine token reduction with keywords:
 
-```python
+```python title="Keywords with Token Reduction for LLM"
 from kreuzberg import TokenReductionConfig
 
 config = ExtractionConfig(
@@ -954,7 +954,7 @@ result = await extract_file("document.pdf", config=config)
 
 **Causes and Solutions**:
 
-```python
+```python title="Fix: Too Few Keywords"
 # 1. min_score is too high
 # Solution: Lower the threshold
 config.keywords.min_score = 0.1  # Was 0.5
@@ -977,7 +977,7 @@ config.keywords.language = "fr"  # Was "en"
 
 **Causes and Solutions**:
 
-```python
+```python title="Fix: Too Many Low-Quality Keywords"
 # 1. min_score is too low
 # Solution: Raise the threshold
 config.keywords.min_score = 0.3  # Was 0.1
@@ -999,7 +999,7 @@ config.keywords.ngram_range = (1, 2)  # Was (1, 3)
 
 **Solution**:
 
-```python
+```python title="Fix: Wrong Algorithm Selection"
 # For multi-word phrases, use RAKE
 config.keywords.algorithm = KeywordAlgorithm.RAKE
 config.keywords.ngram_range = (1, 3)
@@ -1017,7 +1017,7 @@ config.keywords.ngram_range = (1, 1)
 
 **Causes and Solutions**:
 
-```python
+```python title="Fix: Slow Keyword Extraction"
 # 1. max_keywords too high
 # Solution: Reduce candidate generation
 config.keywords.max_keywords = 10  # Was 50
@@ -1043,7 +1043,7 @@ config.max_concurrent_extractions = 4  # Reduce parallelism
 
 **Debugging Steps**:
 
-```python
+```python title="Debug Keyword Extraction Issues"
 async def debug_keywords(doc_path: str):
     config = ExtractionConfig(
         keywords=KeywordConfig(

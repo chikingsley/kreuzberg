@@ -1,4 +1,4 @@
-```php
+```php title="metadata.php"
 <?php
 
 declare(strict_types=1);

@@ -527,7 +527,7 @@ kreuzberg extract scanned.pdf --config kreuzberg.toml --ocr true
 
 **Example config file (kreuzberg.toml) for OCR settings:**
 
-```toml
+```toml title="OCR Configuration Example"
 [ocr]
 backend = "tesseract"
 language = "eng"           # Single language

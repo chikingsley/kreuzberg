@@ -1,4 +1,4 @@
-```php
+```php title="pdf_extraction.php"
 <?php
 
 declare(strict_types=1);

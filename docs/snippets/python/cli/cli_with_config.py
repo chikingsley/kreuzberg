@@ -1,4 +1,4 @@
-```python
+```python title="cli_with_config.py"
 import subprocess
 import json
 import sys

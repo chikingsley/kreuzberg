@@ -2,7 +2,7 @@
 
 Use worker pools for CPU-bound batch processing to maximize parallelism and throughput:
 
-```typescript
+```typescript title="worker_pool.ts"
 import { createWorkerPool, extractFileInWorker, batchExtractFilesInWorker, closeWorkerPool } from '@kreuzberg/node';
 
 // Create a pool with 4 worker threads

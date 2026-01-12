@@ -1,4 +1,4 @@
-```php
+```php title="simple_benchmark.php"
 <?php
 
 declare(strict_types=1);

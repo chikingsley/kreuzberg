@@ -1,4 +1,4 @@
-```csharp
+```csharp title="detect_language.cs"
 using Kreuzberg;
 using System;
 using System.Collections.Generic;

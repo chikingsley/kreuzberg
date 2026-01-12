@@ -647,7 +647,7 @@ Advanced patterns for using page tracking in real-world applications.
 
 When both chunking and page tracking are enabled, chunks automatically include page metadata:
 
-```python
+```python title="Chunk-to-Page Mapping Example"
 from kreuzberg import extract_file_sync, ExtractionConfig, ChunkingConfig, PageConfig
 
 config = ExtractionConfig(
@@ -672,7 +672,7 @@ if result.chunks:
 
 Filter chunks by page range for focused retrieval:
 
-```python
+```python title="Filtering Chunks by Page Range"
 def search_in_pages(chunks: list[Chunk], query: str, page_start: int, page_end: int) -> list[Chunk]:
     """Search only within specified page range."""
     page_chunks = [
@@ -688,7 +688,7 @@ def search_in_pages(chunks: list[Chunk], query: str, page_start: int, page_end: 
 
 Include page context in embeddings for better retrieval:
 
-```python
+```python title="Adding Page Context to Embeddings"
 for chunk in result.chunks:
     if chunk.metadata.first_page:
         context = f"Page {chunk.metadata.first_page}: {chunk.text}"
@@ -703,7 +703,7 @@ for chunk in result.chunks:
 
 Process each page independently:
 
-```python
+```python title="Processing Individual Pages"
 from kreuzberg import extract_file_sync, ExtractionConfig, PageConfig
 
 config = ExtractionConfig(
@@ -730,7 +730,7 @@ if result.pages:
 
 **Multi-Format**: Check `PageStructure` availability:
 
-```python
+```python title="Checking Page Structure Availability"
 if result.metadata.pages and result.metadata.pages.boundaries:
     # Page tracking available
     process_with_pages(result)

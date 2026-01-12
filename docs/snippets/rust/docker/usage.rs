@@ -1,4 +1,4 @@
-```rust
+```rust title="usage.rs"
 use std::process::Command;
 use anyhow::Result;
 use reqwest::multipart;

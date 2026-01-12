@@ -1791,7 +1791,7 @@ module.exports = {
 
 The `@kreuzberg/core` package is a peer dependency. Install it:
 
-```bash
+```bash title="Install Kreuzberg Core Package"
 npm install @kreuzberg/core
 ```
 

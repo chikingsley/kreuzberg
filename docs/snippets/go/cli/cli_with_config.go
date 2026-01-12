@@ -1,4 +1,4 @@
-```go
+```go title="cli_with_config.go"
 package main
 
 import (

@@ -1813,14 +1813,14 @@ echo "Extension loaded successfully!\n";
 
 **Verify php.ini configuration:**
 
-```bash
+```bash title="Check PHP Configuration"
 php --ini
 php -m | grep kreuzberg
 ```
 
 **Check extension directory:**
 
-```bash
+```bash title="Check PHP Extension Directory"
 php -i | grep extension_dir
 ```
 

@@ -1,4 +1,4 @@
-```csharp
+```csharp title="basic_cli.cs"
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;

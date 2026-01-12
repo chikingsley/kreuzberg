@@ -1,4 +1,4 @@
-```go
+```go title="usage.go"
 package main
 
 import (

@@ -1,4 +1,4 @@
-```csharp
+```csharp title="simple_benchmark.cs"
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Kreuzberg;

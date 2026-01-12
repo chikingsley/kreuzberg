@@ -1,4 +1,4 @@
-```php
+```php title="multi_format.php"
 <?php
 
 declare(strict_types=1);

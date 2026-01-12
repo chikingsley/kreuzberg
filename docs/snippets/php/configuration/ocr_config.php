@@ -1,4 +1,4 @@
-```php
+```php title="ocr_config.php"
 <?php
 
 declare(strict_types=1);

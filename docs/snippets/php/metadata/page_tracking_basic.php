@@ -1,4 +1,4 @@
-```php
+```php title="page_tracking_basic.php"
 <?php
 
 declare(strict_types=1);

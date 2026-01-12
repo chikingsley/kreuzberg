@@ -52,7 +52,7 @@ The default configuration (empty `cors_origins` list) **allows requests from any
 
 **Recommended for production:**
 
-```toml
+```toml title="Production CORS Configuration"
 cors_origins = ["https://yourdomain.com", "https://app.yourdomain.com"]
 ```
 
@@ -535,7 +535,7 @@ Model files are cached locally to avoid re-downloading on subsequent runs.
 - Multi-process safe: Thread-safe concurrent access
 
 **Custom cache directory:**
-```toml
+```toml title="Custom Embedding Cache Directory"
 [chunking.embedding]
 model = { type = "preset", name = "balanced" }
 cache_dir = "/custom/cache/path"
@@ -834,7 +834,7 @@ ngram_range: (2, 3)  → 2-3 word phrases only: "machine learning", "neural netw
 
 Keywords are returned as a list of `Keyword` structures in the extraction result:
 
-```json
+```json title="Keyword Output Structure"
 {
   "text": "machine learning",
   "score": 0.85,
@@ -1594,7 +1594,7 @@ if (text_block_coverage < ocr_coverage_threshold) {
 
 The extracted hierarchy is returned in `PageContent.hierarchy` when pages are extracted:
 
-```json
+```json title="PageHierarchy Output Structure"
 {
   "block_count": 12,
   "blocks": [

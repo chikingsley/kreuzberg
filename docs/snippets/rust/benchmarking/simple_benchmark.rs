@@ -1,4 +1,4 @@
-```rust
+```rust title="simple_benchmark.rs"
 use kreuzberg::{Kreuzberg, ExtractionConfig, CacheConfig};
 use std::time::Instant;
 

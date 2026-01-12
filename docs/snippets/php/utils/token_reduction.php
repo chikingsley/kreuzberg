@@ -1,4 +1,4 @@
-```php
+```php title="token_reduction.php"
 <?php
 
 declare(strict_types=1);

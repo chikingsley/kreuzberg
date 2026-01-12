@@ -1,4 +1,4 @@
-```typescript
+```typescript title="simple_benchmark.ts"
 import { extractFile, type ExtractionConfig } from "@kreuzberg/node";
 
 async function benchmarkExtractions(): Promise<void> {

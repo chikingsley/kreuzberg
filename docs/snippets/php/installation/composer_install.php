@@ -1,4 +1,4 @@
-```php
+```php title="composer_install.php"
 <?php
 
 declare(strict_types=1);

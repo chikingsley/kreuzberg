@@ -260,7 +260,7 @@ Contains page structure information when page tracking is available. This field 
 
 **Example usage**:
 
-```rust
+```rust title="Rust - Accessing Page Structure"
 if let Some(page_structure) = metadata.pages {
     println!("Document has {} pages", page_structure.total_count);
     if let Some(boundaries) = page_structure.boundaries {
@@ -271,7 +271,7 @@ if let Some(page_structure) = metadata.pages {
 }
 ```
 
-```python
+```python title="Python - Accessing Page Structure"
 if metadata.get("pages"):
     page_structure = metadata["pages"]
     print(f"Document has {page_structure['total_count']} pages")
@@ -280,7 +280,7 @@ if metadata.get("pages"):
             print(f"Page {boundary['page_number']}: bytes {boundary['byte_start']}-{boundary['byte_end']}")
 ```
 
-```typescript
+```typescript title="TypeScript - Accessing Page Structure"
 if (metadata.pages) {
     console.log(`Document has ${metadata.pages.totalCount} pages`);
     if (metadata.pages.boundaries) {
@@ -291,7 +291,7 @@ if (metadata.pages) {
 }
 ```
 
-```java
+```java title="Java - Accessing Page Structure"
 metadata.pages().ifPresent(pageStructure -> {
     System.out.println("Document has " + pageStructure.getTotalCount() + " pages");
     pageStructure.getBoundaries().ifPresent(boundaries -> {
@@ -303,7 +303,7 @@ metadata.pages().ifPresent(pageStructure -> {
 });
 ```
 
-```go
+```go title="Go - Accessing Page Structure"
 if metadata.Pages != nil {
     fmt.Printf("Document has %d pages\n", metadata.Pages.TotalCount)
     if metadata.Pages.Boundaries != nil {
@@ -3356,7 +3356,7 @@ public sealed class HierarchyConfig
 
 **Example Usage:**
 
-```rust
+```rust title="Rust - HierarchyConfig Setup"
 use kreuzberg::core::config::HierarchyConfig;
 
 let hierarchy = HierarchyConfig {
@@ -3367,7 +3367,7 @@ let hierarchy = HierarchyConfig {
 };
 ```
 
-```python
+```python title="Python - HierarchyConfig Setup"
 from kreuzberg import HierarchyConfig, ExtractionConfig, PdfConfig
 
 hierarchy = HierarchyConfig(
@@ -3381,7 +3381,7 @@ pdf_config = PdfConfig(hierarchy=hierarchy)
 config = ExtractionConfig(pdf_options=pdf_config)
 ```
 
-```typescript
+```typescript title="TypeScript - HierarchyConfig Setup"
 const hierarchyConfig: HierarchyConfig = {
     enabled: true,
     kClusters: 6,
@@ -3394,7 +3394,7 @@ const pdfConfig: PdfConfig = {
 };
 ```
 
-```java
+```java title="Java - HierarchyConfig Setup"
 HierarchyConfig hierarchyConfig = HierarchyConfig.builder()
     .enabled(true)
     .kClusters(6)
@@ -3407,7 +3407,7 @@ PdfConfig pdfConfig = PdfConfig.builder()
     .build();
 ```
 
-```go
+```go title="Go - HierarchyConfig Setup"
 hierarchyConfig := &kreuzberg.HierarchyConfig{
     Enabled:              kreuzberg.BoolPtr(true),
     KClusters:           kreuzberg.IntPtr(6),
@@ -3707,7 +3707,7 @@ public record BoundingBox
 
 **Example Usage:**
 
-```rust
+```rust title="Rust - Iterating PageHierarchy Blocks"
 use kreuzberg::types::ExtractionResult;
 
 if let Some(pages) = result.pages {
@@ -3726,7 +3726,7 @@ if let Some(pages) = result.pages {
 }
 ```
 
-```python
+```python title="Python - Iterating PageHierarchy Blocks"
 from kreuzberg import extract_file
 
 result = extract_file('document.pdf')
@@ -3743,7 +3743,7 @@ if result.get('pages'):
                     print(f"    Position: ({left}, {top}) to ({right}, {bottom})")
 ```
 
-```typescript
+```typescript title="TypeScript - Iterating PageHierarchy Blocks"
 import { extract } from 'kreuzberg';
 
 const result = await extract('document.pdf');
@@ -3765,7 +3765,7 @@ if (result.pages) {
 }
 ```
 
-```java
+```java title="Java - Iterating PageHierarchy Blocks"
 ExtractionResult result = kreuzberg.extract(new File("document.pdf"));
 
 if (result.pages() != null) {
@@ -3784,7 +3784,7 @@ if (result.pages() != null) {
 }
 ```
 
-```go
+```go title="Go - Iterating PageHierarchy Blocks"
 result, _ := kreuzberg.Extract("document.pdf", nil)
 
 if result.Pages != nil {

@@ -1,4 +1,4 @@
-```php
+```php title="advanced_ocr.php"
 <?php
 
 declare(strict_types=1);

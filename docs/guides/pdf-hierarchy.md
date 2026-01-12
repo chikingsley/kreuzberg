@@ -132,7 +132,7 @@ Cluster 6+ (remaining)   → Body text
 
 When `include_bbox` is enabled, each block retains its bounding box:
 
-```json
+```json title="Bounding Box Output Format"
 {
   "text": "Chapter 1: Introduction",
   "level": "h1",
@@ -151,7 +151,7 @@ Bounding box format: `[left, top, right, bottom]` in PDF units (typically points
 
 The `HierarchyConfig` structure provides fine-grained control over hierarchy extraction:
 
-```rust
+```rust title="HierarchyConfig Structure"
 pub struct HierarchyConfig {
     pub enabled: bool,                              // Enable/disable hierarchy extraction
     pub k_clusters: usize,                          // Number of font size clusters (2-10)
@@ -270,7 +270,7 @@ This section provides complete, production-ready examples for configuring and us
 
 ### Example 1: Python - Basic Configuration
 
-```python
+```python title="Basic Hierarchy Configuration"
 from kreuzberg import ExtractionConfig, PdfConfig, HierarchyConfig
 
 # Create hierarchy configuration with default settings
@@ -307,7 +307,7 @@ if result.pages:
 
 ### Example 2: Python - Advanced Configuration for Academic Papers
 
-```python
+```python title="Academic Paper Configuration"
 from kreuzberg import ExtractionConfig, PdfConfig, HierarchyConfig
 
 # Optimized for academic papers with deep hierarchies
@@ -347,7 +347,7 @@ if result.pages:
 
 ### Example 3: Python - Configuration for Scanned Documents
 
-```python
+```python title="Scanned Document Configuration"
 from kreuzberg import ExtractionConfig, PdfConfig, HierarchyConfig
 
 # Optimized for scanned/mixed PDFs
@@ -369,7 +369,7 @@ result = await extract_bytes(pdf_bytes, "application/pdf", config)
 
 ### Example 4: TypeScript - Basic Configuration
 
-```typescript
+```typescript title="TypeScript Hierarchy Configuration"
 import { ExtractionConfig, PdfConfig, HierarchyConfig } from 'kreuzberg';
 
 const hierarchyConfig: HierarchyConfig = {
@@ -408,7 +408,7 @@ if (result.pages) {
 
 ### Example 5: Go - Basic Configuration
 
-```go
+```go title="Go Hierarchy Configuration"
 package main
 
 import (
@@ -454,7 +454,7 @@ func main() {
 
 ### Example 6: Java - Basic Configuration
 
-```java
+```java title="Java Hierarchy Configuration"
 import com.kreuzberg.*;
 
 public class HierarchyExample {
@@ -513,7 +513,7 @@ public class HierarchyExample {
 
 The complete hierarchy for a page is encapsulated in the `PageHierarchy` structure:
 
-```rust
+```rust title="PageHierarchy Structure"
 pub struct PageHierarchy {
     /// Number of hierarchy blocks on this page
     pub block_count: usize,
@@ -524,7 +524,7 @@ pub struct PageHierarchy {
 ```
 
 **JSON Representation**:
-```json
+```json title="PageHierarchy JSON Output"
 {
   "block_count": 5,
   "blocks": [
@@ -554,7 +554,7 @@ pub struct PageHierarchy {
 
 Individual blocks represent semantic units of text with hierarchy information:
 
-```rust
+```rust title="HierarchicalBlock Structure"
 pub struct HierarchicalBlock {
     /// The text content of this block
     pub text: String,
@@ -595,7 +595,7 @@ The `level` field can have the following values:
 
 ### Complete Example Output
 
-```json
+```json title="Complete Extraction Result"
 {
   "pages": [
     {
@@ -678,7 +678,7 @@ Hierarchy detection is less useful when:
 ### 2. Choosing the Right k_clusters Value
 
 **Start with analysis**:
-```python
+```python title="Analyze Font Size Distribution"
 # Analyze font sizes in your sample PDFs
 from collections import Counter
 
@@ -694,7 +694,7 @@ recommended_k = min(len(unique_sizes) + 1, 8)
 ```
 
 **Testing strategy**:
-```python
+```python title="Test Multiple k_clusters Values"
 # Test multiple k values
 for k in [3, 4, 5, 6, 7]:
     config.pdf_options.hierarchy.k_clusters = k
@@ -729,7 +729,7 @@ Are you unsure?
 ### 3. Performance Optimization
 
 **For maximum performance**:
-```python
+```python title="Maximum Performance Configuration"
 config = ExtractionConfig(
     pdf_options=PdfConfig(
         extract_images=False,          # Skip image extraction
@@ -742,7 +742,7 @@ config = ExtractionConfig(
 ```
 
 **For balanced performance**:
-```python
+```python title="Balanced Performance Configuration"
 config = ExtractionConfig(
     pdf_options=PdfConfig(
         extract_images=False,
@@ -766,20 +766,20 @@ config = ExtractionConfig(
 ### 4. Handling Edge Cases
 
 **Very short documents** (< 10 text blocks):
-```python
+```python title="Short Document Configuration"
 # Reduce k to number of blocks / 2
 config.pdf_options.hierarchy.k_clusters = 3
 ```
 
 **Documents with many similar font sizes**:
-```python
+```python title="Similar Font Sizes Configuration"
 # May result in many "body" classifications
 # Adjust expectations or reduce k_clusters
 config.pdf_options.hierarchy.k_clusters = 4
 ```
 
 **Scanned/OCR documents**:
-```python
+```python title="OCR Document Configuration"
 # OCR may introduce font size variations
 config.pdf_options.hierarchy.ocr_coverage_threshold = 0.5
 # And use simpler hierarchy
@@ -789,7 +789,7 @@ config.pdf_options.hierarchy.k_clusters = 3
 ### 5. Data Quality Assurance
 
 **Validation workflow**:
-```python
+```python title="Hierarchy Validation Function"
 def validate_hierarchy(result):
     issues = []
 
@@ -866,7 +866,7 @@ for issue in issues:
    ```
 
 **Solution workflow**:
-```python
+```python title="Debugging Empty Hierarchy"
 # Step 1: Verify extraction works
 config.pdf_options.hierarchy.enabled = True
 result = await extract(pdf_bytes, config)
@@ -913,7 +913,7 @@ if not page.hierarchy.blocks:
    - Solution: Increase clustering specificity
 
 **Solutions**:
-```python
+```python title="Fixing Too Many Body Blocks"
 # Solution 1: Reduce k_clusters
 config.pdf_options.hierarchy.k_clusters = 4  # From 6
 
@@ -949,7 +949,7 @@ if stdev(font_sizes) < 2.0:
    - Multiple font groups of similar size
 
 **Understanding the behavior**:
-```python
+```python title="Understanding Level Assignment"
 # What's happening:
 # - K-means identifies distinct font size clusters
 # - Clusters are ranked by centroid (mean) size
@@ -971,7 +971,7 @@ for block in result.pages[0].hierarchy.blocks:
 ```
 
 **Solution - If appearance doesn't match expectations**:
-```python
+```python title="Custom Level Adjustment"
 # The hierarchy is mathematically correct
 # Adjust expectations or:
 
@@ -1014,7 +1014,7 @@ def adjust_hierarchy(blocks):
 
 **Solutions**:
 
-```python
+```python title="Performance Optimization Solutions"
 # Solution 1: Disable bbox if not needed
 config.pdf_options.hierarchy.include_bbox = False
 # ~10-15% faster, ~10% smaller output
@@ -1058,7 +1058,7 @@ for k in [3, 4, 5, 6]:
 - However, Kreuzberg uses deterministic initialization from actual font sizes
 
 **Debugging**:
-```python
+```python title="Debugging Inconsistent Results"
 # This should NOT happen with Kreuzberg's implementation
 # If you observe inconsistency, it might be due to:
 

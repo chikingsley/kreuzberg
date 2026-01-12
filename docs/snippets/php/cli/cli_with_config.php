@@ -1,4 +1,4 @@
-```php
+```php title="cli_with_config.php"
 <?php
 
 declare(strict_types=1);

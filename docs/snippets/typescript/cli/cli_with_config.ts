@@ -1,4 +1,4 @@
-```typescript
+```typescript title="cli_with_config.ts"
 import { spawn } from "child_process";
 
 interface ExtractionResult {

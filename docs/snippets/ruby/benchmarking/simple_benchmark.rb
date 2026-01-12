@@ -1,4 +1,4 @@
-```ruby
+```ruby title="simple_benchmark.rb"
 require 'kreuzberg'
 require 'benchmark'
 

@@ -1,4 +1,4 @@
-```ruby
+```ruby title="disk_cache.rb"
 require 'kreuzberg'
 require 'fileutils'
 
