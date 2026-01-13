@@ -515,10 +515,10 @@ The complete hierarchy for a page is encapsulated in the `PageHierarchy` structu
 
 ```rust title="PageHierarchy Structure"
 pub struct PageHierarchy {
-    /// Number of hierarchy blocks on this page
+    // Number of hierarchy blocks on this page
     pub block_count: usize,
 
-    /// Hierarchical blocks with heading levels
+    // Hierarchical blocks with heading levels
     pub blocks: Vec<HierarchicalBlock>,
 }
 ```
@@ -556,16 +556,16 @@ Individual blocks represent semantic units of text with hierarchy information:
 
 ```rust title="HierarchicalBlock Structure"
 pub struct HierarchicalBlock {
-    /// The text content of this block
+    // The text content of this block
     pub text: String,
 
-    /// The font size of the text in this block
+    // The font size of the text in this block
     pub font_size: f32,
 
-    /// The hierarchy level of this block (H1-H6 or Body)
+    // The hierarchy level of this block (H1-H6 or Body)
     pub level: String,
 
-    /// Bounding box information for the block
+    // Bounding box information for the block
     pub bbox: Option<(f32, f32, f32, f32)>,
 }
 ```

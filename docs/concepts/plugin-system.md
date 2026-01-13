@@ -53,13 +53,13 @@ Handles extraction for specific file formats. Maps MIME types to extraction impl
 ```rust title="plugin_example.rs"
 #[async_trait]
 pub trait DocumentExtractor: Plugin {
-    /// MIME types this extractor supports
+    // MIME types this extractor supports
     fn supported_mime_types(&self) -> Vec<&str>;
 
-    /// Priority (higher = selected first)
+    // Priority (higher = selected first)
     fn priority(&self) -> i32 { 0 }
 
-    /// Extract from file path
+    // Extract from file path
     async fn extract_file(
         &self,
         path: &Path,
@@ -67,7 +67,7 @@ pub trait DocumentExtractor: Plugin {
         config: &ExtractionConfig,
     ) -> Result<ExtractionResult>;
 
-    /// Extract from bytes
+    // Extract from bytes
     async fn extract_bytes(
         &self,
         data: &[u8],
@@ -106,10 +106,10 @@ Performs optical character recognition on images. Supports multiple OCR engines.
 ```rust title="plugin_example.rs"
 #[async_trait]
 pub trait OcrBackend: Plugin {
-    /// Check if backend supports a language
+    // Check if backend supports a language
     fn supports_language(&self, language: &str) -> bool;
 
-    /// Perform OCR on image bytes
+    // Perform OCR on image bytes
     async fn process_image(
         &self,
         image_data: &[u8],
@@ -144,15 +144,15 @@ Transforms extraction results after initial extraction. Executes in stages for o
 ```rust title="plugin_example.rs"
 #[async_trait]
 pub trait PostProcessor: Plugin {
-    /// Processing stage (Early, Middle, Late)
+    // Processing stage (Early, Middle, Late)
     fn stage(&self) -> ProcessingStage;
 
-    /// Check if processor should run
+    // Check if processor should run
     fn should_process(&self, result: &ExtractionResult, config: &ExtractionConfig) -> bool {
         true
     }
 
-    /// Process extraction result
+    // Process extraction result
     async fn process(
         &self,
         result: ExtractionResult,
@@ -186,12 +186,12 @@ Validates extraction results before post-processing. Can fail extraction if requ
 ```rust title="plugin_example.rs"
 #[async_trait]
 pub trait Validator: Plugin {
-    /// Check if validator should run
+    // Check if validator should run
     fn should_validate(&self, result: &ExtractionResult, config: &ExtractionConfig) -> bool {
         true
     }
 
-    /// Validate extraction result (returns error if invalid)
+    // Validate extraction result (returns error if invalid)
     async fn validate(&self, result: &ExtractionResult, config: &ExtractionConfig) -> Result<()>;
 }
 ```

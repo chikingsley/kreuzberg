@@ -3183,14 +3183,14 @@ Document hierarchy detection configuration controlling font size clustering and 
 
 ```rust title="hierarchy_config.rs"
 pub struct HierarchyConfig {
-    /// Enable hierarchy extraction
+    // Enable hierarchy extraction
     pub enabled: bool,
 
     /// Number of font size clusters to use for hierarchy levels (1-7)
     /// Default: 6 (provides H1-H6 heading levels with body text)
     pub k_clusters: usize,
 
-    /// Include bounding box information in hierarchy blocks
+    // Include bounding box information in hierarchy blocks
     pub include_bbox: bool,
 
     /// OCR coverage threshold for smart OCR triggering (0.0-1.0)
@@ -3428,10 +3428,10 @@ Output structure containing extracted document hierarchy with text blocks and th
 
 ```rust title="page_hierarchy.rs"
 pub struct PageHierarchy {
-    /// Total number of hierarchy blocks extracted from the page
+    // Total number of hierarchy blocks extracted from the page
     pub block_count: usize,
 
-    /// Array of hierarchical text blocks ordered by document position
+    // Array of hierarchical text blocks ordered by document position
     pub blocks: Vec<HierarchicalBlock>,
 }
 ```
@@ -3510,20 +3510,20 @@ A single text block with assigned hierarchy level and spatial information. Repre
 ```rust title="hierarchical_block.rs"
 #[derive(Debug, Clone)]
 pub struct HierarchicalBlock {
-    /// The text content of this block
+    // The text content of this block
     pub text: String,
 
-    /// Hierarchy level: "h1", "h2", "h3", "h4", "h5", "h6", or "body"
+    // Hierarchy level: "h1", "h2", "h3", "h4", "h5", "h6", or "body"
     pub level: HierarchyLevel,
 
-    /// Font size in points (derived from PDF or OCR)
+    // Font size in points (derived from PDF or OCR)
     pub font_size: f32,
 
     /// Bounding box coordinates in PDF units (if include_bbox=true)
     /// Format: (left, top, right, bottom)
     pub bbox: Option<BoundingBox>,
 
-    /// Index position of this block in the blocks array
+    // Index position of this block in the blocks array
     pub block_index: usize,
 }
 
