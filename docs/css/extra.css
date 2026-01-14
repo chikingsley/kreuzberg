@@ -355,6 +355,186 @@ html {
 	color: #323040;
 }
 
+[data-md-color-scheme="slate"] .md-typeset .admonition.note,
+[data-md-color-scheme="slate"] .md-typeset details.note {
+	border: 2px solid #2558FF;
+	background-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details.note > summary {
+	background-color: rgba(37, 88, 255, 0.05);
+	border: none;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note > .admonition-title::before,
+[data-md-color-scheme="slate"] .md-typeset details.note > summary::before {
+	background-color: #ffffff;
+	mask-image: url("/assets/icons/note-dark.svg");
+	-webkit-mask-image: url("/assets/icons/note-dark.svg");
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note p,
+[data-md-color-scheme="slate"] .md-typeset .admonition.note li,
+[data-md-color-scheme="slate"] .md-typeset details.note p,
+[data-md-color-scheme="slate"] .md-typeset details.note li {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.note strong,
+[data-md-color-scheme="slate"] .md-typeset details.note strong {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.question,
+[data-md-color-scheme="slate"] .md-typeset details.question {
+	border: 2px solid #04D492;
+	background-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.question > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details.question > summary {
+	background-color: rgba(4, 212, 146, 0.05);
+	border: none;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.question > .admonition-title::before,
+[data-md-color-scheme="slate"] .md-typeset details.question > summary::before {
+	background-color: #ffffff;
+	mask-image: url("/assets/icons/question-dark.svg");
+	-webkit-mask-image: url("/assets/icons/question-dark.svg");
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.question p,
+[data-md-color-scheme="slate"] .md-typeset .admonition.question li,
+[data-md-color-scheme="slate"] .md-typeset details.question p,
+[data-md-color-scheme="slate"] .md-typeset details.question li {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.question strong,
+[data-md-color-scheme="slate"] .md-typeset details.question strong {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info,
+[data-md-color-scheme="slate"] .md-typeset details.info {
+	border: 2px solid #43E5FF;
+	background-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details.info > summary {
+	background-color: rgba(67, 229, 255, 0.05);
+	border: none;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info > .admonition-title::before,
+[data-md-color-scheme="slate"] .md-typeset details.info > summary::before {
+	background-color: #ffffff;
+	mask-image: url("/assets/icons/info-dark.svg");
+	-webkit-mask-image: url("/assets/icons/info-dark.svg");
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info p,
+[data-md-color-scheme="slate"] .md-typeset .admonition.info li,
+[data-md-color-scheme="slate"] .md-typeset details.info p,
+[data-md-color-scheme="slate"] .md-typeset details.info li {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.info strong,
+[data-md-color-scheme="slate"] .md-typeset details.info strong {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning,
+[data-md-color-scheme="slate"] .md-typeset details.warning {
+	border: 2px solid #FFEE00;
+	background-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details.warning > summary {
+	background-color: rgba(255, 238, 0, 0.05);
+	border: none;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning > .admonition-title::before,
+[data-md-color-scheme="slate"] .md-typeset details.warning > summary::before {
+	background-color: #ffffff;
+	mask-image: url("/assets/icons/warning-dark.svg");
+	-webkit-mask-image: url("/assets/icons/warning-dark.svg");
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning p,
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning li,
+[data-md-color-scheme="slate"] .md-typeset details.warning p,
+[data-md-color-scheme="slate"] .md-typeset details.warning li {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning strong,
+[data-md-color-scheme="slate"] .md-typeset details.warning strong {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip,
+[data-md-color-scheme="slate"] .md-typeset details.tip {
+	border: 2px solid #58FBDA;
+	background-color: transparent;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset details.tip > summary {
+	background-color: rgba(88, 251, 218, 0.05);
+	border: none;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip > .admonition-title::before,
+[data-md-color-scheme="slate"] .md-typeset details.tip > summary::before {
+	background-color: #ffffff;
+	mask-image: url("/assets/icons/tip-dark.svg");
+	-webkit-mask-image: url("/assets/icons/tip-dark.svg");
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip p,
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip li,
+[data-md-color-scheme="slate"] .md-typeset details.tip p,
+[data-md-color-scheme="slate"] .md-typeset details.tip li {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip strong,
+[data-md-color-scheme="slate"] .md-typeset details.tip strong {
+	color: rgba(255, 255, 255, 0.9);
+}
+
 details .highlight {
 	border: 1px solid rgba(255, 255, 255, 0.1);
 }
