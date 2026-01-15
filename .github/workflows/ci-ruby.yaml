@@ -628,7 +628,7 @@ jobs:
           echo ""
           echo "Native extension directory:"
           if [ -d "ext/kreuzberg_rb" ]; then
-            find ext/kreuzberg_rb -maxdepth 1 -type f -o -maxdepth 1 -type d | head -20
+            find ext/kreuzberg_rb -maxdepth 1 \( -type f -o -type d \) | head -20
           fi
           echo ""
           echo "=== Ruby gem environment ==="
@@ -652,7 +652,7 @@ jobs:
           fi
           echo ""
           echo "=== Looking for compiled extension ==="
-          find . -name "*.so" -o -name "*.dll" -o -name "*.dylib" 2>/dev/null | head -20
+          find . \( -name "*.so" -o -name "*.dll" -o -name "*.dylib" \) 2>/dev/null | head -20
           echo ""
           if [ -f "mkmf.log" ]; then
             echo "=== mkmf.log (last 100 lines) ==="
