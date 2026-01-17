@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+#### Docker
+- **Docker registry migration**: Migrated from Docker Hub to GitHub Container Registry
+  - New image location: `ghcr.io/kreuzberg-dev/kreuzberg` (was `goldziher/kreuzberg`)
+  - Core variant: `ghcr.io/kreuzberg-dev/kreuzberg:VERSION-core` or `:core`
+  - Full variant: `ghcr.io/kreuzberg-dev/kreuzberg:VERSION` or `:latest`
+  - Added OCI labels for better container metadata and repository linking
+  - Updated all documentation, examples, and test configurations
+  - Images remain publicly accessible and support linux/amd64 and linux/arm64
+
+---
+
+## [4.0.8] - 2026-01-17
+
+### Fixed
+
+#### CI/CD
+- **Ruby CI cache cleanup**: Fixed Cargo fingerprint errors caused by stale rb_sys build artifacts
+  - Added cleanup of `packages/ruby/tmp/` directory in "Detect partial cache hit and clean stale fingerprints" step
+  - Prevents fingerprint mismatches when GitHub Actions restores partial Cargo cache
+  - Applied to both build-ruby-gem and test-ruby jobs
+
+#### C#
+- **HtmlConversionOptions serialization with no values**: Fixed JSON serialization to write empty object `{}` instead of `null` when HtmlConversionOptions has no values set
+  - Rust FFI expects an object type, not null value
+  - Changed `WriteNullValue()` to `WriteStartObject()` + `WriteEndObject()` for empty options
+  - Resolves "Runtime error: html_options must be an object" error on all HtmlToMarkdown calls with default options
+
+#### Python
+- **Type completions now working**: Fixed missing `_internal_bindings.pyi` type stub file in Python wheels ([#298](https://github.com/kreuzberg-dev/kreuzberg/issues/298))
+  - Added `.pyi` file to Maturin include configuration in `pyproject.toml`
+  - Removed redundant `MANIFEST.in` (Maturin uses `pyproject.toml` include list)
+  - IDEs and type checkers now have full type information for all Rust bindings
+  - Resolves "Type completions not working" error in PyCharm, VS Code, and mypy
+
+#### Homebrew
+- **Bottle checksum mismatches**: Fixed formula update script to download bottles from GitHub Release and compute checksums from actual uploaded files
+  - Formula checksums now match what users download, preventing "Bottle reports different checksum" errors
+  - Script downloads bottles from release instead of using local artifacts that may differ
+  - Ensures checksums are accurate even when bottles are re-uploaded with `--clobber` flag
+
+---
+
 ## [4.0.6] - 2026-01-14
 
 ### Fixed

@@ -129,6 +129,11 @@ jobs:
             echo "Cleaning stale build artifacts to prevent fingerprint errors"
             cargo clean --release -p kreuzberg-ffi 2>/dev/null || true
             cargo clean --release -p kreuzberg 2>/dev/null || true
+            # Clean rb_sys build directory to prevent stale fingerprints in packages/ruby/tmp
+            if [ -d "packages/ruby/tmp" ]; then
+              echo "Cleaning rb_sys build directory: packages/ruby/tmp"
+              rm -rf packages/ruby/tmp
+            fi
           else
             echo "No target directory found, skipping cache cleanup"
           fi
@@ -525,6 +530,11 @@ jobs:
             echo "Cleaning stale build artifacts to prevent fingerprint errors"
             cargo clean --release -p kreuzberg-ffi 2>/dev/null || true
             cargo clean --release -p kreuzberg 2>/dev/null || true
+            # Clean rb_sys build directory to prevent stale fingerprints in packages/ruby/tmp
+            if [ -d "packages/ruby/tmp" ]; then
+              echo "Cleaning rb_sys build directory: packages/ruby/tmp"
+              rm -rf packages/ruby/tmp
+            fi
           else
             echo "No target directory found, skipping cache cleanup"
           fi

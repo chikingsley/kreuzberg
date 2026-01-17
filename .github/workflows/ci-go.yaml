@@ -428,6 +428,7 @@ jobs:
       - name: Move FFI library to correct location
         shell: bash
         run: scripts/ci/go/move-downloaded-ffi-library.sh
+        # Note: Header copy is handled by move-downloaded-ffi-library.sh
 
       - name: Verify FFI library location and permissions
         shell: bash

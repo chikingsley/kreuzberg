@@ -52,7 +52,19 @@ if (Test-Path $ffiPath) {
 
 # Convert FFI path to MSYS2 format for CGO flags
 $msys2FfiPath = ConvertTo-Msys2Path $ffiPath
-$msys2IncludePath = "$msys2RepoRoot/crates/kreuzberg-ffi/include"
+# Note: Windows Go builds use internal/ffi for the header via CGO directives
+# We set the include path but it's primarily used for verification
+$msys2IncludePath = "$msys2RepoRoot/packages/go/v4/internal/ffi"
+
+# Verify FFI header is accessible to Go
+$headerPath = Join-Path $repoRoot "packages/go/v4/internal/ffi\kreuzberg.h"
+if (-not (Test-Path $headerPath)) {
+  Write-Host "⚠ Warning: FFI header not found at $headerPath"
+  Write-Host "  This may cause compilation failures if header is not available"
+  Write-Host "  Expected: packages/go/v4/internal/ffi/kreuzberg.h"
+} else {
+  Write-Host "✓ FFI header verified at packages/go/v4/internal/ffi/kreuzberg.h"
+}
 
 $mingwBin = "C:\msys64\mingw64\bin"
 if (Test-Path (Join-Path $mingwBin "x86_64-w64-mingw32-gcc.exe")) {

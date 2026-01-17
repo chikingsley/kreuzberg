@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 [assembly: InternalsVisibleTo("Kreuzberg.E2E")]
+[assembly: InternalsVisibleTo("Kreuzberg.Tests")]
 
 namespace Kreuzberg;
 
@@ -529,7 +530,7 @@ internal class HtmlConversionOptionsConverter : JsonConverter<HtmlConversionOpti
 
     public override void Write(Utf8JsonWriter writer, HtmlConversionOptions value, JsonSerializerOptions options)
     {
-        // Check if all properties are null - if so, write null instead of empty object
+        // Check if all properties are null - if so, write empty object for FFI contract
         bool hasAnyValue = value.HeadingStyle != null || value.ListIndentType != null ||
                            value.ListIndentWidth.HasValue || value.Bullets != null ||
                            value.StrongEmSymbol != null || value.EscapeAsterisks.HasValue ||
@@ -549,8 +550,12 @@ internal class HtmlConversionOptionsConverter : JsonConverter<HtmlConversionOpti
 
         if (!hasAnyValue)
         {
-            // Write null instead of empty object - FFI will use Option::None and apply defaults
-            writer.WriteNullValue();
+            // When no values are set, serialize as {} (empty object).
+            // The Rust FFI parser (crates/kreuzberg-ffi/src/config.rs:parse_html_options)
+            // requires html_options to be a JSON object, not null. An empty object {}
+            // tells FFI to use all default ConversionOptions values.
+            writer.WriteStartObject();
+            writer.WriteEndObject();
             return;
         }
 

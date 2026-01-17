@@ -17,14 +17,13 @@ use Kreuzberg\Kreuzberg;
 use Kreuzberg\Config\ExtractionConfig;
 use Kreuzberg\Config\ChunkingConfig;
 use Kreuzberg\Config\EmbeddingConfig;
-use Kreuzberg\Enums\EmbeddingModelType;
 
 $config = new ExtractionConfig(
     chunking: new ChunkingConfig(
         maxChars: 500,
         maxOverlap: 50,
         embedding: new EmbeddingConfig(
-            model: EmbeddingModelType::preset('balanced'),
+            model: 'balanced',
             normalize: true,
             batchSize: 16
         )

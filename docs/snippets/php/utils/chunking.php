@@ -16,14 +16,13 @@ use Kreuzberg\Kreuzberg;
 use Kreuzberg\Config\ExtractionConfig;
 use Kreuzberg\Config\ChunkingConfig;
 use Kreuzberg\Config\EmbeddingConfig;
-use Kreuzberg\Enums\EmbeddingModelType;
 
 $config = new ExtractionConfig(
     chunking: new ChunkingConfig(
         maxChars: 1500,
         maxOverlap: 200,
         embedding: new EmbeddingConfig(
-            model: EmbeddingModelType::preset('all-minilm-l6-v2')
+            model: 'balanced'
         )
     )
 );
