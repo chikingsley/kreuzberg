@@ -65,13 +65,13 @@ Extract text, tables, images, and metadata from 56 file formats including PDF, O
 Install via NuGet:
 
 ```bash
-dotnet add package Goldziher.Kreuzberg
+dotnet add package Kreuzberg
 ```
 
 Or via NuGet Package Manager:
 
 ```
-Install-Package Goldziher.Kreuzberg
+Install-Package Kreuzberg
 ```
 
 
