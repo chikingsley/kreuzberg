@@ -13,6 +13,53 @@ use std::time::SystemTime;
 
 static CONFIG_CACHE: LazyLock<DashMap<PathBuf, (SystemTime, Arc<ExtractionConfig>)>> = LazyLock::new(DashMap::new);
 
+/// Output format for extraction results.
+///
+/// Controls the format of the `content` field in `ExtractionResult`.
+/// When set to `Markdown`, `Djot`, or `Html`, the output will be formatted
+/// accordingly. `Plain` returns the raw extracted text.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OutputFormat {
+    /// Plain text content only (default)
+    #[default]
+    Plain,
+    /// Markdown format
+    Markdown,
+    /// Djot markup format (requires djot feature)
+    Djot,
+    /// HTML format
+    Html,
+}
+
+impl std::fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OutputFormat::Plain => write!(f, "plain"),
+            OutputFormat::Markdown => write!(f, "markdown"),
+            OutputFormat::Djot => write!(f, "djot"),
+            OutputFormat::Html => write!(f, "html"),
+        }
+    }
+}
+
+impl std::str::FromStr for OutputFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "plain" | "text" => Ok(OutputFormat::Plain),
+            "markdown" | "md" => Ok(OutputFormat::Markdown),
+            "djot" => Ok(OutputFormat::Djot),
+            "html" => Ok(OutputFormat::Html),
+            _ => Err(format!(
+                "Invalid output format: '{}'. Valid formats: plain, text, markdown, md, djot, html",
+                s
+            )),
+        }
+    }
+}
+
 /// Page extraction and tracking configuration.
 ///
 /// Controls how pages are extracted, tracked, and represented in the extraction results.
@@ -130,13 +177,27 @@ pub struct ExtractionConfig {
     #[serde(default)]
     pub max_concurrent_extractions: Option<usize>,
 
-    /// Output format for extraction results
+    /// Result structure format
     ///
     /// Controls whether results are returned in unified format (default) with all
     /// content in the `content` field, or element-based format with semantic
     /// elements (for Unstructured-compatible output).
     #[serde(default)]
-    pub output_format: crate::types::OutputFormat,
+    pub result_format: crate::types::OutputFormat,
+
+    /// Content text format (default: Plain).
+    ///
+    /// Controls the format of the extracted content:
+    /// - `Plain`: Raw extracted text (default)
+    /// - `Markdown`: Markdown formatted output
+    /// - `Djot`: Djot markup format (requires djot feature)
+    /// - `Html`: HTML formatted output
+    ///
+    /// When set to a structured format, extraction results will include
+    /// formatted output. The `formatted_content` field may be populated
+    /// when format conversion is applied.
+    #[serde(default)]
+    pub output_format: OutputFormat,
 }
 
 /// Post-processor configuration.
@@ -472,7 +533,8 @@ impl Default for ExtractionConfig {
             #[cfg(feature = "html")]
             html_options: None,
             max_concurrent_extractions: None,
-            output_format: crate::types::OutputFormat::Unified,
+            result_format: crate::types::OutputFormat::Unified,
+            output_format: OutputFormat::Plain,
         }
     }
 }
@@ -662,6 +724,14 @@ impl ExtractionConfig {
             if let Some(ref mut token_reduction) = self.token_reduction {
                 token_reduction.mode = mode;
             }
+        }
+
+        // KREUZBERG_OUTPUT_FORMAT override
+        if let Ok(val) = std::env::var("KREUZBERG_OUTPUT_FORMAT") {
+            self.output_format = val.parse().map_err(|e: String| KreuzbergError::Validation {
+                message: format!("Invalid value for KREUZBERG_OUTPUT_FORMAT: {}", e),
+                source: None,
+            })?;
         }
 
         Ok(())
@@ -1919,5 +1989,207 @@ enable_quality_processing: false
         // After override, max_chars = 500, max_overlap = 600 (invalid: >= 500)
 
         restore_env("KREUZBERG_CHUNKING_MAX_CHARS", original_max_chars);
+    }
+
+    // ============================================================================
+    // OutputFormat Tests
+    // ============================================================================
+
+    #[test]
+    fn test_output_format_from_str_plain() {
+        assert_eq!("plain".parse::<OutputFormat>().unwrap(), OutputFormat::Plain);
+        assert_eq!("PLAIN".parse::<OutputFormat>().unwrap(), OutputFormat::Plain);
+        assert_eq!("text".parse::<OutputFormat>().unwrap(), OutputFormat::Plain);
+        assert_eq!("TEXT".parse::<OutputFormat>().unwrap(), OutputFormat::Plain);
+    }
+
+    #[test]
+    fn test_output_format_from_str_markdown() {
+        assert_eq!("markdown".parse::<OutputFormat>().unwrap(), OutputFormat::Markdown);
+        assert_eq!("MARKDOWN".parse::<OutputFormat>().unwrap(), OutputFormat::Markdown);
+        assert_eq!("md".parse::<OutputFormat>().unwrap(), OutputFormat::Markdown);
+        assert_eq!("MD".parse::<OutputFormat>().unwrap(), OutputFormat::Markdown);
+    }
+
+    #[test]
+    fn test_output_format_from_str_djot() {
+        assert_eq!("djot".parse::<OutputFormat>().unwrap(), OutputFormat::Djot);
+        assert_eq!("DJOT".parse::<OutputFormat>().unwrap(), OutputFormat::Djot);
+        assert_eq!("Djot".parse::<OutputFormat>().unwrap(), OutputFormat::Djot);
+    }
+
+    #[test]
+    fn test_output_format_from_str_html() {
+        assert_eq!("html".parse::<OutputFormat>().unwrap(), OutputFormat::Html);
+        assert_eq!("HTML".parse::<OutputFormat>().unwrap(), OutputFormat::Html);
+        assert_eq!("Html".parse::<OutputFormat>().unwrap(), OutputFormat::Html);
+    }
+
+    #[test]
+    fn test_output_format_from_str_invalid() {
+        let result = "invalid".parse::<OutputFormat>();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid output format"));
+        assert!(err.contains("invalid"));
+    }
+
+    #[test]
+    fn test_output_format_to_string() {
+        assert_eq!(OutputFormat::Plain.to_string(), "plain");
+        assert_eq!(OutputFormat::Markdown.to_string(), "markdown");
+        assert_eq!(OutputFormat::Djot.to_string(), "djot");
+        assert_eq!(OutputFormat::Html.to_string(), "html");
+    }
+
+    #[test]
+    fn test_output_format_default() {
+        let format = OutputFormat::default();
+        assert_eq!(format, OutputFormat::Plain);
+    }
+
+    #[test]
+    fn test_output_format_serde_roundtrip() {
+        // Test serialization and deserialization
+        for format in [
+            OutputFormat::Plain,
+            OutputFormat::Markdown,
+            OutputFormat::Djot,
+            OutputFormat::Html,
+        ] {
+            let json = serde_json::to_string(&format).unwrap();
+            let deserialized: OutputFormat = serde_json::from_str(&json).unwrap();
+            assert_eq!(format, deserialized);
+        }
+    }
+
+    #[test]
+    fn test_output_format_serde_values() {
+        // Verify the serialized values match expected JSON strings
+        assert_eq!(serde_json::to_string(&OutputFormat::Plain).unwrap(), "\"plain\"");
+        assert_eq!(serde_json::to_string(&OutputFormat::Markdown).unwrap(), "\"markdown\"");
+        assert_eq!(serde_json::to_string(&OutputFormat::Djot).unwrap(), "\"djot\"");
+        assert_eq!(serde_json::to_string(&OutputFormat::Html).unwrap(), "\"html\"");
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_apply_env_overrides_output_format_plain() {
+        let original = std::env::var("KREUZBERG_OUTPUT_FORMAT").ok();
+
+        set_env("KREUZBERG_OUTPUT_FORMAT", "plain");
+        let mut config = ExtractionConfig::default();
+        config.apply_env_overrides().unwrap();
+        assert_eq!(config.output_format, OutputFormat::Plain);
+
+        restore_env("KREUZBERG_OUTPUT_FORMAT", original);
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_apply_env_overrides_output_format_djot() {
+        let original = std::env::var("KREUZBERG_OUTPUT_FORMAT").ok();
+
+        set_env("KREUZBERG_OUTPUT_FORMAT", "djot");
+        let mut config = ExtractionConfig::default();
+        config.apply_env_overrides().unwrap();
+        assert_eq!(config.output_format, OutputFormat::Djot);
+
+        restore_env("KREUZBERG_OUTPUT_FORMAT", original);
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_apply_env_overrides_output_format_html() {
+        let original = std::env::var("KREUZBERG_OUTPUT_FORMAT").ok();
+
+        set_env("KREUZBERG_OUTPUT_FORMAT", "html");
+        let mut config = ExtractionConfig::default();
+        config.apply_env_overrides().unwrap();
+        assert_eq!(config.output_format, OutputFormat::Html);
+
+        restore_env("KREUZBERG_OUTPUT_FORMAT", original);
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_apply_env_overrides_output_format_markdown() {
+        let original = std::env::var("KREUZBERG_OUTPUT_FORMAT").ok();
+
+        set_env("KREUZBERG_OUTPUT_FORMAT", "markdown");
+        let mut config = ExtractionConfig::default();
+        config.apply_env_overrides().unwrap();
+        assert_eq!(config.output_format, OutputFormat::Markdown);
+
+        // Also test "md" alias
+        set_env("KREUZBERG_OUTPUT_FORMAT", "md");
+        let mut config2 = ExtractionConfig::default();
+        config2.apply_env_overrides().unwrap();
+        assert_eq!(config2.output_format, OutputFormat::Markdown);
+
+        restore_env("KREUZBERG_OUTPUT_FORMAT", original);
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_apply_env_overrides_output_format_invalid() {
+        let original = std::env::var("KREUZBERG_OUTPUT_FORMAT").ok();
+
+        set_env("KREUZBERG_OUTPUT_FORMAT", "invalid_format");
+        let mut config = ExtractionConfig::default();
+        let result = config.apply_env_overrides();
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("KREUZBERG_OUTPUT_FORMAT"));
+        assert!(err_msg.contains("Invalid output format"));
+
+        restore_env("KREUZBERG_OUTPUT_FORMAT", original);
+    }
+
+    #[test]
+    fn test_config_with_output_format_toml() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("kreuzberg.toml");
+
+        fs::write(
+            &config_path,
+            r#"
+use_cache = true
+output_format = "djot"
+        "#,
+        )
+        .unwrap();
+
+        let config = ExtractionConfig::from_toml_file(&config_path).unwrap();
+        assert_eq!(config.output_format, OutputFormat::Djot);
+    }
+
+    #[test]
+    fn test_config_with_output_format_yaml() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("kreuzberg.yaml");
+
+        fs::write(
+            &config_path,
+            r#"
+use_cache: true
+output_format: html
+        "#,
+        )
+        .unwrap();
+
+        let config = ExtractionConfig::from_file(&config_path).unwrap();
+        assert_eq!(config.output_format, OutputFormat::Html);
+    }
+
+    #[test]
+    fn test_config_with_output_format_json() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join("kreuzberg.json");
+
+        fs::write(&config_path, r#"{"use_cache": true, "output_format": "markdown"}"#).unwrap();
+
+        let config = ExtractionConfig::from_json_file(&config_path).unwrap();
+        assert_eq!(config.output_format, OutputFormat::Markdown);
     }
 }

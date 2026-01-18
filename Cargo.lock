@@ -3049,6 +3049,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "jotdown"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "086b08ec7a274cd60cd575ed3651ba081ee72dec0d39a6210e8adcff9efe3880"
+
+[[package]]
 name = "js-sys"
 version = "0.3.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3096,6 +3102,7 @@ dependencies = [
  "image",
  "indexmap",
  "infer",
+ "jotdown",
  "kamadak-exif",
  "kreuzberg-pdfium-render",
  "kreuzberg-tesseract",
@@ -3246,7 +3253,7 @@ dependencies = [
  "image",
  "itertools 0.14.0",
  "js-sys",
- "libloading 0.8.9",
+ "libloading 0.9.0",
  "log",
  "maybe-owned",
  "once_cell",

@@ -124,6 +124,7 @@ mod tests {
 	            images: None,
 	            pages: None,
 	            elements: None,
+	            djot_content: None,
 	        };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -149,6 +150,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -183,6 +185,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -212,6 +215,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -224,6 +228,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };

@@ -1277,7 +1277,7 @@ impl TryFrom<JsExtractionConfig> for ExtractionConfig {
             html_options,
             max_concurrent_extractions: val.max_concurrent_extractions.map(|v| v as usize),
             pages: val.pages.map(|p| p.try_into()).transpose()?,
-            output_format: OutputFormat::Unified,
+            output_format: Default::default(),
         })
     }
 }

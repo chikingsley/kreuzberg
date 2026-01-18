@@ -489,6 +489,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -509,6 +510,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -531,6 +533,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -568,6 +571,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -617,6 +621,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -629,6 +634,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -714,6 +720,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -775,6 +782,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };
@@ -805,6 +813,7 @@ mod tests {
                 detected_languages: None,
                 chunks: None,
                 images: None,
+                djot_content: None,
                 pages: None,
                 elements: None,
             };
@@ -825,6 +834,7 @@ mod tests {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         };

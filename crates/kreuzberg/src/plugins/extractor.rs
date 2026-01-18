@@ -64,6 +64,7 @@ use crate::KreuzbergError;
 ///             detected_languages: None,
 ///             chunks: None,
 ///             images: None,
+///             djot_content: None,
 ///             pages: None,
 ///         })
 ///     }
@@ -143,6 +144,7 @@ pub trait DocumentExtractor: Plugin {
     ///         detected_languages: None,
     ///         chunks: None,
     ///         images: None,
+    ///         djot_content: None,
     ///         pages: None,
     ///     })
     /// }
@@ -214,6 +216,7 @@ pub trait DocumentExtractor: Plugin {
     ///         detected_languages: None,
     ///         chunks: None,
     ///         images: None,
+    ///         djot_content: None,
     ///         pages: None,
     ///     })
     /// }
@@ -436,6 +439,7 @@ pub trait DocumentExtractor: Plugin {
 ///             detected_languages: None,
 ///             chunks: None,
 ///             images: None,
+///             djot_content: None,
 ///             pages: None,
 ///         })
 ///     }
@@ -602,6 +606,7 @@ mod tests {
                 detected_languages: None,
                 chunks: None,
                 images: None,
+                djot_content: None,
                 pages: None,
                 elements: None,
             })
@@ -776,6 +781,7 @@ mod tests {
                     detected_languages: None,
                     chunks: None,
                     images: None,
+                    djot_content: None,
                     pages: None,
                     elements: None,
                 })
@@ -982,6 +988,7 @@ mod tests {
                     detected_languages: None,
                     chunks: None,
                     images: None,
+                    djot_content: None,
                     pages: None,
                     elements: None,
                 })
@@ -1029,6 +1036,7 @@ mod tests {
                     detected_languages: None,
                     chunks: None,
                     images: None,
+                    djot_content: None,
                     pages: None,
                     elements: None,
                 })

@@ -64,6 +64,9 @@ pub trait SyncExtractor {
 pub mod structured;
 pub mod text;
 
+pub mod djot;
+pub mod frontmatter_utils;
+
 #[cfg(feature = "archives")]
 pub mod security;
 
@@ -93,9 +96,6 @@ pub mod epub;
 
 #[cfg(feature = "office")]
 pub mod fictionbook;
-
-#[cfg(feature = "djot")]
-pub mod djot;
 
 #[cfg(feature = "office")]
 pub mod markdown;
@@ -169,7 +169,6 @@ pub use epub::EpubExtractor;
 #[cfg(feature = "office")]
 pub use fictionbook::FictionBookExtractor;
 
-#[cfg(feature = "djot")]
 pub use djot::DjotExtractor;
 
 #[cfg(feature = "office")]
@@ -287,7 +286,6 @@ pub fn register_default_extractors() -> Result<()> {
     #[cfg(feature = "excel")]
     registry.register(Arc::new(ExcelExtractor::new()))?;
 
-    #[cfg(feature = "djot")]
     registry.register(Arc::new(DjotExtractor::new()))?;
 
     #[cfg(feature = "office")]
@@ -350,10 +348,11 @@ mod tests {
         let extractor_names = reg.list();
 
         #[allow(unused_mut)]
-        let mut expected_count = 3;
+        let mut expected_count = 4; // plain-text, markdown, structured, djot
         assert!(extractor_names.contains(&"plain-text-extractor".to_string()));
         assert!(extractor_names.contains(&"markdown-extractor".to_string()));
         assert!(extractor_names.contains(&"structured-extractor".to_string()));
+        assert!(extractor_names.contains(&"djot-extractor".to_string()));
 
         #[cfg(feature = "ocr")]
         {
@@ -377,12 +376,6 @@ mod tests {
         {
             expected_count += 1;
             assert!(extractor_names.contains(&"excel-extractor".to_string()));
-        }
-
-        #[cfg(feature = "djot")]
-        {
-            expected_count += 1;
-            assert!(extractor_names.contains(&"djot-extractor".to_string()));
         }
 
         #[cfg(feature = "office")]

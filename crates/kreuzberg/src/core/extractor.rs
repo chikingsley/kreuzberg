@@ -415,6 +415,7 @@ pub async fn batch_extract_file(
                     detected_languages: None,
                     chunks: None,
                     images: None,
+                    djot_content: None,
                     pages: None,
                     elements: None,
                 });
@@ -514,6 +515,7 @@ pub async fn batch_extract_bytes(
                     detected_languages: None,
                     chunks: None,
                     images: None,
+                    djot_content: None,
                     pages: None,
                     elements: None,
                 });
@@ -627,6 +629,7 @@ pub fn batch_extract_bytes_sync(
                 detected_languages: None,
                 chunks: None,
                 images: None,
+                djot_content: None,
                 pages: None,
                 elements: None,
             }

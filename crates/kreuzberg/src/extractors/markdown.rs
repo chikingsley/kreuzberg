@@ -13,6 +13,10 @@
 //! Requires the `office` feature (which includes `pulldown-cmark`).
 
 #[cfg(feature = "office")]
+use super::frontmatter_utils::{
+    cells_to_markdown, extract_frontmatter, extract_metadata_from_yaml, extract_title_from_content,
+};
+#[cfg(feature = "office")]
 use crate::Result;
 #[cfg(feature = "office")]
 use crate::core::config::ExtractionConfig;
@@ -24,8 +28,6 @@ use crate::types::{ExtractionResult, Metadata, Table};
 use async_trait::async_trait;
 #[cfg(feature = "office")]
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
-#[cfg(feature = "office")]
-use serde_yaml_ng::Value as YamlValue;
 
 /// Enhanced Markdown extractor with metadata and table support.
 ///
@@ -44,102 +46,7 @@ impl MarkdownExtractor {
         Self
     }
 
-    /// Extract YAML frontmatter from markdown content.
-    ///
-    /// Frontmatter is expected to be delimited by `---` at the start of the document.
-    /// Returns the remaining content after frontmatter.
-    fn extract_frontmatter(content: &str) -> (Option<YamlValue>, String) {
-        if !content.starts_with("---") {
-            return (None, content.to_string());
-        }
-
-        let rest = &content[3..];
-        if let Some(end_pos) = rest.find("\n---") {
-            let frontmatter_str = &rest[..end_pos];
-            let remaining = &rest[end_pos + 4..];
-
-            match serde_yaml_ng::from_str::<YamlValue>(frontmatter_str) {
-                Ok(value) => (Some(value), remaining.to_string()),
-                Err(_) => (None, content.to_string()),
-            }
-        } else {
-            (None, content.to_string())
-        }
-    }
-
-    /// Extract metadata from YAML frontmatter.
-    ///
-    /// Extracts the following YAML fields:
-    /// - Standard fields: title, author, date, description (as subject)
-    /// - Extended fields: abstract, subject, category, tags, language, version
-    /// - Array fields (keywords, tags): converted to comma-separated strings
-    fn extract_metadata_from_yaml(yaml: &YamlValue) -> Metadata {
-        let mut metadata = Metadata::default();
-
-        if let Some(title) = yaml.get("title").and_then(|v| v.as_str()) {
-            metadata.additional.insert("title".to_string(), title.into());
-        }
-
-        if let Some(author) = yaml.get("author").and_then(|v| v.as_str()) {
-            metadata.additional.insert("author".to_string(), author.into());
-        }
-
-        if let Some(date) = yaml.get("date").and_then(|v| v.as_str()) {
-            metadata.created_at = Some(date.to_string());
-        }
-
-        if let Some(keywords) = yaml.get("keywords") {
-            match keywords {
-                YamlValue::String(s) => {
-                    metadata.additional.insert("keywords".to_string(), s.clone().into());
-                }
-                YamlValue::Sequence(seq) => {
-                    let keywords_str = seq.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(", ");
-                    metadata.additional.insert("keywords".to_string(), keywords_str.into());
-                }
-                _ => {}
-            }
-        }
-
-        if let Some(description) = yaml.get("description").and_then(|v| v.as_str()) {
-            metadata.subject = Some(description.to_string());
-        }
-
-        if let Some(abstract_text) = yaml.get("abstract").and_then(|v| v.as_str()) {
-            metadata.additional.insert("abstract".to_string(), abstract_text.into());
-        }
-
-        if let Some(subject) = yaml.get("subject").and_then(|v| v.as_str()) {
-            metadata.subject = Some(subject.to_string());
-        }
-
-        if let Some(category) = yaml.get("category").and_then(|v| v.as_str()) {
-            metadata.additional.insert("category".to_string(), category.into());
-        }
-
-        if let Some(tags) = yaml.get("tags") {
-            match tags {
-                YamlValue::String(s) => {
-                    metadata.additional.insert("tags".to_string(), s.clone().into());
-                }
-                YamlValue::Sequence(seq) => {
-                    let tags_str = seq.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(", ");
-                    metadata.additional.insert("tags".to_string(), tags_str.into());
-                }
-                _ => {}
-            }
-        }
-
-        if let Some(language) = yaml.get("language").and_then(|v| v.as_str()) {
-            metadata.additional.insert("language".to_string(), language.into());
-        }
-
-        if let Some(version) = yaml.get("version").and_then(|v| v.as_str()) {
-            metadata.additional.insert("version".to_string(), version.into());
-        }
-
-        metadata
-    }
+    // Frontmatter utilities moved to shared frontmatter_utils module
 
     /// Extract plain text from markdown AST.
     fn extract_text_from_events(events: &[Event]) -> String {
@@ -222,7 +129,7 @@ impl MarkdownExtractor {
                     if let Some((cells, idx)) = current_table.take()
                         && !cells.is_empty()
                     {
-                        let markdown = Self::cells_to_markdown(&cells);
+                        let markdown = cells_to_markdown(&cells);
                         tables.push(Table {
                             cells,
                             markdown,
@@ -238,50 +145,7 @@ impl MarkdownExtractor {
         tables
     }
 
-    /// Convert table cells to markdown format.
-    fn cells_to_markdown(cells: &[Vec<String>]) -> String {
-        if cells.is_empty() {
-            return String::new();
-        }
-
-        let mut md = String::new();
-
-        md.push('|');
-        for cell in &cells[0] {
-            md.push(' ');
-            md.push_str(cell);
-            md.push_str(" |");
-        }
-        md.push('\n');
-
-        md.push('|');
-        for _ in &cells[0] {
-            md.push_str(" --- |");
-        }
-        md.push('\n');
-
-        for row in &cells[1..] {
-            md.push('|');
-            for cell in row {
-                md.push(' ');
-                md.push_str(cell);
-                md.push_str(" |");
-            }
-            md.push('\n');
-        }
-
-        md
-    }
-
-    /// Extract first heading as title if not in frontmatter.
-    fn extract_title_from_content(content: &str) -> Option<String> {
-        for line in content.lines() {
-            if let Some(heading) = line.strip_prefix("# ") {
-                return Some(heading.trim().to_string());
-            }
-        }
-        None
-    }
+    // cells_to_markdown and extract_title_from_content moved to shared frontmatter_utils module
 }
 
 #[cfg(feature = "office")]
@@ -336,16 +200,16 @@ impl DocumentExtractor for MarkdownExtractor {
     ) -> Result<ExtractionResult> {
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining_content) = Self::extract_frontmatter(&text);
+        let (yaml, remaining_content) = extract_frontmatter(&text);
 
         let mut metadata = if let Some(ref yaml_value) = yaml {
-            Self::extract_metadata_from_yaml(yaml_value)
+            extract_metadata_from_yaml(yaml_value)
         } else {
             Metadata::default()
         };
 
         if !metadata.additional.contains_key("title")
-            && let Some(title) = Self::extract_title_from_content(&remaining_content)
+            && let Some(title) = extract_title_from_content(&remaining_content)
         {
             metadata.additional.insert("title".to_string(), title.into());
         }
@@ -365,6 +229,7 @@ impl DocumentExtractor for MarkdownExtractor {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         })
@@ -381,7 +246,9 @@ impl DocumentExtractor for MarkdownExtractor {
 
 #[cfg(all(test, feature = "office"))]
 mod tests {
+    use super::super::frontmatter_utils::{cells_to_markdown, extract_frontmatter, extract_metadata_from_yaml};
     use super::*;
+    use serde_yaml_ng::Value as YamlValue;
 
     #[test]
     fn test_can_extract_markdown_mime_types() {
@@ -400,7 +267,7 @@ mod tests {
             b"# Header\n\nThis is a paragraph with **bold** and *italic* text.\n\n## Subheading\n\nMore content here.";
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, remaining) = extract_frontmatter(&text);
         assert!(yaml.is_none());
         assert!(!remaining.is_empty());
 
@@ -420,19 +287,25 @@ mod tests {
 
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml_opt, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml_opt, remaining) = extract_frontmatter(&text);
         assert!(yaml_opt.is_some());
         assert!(remaining.contains("# Content"));
 
         let yaml = yaml_opt.expect("Should extract YAML frontmatter");
-        let metadata = MarkdownExtractor::extract_metadata_from_yaml(&yaml);
+        let metadata = extract_metadata_from_yaml(&yaml);
 
         assert_eq!(
-            metadata.additional.get("title").and_then(|v| v.as_str()),
+            metadata
+                .additional
+                .get("title")
+                .and_then(|v: &serde_json::Value| v.as_str()),
             Some("My Document")
         );
         assert_eq!(
-            metadata.additional.get("author").and_then(|v| v.as_str()),
+            metadata
+                .additional
+                .get("author")
+                .and_then(|v: &serde_json::Value| v.as_str()),
             Some("John Doe")
         );
         assert_eq!(metadata.created_at, Some("2024-01-15".to_string()));
@@ -451,13 +324,16 @@ mod tests {
         let content = b"---\ntitle: Document\nkeywords:\n  - rust\n  - markdown\n  - parsing\n---\n\nContent";
 
         let text = String::from_utf8_lossy(content).into_owned();
-        let (yaml_opt, _remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml_opt, _remaining) = extract_frontmatter(&text);
 
         assert!(yaml_opt.is_some());
         let yaml = yaml_opt.expect("Should extract YAML frontmatter");
-        let metadata = MarkdownExtractor::extract_metadata_from_yaml(&yaml);
+        let metadata = extract_metadata_from_yaml(&yaml);
 
-        let keywords = metadata.additional.get("keywords").and_then(|v| v.as_str());
+        let keywords = metadata
+            .additional
+            .get("keywords")
+            .and_then(|v: &serde_json::Value| v.as_str());
         assert!(keywords.is_some());
         let keywords_str = keywords.expect("Should extract keywords from metadata");
         assert!(keywords_str.contains("rust"));
@@ -486,11 +362,11 @@ mod tests {
         let content = b"# Main Title\n\nSome content\n\nMore text";
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, remaining) = extract_frontmatter(&text);
         assert!(yaml.is_none());
         assert_eq!(remaining, text);
 
-        let title = MarkdownExtractor::extract_title_from_content(&remaining);
+        let title = extract_title_from_content(&remaining);
         assert_eq!(title, Some("Main Title".to_string()));
     }
 
@@ -499,7 +375,7 @@ mod tests {
         let content = b"";
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, remaining) = extract_frontmatter(&text);
         assert!(yaml.is_none());
         assert!(remaining.is_empty());
 
@@ -514,7 +390,7 @@ mod tests {
         let content = b"   \n\n  \n";
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, remaining) = extract_frontmatter(&text);
         assert!(yaml.is_none());
 
         let parser = Parser::new_ext(&remaining, Options::ENABLE_TABLES);
@@ -529,7 +405,7 @@ mod tests {
 
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, remaining) = extract_frontmatter(&text);
         assert!(yaml.is_none());
 
         let parser = Parser::new_ext(&remaining, Options::ENABLE_TABLES);
@@ -581,7 +457,7 @@ mod tests {
             vec!["Data 3".to_string(), "Data 4".to_string()],
         ];
 
-        let markdown = MarkdownExtractor::cells_to_markdown(&cells);
+        let markdown = cells_to_markdown(&cells);
         assert!(markdown.contains("Header 1"));
         assert!(markdown.contains("Data 1"));
         assert!(markdown.contains("---"));
@@ -620,7 +496,7 @@ mod tests {
         let content = b"---\nthis: is: invalid: yaml:\n---\n\nContent here";
         let text = String::from_utf8_lossy(content).into_owned();
 
-        let (yaml, _remaining) = MarkdownExtractor::extract_frontmatter(&text);
+        let (yaml, _remaining) = extract_frontmatter(&text);
         let _ = yaml;
     }
 
@@ -651,7 +527,7 @@ nested:
 "#;
 
         let yaml: YamlValue = serde_yaml_ng::from_str(yaml_str).expect("Valid YAML");
-        let metadata = MarkdownExtractor::extract_metadata_from_yaml(&yaml);
+        let metadata = extract_metadata_from_yaml(&yaml);
 
         assert_eq!(metadata.created_at, Some("2024-01-15".to_string()));
         assert_eq!(

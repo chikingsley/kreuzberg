@@ -48,6 +48,7 @@
 //! #             chunks: None,
 //! #             images: None,
 //! #             pages: None,
+//! #             djot_content: None,
 //! #         })
 //! #     }
 //! #     async fn extract_file(&self, _: &std::path::Path, _: &str, _: &kreuzberg::ExtractionConfig)
@@ -61,6 +62,7 @@
 //! #             chunks: None,
 //! #             images: None,
 //! #             pages: None,
+//! #             djot_content: None,
 //! #         })
 //! #     }
 //! #     fn supported_mime_types(&self) -> &[&str] { &[] }

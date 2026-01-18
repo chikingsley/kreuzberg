@@ -304,6 +304,7 @@ impl DocumentExtractor for OrgModeExtractor {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             pages: None,
             elements: None,
         })

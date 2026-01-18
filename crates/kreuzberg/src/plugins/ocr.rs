@@ -67,6 +67,7 @@ pub enum OcrBackendType {
 ///             detected_languages: None,
 ///             chunks: None,
 ///             images: None,
+///             djot_content: None,
 ///             pages: None,
 ///         })
 ///     }
@@ -146,6 +147,7 @@ pub trait OcrBackend: Plugin {
     ///         detected_languages: None,
     ///         chunks: None,
     ///         images: None,
+    ///         djot_content: None,
     ///         pages: None,
     ///     })
     /// }
@@ -317,6 +319,7 @@ pub trait OcrBackend: Plugin {
 ///             detected_languages: None,
 ///             chunks: None,
 ///             images: None,
+///             djot_content: None,
 ///             pages: None,
 ///         })
 ///     }
@@ -478,6 +481,7 @@ mod tests {
                 detected_languages: None,
                 chunks: None,
                 images: None,
+                djot_content: None,
                 pages: None,
                 elements: None,
             })

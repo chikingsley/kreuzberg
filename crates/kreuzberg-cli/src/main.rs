@@ -48,8 +48,8 @@ use clap::{Parser, Subcommand};
 #[cfg(feature = "api")]
 use kreuzberg::ServerConfig;
 use kreuzberg::{
-    ChunkingConfig, ExtractionConfig, LanguageDetectionConfig, OcrConfig, batch_extract_file_sync, detect_mime_type,
-    extract_file_sync,
+    ChunkingConfig, ExtractionConfig, LanguageDetectionConfig, OcrConfig, OutputFormat as ContentOutputFormat,
+    batch_extract_file_sync, detect_mime_type, extract_file_sync,
 };
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -114,6 +114,13 @@ enum Commands {
         /// Enable language detection (overrides config file)
         #[arg(long)]
         detect_language: Option<bool>,
+
+        /// Content output format (plain, markdown, djot, html)
+        ///
+        /// Controls the format of the extracted content.
+        /// Note: This is different from --format which controls CLI output (text/json).
+        #[arg(long, value_enum)]
+        content_format: Option<ContentOutputFormatArg>,
     },
 
     /// Batch extract from multiple documents
@@ -144,6 +151,13 @@ enum Commands {
         /// Enable quality processing (overrides config file)
         #[arg(long)]
         quality: Option<bool>,
+
+        /// Content output format (plain, markdown, djot, html)
+        ///
+        /// Controls the format of the extracted content.
+        /// Note: This is different from --format which controls CLI output (text/json).
+        #[arg(long, value_enum)]
+        content_format: Option<ContentOutputFormatArg>,
     },
 
     /// Detect MIME type of a file
@@ -253,6 +267,32 @@ impl std::str::FromStr for OutputFormat {
             "text" => Ok(OutputFormat::Text),
             "json" => Ok(OutputFormat::Json),
             _ => Err(format!("Invalid format: {}. Use 'text' or 'json'", s)),
+        }
+    }
+}
+
+/// Content output format for extraction results.
+///
+/// Controls the format of the extracted content (not the CLI output format).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+enum ContentOutputFormatArg {
+    /// Plain text (default)
+    Plain,
+    /// Markdown format
+    Markdown,
+    /// Djot markup format
+    Djot,
+    /// HTML format
+    Html,
+}
+
+impl From<ContentOutputFormatArg> for ContentOutputFormat {
+    fn from(arg: ContentOutputFormatArg) -> Self {
+        match arg {
+            ContentOutputFormatArg::Plain => ContentOutputFormat::Plain,
+            ContentOutputFormatArg::Markdown => ContentOutputFormat::Markdown,
+            ContentOutputFormatArg::Djot => ContentOutputFormat::Djot,
+            ContentOutputFormatArg::Html => ContentOutputFormat::Html,
         }
     }
 }
@@ -368,6 +408,7 @@ fn main() -> Result<()> {
             chunk_overlap,
             quality,
             detect_language,
+            content_format,
         } => {
             validate_file_exists(&path)?;
             validate_chunk_params(chunk_size, chunk_overlap)?;
@@ -426,6 +467,9 @@ fn main() -> Result<()> {
                     config.language_detection = None;
                 }
             }
+            if let Some(content_fmt) = content_format {
+                config.output_format = content_fmt.into();
+            }
 
             let path_str = path.to_string_lossy().to_string();
 
@@ -468,6 +512,7 @@ fn main() -> Result<()> {
             force_ocr,
             no_cache,
             quality,
+            content_format,
         } => {
             validate_batch_paths(&paths)?;
 
@@ -492,6 +537,9 @@ fn main() -> Result<()> {
             }
             if let Some(quality_flag) = quality {
                 config.enable_quality_processing = quality_flag;
+            }
+            if let Some(content_fmt) = content_format {
+                config.output_format = content_fmt.into();
             }
 
             let path_strs: Vec<String> = paths.iter().map(|p| p.to_string_lossy().to_string()).collect();
