@@ -656,17 +656,17 @@ jobs:
           cd packages/ruby
           echo "lib directory contents:"
           if [ -d "lib" ]; then
-            find lib -type f | head -20
+            find lib -type f | head -20 || true
           else
             echo "ERROR: lib directory not found"
           fi
           echo ""
           echo "=== Looking for compiled extension ==="
-          find . \( -name "*.so" -o -name "*.dll" -o -name "*.dylib" \) 2>/dev/null | head -20
+          find . \( -name "*.so" -o -name "*.dll" -o -name "*.dylib" \) 2>/dev/null | head -20 || true
           echo ""
           if [ -f "mkmf.log" ]; then
             echo "=== mkmf.log (last 100 lines) ==="
-            tail -100 mkmf.log
+            tail -100 mkmf.log || true
           fi
 
       - name: Build kreuzberg CLI binary
