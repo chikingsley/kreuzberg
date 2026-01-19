@@ -3,9 +3,9 @@
 //! This module provides shared utilities used across extraction modules.
 
 use crate::plugins::DocumentExtractor;
-use crate::utils::{PoolSizeHint, estimate_pool_size};
 #[cfg(feature = "office")]
 use crate::utils::intern_mime_type;
+use crate::utils::{PoolSizeHint, estimate_pool_size};
 use crate::{KreuzbergError, Result};
 use std::sync::Arc;
 

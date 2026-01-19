@@ -2,8 +2,8 @@
 //!
 //! This module provides functions for managing the global extractor registry.
 
-use std::sync::Arc;
 use super::r#trait::DocumentExtractor;
+use std::sync::Arc;
 
 /// Register a document extractor with the global registry.
 ///

@@ -1,5 +1,5 @@
-import type { ExtractionResult, PostProcessorProtocol, Table, Chunk, ExtractedImage } from "../types.js";
 import { getBinding } from "../core/binding.js";
+import type { Chunk, ExtractedImage, ExtractionResult, PostProcessorProtocol, Table } from "../types.js";
 
 /**
  * Register a custom post-processor.

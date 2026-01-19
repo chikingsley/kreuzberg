@@ -49,9 +49,9 @@ pub(crate) const TEXT_EXTENSIONS: &[&str] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Cursor, Write};
     use ::tar::Builder as TarBuilder;
     use ::zip::write::{FileOptions, ZipWriter};
+    use std::io::{Cursor, Write};
 
     #[test]
     fn test_extract_zip_metadata() {

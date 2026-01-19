@@ -1,12 +1,12 @@
 //! Element extraction (title, abstract, body, references, tables).
 
+use super::metadata::JatsMetadataExtracted;
+use super::parser::extract_text_content;
 use crate::Result;
 use crate::extraction::cells_to_markdown;
 use crate::types::Table;
 use quick_xml::Reader;
 use quick_xml::events::Event;
-use super::metadata::JatsMetadataExtracted;
-use super::parser::extract_text_content;
 
 /// Extract all content in a single optimized pass.
 /// Combines metadata extraction, content parsing, and table extraction into one pass.

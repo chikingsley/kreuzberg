@@ -13,11 +13,11 @@
  */
 
 import { readFileSync } from "node:fs";
-import type { ExtractionConfig, ExtractionResult } from "../types.js";
-import { getBinding } from "../core/binding.js";
-import { convertResult } from "../core/type-converters.js";
-import { normalizeExtractionConfig } from "../core/config-normalizer.js";
 import { assertUint8Array } from "../core/assertions.js";
+import { getBinding } from "../core/binding.js";
+import { normalizeExtractionConfig } from "../core/config-normalizer.js";
+import { convertResult } from "../core/type-converters.js";
+import type { ExtractionConfig, ExtractionResult } from "../types.js";
 
 /**
  * Extract content from a single file (synchronous).

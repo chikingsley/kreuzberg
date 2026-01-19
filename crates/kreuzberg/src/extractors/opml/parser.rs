@@ -20,9 +20,7 @@ use roxmltree::Node;
 /// - Extracted content as a String (outline hierarchy with indentation)
 /// - Metadata HashMap with key-value pairs from the head section
 #[cfg(feature = "office")]
-pub(crate) fn extract_content_and_metadata(
-    content: &[u8],
-) -> Result<(String, HashMap<String, serde_json::Value>)> {
+pub(crate) fn extract_content_and_metadata(content: &[u8]) -> Result<(String, HashMap<String, serde_json::Value>)> {
     let doc = roxmltree::Document::parse(
         std::str::from_utf8(content)
             .map_err(|e| crate::KreuzbergError::Other(format!("Invalid UTF-8 in OPML: {}", e)))?,
@@ -236,8 +234,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle special characters");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle special characters");
 
         assert!(
             content.contains("Business") && content.contains("Startups"),
@@ -311,8 +308,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle empty outline elements");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle empty outline elements");
 
         assert!(content.contains("Valid Item"), "Should extract valid items");
         assert!(content.contains("Another Valid"), "Should extract nested valid items");
@@ -343,8 +339,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) =
-            extract_content_and_metadata(opml).expect("Should handle deeply nested structures");
+        let (content, _) = extract_content_and_metadata(opml).expect("Should handle deeply nested structures");
 
         assert!(content.contains("Level 1"), "Should extract top-level item");
         assert!(content.contains("Deep Item"), "Should extract deeply nested item");
@@ -365,8 +360,8 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) = extract_content_and_metadata(opml)
-            .expect("Should handle outline with missing text attribute");
+        let (content, metadata) =
+            extract_content_and_metadata(opml).expect("Should handle outline with missing text attribute");
 
         assert!(content.contains("Valid Item"), "Should extract item with text");
         assert!(!content.contains("https://"), "Should not extract URLs");
@@ -392,8 +387,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, _) =
-            extract_content_and_metadata(opml).expect("Should handle whitespace-only text");
+        let (content, _) = extract_content_and_metadata(opml).expect("Should handle whitespace-only text");
 
         assert!(
             content.contains("Real Content"),
@@ -419,8 +413,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle HTML entities");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle HTML entities");
 
         assert!(
             content.contains("News") && content.contains("Updates"),
@@ -448,8 +441,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle single outline");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle single outline");
 
         assert!(content.contains("Only Item"), "Should extract single item");
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("Single"));
@@ -464,8 +456,7 @@ mod tests {
   </head>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle OPML without body");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle OPML without body");
 
         assert_eq!(metadata.get("title").and_then(|v| v.as_str()), Some("No Body"));
         assert!(content.is_empty() || content.trim() == "No Body");
@@ -480,8 +471,7 @@ mod tests {
   </body>
 </opml>"#;
 
-        let (content, metadata) =
-            extract_content_and_metadata(opml).expect("Should handle OPML without head");
+        let (content, metadata) = extract_content_and_metadata(opml).expect("Should handle OPML without head");
 
         assert!(content.contains("Item"), "Should extract body content");
         assert!(metadata.is_empty(), "Should have no metadata without head");

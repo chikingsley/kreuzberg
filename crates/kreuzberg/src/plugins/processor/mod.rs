@@ -2,8 +2,8 @@
 //!
 //! This module provides the trait and registry for implementing custom post-processors.
 
-mod r#trait;
 mod registry;
+mod r#trait;
 
 // Re-export trait and enum for backward compatibility
 pub use r#trait::{PostProcessor, ProcessingStage};

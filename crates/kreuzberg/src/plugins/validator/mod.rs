@@ -2,25 +2,20 @@
 //!
 //! This module provides the trait and registry for implementing custom validators.
 
-mod r#trait;
 mod registry;
+mod r#trait;
 
 // Re-export trait for backward compatibility
 pub use r#trait::Validator;
 
 // Re-export registry functions for backward compatibility
-pub use registry::{
-    register_validator,
-    unregister_validator,
-    list_validators,
-    clear_validators,
-};
+pub use registry::{clear_validators, list_validators, register_validator, unregister_validator};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Result;
     use crate::KreuzbergError;
+    use crate::Result;
     use crate::core::config::ExtractionConfig;
     use crate::plugins::Plugin;
     use crate::types::ExtractionResult;

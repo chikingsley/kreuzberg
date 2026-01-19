@@ -94,7 +94,9 @@ impl WordFilter {
                     word.chars().filter(|c| c.is_alphabetic()).collect::<String>()
                 };
 
-                if clean_word.is_empty() || clean_word.chars().count() >= 3 || TextAnalyzer::has_important_characteristics(word)
+                if clean_word.is_empty()
+                    || clean_word.chars().count() >= 3
+                    || TextAnalyzer::has_important_characteristics(word)
                 {
                     fallback_words.push(word.clone());
                 }

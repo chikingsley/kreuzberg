@@ -9,13 +9,12 @@ mod utilities;
 
 // Re-export all public types and functions for backward compatibility
 pub use cleanup::{
-    batch_cleanup_caches, clear_cache_directory, cleanup_cache, get_cache_metadata, is_cache_valid,
-    smart_cleanup_cache,
+    batch_cleanup_caches, cleanup_cache, clear_cache_directory, get_cache_metadata, is_cache_valid, smart_cleanup_cache,
 };
 pub use core::{CacheStats, GenericCache};
 pub use utilities::{
-    fast_hash, filter_old_cache_entries, generate_cache_key, get_available_disk_space,
-    sort_cache_by_access_time, validate_cache_key,
+    fast_hash, filter_old_cache_entries, generate_cache_key, get_available_disk_space, sort_cache_by_access_time,
+    validate_cache_key,
 };
 
 #[cfg(test)]

@@ -2,8 +2,8 @@
 //!
 //! This module provides functions for managing the global validator registry.
 
-use std::sync::Arc;
 use super::r#trait::Validator;
+use std::sync::Arc;
 
 /// Register a validator with the global registry.
 ///
@@ -170,8 +170,8 @@ pub fn clear_validators() -> crate::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Result;
     use crate::KreuzbergError;
+    use crate::Result;
     use crate::core::config::ExtractionConfig;
     use crate::plugins::Plugin;
     use crate::types::ExtractionResult;

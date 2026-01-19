@@ -104,6 +104,6 @@ export function getDocumentExtractor(name: string): unknown {
  */
 export function registerDocumentExtractor(_name: string): void {
 	throw new Error(
-		"registerDocumentExtractor is not available. Document extractors must be registered at the Rust level."
+		"registerDocumentExtractor is not available. Document extractors must be registered at the Rust level.",
 	);
 }

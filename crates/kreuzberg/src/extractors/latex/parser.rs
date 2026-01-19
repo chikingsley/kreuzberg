@@ -3,11 +3,11 @@
 //! This module contains the main LatexParser struct and the core parsing logic
 //! that orchestrates document structure extraction.
 
-use crate::types::{Metadata, Table};
-use super::metadata::extract_metadata_from_line;
 use super::commands::process_line;
 use super::environments::{process_list, process_table, process_table_with_caption};
-use super::utilities::{extract_env_name, collect_environment, extract_braced};
+use super::metadata::extract_metadata_from_line;
+use super::utilities::{collect_environment, extract_braced, extract_env_name};
+use crate::types::{Metadata, Table};
 
 /// LaTeX parser state machine.
 ///

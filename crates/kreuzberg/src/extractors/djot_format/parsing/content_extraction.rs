@@ -9,7 +9,7 @@ use super::event_handlers::{
 use super::inline_handlers::{
     finalize_inline_element, handle_image_end, handle_inline_end, handle_inline_start, handle_link_end, handle_math_end,
 };
-use super::state::{pop_block, ExtractionState};
+use super::state::{ExtractionState, pop_block};
 use super::text_extraction::extract_text_from_events;
 use crate::extractors::djot_format::attributes::parse_jotdown_attributes;
 use crate::types::{Attributes, DjotContent, DjotImage, DjotLink, FormattedBlock};
@@ -49,10 +49,25 @@ pub fn extract_complete_djot_content(
     for event in events {
         match event {
             Event::Start(container, attrs) => {
-                handle_start_event(&mut state, container, attrs, &mut blocks, &mut images, &mut links, &mut footnotes);
+                handle_start_event(
+                    &mut state,
+                    container,
+                    attrs,
+                    &mut blocks,
+                    &mut images,
+                    &mut links,
+                    &mut footnotes,
+                );
             }
             Event::End(container) => {
-                handle_end_event(&mut state, container, &mut blocks, &mut images, &mut links, &mut footnotes);
+                handle_end_event(
+                    &mut state,
+                    container,
+                    &mut blocks,
+                    &mut images,
+                    &mut links,
+                    &mut footnotes,
+                );
             }
             Event::Str(s) => {
                 if state.in_code_block || state.in_raw_block {

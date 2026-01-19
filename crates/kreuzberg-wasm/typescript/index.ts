@@ -104,17 +104,16 @@ export type * from "./types.js";
 // Initialization Exports
 // ============================================================================
 
+export { initializePdfiumAsync } from "./initialization/pdfium-loader.js";
 export {
+	getInitializationError,
+	getVersion,
+	getWasmModule,
 	initWasm,
 	isInitialized,
-	getVersion,
-	getInitializationError,
-	getWasmModule,
-	type WasmModule,
 	type ModuleInfo,
+	type WasmModule,
 } from "./initialization/wasm-loader.js";
-
-export { initializePdfiumAsync } from "./initialization/pdfium-loader.js";
 
 // ============================================================================
 // Extraction Exports - Bytes
@@ -181,11 +180,11 @@ export {
 	getValidator,
 	listPostProcessors,
 	listValidators,
+	type PostProcessor,
 	registerPostProcessor,
 	registerValidator,
 	unregisterPostProcessor,
 	unregisterValidator,
-	type PostProcessor,
 	type Validator,
 } from "./plugin-registry.js";
 

@@ -214,8 +214,8 @@ impl FilterPipeline {
 
 #[cfg(all(test, feature = "stopwords"))]
 mod tests {
-    use super::*;
     use super::general::split_word_boundaries;
+    use super::*;
 
     #[test]
     fn test_stopword_removal() {

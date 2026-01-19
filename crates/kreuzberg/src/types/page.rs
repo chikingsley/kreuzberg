@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 // Import serde helper and types from sibling modules
-use super::serde_helpers::serde_vec_arc;
 use super::extraction::ExtractedImage;
+use super::serde_helpers::serde_vec_arc;
 use super::tables::Table;
 
 /// Unified page structure for documents.

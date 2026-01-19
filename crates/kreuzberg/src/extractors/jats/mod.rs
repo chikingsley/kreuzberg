@@ -13,9 +13,9 @@
 //! - Citations and references
 //! - Supplementary material information
 
-mod parser;
-mod metadata;
 mod elements;
+mod metadata;
+mod parser;
 
 use crate::Result;
 use crate::core::config::ExtractionConfig;

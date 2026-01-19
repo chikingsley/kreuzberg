@@ -2,19 +2,14 @@
 //!
 //! This module provides the trait and registry for implementing custom document extractors.
 
-mod r#trait;
 mod registry;
+mod r#trait;
 
 // Re-export trait for backward compatibility
 pub use r#trait::DocumentExtractor;
 
 // Re-export registry functions for backward compatibility
-pub use registry::{
-    register_extractor,
-    unregister_extractor,
-    list_extractors,
-    clear_extractors,
-};
+pub use registry::{clear_extractors, list_extractors, register_extractor, unregister_extractor};
 
 #[cfg(test)]
 mod tests {

@@ -95,46 +95,43 @@ export type {
 // Errors and Error Handling
 // ============================================================================
 
-export { ErrorCode, KreuzbergError } from "./errors.js";
-
 export {
+	classifyError,
+	getErrorCodeDescription,
+	getErrorCodeName,
 	getLastErrorCode,
 	getLastPanicContext,
-	getErrorCodeName,
-	getErrorCodeDescription,
-	classifyError,
 } from "./errors/diagnostics.js";
-
 export type { PanicContext } from "./errors.js";
+export { ErrorCode, KreuzbergError } from "./errors.js";
 
 // ============================================================================
 // Core Extraction APIs
 // ============================================================================
 
 export {
-	extractFileSync,
-	extractFile,
-	extractBytesSync,
-	extractBytes,
-} from "./extraction/single.js";
-
-export {
-	batchExtractFilesSync,
-	batchExtractFiles,
-	batchExtractBytesSync,
 	batchExtractBytes,
+	batchExtractBytesSync,
+	batchExtractFiles,
+	batchExtractFilesSync,
 } from "./extraction/batch.js";
+export {
+	extractBytes,
+	extractBytesSync,
+	extractFile,
+	extractFileSync,
+} from "./extraction/single.js";
 
 // ============================================================================
 // Worker Pool APIs
 // ============================================================================
 
 export {
-	createWorkerPool,
-	getWorkerPoolStats,
-	extractFileInWorker,
 	batchExtractFilesInWorker,
 	closeWorkerPool,
+	createWorkerPool,
+	extractFileInWorker,
+	getWorkerPoolStats,
 } from "./extraction/worker-pool.js";
 
 // ============================================================================
@@ -142,10 +139,10 @@ export {
 // ============================================================================
 
 export {
-	registerPostProcessor,
-	unregisterPostProcessor,
 	clearPostProcessors,
 	listPostProcessors,
+	registerPostProcessor,
+	unregisterPostProcessor,
 } from "./plugins/post-processors.js";
 
 // ============================================================================
@@ -153,33 +150,32 @@ export {
 // ============================================================================
 
 export {
-	registerValidator,
-	unregisterValidator,
 	clearValidators,
 	listValidators,
+	registerValidator,
+	unregisterValidator,
 } from "./plugins/validators.js";
 
 // ============================================================================
 // Plugin System: OCR Backends
 // ============================================================================
 
+export { GutenOcrBackend } from "./ocr/guten-ocr.js";
 export {
-	registerOcrBackend,
-	unregisterOcrBackend,
 	clearOcrBackends,
 	listOcrBackends,
+	registerOcrBackend,
+	unregisterOcrBackend,
 } from "./plugins/ocr-backends.js";
-
-export { GutenOcrBackend } from "./ocr/guten-ocr.js";
 
 // ============================================================================
 // Registry: Document Extractors
 // ============================================================================
 
 export {
+	clearDocumentExtractors,
 	listDocumentExtractors,
 	unregisterDocumentExtractor,
-	clearDocumentExtractors,
 } from "./registry/document-extractors.js";
 
 // ============================================================================
@@ -195,20 +191,19 @@ export * from "./config/loader.js";
 export {
 	detectMimeType,
 	detectMimeTypeFromPath,
-	validateMimeType,
 	getExtensionsForMime,
+	validateMimeType,
 } from "./mime/utilities.js";
 
 // ============================================================================
 // Embeddings
 // ============================================================================
 
-export {
-	listEmbeddingPresets,
-	getEmbeddingPreset,
-} from "./embeddings/presets.js";
-
 export type { EmbeddingPreset } from "./embeddings/presets.js";
+export {
+	getEmbeddingPreset,
+	listEmbeddingPresets,
+} from "./embeddings/presets.js";
 
 // ============================================================================
 // Version

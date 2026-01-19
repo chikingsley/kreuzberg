@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // Import Metadata and Table from parent module
-use super::metadata::Metadata;
 use super::Table;
+use super::metadata::Metadata;
 
 /// Comprehensive Djot document structure with semantic preservation.
 ///

@@ -5,7 +5,7 @@
  * Includes byte-based, file-based, and batch processing capabilities.
  */
 
-export { extractBytes, extractBytesSync } from "./bytes.js";
+export type { ExtractionConfig, ExtractionResult } from "../types.js";
 export { batchExtractBytes, batchExtractBytesSync, batchExtractFiles } from "./batch.js";
+export { extractBytes, extractBytesSync } from "./bytes.js";
 export { extractFile, extractFromFile } from "./files.js";
-export type { ExtractionResult, ExtractionConfig } from "../types.js";

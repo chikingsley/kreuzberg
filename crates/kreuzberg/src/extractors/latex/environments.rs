@@ -3,18 +3,14 @@
 //! This module handles LaTeX environments like itemize, enumerate, description,
 //! tabular, and table environments.
 
-use crate::types::Table;
 use super::commands::process_line;
-use super::utilities::{extract_env_name, collect_environment, extract_braced, clean_text};
+use super::utilities::{clean_text, collect_environment, extract_braced, extract_env_name};
+use crate::types::Table;
 
 /// Processes a list environment (itemize, enumerate, or description).
 ///
 /// Converts LaTeX lists into markdown-style lists with proper nesting.
-pub fn process_list(
-    content: &str,
-    list_type: &str,
-    output: &mut String,
-) {
+pub fn process_list(content: &str, list_type: &str, output: &mut String) {
     let lines: Vec<&str> = content.lines().collect();
     let mut item_num = 1;
     let mut i = 0;
@@ -24,7 +20,8 @@ pub fn process_list(
         let trimmed = line.trim();
 
         // Handle nested lists
-        if trimmed.contains("\\begin{") && let Some(env_name) = extract_env_name(trimmed)
+        if trimmed.contains("\\begin{")
+            && let Some(env_name) = extract_env_name(trimmed)
             && (env_name == "itemize" || env_name == "enumerate" || env_name == "description")
         {
             let (nested_content, new_i) = collect_environment(&lines, i, &env_name);
@@ -43,11 +40,15 @@ pub fn process_list(
         }
 
         // Handle \item
-        if trimmed.starts_with("\\item") && let Some(pos) = trimmed.find("\\item") {
+        if trimmed.starts_with("\\item")
+            && let Some(pos) = trimmed.find("\\item")
+        {
             let after = trimmed[pos + 5..].trim();
 
             // Handle \item[label] for description lists
-            if after.starts_with('[') && let Some(bracket_end) = after.find(']') {
+            if after.starts_with('[')
+                && let Some(bracket_end) = after.find(']')
+            {
                 let label = after[1..bracket_end].to_string();
                 let text = after[bracket_end + 1..].trim().to_string();
                 if list_type == "description" {
@@ -136,19 +137,20 @@ pub fn process_table(content: &str, output: &mut String, tables: &mut Vec<Table>
 /// Processes a table environment with caption.
 ///
 /// Extracts the caption and processes the embedded tabular environment.
-pub fn process_table_with_caption(
-    content: &str,
-    output: &mut String,
-    tables: &mut Vec<Table>,
-) {
+pub fn process_table_with_caption(content: &str, output: &mut String, tables: &mut Vec<Table>) {
     // Extract and add caption if present
-    if content.contains("\\caption{") && let Some(caption) = extract_braced(content, "caption") {
+    if content.contains("\\caption{")
+        && let Some(caption) = extract_braced(content, "caption")
+    {
         output.push_str(&caption);
         output.push('\n');
     }
 
     // Process the tabular environment inside
-    if content.contains("\\begin{tabular}") && let Some(start) = content.find("\\begin{tabular}") && let Some(end) = content.find("\\end{tabular}") {
+    if content.contains("\\begin{tabular}")
+        && let Some(start) = content.find("\\begin{tabular}")
+        && let Some(end) = content.find("\\end{tabular}")
+    {
         let tabular_content = &content[start..end + 13];
         process_table(tabular_content, output, tables);
     }

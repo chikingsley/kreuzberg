@@ -1,6 +1,6 @@
 //! Event handlers for special Djot elements.
 
-use super::state::{pop_block, ExtractionState};
+use super::state::{ExtractionState, pop_block};
 use crate::extractors::djot_format::attributes::parse_jotdown_attributes;
 use crate::types::{BlockType, FormattedBlock, InlineElement, InlineType};
 use std::collections::HashMap;
@@ -33,7 +33,11 @@ pub(super) fn handle_symbol(state: &mut ExtractionState, sym: &str) {
 }
 
 /// Handle thematic break event.
-pub(super) fn handle_thematic_break(state: &mut ExtractionState, attrs: &jotdown::Attributes, blocks: &mut Vec<FormattedBlock>) {
+pub(super) fn handle_thematic_break(
+    state: &mut ExtractionState,
+    attrs: &jotdown::Attributes,
+    blocks: &mut Vec<FormattedBlock>,
+) {
     state.flush_text();
 
     let parsed_attrs = if attrs.is_empty() {

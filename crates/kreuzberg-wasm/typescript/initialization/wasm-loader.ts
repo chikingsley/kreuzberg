@@ -10,16 +10,16 @@ import { wrapWasmError } from "../adapters/wasm-adapter.js";
 import { hasWasm, isBrowser } from "../runtime.js";
 import { initializePdfiumAsync } from "./pdfium-loader.js";
 import {
-	type WasmModule,
-	type ModuleInfo,
-	getWasmModule,
-	setWasmModule,
-	isInitialized,
-	setInitialized,
 	getInitializationError,
-	setInitializationError,
 	getInitializationPromise,
+	getWasmModule,
+	isInitialized,
+	type ModuleInfo,
+	setInitializationError,
 	setInitializationPromise,
+	setInitialized,
+	setWasmModule,
+	type WasmModule,
 } from "./state.js";
 
 export type { WasmModule, ModuleInfo };

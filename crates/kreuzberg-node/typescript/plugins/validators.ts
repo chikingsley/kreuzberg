@@ -1,5 +1,5 @@
-import type { ExtractionResult, ValidatorProtocol } from "../types.js";
 import { getBinding } from "../core/binding.js";
+import type { ExtractionResult, ValidatorProtocol } from "../types.js";
 
 /**
  * Register a custom validator.

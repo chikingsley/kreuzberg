@@ -3,8 +3,8 @@
 //! This module handles extraction of document metadata like title, author, and date
 //! from LaTeX preamble commands.
 
-use crate::types::Metadata;
 use super::utilities::extract_braced;
+use crate::types::Metadata;
 
 /// Extracts metadata from a LaTeX line.
 ///
@@ -19,7 +19,9 @@ pub fn extract_metadata_from_line(line: &str, metadata: &mut Metadata) {
         if let Some(author) = extract_braced(line, "author") {
             metadata.additional.insert("author".to_string(), author.into());
         }
-    } else if line.starts_with("\\date{") && let Some(date) = extract_braced(line, "date") {
+    } else if line.starts_with("\\date{")
+        && let Some(date) = extract_braced(line, "date")
+    {
         metadata.additional.insert("date".to_string(), date.into());
     }
 }

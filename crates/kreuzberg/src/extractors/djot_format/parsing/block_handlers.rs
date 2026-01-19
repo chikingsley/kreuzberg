@@ -1,6 +1,6 @@
 //! Block-level container handlers for Djot parsing.
 
-use super::state::{push_block, ExtractionState};
+use super::state::{ExtractionState, push_block};
 use crate::types::{Attributes, BlockType, FormattedBlock};
 use jotdown::Container;
 

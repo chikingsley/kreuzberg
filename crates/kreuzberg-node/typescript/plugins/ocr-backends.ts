@@ -1,5 +1,5 @@
-import type { OcrBackendProtocol } from "../types.js";
 import { getBinding } from "../core/binding.js";
+import type { OcrBackendProtocol } from "../types.js";
 
 /**
  * Type definitions for OCR payload handling

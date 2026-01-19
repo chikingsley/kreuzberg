@@ -7,13 +7,7 @@
  * @internal This module is part of the core infrastructure layer (Layer 1).
  */
 
-import type {
-	Chunk,
-	ExtractedImage,
-	ExtractionResult,
-	PageContent,
-	Table,
-} from "../types.js";
+import type { Chunk, ExtractedImage, ExtractionResult, PageContent, Table } from "../types.js";
 
 /**
  * Parse metadata JSON string to a record object.

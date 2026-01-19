@@ -311,9 +311,7 @@ mod tests {
 
     #[test]
     fn test_should_preserve_word() {
-        let patterns = vec![
-            Regex::new(r"\b[A-Z]{2,}\b").unwrap(),
-        ];
+        let patterns = vec![Regex::new(r"\b[A-Z]{2,}\b").unwrap()];
 
         assert!(should_preserve_word("NASA", &patterns));
         assert!(should_preserve_word("HTTP", &patterns));

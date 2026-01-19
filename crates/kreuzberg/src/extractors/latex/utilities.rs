@@ -36,9 +36,7 @@ pub fn extract_braced(text: &str, command: &str) -> Option<String> {
 /// Reads braced content from a character iterator.
 ///
 /// Handles nested braces correctly and maintains proper depth tracking.
-pub fn read_braced_from_chars(
-    chars: &mut std::iter::Peekable<std::str::Chars>,
-) -> Option<String> {
+pub fn read_braced_from_chars(chars: &mut std::iter::Peekable<std::str::Chars>) -> Option<String> {
     // Skip whitespace before opening brace
     while let Some(&c) = chars.peek() {
         if c.is_whitespace() {
@@ -109,11 +107,7 @@ pub fn clean_text(text: &str) -> String {
 /// Collects content of an environment from begin to end.
 ///
 /// Returns the content and the index of the line after \end{environment}.
-pub fn collect_environment(
-    lines: &[&str],
-    start_idx: usize,
-    env_name: &str,
-) -> (String, usize) {
+pub fn collect_environment(lines: &[&str], start_idx: usize, env_name: &str) -> (String, usize) {
     let mut content = String::new();
     let mut i = start_idx + 1;
     let end_marker = format!("\\end{{{}}}", env_name);

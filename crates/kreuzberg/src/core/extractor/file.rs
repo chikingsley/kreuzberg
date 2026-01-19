@@ -6,6 +6,9 @@
 //! - File validation and reading
 //! - Extraction pipeline orchestration
 
+#[cfg(any(feature = "otel", not(feature = "office")))]
+use crate::KreuzbergError;
+use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::core::mime::{LEGACY_POWERPOINT_MIME_TYPE, LEGACY_WORD_MIME_TYPE};
 #[cfg(feature = "office")]
@@ -13,9 +16,6 @@ use crate::extraction::libreoffice::{convert_doc_to_docx, convert_ppt_to_pptx};
 use crate::types::ExtractionResult;
 #[cfg(feature = "office")]
 use crate::types::LibreOfficeConversionResult;
-#[cfg(any(feature = "otel", not(feature = "office")))]
-use crate::KreuzbergError;
-use crate::Result;
 #[cfg(feature = "office")]
 use serde_json::json;
 use std::path::Path;

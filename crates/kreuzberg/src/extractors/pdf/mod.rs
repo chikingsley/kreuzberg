@@ -20,7 +20,7 @@ use crate::pdf::error::PdfError;
 
 // Re-export for backward compatibility
 #[cfg(feature = "ocr")]
-pub use ocr::{evaluate_native_text_for_ocr, NativeTextStats, OcrFallbackDecision};
+pub use ocr::{NativeTextStats, OcrFallbackDecision, evaluate_native_text_for_ocr};
 
 use extraction::extract_all_from_document;
 #[cfg(feature = "ocr")]

@@ -13,10 +13,10 @@
 //!
 //! Requires the `office` feature.
 
-mod parser;
-mod metadata;
 mod commands;
 mod environments;
+mod metadata;
+mod parser;
 mod utilities;
 
 use crate::Result;

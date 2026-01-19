@@ -4,10 +4,10 @@
  * Provides convenient functions for enabling and setting up OCR backends.
  */
 
+import { isInitialized } from "../extraction/internal.js";
 import { registerOcrBackend } from "../ocr/registry.js";
 import { TesseractWasmBackend } from "../ocr/tesseract-wasm-backend.js";
 import { isBrowser } from "../runtime.js";
-import { isInitialized } from "../extraction/internal.js";
 
 /**
  * Enable OCR functionality with tesseract-wasm backend

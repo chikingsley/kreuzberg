@@ -1,5 +1,5 @@
-import type { ExtractionConfig as ExtractionConfigType } from "../types.js";
 import { getBinding } from "../core/binding.js";
+import type { ExtractionConfig as ExtractionConfigType } from "../types.js";
 
 /**
  * ExtractionConfig namespace with static methods for loading configuration from files.

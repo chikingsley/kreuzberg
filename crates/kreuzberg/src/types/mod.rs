@@ -1,20 +1,20 @@
 //! Core types for document extraction.
 
 // Module declarations
-pub mod metadata;
-pub mod page;
 pub mod djot;
 pub mod extraction;
 pub mod formats;
-pub mod tables;
+pub mod metadata;
+pub mod page;
 pub mod serde_helpers;
+pub mod tables;
 
 // Re-export all types for backward compatibility
-pub use metadata::*;
-pub use page::*;
 pub use djot::*;
 pub use extraction::*;
 pub use formats::*;
+pub use metadata::*;
+pub use page::*;
 pub use tables::*;
 
 #[cfg(test)]

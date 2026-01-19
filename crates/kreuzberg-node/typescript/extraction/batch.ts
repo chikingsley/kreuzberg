@@ -14,11 +14,11 @@
  * @internal This module is part of Layer 2 (extraction APIs).
  */
 
-import type { ExtractionConfig, ExtractionResult } from "../types.js";
-import { getBinding } from "../core/binding.js";
-import { convertResult } from "../core/type-converters.js";
-import { normalizeExtractionConfig } from "../core/config-normalizer.js";
 import { assertUint8ArrayList } from "../core/assertions.js";
+import { getBinding } from "../core/binding.js";
+import { normalizeExtractionConfig } from "../core/config-normalizer.js";
+import { convertResult } from "../core/type-converters.js";
+import type { ExtractionConfig, ExtractionResult } from "../types.js";
 
 /**
  * Extract content from multiple files in parallel (synchronous).
@@ -52,10 +52,7 @@ import { assertUint8ArrayList } from "../core/assertions.js";
  * });
  * ```
  */
-export function batchExtractFilesSync(
-	paths: string[],
-	config: ExtractionConfig | null = null,
-): ExtractionResult[] {
+export function batchExtractFilesSync(paths: string[], config: ExtractionConfig | null = null): ExtractionResult[] {
 	const normalizedConfig = normalizeExtractionConfig(config);
 	const rawResults = getBinding().batchExtractFilesSync(paths, normalizedConfig);
 	return rawResults.map(convertResult);

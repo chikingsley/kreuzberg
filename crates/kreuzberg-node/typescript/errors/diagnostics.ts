@@ -1,6 +1,6 @@
+import { getBinding } from "../core/binding.js";
 import type { PanicContext } from "../errors.js";
 import type { ErrorClassification } from "../types.js";
-import { getBinding } from "../core/binding.js";
 
 /**
  * Get the error code for the last FFI error.
@@ -197,7 +197,7 @@ export function getAvailableOcrBackends(): string[] {
  */
 export function checkOcrDependencies(): Record<string, unknown> {
 	throw new Error(
-		"checkOcrDependencies is not directly available. Check error codes after extraction attempts instead."
+		"checkOcrDependencies is not directly available. Check error codes after extraction attempts instead.",
 	);
 }
 

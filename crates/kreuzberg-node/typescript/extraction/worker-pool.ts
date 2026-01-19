@@ -13,10 +13,10 @@
  * @internal This module is part of Layer 2 (extraction APIs).
  */
 
-import type { ExtractionConfig, ExtractionResult, WorkerPool, WorkerPoolStats } from "../types.js";
 import { getBinding } from "../core/binding.js";
-import { convertResult } from "../core/type-converters.js";
 import { normalizeExtractionConfig } from "../core/config-normalizer.js";
+import { convertResult } from "../core/type-converters.js";
+import type { ExtractionConfig, ExtractionResult, WorkerPool, WorkerPoolStats } from "../types.js";
 
 /**
  * Create a new worker pool for concurrent extraction operations.

@@ -44,11 +44,7 @@ pub fn process_line(line: &str) -> String {
 /// Processes a single LaTeX command.
 ///
 /// Handles formatting commands (\textbf, \emph, etc.) and extracts their content.
-fn process_command(
-    cmd: &str,
-    chars: &mut std::iter::Peekable<std::str::Chars>,
-    result: &mut String,
-) {
+fn process_command(cmd: &str, chars: &mut std::iter::Peekable<std::str::Chars>, result: &mut String) {
     match cmd {
         "textbf" => {
             if let Some(content) = read_braced_from_chars(chars) {

@@ -38,7 +38,7 @@ macro_rules! embed_stopwords {
 /// Load other language stopwords into the provided map.
 pub(in crate::stopwords) fn load_stopwords(map: &mut AHashMap<String, AHashSet<String>>) {
     embed_stopwords!(
-        map, "ar", "he", "tr", "fa", "ku", "hy", "et", "eu", "br", "eo", "fi", "ga", "hu", "id", "la", "lt", "lv", "ms",
-        "tl", "el", "ha", "sw", "yo", "zu", "so", "st"
+        map, "ar", "he", "tr", "fa", "ku", "hy", "et", "eu", "br", "eo", "fi", "ga", "hu", "id", "la", "lt", "lv",
+        "ms", "tl", "el", "ha", "sw", "yo", "zu", "so", "st"
     );
 }
