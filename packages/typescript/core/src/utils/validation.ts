@@ -56,7 +56,7 @@ function createValidator<T>(rule: ValidationRule<T>): (value: T) => void {
  */
 function createMultiParamValidator<T extends any[]>(
 	rule: ValidationRule<T>,
-	paramCount: number,
+	_paramCount: number,
 ): (...args: T) => void {
 	return (...args: T): void => {
 		const validator = getNativeModule()[rule.validatorName];

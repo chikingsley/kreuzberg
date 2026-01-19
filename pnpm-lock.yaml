@@ -128,6 +128,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20260107.1
         version: 4.20260108.0
+      '@kreuzberg/test-utils':
+        specifier: workspace:*
+        version: link:../../packages/typescript/test-utils
       '@kreuzberg/wasm':
         specifier: workspace:*
         version: link:../../crates/kreuzberg-wasm
