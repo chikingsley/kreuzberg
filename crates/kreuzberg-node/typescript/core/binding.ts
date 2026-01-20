@@ -151,15 +151,14 @@ export function createNativeBindingError(error: unknown): Error {
 export function loadNativeBinding(): NativeBinding {
 	let localRequire: ((path: string) => unknown) | undefined;
 
-	// In CJS, require is already available globally
-	if (typeof require !== "undefined") {
-		localRequire = require as (path: string) => unknown;
-	} else {
-		// In ESM, we need to create require from import.meta.url
-		try {
-			localRequire = createRequire(import.meta.url);
-		} catch {
-			localRequire = undefined;
+	// In ESM bundled context, we must create require from import.meta.url first
+	// This ensures we get a proper require that can load .node files
+	try {
+		localRequire = createRequire(import.meta.url);
+	} catch {
+		// Fallback to global require if createRequire fails (e.g., in CJS)
+		if (typeof require !== "undefined") {
+			localRequire = require as (path: string) => unknown;
 		}
 	}
 
@@ -168,7 +167,7 @@ export function loadNativeBinding(): NativeBinding {
 	}
 
 	// Load from package root index.js (NAPI-RS generated loader), not compiled barrel export
-	// When bundled: From dist/index.js, ../index.js points to package root index.js
+	// When bundled: From dist/index.mjs, ../index.js points to package root index.js
 	// When unbundled: From dist/core/binding.js, ../../index.js points to package root index.js
 	// Since we're using bundle: true, use ../index.js
 	const loadedModule = localRequire("../index.js") as unknown;
