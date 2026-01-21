@@ -270,7 +270,6 @@ async fn test_pipeline_with_all_features() {
 
 #[tokio::test]
 #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
-#[ignore = "Keywords not added to metadata.additional - needs investigation"]
 async fn test_pipeline_with_keyword_extraction() {
     {
         let _guard = REGISTRY_TEST_GUARD.lock().unwrap();

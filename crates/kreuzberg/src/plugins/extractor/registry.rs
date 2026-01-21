@@ -58,6 +58,7 @@ use std::sync::Arc;
 ///             images: None,
 ///             djot_content: None,
 ///             pages: None,
+///             elements: None,
 ///         })
 ///     }
 ///

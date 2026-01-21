@@ -383,6 +383,19 @@ mod tests {
             )
             .unwrap();
 
+            // Add app.xml with slide count
+            let app_xml = format!(
+                r#"<?xml version="1.0" encoding="UTF-8"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+            xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+    <Slides>{}</Slides>
+    <Application>Microsoft Office PowerPoint</Application>
+</Properties>"#,
+                slides.len()
+            );
+            zip.start_file("docProps/app.xml", options).unwrap();
+            zip.write_all(app_xml.as_bytes()).unwrap();
+
             let _ = zip.finish().unwrap();
         }
         buffer
@@ -415,7 +428,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Slide count extraction changed - needs investigation"]
     fn test_extract_pptx_metadata() {
         let pptx_bytes = create_test_pptx_bytes(vec!["Content"]);
         let result = extract_pptx_from_bytes(&pptx_bytes, false, None).unwrap();

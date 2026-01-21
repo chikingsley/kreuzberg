@@ -263,8 +263,10 @@ impl ServerConfig {
     /// use kreuzberg::core::ServerConfig;
     ///
     /// # fn example() -> kreuzberg::Result<()> {
-    /// std::env::set_var("KREUZBERG_HOST", "0.0.0.0");
-    /// std::env::set_var("KREUZBERG_PORT", "3000");
+    /// unsafe {
+    ///     std::env::set_var("KREUZBERG_HOST", "0.0.0.0");
+    ///     std::env::set_var("KREUZBERG_PORT", "3000");
+    /// }
     ///
     /// let mut config = ServerConfig::default();
     /// config.apply_env_overrides()?;

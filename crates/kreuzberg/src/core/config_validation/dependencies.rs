@@ -29,7 +29,6 @@ use crate::{KreuzbergError, Result};
 /// assert!(validate_port(1).is_ok());
 /// assert!(validate_port(65535).is_ok());
 /// assert!(validate_port(0).is_err());
-/// assert!(validate_port(65536).is_err());
 /// ```
 pub fn validate_port(port: u16) -> Result<()> {
     if port > 0 {

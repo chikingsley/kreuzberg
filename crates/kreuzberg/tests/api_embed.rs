@@ -77,7 +77,6 @@ async fn test_embed_empty_texts() {
 
 /// Test embed endpoint with custom embedding configuration.
 #[tokio::test]
-#[ignore = "Embedding API validation changed - returns 422 instead of 200"]
 async fn test_embed_with_custom_config() {
     let app = create_router(ExtractionConfig::default());
 
@@ -85,9 +84,8 @@ async fn test_embed_with_custom_config() {
         "texts": ["Test embedding with custom config"],
         "config": {
             "model": {
-                "preset": {
-                    "name": "fast"
-                }
+                "type": "preset",
+                "name": "fast"
             },
             "batch_size": 32
         }
@@ -104,6 +102,15 @@ async fn test_embed_with_custom_config() {
         )
         .await
         .unwrap();
+
+    // Debug: print error if not OK
+    let status = response.status();
+    if status != StatusCode::OK {
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        eprintln!("Response status: {:?}", status);
+        eprintln!("Response body: {}", String::from_utf8_lossy(&body));
+        panic!("Expected OK status, got {}", status);
+    }
 
     assert_eq!(response.status(), StatusCode::OK);
 

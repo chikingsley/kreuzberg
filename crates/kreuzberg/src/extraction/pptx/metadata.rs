@@ -26,6 +26,8 @@ pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
     #[cfg(feature = "office")]
     {
         let mut metadata_map = HashMap::new();
+        let mut slide_count = 0;
+        let mut slide_names = Vec::new();
 
         if let Ok(core) = extract_core_properties(archive) {
             if let Some(title) = core.title {
@@ -65,6 +67,7 @@ pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
         if let Ok(app) = extract_pptx_app_properties(archive) {
             if let Some(slides) = app.slides {
                 metadata_map.insert("slide_count".to_string(), slides.to_string());
+                slide_count = slides.max(0) as usize;
             }
             if let Some(notes) = app.notes {
                 metadata_map.insert("notes_count".to_string(), notes.to_string());
@@ -73,6 +76,7 @@ pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
                 metadata_map.insert("hidden_slides".to_string(), hidden_slides.to_string());
             }
             if !app.slide_titles.is_empty() {
+                slide_names = app.slide_titles.clone();
                 metadata_map.insert("slide_titles".to_string(), app.slide_titles.join(", "));
             }
             if let Some(presentation_format) = app.presentation_format {
@@ -103,8 +107,8 @@ pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
         }
 
         PptxMetadata {
-            slide_count: 0,
-            slide_names: Vec::new(),
+            slide_count,
+            slide_names,
         }
     }
 
