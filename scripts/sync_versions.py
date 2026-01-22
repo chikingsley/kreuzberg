@@ -655,6 +655,76 @@ def main():
             r'(Version string in format ")([^"]+)(" or similar)',
             rf'\g<1>{version}\g<3>',
         ),
+        # C# PackageReleaseNotes
+        (
+            repo_root / "packages/csharp/Kreuzberg/Kreuzberg.csproj",
+            r'(<PackageReleaseNotes>Version )[^<]+(</PackageReleaseNotes>)',
+            rf'\g<1>{version}\g<2>',
+        ),
+        # Elixir README dependency constraint
+        (
+            repo_root / "packages/elixir/README.md",
+            r'(kreuzberg:\s*"~>\s*)\d+\.\d+(")',
+            rf'\g<1>{".".join(version.split(".")[:2])}\g<2>',
+        ),
+        # Go README badge filter and version references
+        (
+            repo_root / "packages/go/v4/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        # All README badge filters
+        (
+            repo_root / "README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "packages/python/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "packages/ruby/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "packages/php/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "packages/elixir/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "packages/csharp/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "crates/kreuzberg-node/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "crates/kreuzberg-wasm/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        (
+            repo_root / "crates/kreuzberg/README.md",
+            r'(filter=v)\d+\.\d+\.\d+',
+            rf'\g<1>{version}',
+        ),
+        # Rust crate README version banner
+        (
+            repo_root / "crates/kreuzberg/README.md",
+            r'(> \*\*🚀 Version )\d+\.\d+\.\d+[^*]*(\*\*)',
+            rf'\g<1>{version} Release\g<2>',
+        ),
         # Docker compose images
         (
             repo_root / "tests/test_apps/docker/docker-compose.yml",

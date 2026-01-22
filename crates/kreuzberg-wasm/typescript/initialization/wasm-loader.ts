@@ -7,8 +7,38 @@
  */
 
 import { wrapWasmError } from "../adapters/wasm-adapter.js";
-import { hasWasm, isBrowser } from "../runtime.js";
+import { hasWasm, isBrowser, isNode } from "../runtime.js";
 import { initializePdfiumAsync } from "./pdfium-loader.js";
+
+/**
+ * Load WASM binary from file system in Node.js environment.
+ * Returns undefined in browser environments (fetch will be used instead).
+ */
+async function loadWasmBinaryForNode(): Promise<Uint8Array | undefined> {
+	if (!isNode()) {
+		return undefined;
+	}
+
+	try {
+		// Dynamic import to avoid bundling Node.js modules
+		const fs = await import(/* @vite-ignore */ "node:fs/promises");
+		const path = await import(/* @vite-ignore */ "node:path");
+		const url = await import(/* @vite-ignore */ "node:url");
+
+		// Resolve the WASM file path relative to this module
+		// The module is in dist/initialization/wasm-loader.js
+		// The WASM file is in dist/pkg/kreuzberg_wasm_bg.wasm
+		const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+		const wasmPath = path.join(__dirname, "..", "pkg", "kreuzberg_wasm_bg.wasm");
+
+		const wasmBuffer = await fs.readFile(wasmPath);
+		return new Uint8Array(wasmBuffer);
+	} catch {
+		// Fall back to fetch-based loading if file system access fails
+		return undefined;
+	}
+}
+
 import {
 	getInitializationError,
 	getInitializationPromise,
@@ -139,7 +169,14 @@ export async function initWasm(): Promise<void> {
 			setWasmModule(loadedModule);
 
 			if (loadedModule && typeof loadedModule.default === "function") {
-				await loadedModule.default();
+				// In Node.js, load WASM binary from file system to avoid fetch issues
+				// In browsers/Workers, the default() function uses fetch with import.meta.url
+				const wasmBinary = await loadWasmBinaryForNode();
+				if (wasmBinary) {
+					await loadedModule.default(wasmBinary);
+				} else {
+					await loadedModule.default();
+				}
 			}
 
 			if (isBrowser() && loadedModule && typeof loadedModule.initialize_pdfium_render === "function") {

@@ -29,7 +29,7 @@
  * ```
  */
 
-export type RuntimeType = "browser" | "node" | "deno" | "bun" | "unknown";
+export type RuntimeType = "browser" | "node" | "deno" | "bun" | "cloudflare-workers" | "edge-runtime" | "unknown";
 
 /**
  * WebAssembly capabilities available in the runtime
@@ -87,6 +87,24 @@ export interface WasmCapabilities {
  * ```
  */
 export function detectRuntime(): RuntimeType {
+	// Check for Cloudflare Workers - has caches global with a default property but no window/document
+	const globalCaches = (globalThis as unknown as Record<string, unknown>).caches;
+	if (
+		typeof caches !== "undefined" &&
+		globalCaches !== null &&
+		typeof globalCaches === "object" &&
+		"default" in (globalCaches as object) &&
+		typeof window === "undefined" &&
+		typeof document === "undefined"
+	) {
+		return "cloudflare-workers";
+	}
+
+	// Check for Vercel Edge Runtime / other edge runtimes
+	if (typeof (globalThis as unknown as Record<string, unknown>).EdgeRuntime !== "undefined") {
+		return "edge-runtime";
+	}
+
 	if (typeof (globalThis as unknown as Record<string, unknown>).Deno !== "undefined") {
 		return "deno";
 	}
@@ -143,6 +161,36 @@ export function isBun(): boolean {
 }
 
 /**
+ * Check if running in Cloudflare Workers
+ *
+ * @returns True if running in Cloudflare Workers, false otherwise
+ */
+export function isCloudflareWorkers(): boolean {
+	return detectRuntime() === "cloudflare-workers";
+}
+
+/**
+ * Check if running in an edge runtime (Vercel Edge, etc.)
+ *
+ * @returns True if running in an edge runtime, false otherwise
+ */
+export function isEdgeRuntime(): boolean {
+	return detectRuntime() === "edge-runtime";
+}
+
+/**
+ * Check if running in any edge/serverless environment
+ *
+ * This includes Cloudflare Workers, Vercel Edge, and similar environments.
+ *
+ * @returns True if running in an edge environment, false otherwise
+ */
+export function isEdgeEnvironment(): boolean {
+	const runtime = detectRuntime();
+	return runtime === "cloudflare-workers" || runtime === "edge-runtime";
+}
+
+/**
  * Check if running in a web environment (browser or similar)
  *
  * @returns True if running in a web browser, false otherwise
@@ -153,13 +201,19 @@ export function isWebEnvironment(): boolean {
 }
 
 /**
- * Check if running in a server-like environment (Node.js, Deno, Bun)
+ * Check if running in a server-like environment (Node.js, Deno, Bun, Cloudflare Workers, Edge)
  *
  * @returns True if running on a server runtime, false otherwise
  */
 export function isServerEnvironment(): boolean {
 	const runtime = detectRuntime();
-	return runtime === "node" || runtime === "deno" || runtime === "bun";
+	return (
+		runtime === "node" ||
+		runtime === "deno" ||
+		runtime === "bun" ||
+		runtime === "cloudflare-workers" ||
+		runtime === "edge-runtime"
+	);
 }
 
 /**

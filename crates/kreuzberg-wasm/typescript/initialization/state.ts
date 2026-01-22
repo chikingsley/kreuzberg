@@ -52,7 +52,7 @@ export type WasmModule = {
 	read_block_from_callback_wasm: (param: number, position: number, pBuf: number, size: number) => number;
 	write_block_from_callback_wasm: (param: number, buf: number, size: number) => number;
 
-	default?: () => Promise<void>;
+	default?: (moduleOrPath?: BufferSource | WebAssembly.Module | string | URL | Response | Request) => Promise<void>;
 };
 
 export type ModuleInfo = {

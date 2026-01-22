@@ -205,4 +205,108 @@ mod tests {
         assert_eq!(config.batch_size, 32);
         assert!(config.cache_dir.is_none());
     }
+
+    /// Tests that EmbeddingModelType::Preset serializes with "type" field (internally-tagged).
+    /// This validates the API schema matches the documented format:
+    /// `{"type": "preset", "name": "fast"}` NOT `{"preset": {"name": "fast"}}`
+    #[test]
+    fn test_embedding_model_type_preset_serialization() {
+        let model = EmbeddingModelType::Preset {
+            name: "fast".to_string(),
+        };
+        let json = serde_json::to_string(&model).unwrap();
+
+        // Should use internally-tagged format with "type" discriminator
+        assert!(json.contains(r#""type":"preset""#), "Should contain type:preset field");
+        assert!(json.contains(r#""name":"fast""#), "Should contain name:fast field");
+
+        // Should NOT use adjacently-tagged format
+        assert!(
+            !json.contains(r#"{"preset":"#),
+            "Should NOT use adjacently-tagged format"
+        );
+    }
+
+    /// Tests that EmbeddingModelType::Preset deserializes from the documented API format.
+    /// API documentation shows: `{"type": "preset", "name": "fast"}`
+    #[test]
+    fn test_embedding_model_type_preset_deserialization() {
+        // This is the documented API format that users should send
+        let json = r#"{"type": "preset", "name": "fast"}"#;
+        let model: EmbeddingModelType = serde_json::from_str(json).unwrap();
+
+        match model {
+            EmbeddingModelType::Preset { name } => {
+                assert_eq!(name, "fast");
+            }
+            _ => panic!("Expected Preset variant"),
+        }
+    }
+
+    /// Tests that the wrong format (adjacently-tagged) is rejected.
+    /// This ensures the API doesn't accept the old/wrong documentation format.
+    #[test]
+    fn test_embedding_model_type_rejects_wrong_format() {
+        // This is the WRONG format that was in the old documentation
+        let wrong_json = r#"{"preset": {"name": "fast"}}"#;
+        let result: Result<EmbeddingModelType, _> = serde_json::from_str(wrong_json);
+
+        // Should fail to parse - the wrong format should be rejected
+        assert!(result.is_err(), "Should reject adjacently-tagged format");
+    }
+
+    /// Tests round-trip serialization/deserialization of EmbeddingConfig.
+    #[test]
+    fn test_embedding_config_roundtrip() {
+        let config = EmbeddingConfig {
+            model: EmbeddingModelType::Preset {
+                name: "balanced".to_string(),
+            },
+            normalize: true,
+            batch_size: 64,
+            show_download_progress: false,
+            cache_dir: None,
+        };
+
+        let json = serde_json::to_string(&config).unwrap();
+        let deserialized: EmbeddingConfig = serde_json::from_str(&json).unwrap();
+
+        match deserialized.model {
+            EmbeddingModelType::Preset { name } => {
+                assert_eq!(name, "balanced");
+            }
+            _ => panic!("Expected Preset variant"),
+        }
+        assert!(deserialized.normalize);
+        assert_eq!(deserialized.batch_size, 64);
+    }
+
+    /// Tests Custom model type serialization format.
+    #[test]
+    fn test_embedding_model_type_custom_serialization() {
+        let model = EmbeddingModelType::Custom {
+            model_id: "sentence-transformers/all-MiniLM-L6-v2".to_string(),
+            dimensions: 384,
+        };
+        let json = serde_json::to_string(&model).unwrap();
+
+        assert!(json.contains(r#""type":"custom""#), "Should contain type:custom field");
+        assert!(json.contains(r#""model_id":"#), "Should contain model_id field");
+        assert!(json.contains(r#""dimensions":384"#), "Should contain dimensions field");
+    }
+
+    /// Tests Custom model type deserialization.
+    #[test]
+    fn test_embedding_model_type_custom_deserialization() {
+        let json = r#"{"type": "custom", "model_id": "test/model", "dimensions": 512}"#;
+        let model: EmbeddingModelType = serde_json::from_str(json).unwrap();
+
+        match model {
+            EmbeddingModelType::Custom { model_id, dimensions } => {
+                assert_eq!(model_id, "test/model");
+                assert_eq!(dimensions, 512);
+            }
+            _ => panic!("Expected Custom variant"),
+        }
+    }
 }

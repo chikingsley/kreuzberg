@@ -17,7 +17,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>kreuzberg;document;extraction;rust;ffi;pdf;ocr;office;docx;excel;document-processing;document-intelligence;text-extraction;metadata;parsing;tesseract;dotnet;netcore</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Version 4.0.0: Stable release of C# bindings with .NET 9+ FFM API support, comprehensive documentation, and full test suite (268+ tests).</PackageReleaseNotes>
+    <PackageReleaseNotes>Version 4.1.0</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
