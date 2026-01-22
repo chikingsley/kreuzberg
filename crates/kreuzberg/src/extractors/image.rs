@@ -44,7 +44,11 @@ impl ImageExtractor {
             registry.get(&ocr_config.backend)?
         };
 
-        let ocr_result = backend.process_image(content, ocr_config).await?;
+        // Thread output_format from ExtractionConfig to OcrConfig
+        let mut ocr_config_with_format = ocr_config.clone();
+        ocr_config_with_format.output_format = Some(config.output_format);
+
+        let ocr_result = backend.process_image(content, &ocr_config_with_format).await?;
 
         let ocr_text = ocr_result.content.clone();
         let ocr_extraction_result = crate::extraction::image::extract_text_from_image_with_ocr(
@@ -167,6 +171,7 @@ impl DocumentExtractor for ImageExtractor {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             elements: None,
         })
     }

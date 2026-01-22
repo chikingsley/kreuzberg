@@ -37,6 +37,7 @@
 //! [dependencies]
 //! kreuzberg = { version = "4.0", features = ["ocr"] }
 //! ```
+mod backends;
 pub mod cache;
 pub mod error;
 pub mod hocr;

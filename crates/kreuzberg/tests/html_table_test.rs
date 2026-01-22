@@ -34,7 +34,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "HTML to markdown conversion should succeed");
 
         let markdown = result.unwrap();
@@ -76,7 +76,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should convert to markdown");
 
         let markdown = result.unwrap();
@@ -140,7 +140,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should convert complex table");
 
         let markdown = result.unwrap();
@@ -191,7 +191,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle merged cell table");
 
         let markdown = result.unwrap();
@@ -245,7 +245,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle multiple tables");
 
         let markdown = result.unwrap();
@@ -300,7 +300,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle mixed header cells");
 
         let markdown = result.unwrap();
@@ -346,7 +346,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle table with caption");
 
         let markdown = result.unwrap();
@@ -382,7 +382,7 @@ mod html_table_tests {
     fn test_simple_flat_table() {
         let html = r#"<table><tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>"#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle flat table");
 
         let markdown = result.unwrap();
@@ -418,7 +418,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle empty cells");
 
         let markdown = result.unwrap();
@@ -456,7 +456,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle numeric table");
 
         let markdown = result.unwrap();
@@ -499,7 +499,7 @@ mod html_table_tests {
         </table>
         "#;
 
-        let result = convert_html_to_markdown(html, None);
+        let result = convert_html_to_markdown(html, None, None);
         assert!(result.is_ok(), "Should handle unicode characters");
 
         let markdown = result.unwrap();

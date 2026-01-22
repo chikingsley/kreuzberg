@@ -467,7 +467,8 @@ mod tests {
                 chunks: None,
                 images: None,
                 pages: None,
-            elements: None,
+                elements: None,
+                djot_content: None,
             };
 
             let py_result = ExtractionResult::from_rust(rust_result, py).expect("conversion should succeed");
@@ -494,7 +495,8 @@ mod tests {
                 chunks: None,
                 images: None,
                 pages: None,
-            elements: None,
+                elements: None,
+                djot_content: None,
             };
             rust_result
                 .metadata

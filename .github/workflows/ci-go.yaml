@@ -79,6 +79,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        id: checkout
 
       - name: Install pkg-config (Windows, fallback)
         if: runner.os == 'Windows'
@@ -315,7 +316,7 @@ jobs:
           retention-days: 7
 
       - name: Cleanup Rust cache
-        if: always()
+        if: always() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/cleanup-rust-cache
 
   test-go:
@@ -330,6 +331,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        id: checkout
 
       - name: Install pkg-config (Windows, fallback)
         if: runner.os == 'Windows'
@@ -364,6 +366,8 @@ jobs:
           use-sccache: ${{ matrix.os != 'windows-latest' }}
           target: ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-gnu' || '' }}
           toolchain: ${{ matrix.os == 'windows-latest' && 'stable-x86_64-pc-windows-gnu' || '' }}
+          # Disable cache on Windows due to fingerprint corruption and CGO issues
+          disable-cache: ${{ matrix.os == 'windows-latest' }}
 
       - name: Clean stale fingerprints (test job)
         shell: bash

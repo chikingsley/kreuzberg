@@ -84,9 +84,8 @@ async fn test_embed_with_custom_config() {
         "texts": ["Test embedding with custom config"],
         "config": {
             "model": {
-                "preset": {
-                    "name": "fast"
-                }
+                "type": "preset",
+                "name": "fast"
             },
             "batch_size": 32
         }
@@ -295,9 +294,8 @@ async fn test_embed_different_presets() {
         "texts": ["Test text"],
         "config": {
             "model": {
-                "preset": {
-                    "name": "fast"
-                }
+                "type": "preset",
+                "name": "fast"
             }
         }
     });
@@ -327,9 +325,8 @@ async fn test_embed_different_presets() {
         "texts": ["Test text"],
         "config": {
             "model": {
-                "preset": {
-                    "name": "balanced"
-                }
+                "type": "preset",
+                "name": "balanced"
             }
         }
     });

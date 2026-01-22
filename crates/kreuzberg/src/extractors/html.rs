@@ -1,7 +1,7 @@
 //! HTML document extractor.
 
 use crate::Result;
-use crate::core::config::ExtractionConfig;
+use crate::core::config::{ExtractionConfig, OutputFormat};
 use crate::extractors::SyncExtractor;
 use crate::plugins::{DocumentExtractor, Plugin};
 use crate::text::utf8_validation;
@@ -202,16 +202,24 @@ impl SyncExtractor for HtmlExtractor {
             .map(|s| s.to_string())
             .unwrap_or_else(|_| String::from_utf8_lossy(content).to_string());
 
-        let (markdown, html_metadata) =
-            crate::extraction::html::convert_html_to_markdown_with_metadata(&html, config.html_options.clone())?;
+        let (content_text, html_metadata) = crate::extraction::html::convert_html_to_markdown_with_metadata(
+            &html,
+            config.html_options.clone(),
+            Some(config.output_format),
+        )?;
 
-        let tables = extract_html_tables(&markdown)?;
+        let tables = extract_html_tables(&content_text)?;
 
-        let content_without_frontmatter = markdown;
+        // Set mime_type based on actual output format
+        let result_mime_type = match config.output_format {
+            OutputFormat::Markdown => "text/markdown",
+            OutputFormat::Djot => "text/djot",
+            _ => mime_type, // Preserve original mime_type for other formats
+        };
 
         Ok(ExtractionResult {
-            content: content_without_frontmatter,
-            mime_type: mime_type.to_string(),
+            content: content_text,
+            mime_type: result_mime_type.to_string(),
             metadata: Metadata {
                 format: html_metadata.map(|m| crate::types::FormatMetadata::Html(Box::new(m))),
                 ..Default::default()
@@ -221,6 +229,7 @@ impl SyncExtractor for HtmlExtractor {
             detected_languages: None,
             chunks: None,
             images: None,
+            djot_content: None,
             elements: None,
         })
     }
@@ -276,7 +285,7 @@ mod tests {
 
     /// Helper function to convert HTML to markdown for testing
     fn html_to_markdown_for_test(html: &str) -> String {
-        crate::extraction::html::convert_html_to_markdown(html, None).unwrap()
+        crate::extraction::html::convert_html_to_markdown(html, None, None).unwrap()
     }
 
     #[test]
@@ -416,5 +425,67 @@ mod tests {
         assert_eq!(table.cells[0], vec!["Name", "Age"]);
         assert_eq!(table.cells[1], vec!["Alice", "30"]);
         assert_eq!(table.cells[2], vec!["Bob", "25"]);
+    }
+
+    #[tokio::test]
+    async fn test_html_extractor_with_djot_output() {
+        let html = r#"
+        <html>
+            <body>
+                <h1>Test Page</h1>
+                <p>Content with <strong>emphasis</strong>.</p>
+            </body>
+        </html>
+    "#;
+
+        let extractor = HtmlExtractor::new();
+        let config = ExtractionConfig {
+            output_format: OutputFormat::Djot,
+            ..Default::default()
+        };
+
+        let result = extractor
+            .extract_bytes(html.as_bytes(), "text/html", &config)
+            .await
+            .unwrap();
+
+        assert_eq!(result.mime_type, "text/djot");
+        assert!(result.content.contains("# Test Page"));
+        assert!(result.content.contains("*emphasis*")); // Djot strong syntax
+    }
+
+    #[tokio::test]
+    async fn test_html_extractor_djot_double_conversion_prevention() {
+        let html = r#"
+        <html>
+            <body>
+                <h1>Test</h1>
+                <p>Content with <strong>bold</strong> text.</p>
+            </body>
+        </html>
+    "#;
+
+        let extractor = HtmlExtractor::new();
+        let config = ExtractionConfig {
+            output_format: OutputFormat::Djot,
+            ..Default::default()
+        };
+
+        let result = extractor
+            .extract_bytes(html.as_bytes(), "text/html", &config)
+            .await
+            .unwrap();
+
+        // Content should already be in djot format
+        assert_eq!(result.mime_type, "text/djot");
+        let original_content = result.content.clone();
+
+        // Simulate pipeline format application
+        let mut pipeline_result = result.clone();
+        crate::core::pipeline::apply_output_format(&mut pipeline_result, OutputFormat::Djot);
+
+        // Content should be identical - no re-conversion should occur
+        assert_eq!(pipeline_result.content, original_content);
+        assert_eq!(pipeline_result.mime_type, "text/djot");
     }
 }

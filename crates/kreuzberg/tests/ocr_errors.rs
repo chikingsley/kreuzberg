@@ -34,6 +34,7 @@ fn test_ocr_invalid_language_code() {
             backend: "tesseract".to_string(),
             language: "invalid_lang_99999".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -74,6 +75,7 @@ fn test_ocr_invalid_psm_mode() {
                 psm: 999,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -112,6 +114,7 @@ fn test_ocr_invalid_backend_name() {
             backend: "nonexistent_ocr_backend_xyz".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -147,6 +150,7 @@ fn test_ocr_corrupted_image_data() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -177,6 +181,7 @@ fn test_ocr_empty_image() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -207,6 +212,7 @@ fn test_ocr_non_image_data() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -245,6 +251,7 @@ fn test_ocr_extreme_table_threshold() {
                 table_row_threshold_ratio: 10.0,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -281,6 +288,7 @@ fn test_ocr_negative_psm() {
                 psm: -5,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -313,6 +321,7 @@ fn test_ocr_empty_whitelist() {
                 tessedit_char_whitelist: "".to_string(),
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -349,6 +358,7 @@ fn test_ocr_conflicting_whitelist_blacklist() {
                 tessedit_char_blacklist: "abc".to_string(),
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -381,6 +391,7 @@ fn test_ocr_empty_language() {
             backend: "tesseract".to_string(),
             language: "".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -413,6 +424,7 @@ fn test_ocr_malformed_multi_language() {
             backend: "tesseract".to_string(),
             language: "eng++deu++fra".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -446,6 +458,7 @@ fn test_ocr_cache_disabled_then_enabled() {
                 use_cache: false,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: false,
@@ -466,6 +479,7 @@ fn test_ocr_cache_disabled_then_enabled() {
                 use_cache: true,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,
@@ -497,6 +511,7 @@ fn test_ocr_concurrent_same_file() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,
@@ -563,6 +578,7 @@ fn test_ocr_concurrent_different_files() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,
@@ -632,6 +648,7 @@ fn test_ocr_with_preprocessing_extreme_dpi() {
                 }),
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()
@@ -677,6 +694,7 @@ fn test_ocr_with_invalid_binarization_method() {
                 }),
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()

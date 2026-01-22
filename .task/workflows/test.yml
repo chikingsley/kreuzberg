@@ -2,8 +2,8 @@ version: "3"
 
 tasks:
   all:
-    desc: Run all tests across all languages
-    cmds:
+    desc: Run all tests across all languages (in parallel)
+    deps:
       - task: rust:test
       - task: python:test
       - task: node:test
@@ -17,7 +17,7 @@ tasks:
 
   all:parallel:
     desc: Run all tests in parallel (using deps)
-    cmds:
+    deps:
       - task: rust:test
       - task: python:test
       - task: node:test

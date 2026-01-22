@@ -41,6 +41,7 @@ impl PptxExtractor {
 
         let ocr_config = config.ocr.as_ref().unwrap();
         let tess_config = ocr_config.tesseract_config.as_ref().cloned().unwrap_or_default();
+        let output_format = config.output_format;
 
         for image in &mut images {
             let image_data = image.data.clone();
@@ -53,7 +54,7 @@ impl PptxExtractor {
 
                 let proc = OcrProcessor::new(cache_dir)?;
                 let ocr_tess_config: crate::ocr::types::TesseractConfig = (&tess_config_clone).into();
-                proc.process_image(&image_data, &ocr_tess_config)
+                proc.process_image_with_format(&image_data, &ocr_tess_config, output_format)
             })
             .await
             .map_err(|e| crate::KreuzbergError::Ocr {
@@ -65,7 +66,7 @@ impl PptxExtractor {
                 Ok(ocr_extraction) => {
                     let extraction_result = ExtractionResult {
                         content: ocr_extraction.content,
-                        mime_type: image.format.clone(),
+                        mime_type: ocr_extraction.mime_type,
                         metadata: Metadata::default(),
                         tables: vec![],
                         detected_languages: None,
@@ -180,6 +181,7 @@ impl DocumentExtractor for PptxExtractor {
             detected_languages: None,
             chunks: None,
             images,
+            djot_content: None,
             elements: None,
         })
     }
@@ -244,6 +246,7 @@ impl DocumentExtractor for PptxExtractor {
             detected_languages: None,
             chunks: None,
             images,
+            djot_content: None,
             elements: None,
         })
     }

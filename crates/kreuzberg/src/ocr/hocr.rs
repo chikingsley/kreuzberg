@@ -1,7 +1,15 @@
 use super::error::OcrError;
-use html_to_markdown_rs::{ConversionOptions, convert};
+use crate::core::config::OutputFormat as KreuzbergOutputFormat;
+use html_to_markdown_rs::{ConversionOptions, OutputFormat as LibOutputFormat, convert};
 
-pub fn convert_hocr_to_markdown(hocr_html: &str, options: Option<ConversionOptions>) -> Result<String, OcrError> {
+/// Convert hOCR to specified output format (markdown or djot).
+///
+/// Defaults to Markdown for backward compatibility.
+pub fn convert_hocr_to_markdown(
+    hocr_html: &str,
+    options: Option<ConversionOptions>,
+    output_format: Option<KreuzbergOutputFormat>,
+) -> Result<String, OcrError> {
     let use_default = options.is_none();
     let mut opts = options.unwrap_or_default();
 
@@ -9,6 +17,14 @@ pub fn convert_hocr_to_markdown(hocr_html: &str, options: Option<ConversionOptio
         opts.hocr_spatial_tables = false;
         opts.extract_metadata = false;
     }
+
+    // Set output format
+    let format = output_format.unwrap_or(KreuzbergOutputFormat::Markdown);
+    opts.output_format = match format {
+        KreuzbergOutputFormat::Markdown => LibOutputFormat::Markdown,
+        KreuzbergOutputFormat::Djot => LibOutputFormat::Djot,
+        KreuzbergOutputFormat::Plain | KreuzbergOutputFormat::Html => LibOutputFormat::Markdown,
+    };
 
     convert(hocr_html, Some(opts)).map_err(|e| OcrError::ProcessingFailed(format!("hOCR conversion failed: {}", e)))
 }
@@ -26,7 +42,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.contains("Hello"));
         assert!(markdown.contains("World"));
     }
@@ -40,14 +56,14 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
     }
 
     #[test]
     fn test_empty_hocr() {
         let hocr = "";
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.is_empty() || markdown.trim().is_empty());
     }
 
@@ -60,7 +76,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
         assert!(markdown.contains("Content"));
     }
@@ -78,7 +94,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.contains("First"));
         assert!(markdown.contains("Second"));
     }
@@ -98,7 +114,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
     }
 
@@ -111,7 +127,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
     }
 
@@ -124,7 +140,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
     }
 
@@ -140,7 +156,7 @@ mod tests {
             </div>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.contains("Nested"));
     }
 
@@ -151,7 +167,7 @@ mod tests {
                 <span class="ocrx_word">Unclosed
         </div>"#;
 
-        let result = convert_hocr_to_markdown(hocr, None);
+        let result = convert_hocr_to_markdown(hocr, None, None);
         assert!(result.is_ok());
     }
 
@@ -163,7 +179,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(!markdown.is_empty());
     }
 
@@ -179,7 +195,7 @@ mod tests {
             </ul>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.contains("Heading") || markdown.contains("heading") || !markdown.is_empty());
     }
 
@@ -193,7 +209,7 @@ mod tests {
             </p>
         </div>"#;
 
-        let markdown = convert_hocr_to_markdown(hocr, None).unwrap();
+        let markdown = convert_hocr_to_markdown(hocr, None, None).unwrap();
         assert!(markdown.contains("Ñoño") || !markdown.is_empty());
     }
 
@@ -208,9 +224,37 @@ mod tests {
         }
         hocr.push_str("</div>");
 
-        let result = convert_hocr_to_markdown(&hocr, None);
+        let result = convert_hocr_to_markdown(&hocr, None, None);
         assert!(result.is_ok());
         let markdown = result.unwrap();
         assert!(!markdown.is_empty());
+    }
+
+    #[test]
+    fn test_hocr_to_djot_conversion() {
+        let hocr = r#"<div class="ocr_page">
+            <p class="ocr_par">
+                <span class="ocrx_word">Hello</span>
+                <span class="ocrx_word">World</span>
+            </p>
+        </div>"#;
+
+        let result = convert_hocr_to_markdown(hocr, None, Some(KreuzbergOutputFormat::Djot)).unwrap();
+        assert!(result.contains("Hello"));
+        assert!(result.contains("World"));
+    }
+
+    #[test]
+    fn test_hocr_to_djot_with_formatting() {
+        let hocr = r#"<div class="ocr_page">
+            <p class="ocr_par">
+                <strong class="ocrx_word">Bold</strong>
+                <em class="ocrx_word">Italic</em>
+            </p>
+        </div>"#;
+
+        let result = convert_hocr_to_markdown(hocr, None, Some(KreuzbergOutputFormat::Djot)).unwrap();
+        // Djot uses * for strong, _ for emphasis
+        assert!(!result.is_empty());
     }
 }

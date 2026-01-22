@@ -193,6 +193,7 @@ async fn test_concurrent_ocr_processing() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,
@@ -262,6 +263,7 @@ fn test_concurrent_ocr_cache_stress() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,
@@ -378,7 +380,8 @@ async fn test_concurrent_pipeline_processing() {
                 chunks: None,
                 images: None,
                 pages: None,
-            elements: None,
+                elements: None,
+                djot_content: None,
             };
 
             run_pipeline(result, &config).await

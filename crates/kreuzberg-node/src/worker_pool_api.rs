@@ -3,8 +3,10 @@
 //! This module provides APIs for creating and managing worker pools
 //! for CPU-bound document extraction tasks.
 
+use crate::error_handling::convert_error;
+use crate::result::resolve_config;
 use crate::worker_pool::WorkerPool;
-use crate::{JsExtractionConfig, JsExtractionResult, convert_error, resolve_config};
+use crate::{JsExtractionConfig, JsExtractionResult};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::sync::{Arc, Mutex};

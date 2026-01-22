@@ -167,6 +167,7 @@ fn test_ocr_quality_simple_text_high_accuracy() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -241,6 +242,7 @@ fn test_ocr_quality_numeric_accuracy() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -306,6 +308,7 @@ fn test_ocr_quality_layout_preservation() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -365,6 +368,7 @@ fn test_ocr_quality_technical_document() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -409,6 +413,7 @@ fn test_ocr_consistency_across_runs() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         use_cache: false,
@@ -474,6 +479,7 @@ fn test_ocr_consistency_with_different_psm() {
                 psm: 3,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -487,6 +493,7 @@ fn test_ocr_consistency_with_different_psm() {
                 psm: 6,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -557,6 +564,7 @@ fn test_ocr_quality_multi_page_consistency() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -608,6 +616,7 @@ fn test_ocr_quality_with_tables() {
                 table_min_confidence: 0.5,
                 ..Default::default()
             }),
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()

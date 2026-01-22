@@ -192,6 +192,7 @@ async fn main() -> Result<()> {
                         backend: "tesseract".to_string(),
                         language: "eng".to_string(),
                         tesseract_config: None,
+                        output_format: None,
                     }),
                     ..Default::default()
                 }

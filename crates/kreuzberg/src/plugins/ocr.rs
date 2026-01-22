@@ -69,6 +69,7 @@ pub enum OcrBackendType {
 ///             images: None,
 ///             djot_content: None,
 ///             pages: None,
+///             elements: None,
 ///         })
 ///     }
 ///
@@ -149,6 +150,7 @@ pub trait OcrBackend: Plugin {
     ///         images: None,
     ///         djot_content: None,
     ///         pages: None,
+    ///         elements: None,
     ///     })
     /// }
     /// # }
@@ -321,6 +323,7 @@ pub trait OcrBackend: Plugin {
 ///             images: None,
 ///             djot_content: None,
 ///             pages: None,
+///             elements: None,
 ///         })
 ///     }
 ///     fn supports_language(&self, _: &str) -> bool { true }
@@ -510,6 +513,7 @@ mod tests {
             backend: "mock".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         };
 
         let result = backend.process_image(b"fake image data", &config).await.unwrap();
@@ -597,6 +601,7 @@ mod tests {
             backend: "mock".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         };
 
         let result = backend.process_file(path, &config).await.unwrap();
@@ -634,6 +639,7 @@ mod tests {
             backend: "mock".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         };
 
         let result = backend.process_image(b"", &config).await;

@@ -101,8 +101,8 @@ tasks:
       - task: elixir:build
 
   test:
-    desc: Run test suites for all languages
-    cmds:
+    desc: Run test suites for all languages (in parallel)
+    deps:
       - task: rust:test
       - task: python:test
       - task: ruby:test
@@ -112,6 +112,7 @@ tasks:
       - task: csharp:test
       - task: php:test
       - task: elixir:test
+      - task: wasm:test
 
   check:
     desc: Run all linting and formatting checks via prek
