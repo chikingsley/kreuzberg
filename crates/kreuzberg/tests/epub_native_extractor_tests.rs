@@ -53,20 +53,14 @@ async fn test_native_epub_wasteland_extraction() {
         result.content.len()
     );
 
-    assert!(
-        result.metadata.additional.contains_key("title"),
-        "Should extract title metadata"
-    );
+    assert!(result.metadata.title.is_some(), "Should extract title metadata");
     assert_eq!(
-        result.metadata.additional.get("title").and_then(|v| v.as_str()),
+        result.metadata.title.as_deref(),
         Some("The Waste Land"),
         "Should have correct title"
     );
 
-    assert!(
-        result.metadata.additional.contains_key("creator"),
-        "Should extract creator metadata"
-    );
+    assert!(result.metadata.authors.is_some(), "Should extract creator metadata");
 
     assert!(
         result.content.contains("April") || result.content.contains("cruellest"),
@@ -105,10 +99,7 @@ async fn test_native_epub_images_extraction() {
         result.content.len()
     );
 
-    assert!(
-        result.metadata.additional.contains_key("title"),
-        "Should extract title metadata"
-    );
+    assert!(result.metadata.title.is_some(), "Should extract title metadata");
 
     println!("✅ Images EPUB extraction test passed ({} bytes)", result.content.len());
 }
@@ -179,7 +170,7 @@ async fn test_native_epub2_cover_extraction() {
     );
 
     assert_eq!(
-        result.metadata.additional.get("title").and_then(|v| v.as_str()),
+        result.metadata.title.as_deref(),
         Some("Pandoc EPUB Test"),
         "Should have correct title"
     );

@@ -135,7 +135,7 @@ curl -X POST http://localhost:8000/embed \
   -d '{
     "texts":["Test text"],
     "config":{
-      "model":{"preset":{"name":"fast"}},
+      "model":{"type":"preset","name":"fast"},
       "batch_size":32
     }
   }'
@@ -172,6 +172,173 @@ curl -X POST http://localhost:8000/embed \
 - Batch embed multiple texts efficiently
 
 **Note:** This endpoint requires the `embeddings` feature to be enabled (available in Docker images and most pre-built binaries). ONNX Runtime must be installed on the system.
+
+#### POST /chunk
+
+Chunk text into smaller pieces with configurable overlap for RAG (Retrieval-Augmented Generation) pipelines.
+
+**Request Format:**
+
+- **Method:** POST
+- **Content-Type:** `application/json`
+- **Body:**
+    - `text` (required): The text string to chunk
+    - `chunker_type` (optional): Type of chunker to use - `"text"` (default) or `"markdown"`
+    - `config` (optional): Chunking configuration object
+
+**Configuration Options:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_characters` | integer | 2000 | Maximum characters per chunk |
+| `overlap` | integer | 100 | Number of overlapping characters between chunks |
+| `trim` | boolean | true | Whether to trim whitespace from chunks |
+
+**Example:**
+
+```bash title="Terminal"
+# Basic text chunking with defaults
+curl -X POST http://localhost:8000/chunk \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Your long text content here..."}'
+
+# Chunk with custom configuration
+curl -X POST http://localhost:8000/chunk \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text":"Your long text content here...",
+    "chunker_type":"text",
+    "config":{
+      "max_characters":1000,
+      "overlap":50,
+      "trim":true
+    }
+  }'
+
+# Markdown-aware chunking (preserves structure)
+curl -X POST http://localhost:8000/chunk \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text":"# Heading\n\nParagraph content...\n\n## Subheading\n\nMore content...",
+    "chunker_type":"markdown"
+  }'
+```
+
+**Response Schema:**
+
+```json title="Response"
+{
+  "chunks": [
+    {
+      "content": "First chunk of text...",
+      "byte_start": 0,
+      "byte_end": 1000,
+      "chunk_index": 0,
+      "total_chunks": 3,
+      "first_page": null,
+      "last_page": null
+    },
+    {
+      "content": "Second chunk with overlap...",
+      "byte_start": 900,
+      "byte_end": 1900,
+      "chunk_index": 1,
+      "total_chunks": 3,
+      "first_page": null,
+      "last_page": null
+    }
+  ],
+  "chunk_count": 3,
+  "config": {
+    "max_characters": 1000,
+    "overlap": 100,
+    "trim": true,
+    "chunker_type": "text"
+  },
+  "input_size_bytes": 2500,
+  "chunker_type": "text"
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `chunks` | array | Array of chunk objects |
+| `chunks[].content` | string | The text content of this chunk |
+| `chunks[].byte_start` | integer | Starting byte offset in original text |
+| `chunks[].byte_end` | integer | Ending byte offset in original text |
+| `chunks[].chunk_index` | integer | Zero-based index of this chunk |
+| `chunks[].total_chunks` | integer | Total number of chunks produced |
+| `chunks[].first_page` | integer/null | First page number (for PDF sources) |
+| `chunks[].last_page` | integer/null | Last page number (for PDF sources) |
+| `chunk_count` | integer | Total number of chunks |
+| `config` | object | Configuration used for chunking |
+| `input_size_bytes` | integer | Size of input text in bytes |
+| `chunker_type` | string | Type of chunker used |
+
+**Use Cases:**
+
+- Prepare text for vector database insertion
+- Split documents for embedding generation
+- Create overlapping chunks for semantic search
+- Preprocess content for RAG pipelines
+- Batch process text without full document extraction
+
+**Error Responses:**
+
+| Status | Error Type | Description |
+|--------|------------|-------------|
+| 400 | `ValidationError` | Empty text or invalid chunker_type |
+| 500 | Internal errors | Server processing errors |
+
+**Client Examples:**
+
+=== "C#"
+
+    --8<-- "snippets/csharp/client_chunk_text.md"
+
+=== "cURL"
+
+    ```bash title="Terminal"
+    # Basic chunking
+    curl -X POST http://localhost:8000/chunk \
+      -H "Content-Type: application/json" \
+      -d '{"text":"Your long text content here..."}' | jq .
+
+    # Chunking with custom configuration
+    curl -X POST http://localhost:8000/chunk \
+      -H "Content-Type: application/json" \
+      -d '{
+        "text":"Your long text content here...",
+        "chunker_type":"text",
+        "config":{"max_characters":1000,"overlap":50,"trim":true}
+      }' | jq .
+    ```
+
+=== "Go"
+
+    --8<-- "snippets/go/api/client_chunk_text.md"
+
+=== "Java"
+
+    --8<-- "snippets/java/api/client_chunk_text.md"
+
+=== "Python"
+
+    --8<-- "snippets/python/api/client_chunk_text.md"
+
+=== "Ruby"
+
+    --8<-- "snippets/ruby/api/client_chunk_text.md"
+
+=== "Rust"
+
+    --8<-- "snippets/rust/api/client_chunk_text.md"
+
+=== "TypeScript"
+
+    --8<-- "snippets/typescript/api/client_chunk_text.md"
 
 #### GET /health
 

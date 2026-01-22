@@ -90,6 +90,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        id: checkout
 
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
@@ -197,7 +198,7 @@ jobs:
           retention-days: 7
 
       - name: Cleanup Rust cache
-        if: always()
+        if: always() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/cleanup-rust-cache
 
       - name: Smoke test wheel
@@ -261,6 +262,7 @@ jobs:
       RUSTC_WRAPPER: ''
     steps:
       - uses: actions/checkout@v4
+        id: checkout
 
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
@@ -313,6 +315,20 @@ jobs:
 
       - name: Install Task
         uses: ./.github/actions/install-task
+
+      - name: Setup Tesseract tessdata (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # kreuzberg-tesseract expects tessdata at C:\tess\tessdata on Windows
+          mkdir -p /c/tess/tessdata
+          echo "Downloading tessdata files..."
+          curl -fsSL -o /c/tess/tessdata/eng.traineddata \
+            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata"
+          curl -fsSL -o /c/tess/tessdata/osd.traineddata \
+            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/osd.traineddata"
+          echo "Tessdata files downloaded to C:/tess/tessdata"
+          ls -la /c/tess/tessdata/
 
       - name: Run Python tests
         shell: bash

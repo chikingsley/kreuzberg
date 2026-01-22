@@ -63,6 +63,7 @@ impl OcrBackend for MockOcrBackend {
             chunks: None,
             images: None,
             pages: None,
+            djot_content: None,
             elements: None,
         })
     }
@@ -160,6 +161,7 @@ impl OcrBackend for ValidatingOcrBackend {
             chunks: None,
             images: None,
             pages: None,
+            djot_content: None,
             elements: None,
         })
     }
@@ -218,6 +220,7 @@ impl OcrBackend for MetadataOcrBackend {
             chunks: None,
             images: None,
             pages: None,
+            djot_content: None,
             elements: None,
         })
     }
@@ -301,6 +304,7 @@ fn test_ocr_backend_used_for_image_extraction() {
         backend: "extraction-test-ocr".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config = ExtractionConfig {
@@ -360,6 +364,7 @@ fn test_ocr_backend_receives_correct_parameters() {
         backend: "param-test-ocr".to_string(),
         language: "deu".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config = ExtractionConfig {
@@ -408,6 +413,7 @@ fn test_ocr_backend_returns_correct_format() {
         backend: "format-test-ocr".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config = ExtractionConfig {
@@ -458,6 +464,7 @@ fn test_ocr_backend_error_handling() {
         backend: "failing-ocr".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config = ExtractionConfig {
@@ -508,6 +515,7 @@ fn test_ocr_backend_validation_error() {
         backend: "validating-ocr".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config = ExtractionConfig {
@@ -570,6 +578,7 @@ fn test_switching_between_ocr_backends() {
         backend: "backend-1".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config1 = ExtractionConfig {
@@ -588,6 +597,7 @@ fn test_switching_between_ocr_backends() {
         backend: "backend-2".to_string(),
         language: "eng".to_string(),
         tesseract_config: None,
+        output_format: None,
     };
 
     let config2 = ExtractionConfig {

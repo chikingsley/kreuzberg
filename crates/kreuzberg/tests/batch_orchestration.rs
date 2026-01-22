@@ -257,6 +257,7 @@ fn test_ocr_multipage_efficiency() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         use_cache: true,

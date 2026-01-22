@@ -459,6 +459,7 @@ async fn test_extraction_with_ocr_config() {
             tesseract_config: None,
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()

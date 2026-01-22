@@ -105,6 +105,13 @@ pub mod mime;
 pub mod plugins;
 pub mod types;
 
+// Re-export all public plugin APIs
+pub use plugins::{
+    clear_ocr_backends, clear_post_processors, clear_validators, list_ocr_backends, list_post_processors,
+    list_validators, register_ocr_backend, register_post_processor, register_validator, unregister_ocr_backend,
+    unregister_post_processor, unregister_validator,
+};
+
 pub use config::*;
 pub use errors::*;
 pub use extraction::*;

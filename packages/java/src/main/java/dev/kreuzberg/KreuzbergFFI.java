@@ -37,6 +37,7 @@ public final class KreuzbergFFI {
 	private static final Linker LINKER = Linker.nativeLinker();
 	private static final SymbolLookup LOOKUP;
 	private static final long C_STRING_MAX_SIZE = 67108864L;
+	private static final long NULL_PAGE_SIZE = 4096L;
 	private static final String NATIVES_RESOURCE_ROOT = "/natives";
 	private static final Object NATIVE_EXTRACT_LOCK = new Object();
 	private static String cachedExtractKey;
@@ -116,8 +117,7 @@ public final class KreuzbergFFI {
 			ValueLayout.ADDRESS.withName("detected_languages_json"), ValueLayout.ADDRESS.withName("metadata_json"),
 			ValueLayout.ADDRESS.withName("chunks_json"), ValueLayout.ADDRESS.withName("images_json"),
 			ValueLayout.ADDRESS.withName("page_structure_json"), ValueLayout.ADDRESS.withName("pages_json"),
-			ValueLayout.ADDRESS.withName("elements_json"), ValueLayout.JAVA_BOOLEAN.withName("success"),
-			MemoryLayout.paddingLayout(7));
+			ValueLayout.JAVA_BOOLEAN.withName("success"), MemoryLayout.paddingLayout(7));
 
 	public static final long CONTENT_OFFSET = C_EXTRACTION_RESULT_LAYOUT
 			.byteOffset(MemoryLayout.PathElement.groupElement("content"));
@@ -143,8 +143,6 @@ public final class KreuzbergFFI {
 			.byteOffset(MemoryLayout.PathElement.groupElement("page_structure_json"));
 	public static final long PAGES_OFFSET = C_EXTRACTION_RESULT_LAYOUT
 			.byteOffset(MemoryLayout.PathElement.groupElement("pages_json"));
-	public static final long ELEMENTS_OFFSET = C_EXTRACTION_RESULT_LAYOUT
-			.byteOffset(MemoryLayout.PathElement.groupElement("elements_json"));
 	public static final long SUCCESS_OFFSET = C_EXTRACTION_RESULT_LAYOUT
 			.byteOffset(MemoryLayout.PathElement.groupElement("success"));
 
@@ -779,6 +777,12 @@ public final class KreuzbergFFI {
 		if (address == null || address.address() == 0) {
 			return null;
 		}
+		// Reject obviously invalid pointers that fall within the null page (< 4KB).
+		// These are sentinel values (like 0x1) that indicate an error condition
+		// from the FFI layer and will cause SIGSEGV if dereferenced.
+		if (address.address() < NULL_PAGE_SIZE) {
+			return null;
+		}
 		// Use Arena.global() to ensure thread-safe access to the memory segment.
 		// The getString(0) method reads bytes until it finds the null terminator,
 		// so it won't actually access all C_STRING_MAX_SIZE bytes.
@@ -830,5 +834,111 @@ public final class KreuzbergFFI {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Creates the appropriate KreuzbergException subtype based on the last error.
+	 *
+	 * <p>
+	 * This method retrieves the last error code and message from the FFI layer and
+	 * creates a specific exception type (e.g., ParsingException, OcrException,
+	 * CacheException, ImageProcessingException) based on the error classification.
+	 *
+	 * @param contextMessage
+	 *            additional context to include in the error message
+	 * @return a KreuzbergException of the appropriate subtype
+	 */
+	@SuppressWarnings("PMD.AvoidCatchingThrowable")
+	static KreuzbergException createTypedException(String contextMessage) {
+		String errorMessage = null;
+		int errorCode = 0;
+		PanicContext panicContext = null;
+
+		try {
+			MemorySegment errorPtr = (MemorySegment) KREUZBERG_LAST_ERROR.invoke();
+			errorMessage = readCString(errorPtr);
+			errorCode = getLastErrorCode();
+			if (errorCode == ErrorCode.PANIC.getCode()) {
+				panicContext = getLastPanicContext();
+			}
+		} catch (Throwable e) {
+			errorMessage = "Unknown error (failed to retrieve error details)";
+		}
+
+		String fullMessage = contextMessage;
+		if (errorMessage != null && !errorMessage.isBlank()) {
+			fullMessage = contextMessage + ": " + errorMessage;
+		}
+
+		// First try to classify based on the FFI error code
+		ErrorCode code = ErrorCode.fromCode(errorCode);
+
+		// If generic error, try to classify from message content
+		if (code == ErrorCode.GENERIC_ERROR || code == ErrorCode.SUCCESS) {
+			code = ErrorCode.classifyFromMessage(errorMessage);
+		}
+
+		return createExceptionForCode(code, fullMessage, panicContext);
+	}
+
+	/**
+	 * Creates the appropriate exception type for the given error code and message.
+	 *
+	 * <p>
+	 * This method first checks the FFI error code, then falls back to message-based
+	 * classification for binding-specific error types like cache and image
+	 * processing errors that don't have corresponding FFI codes (these are
+	 * Java-binding-specific exceptions created via message pattern matching,
+	 * similar to how Python and Go handle them).
+	 *
+	 * @param code
+	 *            the error code from FFI
+	 * @param message
+	 *            the error message
+	 * @param panicContext
+	 *            optional panic context (may be null)
+	 * @return a KreuzbergException of the appropriate subtype
+	 */
+	private static KreuzbergException createExceptionForCode(ErrorCode code, String message,
+			PanicContext panicContext) {
+		// First, handle FFI error codes (0-7)
+		switch (code) {
+			case PARSING_ERROR :
+				return new ParsingException(message);
+			case OCR_ERROR :
+				return new OcrException(message);
+			case MISSING_DEPENDENCY :
+				return new MissingDependencyException(message);
+			case INVALID_ARGUMENT :
+				return new ValidationException(message);
+			case PANIC :
+				return new KreuzbergException(message, code, panicContext);
+			case IO_ERROR :
+				// IO errors use the generic exception with the IO_ERROR code
+				return new KreuzbergException(message, code, panicContext);
+			default :
+				// Fall through to message-based classification
+				break;
+		}
+
+		// For GENERIC_ERROR or SUCCESS, use message-based classification
+		// to detect binding-specific error types (cache, image processing)
+		// These error types don't have FFI codes but are useful for Java users.
+		if (message != null) {
+			String lower = message.toLowerCase(Locale.ROOT);
+
+			// Check for cache-related errors
+			if (lower.contains("cache")) {
+				return new CacheException(message);
+			}
+
+			// Check for image processing errors
+			if (lower.contains("image") && (lower.contains("process") || lower.contains("decode")
+					|| lower.contains("encode") || lower.contains("resize") || lower.contains("dpi"))) {
+				return new ImageProcessingException(message);
+			}
+		}
+
+		return new KreuzbergException(message, code, panicContext);
 	}
 }

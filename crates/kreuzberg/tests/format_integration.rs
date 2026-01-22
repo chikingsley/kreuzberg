@@ -100,6 +100,7 @@ async fn test_ocr_simple_english_image_async() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()
@@ -142,6 +143,7 @@ async fn test_ocr_image_without_text_async() {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: true,
         ..Default::default()

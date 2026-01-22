@@ -41,8 +41,11 @@ pub mod mime;
 pub mod pipeline;
 pub mod server_config;
 
+#[cfg(feature = "pdf")]
+pub use config::HierarchyConfig;
 pub use config::{
-    ChunkingConfig, ExtractionConfig, ImageExtractionConfig, LanguageDetectionConfig, OcrConfig, TokenReductionConfig,
+    ChunkingConfig, EmbeddingConfig, EmbeddingModelType, ExtractionConfig, ImageExtractionConfig,
+    LanguageDetectionConfig, OcrConfig, OutputFormat, PageConfig, PostProcessorConfig, TokenReductionConfig,
 };
 pub use config_validation::{
     validate_binarization_method, validate_chunking_params, validate_confidence, validate_dpi, validate_language_code,

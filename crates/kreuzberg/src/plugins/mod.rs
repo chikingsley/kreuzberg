@@ -49,6 +49,7 @@
 //! #             images: None,
 //! #             pages: None,
 //! #             djot_content: None,
+//! #             elements: None,
 //! #         })
 //! #     }
 //! #     async fn extract_file(&self, _: &std::path::Path, _: &str, _: &kreuzberg::ExtractionConfig)
@@ -63,6 +64,7 @@
 //! #             images: None,
 //! #             pages: None,
 //! #             djot_content: None,
+//! #             elements: None,
 //! #         })
 //! #     }
 //! #     fn supported_mime_types(&self) -> &[&str] { &[] }
@@ -124,7 +126,9 @@
 //!             detected_languages: None,
 //!             chunks: None,
 //!             images: None,
+//!             djot_content: None,
 //!             pages: None,
+//!             elements: None,
 //!         })
 //!     }
 //!
@@ -212,3 +216,10 @@ pub use ocr::{
 pub use processor::{PostProcessor, ProcessingStage, list_post_processors};
 pub use traits::Plugin;
 pub use validator::{Validator, clear_validators, list_validators, register_validator, unregister_validator};
+
+// Re-export registry items for backward compatibility
+pub use registry::{
+    DOCUMENT_EXTRACTOR_REGISTRY, DocumentExtractorRegistry, OCR_BACKEND_REGISTRY, OcrBackendRegistry,
+    POST_PROCESSOR_REGISTRY, PostProcessorRegistry, VALIDATOR_REGISTRY, ValidatorRegistry,
+    get_document_extractor_registry, get_ocr_backend_registry, get_post_processor_registry, get_validator_registry,
+};

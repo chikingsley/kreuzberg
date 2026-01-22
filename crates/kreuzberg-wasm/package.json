@@ -1,6 +1,6 @@
 {
 	"name": "@kreuzberg/wasm",
-	"version": "4.0.8",
+	"version": "4.1.0",
 	"type": "module",
 	"packageManager": "pnpm@10.17.0",
 	"description": "Kreuzberg document intelligence - WebAssembly bindings",
@@ -87,13 +87,13 @@
 	"scripts": {
 		"build:wasm:web": "wasm-pack build --target web --out-dir pkg --release",
 		"build:wasm:bundler": "wasm-pack build --target bundler --out-dir pkg --release",
-		"build:wasm:nodejs": "wasm-pack build --target nodejs --out-dir pkg --release",
+		"build:wasm:nodejs": "wasm-pack build --target nodejs --out-dir pkg-nodejs --release",
 		"build:wasm:deno": "wasm-pack build --target deno --out-dir pkg --release",
 		"build:ts": "tsup && tsc --emitDeclarationOnly && node scripts/fix-type-exports.js",
 		"build:ts:minify": "tsup --minify && tsc --emitDeclarationOnly && node scripts/fix-type-exports.js",
 		"copy:pkg": "node scripts/copy-pkg.js",
-		"build": "npm run build:wasm:nodejs && npm run build:ts && npm run copy:pkg",
-		"build:ci": "npm run build:wasm:nodejs && npm run build:ts:minify && npm run copy:pkg",
+		"build": "npm run build:wasm:web && npm run build:ts && npm run copy:pkg",
+		"build:ci": "npm run build:wasm:web && npm run build:ts:minify && npm run copy:pkg",
 		"build:all": "npm run build:wasm:web && npm run build:wasm:bundler && npm run build:wasm:nodejs && npm run build:wasm:deno && npm run build:ts && npm run copy:pkg",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check typescript && oxlint typescript",
@@ -106,11 +106,11 @@
 		"prepublishOnly": "npm run build"
 	},
 	"devDependencies": {
-		"@types/node": "^25.0.9",
+		"@types/node": "^25.0.10",
 		"@vitest/coverage-v8": "^4.0.17",
 		"@vitest/ui": "^4.0.17",
 		"jsdom": "^27.4.0",
-		"oxlint": "^1.39.0",
+		"oxlint": "^1.41.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.17"

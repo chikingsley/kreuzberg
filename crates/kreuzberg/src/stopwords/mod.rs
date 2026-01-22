@@ -82,33 +82,7 @@
 use ahash::{AHashMap, AHashSet};
 use once_cell::sync::Lazy;
 
-/// Macro to generate embedded stopwords for all languages.
-///
-/// This macro embeds the JSON files at compile time using `include_str!()` and
-/// generates code to parse and insert them into the stopwords map.
-macro_rules! embed_stopwords {
-    ($map:expr, $($lang:literal),* $(,)?) => {
-        $(
-            {
-                const JSON: &str = include_str!(concat!("../../stopwords/", $lang, "_stopwords.json"));
-                match serde_json::from_str::<Vec<String>>(JSON) {
-                    Ok(words) => {
-                        let set: AHashSet<String> = words.into_iter().collect();
-                        $map.insert($lang.to_string(), set);
-                    }
-                    Err(e) => {
-                        panic!(
-                            "Failed to parse embedded stopwords for language '{}': {}. \
-                            This indicates corrupted or malformed JSON in the embedded stopwords data. \
-                            Please report this issue at https://github.com/kreuzberg-dev/kreuzberg/issues",
-                            $lang, e
-                        );
-                    }
-                }
-            }
-        )*
-    };
-}
+mod languages;
 
 /// Global stopwords registry.
 ///
@@ -146,12 +120,12 @@ macro_rules! embed_stopwords {
 pub static STOPWORDS: Lazy<AHashMap<String, AHashSet<String>>> = Lazy::new(|| {
     let mut map = AHashMap::new();
 
-    embed_stopwords!(
-        map, "af", "ar", "bg", "bn", "br", "ca", "cs", "da", "de", "el", "en", "eo", "es", "et", "eu", "fa", "fi",
-        "fr", "ga", "gl", "gu", "ha", "he", "hi", "hr", "hu", "hy", "id", "it", "ja", "kn", "ko", "ku", "la", "lt",
-        "lv", "ml", "mr", "ms", "ne", "nl", "no", "pl", "pt", "ro", "ru", "si", "sk", "sl", "so", "st", "sv", "sw",
-        "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "yo", "zh", "zu",
-    );
+    // Load stopwords by language family
+    languages::germanic::load_stopwords(&mut map);
+    languages::romance::load_stopwords(&mut map);
+    languages::slavic::load_stopwords(&mut map);
+    languages::asian::load_stopwords(&mut map);
+    languages::other::load_stopwords(&mut map);
 
     apply_stopword_whitelist(&mut map);
 

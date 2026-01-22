@@ -115,6 +115,7 @@ pub fn test_config_with_ocr() -> kreuzberg::core::config::ExtractionConfig {
             backend: "tesseract".to_string(),
             language: "eng".to_string(),
             tesseract_config: None,
+            output_format: None,
         }),
         force_ocr: false,
         ..Default::default()

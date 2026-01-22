@@ -15,12 +15,113 @@ function getNativeModule(): Record<string, any> {
 	if (!nativeModule) {
 		try {
 			nativeModule = require("kreuzberg-node");
-		} catch (_error) {
-			throw new Error("Unable to load native kreuzberg-node module. Please ensure it is properly compiled.");
+		} catch (error) {
+			throw new Error(`Unable to load native kreuzberg-node module: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 	return nativeModule;
 }
+
+/**
+ * Interface for a single validation rule
+ */
+interface ValidationRule<T> {
+	validatorName: string;
+	errorMessage: (value: T) => string;
+}
+
+/**
+ * Creates a validator function using the factory pattern.
+ * Generates a function that validates a value against a native module validator.
+ *
+ * @param rule The validation rule containing native validator name and error message
+ * @returns A validator function that throws on invalid input
+ */
+function createValidator<T>(rule: ValidationRule<T>): (value: T) => void {
+	return (value: T): void => {
+		const validator = getNativeModule()[rule.validatorName];
+		if (!validator(value)) {
+			throw new Error(rule.errorMessage(value));
+		}
+	};
+}
+
+/**
+ * Creates a multi-parameter validator function for cases like chunking params.
+ * Generates a function that validates multiple values against a native module validator.
+ *
+ * @param rule The validation rule
+ * @param paramCount Number of parameters to validate
+ * @returns A validator function that throws on invalid input
+ */
+function createMultiParamValidator<T extends any[]>(
+	rule: ValidationRule<T>,
+	_paramCount: number,
+): (...args: T) => void {
+	return (...args: T): void => {
+		const validator = getNativeModule()[rule.validatorName];
+		if (!validator(...args)) {
+			throw new Error(rule.errorMessage(args));
+		}
+	};
+}
+
+/**
+ * Centralized validation rules registry.
+ * Each rule maps to a native validator function and provides error messaging.
+ */
+const VALIDATION_RULES = {
+	binarizationMethod: {
+		validatorName: 'validateBinarizationMethod',
+		errorMessage: (value: string) => `Invalid binarization method: ${value}`,
+	} as ValidationRule<string>,
+
+	ocrBackend: {
+		validatorName: 'validateOcrBackend',
+		errorMessage: (value: string) => `Invalid OCR backend: ${value}`,
+	} as ValidationRule<string>,
+
+	languageCode: {
+		validatorName: 'validateLanguageCode',
+		errorMessage: (value: string) => `Invalid language code: ${value}`,
+	} as ValidationRule<string>,
+
+	tokenReductionLevel: {
+		validatorName: 'validateTokenReductionLevel',
+		errorMessage: (value: string) => `Invalid token reduction level: ${value}`,
+	} as ValidationRule<string>,
+
+	tesseractPsm: {
+		validatorName: 'validateTesseractPsm',
+		errorMessage: (value: number) => `Invalid Tesseract PSM: ${value}. Valid range: 0-13`,
+	} as ValidationRule<number>,
+
+	tesseractOem: {
+		validatorName: 'validateTesseractOem',
+		errorMessage: (value: number) => `Invalid Tesseract OEM: ${value}. Valid range: 0-3`,
+	} as ValidationRule<number>,
+
+	outputFormat: {
+		validatorName: 'validateOutputFormat',
+		errorMessage: (value: string) => `Invalid output format: ${value}`,
+	} as ValidationRule<string>,
+
+	confidence: {
+		validatorName: 'validateConfidence',
+		errorMessage: (value: number) => `Invalid confidence: ${value}. Valid range: 0.0-1.0`,
+	} as ValidationRule<number>,
+
+	dpi: {
+		validatorName: 'validateDpi',
+		errorMessage: (value: number) => `Invalid DPI: ${value}. Valid range: 1-2400`,
+	} as ValidationRule<number>,
+
+	chunkingParams: {
+		validatorName: 'validateChunkingParams',
+		errorMessage: (args: [number, number]) =>
+			`Invalid chunking params: maxChars=${args[0]}, maxOverlap=${args[1]}`,
+	} as ValidationRule<[number, number]>,
+};
 
 /**
  * Validates a binarization method string.
@@ -42,12 +143,7 @@ function getNativeModule(): Record<string, any> {
  * }
  * ```
  */
-export function validateBinarizationMethod(method: string): void {
-	const validator = getNativeModule()['validateBinarizationMethod'];
-	if (!validator(method)) {
-		throw new Error(`Invalid binarization method: ${method}`);
-	}
-}
+export const validateBinarizationMethod = createValidator(VALIDATION_RULES.binarizationMethod);
 
 /**
  * Validates an OCR backend string.
@@ -68,12 +164,7 @@ export function validateBinarizationMethod(method: string): void {
  * }
  * ```
  */
-export function validateOcrBackend(backend: string): void {
-	const validator = getNativeModule()['validateOcrBackend'];
-	if (!validator(backend)) {
-		throw new Error(`Invalid OCR backend: ${backend}`);
-	}
-}
+export const validateOcrBackend = createValidator(VALIDATION_RULES.ocrBackend);
 
 /**
  * Validates a language code (ISO 639-1 or 639-3 format).
@@ -94,12 +185,7 @@ export function validateOcrBackend(backend: string): void {
  * }
  * ```
  */
-export function validateLanguageCode(code: string): void {
-	const validator = getNativeModule()['validateLanguageCode'];
-	if (!validator(code)) {
-		throw new Error(`Invalid language code: ${code}`);
-	}
-}
+export const validateLanguageCode = createValidator(VALIDATION_RULES.languageCode);
 
 /**
  * Validates a token reduction level string.
@@ -120,12 +206,7 @@ export function validateLanguageCode(code: string): void {
  * }
  * ```
  */
-export function validateTokenReductionLevel(level: string): void {
-	const validator = getNativeModule()['validateTokenReductionLevel'];
-	if (!validator(level)) {
-		throw new Error(`Invalid token reduction level: ${level}`);
-	}
-}
+export const validateTokenReductionLevel = createValidator(VALIDATION_RULES.tokenReductionLevel);
 
 /**
  * Validates a Tesseract Page Segmentation Mode (PSM) value.
@@ -146,12 +227,7 @@ export function validateTokenReductionLevel(level: string): void {
  * }
  * ```
  */
-export function validateTesseractPsm(psm: number): void {
-	const validator = getNativeModule()['validateTesseractPsm'];
-	if (!validator(psm)) {
-		throw new Error(`Invalid Tesseract PSM: ${psm}. Valid range: 0-13`);
-	}
-}
+export const validateTesseractPsm = createValidator(VALIDATION_RULES.tesseractPsm);
 
 /**
  * Validates a Tesseract OCR Engine Mode (OEM) value.
@@ -172,12 +248,7 @@ export function validateTesseractPsm(psm: number): void {
  * }
  * ```
  */
-export function validateTesseractOem(oem: number): void {
-	const validator = getNativeModule()['validateTesseractOem'];
-	if (!validator(oem)) {
-		throw new Error(`Invalid Tesseract OEM: ${oem}. Valid range: 0-3`);
-	}
-}
+export const validateTesseractOem = createValidator(VALIDATION_RULES.tesseractOem);
 
 /**
  * Validates a tesseract output format string.
@@ -198,12 +269,7 @@ export function validateTesseractOem(oem: number): void {
  * }
  * ```
  */
-export function validateOutputFormat(format: string): void {
-	const validator = getNativeModule()['validateOutputFormat'];
-	if (!validator(format)) {
-		throw new Error(`Invalid output format: ${format}`);
-	}
-}
+export const validateOutputFormat = createValidator(VALIDATION_RULES.outputFormat);
 
 /**
  * Validates a confidence threshold value.
@@ -224,12 +290,7 @@ export function validateOutputFormat(format: string): void {
  * }
  * ```
  */
-export function validateConfidence(confidence: number): void {
-	const validator = getNativeModule()['validateConfidence'];
-	if (!validator(confidence)) {
-		throw new Error(`Invalid confidence: ${confidence}. Valid range: 0.0-1.0`);
-	}
-}
+export const validateConfidence = createValidator(VALIDATION_RULES.confidence);
 
 /**
  * Validates a DPI (dots per inch) value.
@@ -250,12 +311,7 @@ export function validateConfidence(confidence: number): void {
  * }
  * ```
  */
-export function validateDpi(dpi: number): void {
-	const validator = getNativeModule()['validateDpi'];
-	if (!validator(dpi)) {
-		throw new Error(`Invalid DPI: ${dpi}. Valid range: 1-2400`);
-	}
-}
+export const validateDpi = createValidator(VALIDATION_RULES.dpi);
 
 /**
  * Validates chunking parameters.
@@ -277,12 +333,7 @@ export function validateDpi(dpi: number): void {
  * }
  * ```
  */
-export function validateChunkingParams(maxChars: number, maxOverlap: number): void {
-	const validator = getNativeModule()['validateChunkingParams'];
-	if (!validator(maxChars, maxOverlap)) {
-		throw new Error(`Invalid chunking params: maxChars=${maxChars}, maxOverlap=${maxOverlap}`);
-	}
-}
+export const validateChunkingParams = createMultiParamValidator(VALIDATION_RULES.chunkingParams, 2);
 
 /**
  * Get all valid binarization methods.
