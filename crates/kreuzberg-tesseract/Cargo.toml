@@ -21,7 +21,7 @@ libc = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-image = { workspace = true }
+image = { workspace = true, features = ["png"] }
 
 [build-dependencies]
 cc = { version = "^1.2.53", optional = true }

@@ -1,9 +1,9 @@
-//go:build cgo && !windows
+//go:build cgo && windows
 
 package kreuzberg
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/internal/ffi
+// Windows: CGO_CFLAGS must be set externally as ${SRCDIR} produces malformed paths
 #include "internal/ffi/kreuzberg.h"
 #include <stdlib.h>
 #include <string.h>

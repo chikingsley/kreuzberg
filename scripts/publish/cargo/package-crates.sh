@@ -45,7 +45,7 @@ fi
 if [ "$core_packaged" -eq 1 ]; then
   cp target/package/kreuzberg-*.crate crate-artifacts/
 else
-  echo "::warning::kreuzberg crate could not be packaged. It will need to be packaged after tesseract-rs is published and indexed."
+  echo "::warning::kreuzberg crate could not be packaged. It will need to be packaged after kreuzberg-tesseract is published and indexed."
 fi
 if [ "$cli_packaged" -eq 1 ]; then
   cp target/package/kreuzberg-cli-*.crate crate-artifacts/

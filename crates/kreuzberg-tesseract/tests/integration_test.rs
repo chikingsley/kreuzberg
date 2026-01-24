@@ -7,7 +7,7 @@ fn get_default_tessdata_dir() -> PathBuf {
         PathBuf::from(home_dir)
             .join("Library")
             .join("Application Support")
-            .join("tesseract-rs")
+            .join("kreuzberg-tesseract")
             .join("tessdata")
     } else if cfg!(target_os = "linux") {
         let system_paths = [
@@ -20,10 +20,10 @@ fn get_default_tessdata_dir() -> PathBuf {
             }
         }
         let home_dir = std::env::var("HOME").expect("HOME environment variable not set");
-        PathBuf::from(home_dir).join(".tesseract-rs").join("tessdata")
+        PathBuf::from(home_dir).join(".kreuzberg-tesseract").join("tessdata")
     } else if cfg!(target_os = "windows") {
         PathBuf::from(std::env::var("APPDATA").expect("APPDATA environment variable not set"))
-            .join("tesseract-rs")
+            .join("kreuzberg-tesseract")
             .join("tessdata")
     } else {
         panic!("Unsupported operating system");

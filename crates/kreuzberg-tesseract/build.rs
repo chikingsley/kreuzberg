@@ -38,7 +38,7 @@ mod build_tesseract {
                 return None;
             }
         }
-        Some(path.join("tesseract-rs-cache"))
+        Some(path.join("kreuzberg-tesseract-cache"))
     }
 
     fn get_preferred_out_dir() -> PathBuf {
@@ -63,14 +63,14 @@ mod build_tesseract {
             PathBuf::from(home_dir)
                 .join("Library")
                 .join("Application Support")
-                .join("tesseract-rs")
+                .join("kreuzberg-tesseract")
         } else if cfg!(target_os = "linux") {
             let home_dir = env::var("HOME").unwrap_or_else(|_| {
                 env::var("USER")
                     .map(|user| format!("/home/{}", user))
                     .expect("Neither HOME nor USER environment variable set")
             });
-            PathBuf::from(home_dir).join(".tesseract-rs")
+            PathBuf::from(home_dir).join(".kreuzberg-tesseract")
         } else {
             panic!("Unsupported operating system");
         }
@@ -117,7 +117,7 @@ mod build_tesseract {
                     "cargo:warning=Failed to create cache dir {:?}: {}. Falling back to temp dir.",
                     preferred, err
                 );
-                let fallback = env::temp_dir().join("tesseract-rs-cache");
+                let fallback = env::temp_dir().join("kreuzberg-tesseract-cache");
                 fs::create_dir_all(&fallback).expect("Failed to create fallback cache directory in temp dir");
                 fallback
             }

@@ -327,8 +327,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # TODO: Re-enable windows-latest once Tesseract installation issues are resolved
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -489,6 +488,20 @@ jobs:
 
       - name: Install Task
         uses: ./.github/actions/install-task
+
+      - name: Setup Tesseract tessdata (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          # kreuzberg-tesseract expects tessdata at C:\tess\tessdata on Windows
+          mkdir -p /c/tess/tessdata
+          echo "Downloading tessdata files..."
+          curl -fsSL -o /c/tess/tessdata/eng.traineddata \
+            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata"
+          curl -fsSL -o /c/tess/tessdata/osd.traineddata \
+            "https://github.com/tesseract-ocr/tessdata_fast/raw/main/osd.traineddata"
+          echo "Tessdata files downloaded to C:/tess/tessdata"
+          ls -la /c/tess/tessdata/
 
       - name: Run Go tests
         shell: bash

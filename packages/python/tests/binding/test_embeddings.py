@@ -21,6 +21,9 @@ The tests follow the established pattern from other binding tests, using:
 from __future__ import annotations
 
 import math
+import platform
+
+import pytest
 
 from kreuzberg import (
     ChunkingConfig,
@@ -180,6 +183,7 @@ class TestEmbeddingDimensionVerification:
                     dimension = len(chunk["embedding"])
                     assert dimension in [128, 256, 384, 512]
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Quality embedding model download too slow for Windows CI")
     def test_quality_model_dimension_verification(self) -> None:
         """Verify quality model produces correct embedding dimensions."""
         model = EmbeddingModelType.preset("quality")
@@ -520,6 +524,7 @@ class TestModelSwitching:
             if chunk["embedding"] is not None:
                 assert isinstance(chunk["embedding"], list)
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Quality embedding model download too slow for Windows CI")
     def test_preset_model_switching_quality(self) -> None:
         """Test switching to quality preset model."""
         model = EmbeddingModelType.preset("quality")

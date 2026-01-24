@@ -1,7 +1,9 @@
+//go:build !windows
+
 package kreuzberg
 
 /*
-// Kreuzberg FFI - CGO Configuration
+// Kreuzberg FFI - CGO Configuration (non-Windows)
 //
 // This file provides the CGO include directive for the FFI header.
 // Library linking is configured via:
