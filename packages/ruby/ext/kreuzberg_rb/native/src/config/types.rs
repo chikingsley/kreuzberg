@@ -1025,8 +1025,10 @@ pub fn config_from_file(path: String) -> Result<RHash, Error> {
         .and_then(|v| magnus::RHash::try_convert(v).map_err(|_| validation_error("Config must be a Hash")))
 }
 
-/// Discover extraction config from current directory
+/// Discover extraction config from current directory or parent directories
 pub fn config_discover() -> Result<Value, Error> {
+    use std::path::PathBuf;
+
     let ruby = Ruby::get().expect("Ruby not initialized");
 
     // Search for config files in order of precedence
@@ -1038,19 +1040,27 @@ pub fn config_discover() -> Result<Value, Error> {
         (".kreuzbergrc", "json"),
     ];
 
-    for (name, format) in config_files {
-        if let Ok(content) = fs::read_to_string(name) {
-            let json_value: serde_json::Value = match format {
-                "toml" => toml::from_str(&content)
-                    .map_err(|e| validation_error(format!("Invalid TOML in {}: {}", name, e)))?,
-                "yaml" => serde_yaml_ng::from_str(&content)
-                    .map_err(|e| validation_error(format!("Invalid YAML in {}: {}", name, e)))?,
-                "json" => serde_json::from_str(&content)
-                    .map_err(|e| validation_error(format!("Invalid JSON in {}: {}", name, e)))?,
-                _ => unreachable!(),
-            };
-            return json_value_to_ruby(&ruby, &json_value);
+    // Start from current directory and search up to parent directories
+    let mut current_dir: Option<PathBuf> = std::env::current_dir().ok();
+
+    while let Some(dir) = current_dir {
+        for (name, format) in &config_files {
+            let config_path = dir.join(name);
+            if let Ok(content) = fs::read_to_string(&config_path) {
+                let json_value: serde_json::Value = match *format {
+                    "toml" => toml::from_str(&content)
+                        .map_err(|e| validation_error(format!("Invalid TOML in {}: {}", config_path.display(), e)))?,
+                    "yaml" => serde_yaml_ng::from_str(&content)
+                        .map_err(|e| validation_error(format!("Invalid YAML in {}: {}", config_path.display(), e)))?,
+                    "json" => serde_json::from_str(&content)
+                        .map_err(|e| validation_error(format!("Invalid JSON in {}: {}", config_path.display(), e)))?,
+                    _ => unreachable!(),
+                };
+                return json_value_to_ruby(&ruby, &json_value);
+            }
         }
+        // Move to parent directory
+        current_dir = dir.parent().map(|p| p.to_path_buf());
     }
 
     // Return nil if no config found
