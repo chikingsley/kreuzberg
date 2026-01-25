@@ -213,7 +213,9 @@ async fn test_unicode_filenames() {
     let config = ExtractionConfig::default();
 
     let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-    temp_file.write_all(b"Test content with Unicode filename.").expect("Operation failed");
+    temp_file
+        .write_all(b"Test content with Unicode filename.")
+        .expect("Operation failed");
 
     let result = extract_file(temp_file.path(), Some("text/plain"), &config).await;
 

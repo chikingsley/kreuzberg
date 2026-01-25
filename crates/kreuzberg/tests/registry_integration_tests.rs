@@ -516,7 +516,10 @@ fn test_extractor_multiple_mime_types() {
         registry.get("application/pdf").expect("Value not found").name(),
         "multi-format-extractor"
     );
-    assert_eq!(registry.get("text/csv").expect("Value not found").name(), "multi-format-extractor");
+    assert_eq!(
+        registry.get("text/csv").expect("Value not found").name(),
+        "multi-format-extractor"
+    );
 }
 
 /// Test clearing all extractors.

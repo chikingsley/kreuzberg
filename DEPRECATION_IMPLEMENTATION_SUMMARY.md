@@ -250,8 +250,8 @@ Tests verify:
 When using deprecated APIs, the C# compiler generates warnings:
 
 ```
-CS0618: 'LegacyExtractionAPI.ExtractAsyncWithOcr(byte[], string, bool)' 
-is obsolete: 'Use ExtractAsyncWithConfig() with ExtractionConfig.Ocr instead. 
+CS0618: 'LegacyExtractionAPI.ExtractAsyncWithOcr(byte[], string, bool)'
+is obsolete: 'Use ExtractAsyncWithConfig() with ExtractionConfig.Ocr instead.
 This method will be removed in v2.0.0.'
 ```
 
@@ -267,7 +267,7 @@ var result = await LegacyExtractionAPI.ExtractAsyncWithOcr(input, mimeType, true
 When using deprecated functions, Elixir compiler generates warnings:
 
 ```
-warning: Kreuzberg.LegacyAPI.extract_with_ocr/3 is deprecated, use 
+warning: Kreuzberg.LegacyAPI.extract_with_ocr/3 is deprecated, use
 Kreuzberg.extract/3 with ExtractionConfig.ocr map instead
 ```
 
@@ -365,4 +365,3 @@ For questions about deprecation implementation:
 2. Check `DeprecationExamples.cs` for C# patterns
 3. Check `LegacyAPI.ex` for Elixir patterns
 4. Run the test suites to understand verification approaches
-

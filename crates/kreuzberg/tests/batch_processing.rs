@@ -161,7 +161,11 @@ async fn test_batch_extract_empty_list() {
     let results = batch_extract_file(paths, &config).await;
 
     assert!(results.is_ok(), "Empty batch should succeed");
-    assert_eq!(results.expect("Operation failed").len(), 0, "Should return empty vector");
+    assert_eq!(
+        results.expect("Operation failed").len(),
+        0,
+        "Should return empty vector"
+    );
 }
 
 /// Test batch extraction when one file fails (others should succeed).

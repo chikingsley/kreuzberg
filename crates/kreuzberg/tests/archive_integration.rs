@@ -111,7 +111,8 @@ async fn test_zip_nested_directories() {
         zip.start_file("dir1/file.txt", options).expect("Operation failed");
         zip.write_all(b"File in dir1").expect("Operation failed");
 
-        zip.start_file("dir1/subdir/nested.txt", options).expect("Operation failed");
+        zip.start_file("dir1/subdir/nested.txt", options)
+            .expect("Operation failed");
         zip.write_all(b"Nested file").expect("Operation failed");
 
         zip.finish().expect("Operation failed");
@@ -246,7 +247,8 @@ async fn test_nested_archive() {
         zip.write_all(&inner_zip).expect("Operation failed");
 
         zip.start_file("readme.txt", options).expect("Operation failed");
-        zip.write_all(b"This archive contains another archive").expect("Operation failed");
+        zip.write_all(b"This archive contains another archive")
+            .expect("Operation failed");
 
         zip.finish().expect("Operation failed");
     }
@@ -373,8 +375,10 @@ async fn test_large_archive() {
         let options = FileOptions::<'_, ()>::default();
 
         for i in 0..100 {
-            zip.start_file(format!("file_{}.txt", i), options).expect("Operation failed");
-            zip.write_all(format!("Content {}", i).as_bytes()).expect("Failed to convert to bytes");
+            zip.start_file(format!("file_{}.txt", i), options)
+                .expect("Operation failed");
+            zip.write_all(format!("Content {}", i).as_bytes())
+                .expect("Failed to convert to bytes");
         }
 
         zip.finish().expect("Operation failed");
@@ -419,12 +423,15 @@ async fn test_archive_with_special_characters() {
         let options = FileOptions::<'_, ()>::default();
 
         zip.start_file("测试文件.txt", options).expect("Operation failed");
-        zip.write_all("Unicode content".as_bytes()).expect("Failed to convert to bytes");
+        zip.write_all("Unicode content".as_bytes())
+            .expect("Failed to convert to bytes");
 
-        zip.start_file("file with spaces.txt", options).expect("Operation failed");
+        zip.start_file("file with spaces.txt", options)
+            .expect("Operation failed");
         zip.write_all(b"Spaces in filename").expect("Operation failed");
 
-        zip.start_file("file-with-dashes.txt", options).expect("Operation failed");
+        zip.start_file("file-with-dashes.txt", options)
+            .expect("Operation failed");
         zip.write_all(b"Dashes").expect("Operation failed");
 
         zip.finish().expect("Operation failed");

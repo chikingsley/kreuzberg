@@ -7,7 +7,7 @@ namespace Kreuzberg.Tests
 {
     /// <summary>
     /// Cross-language serialization tests for C# bindings.
-    /// 
+    ///
     /// Validates that ExtractionConfig serializes consistently with other language bindings.
     /// </summary>
     public class SerializationTest

@@ -124,8 +124,11 @@ fn test_config_merge_in_mcp_context() {
     let default_config = kreuzberg::core::config::ExtractionConfig::default();
     assert_eq!(default_config.use_cache, true, "Default cache should be enabled");
     assert_eq!(default_config.force_ocr, false, "Default force_ocr should be false");
-    assert_eq!(default_config.output_format, kreuzberg::core::config::OutputFormat::Plain,
-        "Default output format should be Plain");
+    assert_eq!(
+        default_config.output_format,
+        kreuzberg::core::config::OutputFormat::Plain,
+        "Default output format should be Plain"
+    );
 
     // Test 2: Request provides single field override - verify precedence
     let request_config_json = json!({
@@ -138,9 +141,15 @@ fn test_config_merge_in_mcp_context() {
     assert_eq!(request_config.force_ocr, true, "Request force_ocr should be true");
 
     // But unspecified fields should use defaults
-    assert_eq!(request_config.use_cache, true, "Unspecified use_cache should default to true");
-    assert_eq!(request_config.output_format, kreuzberg::core::config::OutputFormat::Plain,
-        "Unspecified output_format should default to Plain");
+    assert_eq!(
+        request_config.use_cache, true,
+        "Unspecified use_cache should default to true"
+    );
+    assert_eq!(
+        request_config.output_format,
+        kreuzberg::core::config::OutputFormat::Plain,
+        "Unspecified output_format should default to Plain"
+    );
 
     // Test 3: Multiple field overrides - verify precedence chain
     let multi_override_json = json!({
@@ -154,12 +163,18 @@ fn test_config_merge_in_mcp_context() {
     // All specified fields should override defaults
     assert_eq!(multi_config.use_cache, false, "Override use_cache should be false");
     assert_eq!(multi_config.force_ocr, true, "Override force_ocr should be true");
-    assert_eq!(multi_config.output_format, kreuzberg::core::config::OutputFormat::Markdown,
-        "Override output_format should be Markdown");
+    assert_eq!(
+        multi_config.output_format,
+        kreuzberg::core::config::OutputFormat::Markdown,
+        "Override output_format should be Markdown"
+    );
 
     // Unspecified numeric fields should still have defaults
     if let Some(max_conc) = multi_config.max_concurrent_extractions {
-        panic!("max_concurrent_extractions should not be specified when not in request, got: {}", max_conc);
+        panic!(
+            "max_concurrent_extractions should not be specified when not in request, got: {}",
+            max_conc
+        );
     }
 
     // Test 4: Verify config can be fully constructed with all fields
@@ -174,10 +189,21 @@ fn test_config_merge_in_mcp_context() {
         serde_json::from_value(full_json).expect("Failed to parse full config");
 
     assert_eq!(full_config.use_cache, false, "Full config use_cache should be false");
-    assert_eq!(full_config.enable_quality_processing, true, "Full config quality processing should be true");
+    assert_eq!(
+        full_config.enable_quality_processing, true,
+        "Full config quality processing should be true"
+    );
     assert_eq!(full_config.force_ocr, true, "Full config force_ocr should be true");
-    assert_eq!(full_config.output_format, kreuzberg::core::config::OutputFormat::Html, "Full config output_format should be Html");
-    assert_eq!(full_config.max_concurrent_extractions, Some(8), "Full config max_concurrent should be 8");
+    assert_eq!(
+        full_config.output_format,
+        kreuzberg::core::config::OutputFormat::Html,
+        "Full config output_format should be Html"
+    );
+    assert_eq!(
+        full_config.max_concurrent_extractions,
+        Some(8),
+        "Full config max_concurrent should be 8"
+    );
 }
 
 #[test]
@@ -302,8 +328,7 @@ fn test_mcp_batch_with_config() {
 fn test_mcp_invalid_config_json_error() {
     let invalid_config = "not a valid json object";
 
-    let result: Result<kreuzberg::core::config::ExtractionConfig, _> =
-        serde_json::from_str(invalid_config);
+    let result: Result<kreuzberg::core::config::ExtractionConfig, _> = serde_json::from_str(invalid_config);
 
     assert!(result.is_err(), "Invalid JSON should produce error");
 }
@@ -329,7 +354,10 @@ fn test_mcp_config_overrides() {
         // Verify request config overrides defaults
         assert_eq!(parsed_config.force_ocr, true);
         assert_eq!(parsed_config.use_cache, false);
-        assert_eq!(parsed_config.output_format, kreuzberg::core::config::OutputFormat::Markdown);
+        assert_eq!(
+            parsed_config.output_format,
+            kreuzberg::core::config::OutputFormat::Markdown
+        );
     }
 }
 
@@ -359,7 +387,10 @@ fn test_mcp_no_deprecated_params() {
     }
 
     // Verify deprecated params are NOT in the correct structure
-    assert!(deprecated_params.get("config").is_none(), "Deprecated params should not be in config");
+    assert!(
+        deprecated_params.get("config").is_none(),
+        "Deprecated params should not be in config"
+    );
 }
 
 /// End-to-end test with real text extraction
@@ -438,12 +469,17 @@ fn test_mcp_minimal_config() {
     });
 
     // Path should exist and be correct
-    assert_eq!(minimal_request.get("path"), Some(&serde_json::Value::String("/document.pdf".to_string())),
-        "Path field should be present and set to /document.pdf");
+    assert_eq!(
+        minimal_request.get("path"),
+        Some(&serde_json::Value::String("/document.pdf".to_string())),
+        "Path field should be present and set to /document.pdf"
+    );
 
     // If no config, use defaults
     let config = match minimal_request.get("config") {
-        Some(config_obj) => serde_json::from_value(config_obj.clone()).expect("Failed to parse config from minimal request"),
+        Some(config_obj) => {
+            serde_json::from_value(config_obj.clone()).expect("Failed to parse config from minimal request")
+        }
         None => kreuzberg::core::config::ExtractionConfig::default(),
     };
 
@@ -524,10 +560,16 @@ fn test_mcp_config_round_trip_serialization() {
 
     // Verify round-trip
     assert_eq!(original_config.use_cache, restored_config.use_cache);
-    assert_eq!(original_config.enable_quality_processing, restored_config.enable_quality_processing);
+    assert_eq!(
+        original_config.enable_quality_processing,
+        restored_config.enable_quality_processing
+    );
     assert_eq!(original_config.force_ocr, restored_config.force_ocr);
     assert_eq!(original_config.output_format, restored_config.output_format);
-    assert_eq!(original_config.max_concurrent_extractions, restored_config.max_concurrent_extractions);
+    assert_eq!(
+        original_config.max_concurrent_extractions,
+        restored_config.max_concurrent_extractions
+    );
 }
 
 /// Test MCP tool invocation with extract_bytes semantics
@@ -570,8 +612,7 @@ fn test_mcp_tool_extract_file_semantics() {
     // Simulate MCP tool: extract_file (sync)
     if test_file.exists() {
         let file_path = test_file.to_str().expect("test_file path should be valid UTF-8");
-        let result = kreuzberg::extract_file_sync(file_path, None, &config)
-            .expect("Extraction should succeed");
+        let result = kreuzberg::extract_file_sync(file_path, None, &config).expect("Extraction should succeed");
 
         assert!(!result.content.is_empty());
     }
@@ -613,8 +654,7 @@ fn test_mcp_error_invalid_format_field() {
         "output_format": "invalid_format_that_does_not_exist",
     });
 
-    let result: Result<kreuzberg::core::config::ExtractionConfig, _> =
-        serde_json::from_value(invalid_config);
+    let result: Result<kreuzberg::core::config::ExtractionConfig, _> = serde_json::from_value(invalid_config);
 
     // This should fail during deserialization
     assert!(result.is_err());
@@ -665,14 +705,14 @@ fn test_mcp_nested_config_extraction() {
         }
     });
 
-    if let Some(params) = nested_request.get("parameters") {
-        if let Some(config_obj) = params.get("config") {
-            let config: kreuzberg::core::config::ExtractionConfig =
-                serde_json::from_value(config_obj.clone()).expect("Failed to parse nested config");
+    if let Some(params) = nested_request.get("parameters")
+        && let Some(config_obj) = params.get("config")
+    {
+        let config: kreuzberg::core::config::ExtractionConfig =
+            serde_json::from_value(config_obj.clone()).expect("Failed to parse nested config");
 
-            assert_eq!(config.output_format, kreuzberg::core::config::OutputFormat::Markdown);
-            assert_eq!(config.force_ocr, true);
-        }
+        assert_eq!(config.output_format, kreuzberg::core::config::OutputFormat::Markdown);
+        assert_eq!(config.force_ocr, true);
     }
 }
 
@@ -692,12 +732,7 @@ fn test_mcp_html_output_format() {
 /// Test MCP config with all boolean combinations
 #[test]
 fn test_mcp_boolean_combinations() {
-    let combinations = vec![
-        (true, true),
-        (true, false),
-        (false, true),
-        (false, false),
-    ];
+    let combinations = vec![(true, true), (true, false), (false, true), (false, false)];
 
     for (use_cache, quality_processing) in combinations {
         let config_json = json!({
@@ -728,8 +763,14 @@ fn test_mcp_response_structure_validation() {
         }
     });
 
-    assert_eq!(mcp_response.get("status").expect("status field should exist"), "success");
-    assert!(mcp_response.get("data").is_some(), "data field should be present in MCP response");
+    assert_eq!(
+        mcp_response.get("status").expect("status field should exist"),
+        "success"
+    );
+    assert!(
+        mcp_response.get("data").is_some(),
+        "data field should be present in MCP response"
+    );
 }
 
 /// Test MCP request/response roundtrip with config
@@ -752,7 +793,10 @@ fn test_mcp_request_response_roundtrip() {
     // Verify it matches
     assert_eq!(original_config.get("use_cache"), response_config.get("use_cache"));
     assert_eq!(original_config.get("force_ocr"), response_config.get("force_ocr"));
-    assert_eq!(original_config.get("output_format"), response_config.get("output_format"));
+    assert_eq!(
+        original_config.get("output_format"),
+        response_config.get("output_format")
+    );
 }
 
 /// Test MCP config with partial updates

@@ -222,12 +222,7 @@ fn test_cli_output_format_all_variants() {
 
     for format in formats {
         let output = Command::new(get_binary_path())
-            .args([
-                "extract",
-                test_file.as_str(),
-                "--output-format",
-                format,
-            ])
+            .args(["extract", test_file.as_str(), "--output-format", format])
             .output()
             .unwrap_or_else(|_| panic!("Failed to execute extract with --output-format {}", format));
 
@@ -239,11 +234,7 @@ fn test_cli_output_format_all_variants() {
         );
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        assert!(
-            !stdout.is_empty(),
-            "Output for format {} should not be empty",
-            format
-        );
+        assert!(!stdout.is_empty(), "Output for format {} should not be empty", format);
     }
 }
 
@@ -325,18 +316,13 @@ fn test_cli_content_format_deprecated_warning() {
 
     // The deprecated --content-format should still work but may show warning
     let output = Command::new(get_binary_path())
-        .args([
-            "extract",
-            test_file.as_str(),
-            "--content-format",
-            "plain",
-        ])
+        .args(["extract", test_file.as_str(), "--content-format", "plain"])
         .output()
         .expect("Failed to execute extract with --content-format");
 
     // Command should either succeed or show expected deprecation behavior
     let stdout = String::from_utf8_lossy(&output.stdout);
-    
+
     // Note: We're checking that the command doesn't crash; deprecation warning behavior
     // depends on implementation details
     assert!(
@@ -415,10 +401,7 @@ fn test_cli_invalid_json_error() {
         .expect("Failed to execute command");
 
     // Should fail gracefully with error message
-    assert!(
-        !output.status.success(),
-        "Command should fail with invalid JSON"
-    );
+    assert!(!output.status.success(), "Command should fail with invalid JSON");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     // Should contain some error indication
@@ -506,14 +489,10 @@ fn test_cli_real_extraction() {
     );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    
+
     // Should be valid JSON output
     let parsed: Result<serde_json::Value, _> = serde_json::from_str(&stdout);
-    assert!(
-        parsed.is_ok(),
-        "E2E output should be valid JSON, got: {}",
-        stdout
-    );
+    assert!(parsed.is_ok(), "E2E output should be valid JSON, got: {}", stdout);
 
     // Verify structure
     if let Ok(value) = parsed {
@@ -538,19 +517,11 @@ fn test_cli_empty_config_json() {
 
     // Empty JSON object should use defaults
     let output = Command::new(get_binary_path())
-        .args([
-            "extract",
-            test_file.as_str(),
-            "--config-json",
-            "{}",
-        ])
+        .args(["extract", test_file.as_str(), "--config-json", "{}"])
         .output()
         .expect("Failed to execute with empty JSON config");
 
-    assert!(
-        output.status.success(),
-        "Command with empty JSON config should succeed"
-    );
+    assert!(output.status.success(), "Command with empty JSON config should succeed");
 }
 
 #[test]
@@ -601,12 +572,7 @@ fn test_cli_config_json_with_nested_objects() {
 "#;
 
     let output = Command::new(get_binary_path())
-        .args([
-            "extract",
-            test_file.as_str(),
-            "--config-json",
-            complex_config,
-        ])
+        .args(["extract", test_file.as_str(), "--config-json", complex_config])
         .output()
         .expect("Failed to execute with nested JSON config");
 

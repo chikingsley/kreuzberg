@@ -18,7 +18,7 @@ public SomeType DeprecatedMember { get; set; }
 #### Parameters
 
 - **message** (required): String describing the deprecation reason and recommended alternative
-- **error** (optional): 
+- **error** (optional):
   - `false` (default): Generate CS0618 warning
   - `true`: Generate CS0619 error, preventing compilation
 
@@ -39,7 +39,7 @@ public bool EnableOcr { get; set; }
 ```csharp
 /// <summary>
 /// Extract text using legacy method.
-/// 
+///
 /// Deprecated: This method will be removed in version 2.0.0.
 /// Use ExtractAsync() instead for better performance.
 /// </summary>
@@ -77,7 +77,7 @@ public void ObsoleteMethod()
 /// <remarks>
 /// This method uses the old boolean-based OCR configuration pattern.
 /// It will be removed in v2.0.0. Please migrate to the new configuration-based approach.
-/// 
+///
 /// See migration guide: https://docs.kreuzberg.io/v1-to-v2-migration
 /// </remarks>
 /// <param name="input">Document input</param>
@@ -90,9 +90,9 @@ public void ObsoleteMethod()
 )]
 public async Task<ExtractionResult> ExtractWithOcrAsync(string input, bool enableOcr)
 {
-    return await ExtractAsync(input, new ExtractionConfig 
-    { 
-        Ocr = enableOcr ? new OcrConfig { Backend = "tesseract" } : null 
+    return await ExtractAsync(input, new ExtractionConfig
+    {
+        Ocr = enableOcr ? new OcrConfig { Backend = "tesseract" } : null
     });
 }
 ```
@@ -171,7 +171,7 @@ end
 defmodule Kreuzberg.LegacyAPI do
   @moduledoc """
   Legacy API functions deprecated in favor of configuration-based approach.
-  
+
   These functions will be removed in v2.0.0.
   See the migration guide: https://docs.kreuzberg.io/v1-to-v2-migration
   """
@@ -194,7 +194,7 @@ defmodule Kreuzberg.LegacyAPI do
   `ExtractionConfig.ocr` nested configuration map.
   """
   @deprecated "Use Kreuzberg.extract/3 with ExtractionConfig.ocr instead. Removes in v2.0.0."
-  @spec extract_with_ocr_bool(binary(), String.t(), boolean()) :: 
+  @spec extract_with_ocr_bool(binary(), String.t(), boolean()) ::
           {:ok, ExtractionResult.t()} | {:error, String.t()}
   def extract_with_ocr_bool(input, mime_type, enable_ocr) do
     config = if enable_ocr do

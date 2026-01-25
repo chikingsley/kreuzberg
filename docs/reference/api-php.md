@@ -532,19 +532,19 @@ echo $mimeType; // "application/pdf"
 
 !!! warning "Deprecated API"
     The `$outputFormat` property has been deprecated in favor of the new configuration object approach.
-    
+
     **Old pattern (no longer supported):**
     ```php
     $config = new ExtractionConfig();
     $config->outputFormat = 'markdown';
     ```
-    
+
     **New pattern:**
     ```php
     $config = new ExtractionConfig();
     $config->outputFormat = OutputFormat::MARKDOWN;
     ```
-    
+
     For more control, use the full configuration builder with `OutputConfig` object.
 
 ### ExtractionConfig

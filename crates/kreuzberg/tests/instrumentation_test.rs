@@ -17,7 +17,10 @@ struct SpanCollector {
 
 impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for SpanCollector {
     fn on_new_span(&self, attrs: &Attributes<'_>, _id: &Id, _ctx: Context<'_, S>) {
-        self.spans.lock().expect("Operation failed").push(attrs.metadata().name().to_string());
+        self.spans
+            .lock()
+            .expect("Operation failed")
+            .push(attrs.metadata().name().to_string());
     }
 }
 
@@ -42,7 +45,9 @@ async fn test_cache_instrumentation() {
     )
     .expect("Operation failed");
 
-    cache.set("test_key", b"test data".to_vec(), None).expect("Operation failed");
+    cache
+        .set("test_key", b"test data".to_vec(), None)
+        .expect("Operation failed");
 
     let _ = cache.get("test_key", None).expect("Value not found");
 

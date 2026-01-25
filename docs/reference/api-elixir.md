@@ -839,19 +839,19 @@ IO.inspect(atom)
 
 !!! warning "Deprecated API"
     The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
-    
+
     **Old pattern (no longer supported):**
     ```elixir
     config = %Kreuzberg.ExtractionConfig{force_ocr: true}
     ```
-    
+
     **New pattern:**
     ```elixir
     config = %Kreuzberg.ExtractionConfig{
       ocr: %Kreuzberg.OcrConfig{backend: "tesseract"}
     }
     ```
-    
+
     The new approach provides more granular control over OCR behavior through the OcrConfig struct.
 
 ### ExtractionConfig

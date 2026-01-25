@@ -147,7 +147,9 @@ async fn test_concurrent_extractions_with_cache() {
 
     let test_data = b"Cached content for concurrent access test";
 
-    let _ = extract_bytes(test_data, "text/plain", &config).await.expect("Async operation failed");
+    let _ = extract_bytes(test_data, "text/plain", &config)
+        .await
+        .expect("Async operation failed");
 
     let mut handles = vec![];
     for _ in 0..100 {
@@ -457,7 +459,9 @@ async fn test_extraction_throughput_scales() {
 
     let sequential_start = std::time::Instant::now();
     for _ in 0..20 {
-        let _ = extract_bytes(test_data, "text/plain", &config).await.expect("Async operation failed");
+        let _ = extract_bytes(test_data, "text/plain", &config)
+            .await
+            .expect("Async operation failed");
     }
     let sequential_duration = sequential_start.elapsed();
 

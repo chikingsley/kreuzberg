@@ -307,7 +307,7 @@ Total Documentation Size:       30+ KB
 
 Breakdown by Type:
 - Core Test Files:     9 files, 1200+ lines
-- Helper Binary:       1 file,  35+ lines  
+- Helper Binary:       1 file,  35+ lines
 - Documentation:       3 files, 1000+ lines
 ```
 

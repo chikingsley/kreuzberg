@@ -53,7 +53,12 @@ async fn test_mime_detection_by_extension() {
         let detected = detect_mime_type(&temp_path, true);
 
         assert!(detected.is_ok(), "Should detect MIME type for {}", filename);
-        assert_eq!(detected.expect("Operation failed"), expected_mime, "MIME type mismatch for {}", filename);
+        assert_eq!(
+            detected.expect("Operation failed"),
+            expected_mime,
+            "MIME type mismatch for {}",
+            filename
+        );
     }
 }
 
@@ -118,7 +123,11 @@ async fn test_mime_detection_by_content() {
 
     for test_case in test_cases {
         let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-        let temp_path = temp_file.path().parent().expect("Operation failed").join(test_case.filename);
+        let temp_path = temp_file
+            .path()
+            .parent()
+            .expect("Operation failed")
+            .join(test_case.filename);
 
         temp_file.write_all(&test_case.content).expect("Operation failed");
         temp_file.flush().expect("Operation failed");
@@ -222,9 +231,15 @@ async fn test_unknown_mime_type() {
 #[tokio::test]
 async fn test_mime_mismatch_warning() {
     let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-    let temp_path = temp_file.path().parent().expect("Operation failed").join("document.pdf");
+    let temp_path = temp_file
+        .path()
+        .parent()
+        .expect("Operation failed")
+        .join("document.pdf");
 
-    temp_file.write_all(&[0x50, 0x4B, 0x03, 0x04]).expect("Operation failed");
+    temp_file
+        .write_all(&[0x50, 0x4B, 0x03, 0x04])
+        .expect("Operation failed");
     temp_file.flush().expect("Operation failed");
     std::fs::copy(temp_file.path(), &temp_path).expect("Operation failed");
 
@@ -245,7 +260,11 @@ async fn test_mime_mismatch_warning() {
 #[tokio::test]
 async fn test_extension_content_mismatch() {
     let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-    let temp_path = temp_file.path().parent().expect("Operation failed").join("document.txt");
+    let temp_path = temp_file
+        .path()
+        .parent()
+        .expect("Operation failed")
+        .join("document.txt");
 
     temp_file.write_all(b"%PDF-1.4\n").expect("Operation failed");
     temp_file.flush().expect("Operation failed");
@@ -329,7 +348,11 @@ async fn test_mime_detection_skip_existence_check() {
 #[tokio::test]
 async fn test_filename_multiple_dots() {
     let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-    let temp_path = temp_file.path().parent().expect("Operation failed").join("my.backup.file.pdf");
+    let temp_path = temp_file
+        .path()
+        .parent()
+        .expect("Operation failed")
+        .join("my.backup.file.pdf");
 
     temp_file.write_all(b"test").expect("Operation failed");
     temp_file.flush().expect("Operation failed");
@@ -338,7 +361,11 @@ async fn test_filename_multiple_dots() {
     let detected = detect_mime_type(&temp_path, true);
 
     assert!(detected.is_ok(), "Should handle multiple dots in filename");
-    assert_eq!(detected.expect("Operation failed"), "application/pdf", "Should use last extension");
+    assert_eq!(
+        detected.expect("Operation failed"),
+        "application/pdf",
+        "Should use last extension"
+    );
 
     let _ = std::fs::remove_file(&temp_path);
 }
@@ -347,7 +374,11 @@ async fn test_filename_multiple_dots() {
 #[tokio::test]
 async fn test_filename_special_characters() {
     let mut temp_file = NamedTempFile::new().expect("Should create temp file");
-    let temp_path = temp_file.path().parent().expect("Operation failed").join("文档 (copy) [v2].pdf");
+    let temp_path = temp_file
+        .path()
+        .parent()
+        .expect("Operation failed")
+        .join("文档 (copy) [v2].pdf");
 
     temp_file.write_all(b"test").expect("Operation failed");
     temp_file.flush().expect("Operation failed");

@@ -143,7 +143,8 @@ async fn test_docx_keywords_extraction() {
         let options: FileOptions<()> = FileOptions::default().compression_method(CompressionMethod::Stored);
 
         // Add [Content_Types].xml
-        zip.start_file("[Content_Types].xml", options).expect("Operation failed");
+        zip.start_file("[Content_Types].xml", options)
+            .expect("Operation failed");
         zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>

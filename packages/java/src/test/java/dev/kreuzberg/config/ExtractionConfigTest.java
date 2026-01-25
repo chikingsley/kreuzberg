@@ -285,8 +285,8 @@ final class ExtractionConfigTest {
 		ExtractionConfig config = ExtractionConfig.builder().useCache(true).enableQualityProcessing(true).forceOcr(true)
 				.outputFormat("markdown").resultFormat("element_based").ocr(ocrConfig).chunking(chunkingConfig)
 				.languageDetection(langConfig).pdfOptions(pdfConfig).imageExtraction(imageExtConfig)
-				.imagePreprocessing(imgPreConfig).postprocessor(postConfig).tokenReduction(tokenConfig).pages(pageConfig)
-				.maxConcurrentExtractions(4).build();
+				.imagePreprocessing(imgPreConfig).postprocessor(postConfig).tokenReduction(tokenConfig)
+				.pages(pageConfig).maxConcurrentExtractions(4).build();
 
 		assertThat(config.isUseCache()).isTrue();
 		assertThat(config.isEnableQualityProcessing()).isTrue();

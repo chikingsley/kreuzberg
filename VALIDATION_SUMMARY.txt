@@ -30,7 +30,7 @@ DETAILED RESULTS:
    Linting:   0 warnings (clippy -D warnings PASSED)
    Format:    cargo fmt --check PASSED
    Status:    READY FOR PRODUCTION
-   
+
 2. PYTHON - RUNTIME DEPENDENCY ISSUE
    Tests:     pytest not installed (ruff linting PASSED)
    Linting:   ruff ALL CHECKS PASSED
@@ -39,7 +39,7 @@ DETAILED RESULTS:
 3. TYPESCRIPT - UNKNOWN STATUS
    Tests:     No output captured
    Action:    Needs re-execution with explicit logging
-   
+
 4. RUBY - 1 CRITICAL TEST FAILURE
    Tests:     1110 total, 1 FAILURE, 27 PENDING, 1082 PASSING (97.4% pass rate)
    Failed:    Kreuzberg::Config::Extraction round-trip serialization (line 78)
@@ -167,7 +167,7 @@ SUMMARY:
   - 3 critical code issues need fixes (Ruby serialization, Elixir doctest, Go FFI)
   - 28 Ruby linting issues are all auto-fixable
   - Ruby test pass rate is 97.4% (1 failure out of 1110 tests)
-  
+
 READY FOR MERGE: NO (needs 3 critical fixes + Ruby serialization test)
 ESTIMATED TIME TO MERGE-READY: 2-4 hours
 ================================================================================

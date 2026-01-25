@@ -352,19 +352,19 @@ Same as [`batch_extract_bytes_sync()`](#batch_extract_bytes_sync).
 
 !!! warning "Deprecated API"
     The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
-    
+
     **Old pattern (no longer supported):**
     ```python
     config = ExtractionConfig(force_ocr=True)
     ```
-    
+
     **New pattern:**
     ```python
     config = ExtractionConfig(
         ocr=OcrConfig(backend="tesseract")
     )
     ```
-    
+
     The new approach provides more granular control over OCR behavior through the `OcrConfig` object.
 
 Main configuration class for extraction operations.

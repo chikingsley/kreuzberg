@@ -16,7 +16,7 @@ This is your entry point for the comprehensive deprecation markers implementatio
   - `[Obsolete]` attribute usage
   - Methods, properties, and extension methods
   - XML documentation patterns
-  
+
 - **[csharp_deprecation_test.cs](./tests/csharp_deprecation_test.cs)** - C# unit tests
   - Reflection-based verification
   - Attribute inspection

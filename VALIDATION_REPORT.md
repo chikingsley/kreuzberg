@@ -61,7 +61,7 @@ Multi-platform validation across 9 language ecosystems. Some platforms have test
 
 **Failed Test**:
 ```
-Kreuzberg::Config::Extraction round-trip serialization 
+Kreuzberg::Config::Extraction round-trip serialization
   should survive serialization -> deserialization -> serialization
   Error: ArgumentError: wrong number of arguments (given 1, expected 0)
   Location: ./spec/serialization_spec.rb:78
@@ -121,7 +121,7 @@ Missing: settings.gradle, build.gradle, or .gradle
 
 ### 7. PHP ✗ PARTIAL FAILURES
 
-**Status**: 
+**Status**:
 - phpunit: Not found/installed
 - phpstan: Memory limit exceeded
 
@@ -165,7 +165,7 @@ Missing: settings.gradle, build.gradle, or .gradle
 1. Doctest compilation error in lib/kreuzberg/config.ex:445
    - Issue: "expected key-value pairs in a map, got: ..."
    - Location: Kreuzberg.SerializationTest doctest
-   
+
 2. Warning: Unused variable in test/error_handling_test.exs:755
    - Variable: "has_success"
    - Solution: Prefix with underscore or use the variable
@@ -175,7 +175,7 @@ Missing: settings.gradle, build.gradle, or .gradle
 error: expected key-value pairs in a map, got: ...
 └─ (for doctest at) lib/kreuzberg/config.ex:445: Kreuzberg.SerializationTest...
 
-(CompileError) (for doctest at) lib/kreuzberg/config.ex: cannot compile module 
+(CompileError) (for doctest at) lib/kreuzberg/config.ex: cannot compile module
 Kreuzberg.SerializationTest
 ```
 

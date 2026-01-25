@@ -266,7 +266,8 @@ fn test_postprocessor_modifies_content() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(processor as Arc<dyn PostProcessor>, 100).expect("Operation failed");
+        reg.register(processor as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();
@@ -324,8 +325,15 @@ fn test_postprocessor_adds_metadata() {
         "Metadata 'word_count' not added"
     );
 
-    let processed_by = extraction_result.metadata.additional.get("processed_by").expect("Operation failed");
-    assert_eq!(processed_by.as_str().expect("Failed to extract string from value"), "metadata-adder");
+    let processed_by = extraction_result
+        .metadata
+        .additional
+        .get("processed_by")
+        .expect("Operation failed");
+    assert_eq!(
+        processed_by.as_str().expect("Failed to extract string from value"),
+        "metadata-adder"
+    );
 
     {
         let mut reg = registry.write().expect("Operation failed");
@@ -411,8 +419,10 @@ fn test_clear_all_postprocessors() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(processor1 as Arc<dyn PostProcessor>, 100).expect("Operation failed");
-        reg.register(processor2 as Arc<dyn PostProcessor>, 100).expect("Operation failed");
+        reg.register(processor1 as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
+        reg.register(processor2 as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
     }
 
     {
@@ -441,7 +451,8 @@ fn test_postprocessor_error_handling() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(failing_processor as Arc<dyn PostProcessor>, 100).expect("Operation failed");
+        reg.register(failing_processor as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();
@@ -488,7 +499,10 @@ fn test_postprocessor_invalid_name() {
         let result = reg.register(processor, 100);
 
         assert!(result.is_err());
-        assert!(matches!(result.expect_err("Operation should fail"), KreuzbergError::Validation { .. }));
+        assert!(matches!(
+            result.expect_err("Operation should fail"),
+            KreuzbergError::Validation { .. }
+        ));
     }
 
     {
@@ -521,9 +535,12 @@ fn test_multiple_postprocessors_execution_order() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(early_processor as Arc<dyn PostProcessor>, 100).expect("Operation failed");
-        reg.register(middle_processor as Arc<dyn PostProcessor>, 100).expect("Operation failed");
-        reg.register(late_processor as Arc<dyn PostProcessor>, 100).expect("Operation failed");
+        reg.register(early_processor as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
+        reg.register(middle_processor as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
+        reg.register(late_processor as Arc<dyn PostProcessor>, 100)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();

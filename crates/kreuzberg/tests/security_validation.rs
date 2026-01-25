@@ -149,7 +149,8 @@ fn test_archive_many_small_files() {
         let options = FileOptions::<'_, ()>::default();
 
         for i in 0..1000 {
-            zip.start_file(format!("file{}.txt", i), options).expect("Operation failed");
+            zip.start_file(format!("file{}.txt", i), options)
+                .expect("Operation failed");
             zip.write_all(b"small content").expect("Operation failed");
         }
 

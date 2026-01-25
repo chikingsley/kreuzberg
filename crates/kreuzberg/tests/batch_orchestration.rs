@@ -152,7 +152,9 @@ async fn test_batch_documents_preserves_order() {
         get_test_file_path("xml/simple_note.xml"),
     ];
 
-    let results = batch_extract_file(paths, &config).await.expect("Async operation failed");
+    let results = batch_extract_file(paths, &config)
+        .await
+        .expect("Async operation failed");
 
     assert_eq!(results.len(), 3, "Should have 3 results");
 
@@ -469,7 +471,9 @@ async fn test_batch_scales_with_cpu_count() {
         .collect();
 
     let start = Instant::now();
-    let _ = batch_extract_bytes(owned_contents_1, &config_1).await.expect("Async operation failed");
+    let _ = batch_extract_bytes(owned_contents_1, &config_1)
+        .await
+        .expect("Async operation failed");
     let duration_1 = start.elapsed();
 
     let config_full = ExtractionConfig {
@@ -483,7 +487,9 @@ async fn test_batch_scales_with_cpu_count() {
         .collect();
 
     let start = Instant::now();
-    let _ = batch_extract_bytes(owned_contents_full, &config_full).await.expect("Async operation failed");
+    let _ = batch_extract_bytes(owned_contents_full, &config_full)
+        .await
+        .expect("Async operation failed");
     let duration_full = start.elapsed();
 
     println!(
@@ -572,7 +578,9 @@ async fn test_batch_accuracy_under_load() {
         .map(|(bytes, mime)| (bytes.to_vec(), mime.to_string()))
         .collect();
 
-    let results = batch_extract_bytes(owned_contents, &config).await.expect("Async operation failed");
+    let results = batch_extract_bytes(owned_contents, &config)
+        .await
+        .expect("Async operation failed");
 
     assert_eq!(results.len(), 100);
 

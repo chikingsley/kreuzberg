@@ -854,12 +854,12 @@ const normalized2 = normalizeMimeType('text/plain');      // 'text/plain'
 
 !!! warning "Deprecated API"
     The `enable_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
-    
+
     **Old pattern (no longer supported):**
     ```typescript
     const config = { enable_ocr: true };
     ```
-    
+
     **New pattern:**
     ```typescript
     const config = {
@@ -869,7 +869,7 @@ const normalized2 = normalizeMimeType('text/plain');      // 'text/plain'
       }
     };
     ```
-    
+
     The new approach provides more granular control over OCR behavior through the OCR configuration object.
 
 ### loadConfigFromString()

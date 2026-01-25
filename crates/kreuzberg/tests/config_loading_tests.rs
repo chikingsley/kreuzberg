@@ -242,7 +242,10 @@ enabled = true
     assert!(result.is_ok(), "Discover should succeed");
     let config = result.expect("Operation failed");
     assert!(config.is_some(), "Should find config in current directory");
-    assert!(config.expect("Operation failed").ocr.is_some(), "Should have OCR config");
+    assert!(
+        config.expect("Operation failed").ocr.is_some(),
+        "Should have OCR config"
+    );
 }
 
 /// Test discover() finds config in parent directory.
@@ -272,7 +275,10 @@ enabled = true
     assert!(result.is_ok(), "Discover should succeed");
     let config = result.expect("Operation failed");
     assert!(config.is_some(), "Should find config in parent directory");
-    assert!(config.expect("Operation failed").ocr.is_some(), "Should have OCR config");
+    assert!(
+        config.expect("Operation failed").ocr.is_some(),
+        "Should have OCR config"
+    );
 }
 
 /// Test discover() returns None when no config found.
@@ -348,7 +354,10 @@ enabled = true
     assert!(result.is_ok(), "Discover should succeed");
     let config = result.expect("Operation failed");
     assert!(config.is_some(), "Should find config in ancestor directory");
-    assert!(config.expect("Operation failed").ocr.is_some(), "Should have OCR config");
+    assert!(
+        config.expect("Operation failed").ocr.is_some(),
+        "Should have OCR config"
+    );
 }
 
 /// Test config loading with all supported features.

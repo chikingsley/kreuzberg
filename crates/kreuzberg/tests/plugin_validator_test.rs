@@ -292,7 +292,8 @@ fn test_validator_called_during_extraction() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(Arc::clone(&validator) as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(Arc::clone(&validator) as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();
@@ -339,7 +340,7 @@ fn test_validator_can_reject_invalid_input() {
 
     assert!(result.is_err(), "Expected validation to fail");
 
-    match result.err().expect("Operation failed") {
+    match result.expect_err("Operation failed") {
         KreuzbergError::Validation { message, .. } => {
             assert!(message.contains("Content too short"));
         }
@@ -446,7 +447,7 @@ fn test_validator_rejects_wrong_mime_type() {
 
     assert!(result.is_err(), "Expected MIME type validation to fail");
 
-    match result.err().expect("Operation failed") {
+    match result.expect_err("Operation failed") {
         KreuzbergError::Validation { message, .. } => {
             assert!(message.contains("MIME type"));
             assert!(message.contains("not allowed"));
@@ -526,8 +527,10 @@ fn test_clear_all_validators() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(validator1 as Arc<dyn Validator>).expect("Operation failed");
-        reg.register(validator2 as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(validator1 as Arc<dyn Validator>)
+            .expect("Operation failed");
+        reg.register(validator2 as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     {
@@ -569,7 +572,10 @@ fn test_validator_invalid_name() {
         let result = reg.register(validator);
 
         assert!(result.is_err());
-        assert!(matches!(result.err().expect("Operation failed"), KreuzbergError::Validation { .. }));
+        assert!(matches!(
+            result.expect_err("Operation failed"),
+            KreuzbergError::Validation { .. }
+        ));
     }
 
     {
@@ -600,7 +606,8 @@ fn test_validator_initialization_lifecycle() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(Arc::clone(&validator) as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(Arc::clone(&validator) as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     assert!(
@@ -643,8 +650,10 @@ fn test_multiple_validators_execution() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(Arc::clone(&validator1) as Arc<dyn Validator>).expect("Operation failed");
-        reg.register(validator2 as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(Arc::clone(&validator1) as Arc<dyn Validator>)
+            .expect("Operation failed");
+        reg.register(validator2 as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();
@@ -682,8 +691,10 @@ fn test_validator_priority_execution_order() {
 
     {
         let mut reg = registry.write().expect("Operation failed");
-        reg.register(high_priority as Arc<dyn Validator>).expect("Operation failed");
-        reg.register(low_priority as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(high_priority as Arc<dyn Validator>)
+            .expect("Operation failed");
+        reg.register(low_priority as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();
@@ -691,7 +702,7 @@ fn test_validator_priority_execution_order() {
 
     assert!(result.is_err(), "Expected high-priority validator to fail");
 
-    match result.err().expect("Operation failed") {
+    match result.expect_err("Operation failed") {
         KreuzbergError::Validation { message, .. } => {
             assert!(message.contains("Required metadata key"));
         }
@@ -729,7 +740,7 @@ fn test_validator_always_fails() {
 
     assert!(result.is_err(), "Validator should always fail");
 
-    match result.err().expect("Operation failed") {
+    match result.expect_err("Operation failed") {
         KreuzbergError::Validation { message, .. } => {
             assert!(message.contains("intentionally failed"));
         }
@@ -764,7 +775,8 @@ fn test_validator_registration_order_preserved_for_same_priority() {
             name: "order-first".to_string(),
         }) as Arc<dyn Validator>)
             .expect("Operation failed");
-        reg.register(tracker.clone() as Arc<dyn Validator>).expect("Operation failed");
+        reg.register(tracker.clone() as Arc<dyn Validator>)
+            .expect("Operation failed");
     }
 
     let config = ExtractionConfig::default();

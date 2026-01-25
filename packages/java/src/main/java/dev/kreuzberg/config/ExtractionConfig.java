@@ -634,7 +634,8 @@ public final class ExtractionConfig {
 		 * <p>
 		 * Valid formats: plain, markdown, djot, html
 		 *
-		 * @param format the output format
+		 * @param format
+		 *            the output format
 		 * @return this builder for chaining
 		 * @since 4.2.0
 		 */
@@ -649,7 +650,8 @@ public final class ExtractionConfig {
 		 * <p>
 		 * Valid formats: unified, element_based
 		 *
-		 * @param format the result format
+		 * @param format
+		 *            the result format
 		 * @return this builder for chaining
 		 * @since 4.2.0
 		 */

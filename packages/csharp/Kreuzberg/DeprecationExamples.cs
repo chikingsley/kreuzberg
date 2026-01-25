@@ -7,7 +7,7 @@ namespace Kreuzberg;
 
 /// <summary>
 /// Legacy extraction API using deprecated boolean-based OCR configuration.
-/// 
+///
 /// This class demonstrates how to mark deprecated methods in C#.
 /// Users should migrate to the modern ExtractionConfig-based approach.
 /// </summary>
@@ -20,14 +20,14 @@ public static class LegacyExtractionAPI
     /// This method uses the old boolean parameter pattern for OCR control.
     /// It will be removed in v2.0.0. Please use ExtractAsyncWithConfig() instead,
     /// which provides more flexible OCR configuration options.
-    /// 
+    ///
     /// Migration example:
-    /// 
+    ///
     /// OLD (deprecated):
     /// <c>
     /// await ExtractAsyncWithOcr(input, "application/pdf", enableOcr: true);
     /// </c>
-    /// 
+    ///
     /// NEW (recommended):
     /// <c>
     /// var config = new ExtractionConfig

@@ -523,7 +523,10 @@ async fn test_pipeline_cross_stage_data_flow() {
         impl PostProcessor for MiddleProcessor {
             async fn process(&self, result: &mut ExtractionResult, _: &ExtractionConfig) -> Result<()> {
                 if let Some(stage) = result.metadata.additional.get("stage") {
-                    result.content.push_str(&format!("[saw:{}]", stage.as_str().expect("Failed to extract string from value")));
+                    result.content.push_str(&format!(
+                        "[saw:{}]",
+                        stage.as_str().expect("Failed to extract string from value")
+                    ));
                 }
                 Ok(())
             }
@@ -592,7 +595,8 @@ async fn test_pipeline_early_stage_error_recorded() {
         let mut reg = registry
             .write()
             .expect("Failed to acquire write lock on registry in test");
-        reg.register(Arc::new(EarlyFailingProcessor), 50).expect("Operation failed");
+        reg.register(Arc::new(EarlyFailingProcessor), 50)
+            .expect("Operation failed");
     }
 
     let result = ExtractionResult {
@@ -998,7 +1002,8 @@ async fn test_pipeline_metadata_added_in_early_visible_in_middle() {
         }
 
         reg.register(early, 50).expect("Operation failed");
-        reg.register(Arc::new(MiddleReadingProcessor), 50).expect("Operation failed");
+        reg.register(Arc::new(MiddleReadingProcessor), 50)
+            .expect("Operation failed");
     }
 
     let result = ExtractionResult {
@@ -1071,7 +1076,8 @@ async fn test_pipeline_content_modified_in_middle_visible_in_late() {
         }
 
         reg.register(middle, 50).expect("Operation failed");
-        reg.register(Arc::new(LateReadingProcessor), 50).expect("Operation failed");
+        reg.register(Arc::new(LateReadingProcessor), 50)
+            .expect("Operation failed");
     }
 
     let result = ExtractionResult {
@@ -1250,7 +1256,16 @@ async fn test_pipeline_processors_reading_previous_output() {
     let config = ExtractionConfig::default();
 
     let processed = run_pipeline(result, &config).await.expect("Async operation failed");
-    assert_eq!(processed.metadata.additional.get("count").expect("Operation failed").as_i64().expect("Operation failed"), 4);
+    assert_eq!(
+        processed
+            .metadata
+            .additional
+            .get("count")
+            .expect("Operation failed")
+            .as_i64()
+            .expect("Operation failed"),
+        4
+    );
 }
 
 #[tokio::test]
@@ -1289,7 +1304,8 @@ async fn test_pipeline_large_content_modification() {
         let mut reg = registry
             .write()
             .expect("Failed to acquire write lock on registry in test");
-        reg.register(Arc::new(LargeContentProcessor), 50).expect("Operation failed");
+        reg.register(Arc::new(LargeContentProcessor), 50)
+            .expect("Operation failed");
     }
 
     let result = ExtractionResult {

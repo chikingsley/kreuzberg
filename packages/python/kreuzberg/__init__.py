@@ -222,6 +222,7 @@ __all__ = [
     "config_get_field",
     "config_merge",
     "config_to_json",
+    "deprecated",
     "detect_mime_type",
     "detect_mime_type_from_path",
     "discover_extraction_config",

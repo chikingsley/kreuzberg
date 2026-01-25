@@ -120,7 +120,8 @@ async fn test_pptx_with_image_placeholder_no_txbody() {
         let options: FileOptions<()> = FileOptions::default().compression_method(CompressionMethod::Stored);
 
         // Add [Content_Types].xml
-        zip.start_file("[Content_Types].xml", options).expect("Operation failed");
+        zip.start_file("[Content_Types].xml", options)
+            .expect("Operation failed");
         zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -137,7 +138,8 @@ async fn test_pptx_with_image_placeholder_no_txbody() {
 </Relationships>"#).expect("Operation failed");
 
         // Add ppt/presentation.xml
-        zip.start_file("ppt/presentation.xml", options).expect("Operation failed");
+        zip.start_file("ppt/presentation.xml", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -151,7 +153,8 @@ async fn test_pptx_with_image_placeholder_no_txbody() {
         .expect("Operation failed");
 
         // Add ppt/_rels/presentation.xml.rels
-        zip.start_file("ppt/_rels/presentation.xml.rels", options).expect("Operation failed");
+        zip.start_file("ppt/_rels/presentation.xml.rels", options)
+            .expect("Operation failed");
         zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
@@ -159,7 +162,8 @@ async fn test_pptx_with_image_placeholder_no_txbody() {
 
         // Add ppt/slides/slide1.xml with a shape WITHOUT txBody (image placeholder)
         // This is the critical test case - a <p:sp> element with no <p:txBody>
-        zip.start_file("ppt/slides/slide1.xml", options).expect("Operation failed");
+        zip.start_file("ppt/slides/slide1.xml", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -262,7 +266,8 @@ async fn test_pptx_with_image_placeholder_no_txbody() {
         .expect("Operation failed");
 
         // Add ppt/slides/_rels/slide1.xml.rels (empty)
-        zip.start_file("ppt/slides/_rels/slide1.xml.rels", options).expect("Operation failed");
+        zip.start_file("ppt/slides/_rels/slide1.xml.rels", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
@@ -336,7 +341,8 @@ async fn test_pptx_mixed_shapes_extraction() {
         let options: FileOptions<()> = FileOptions::default().compression_method(CompressionMethod::Stored);
 
         // Add [Content_Types].xml
-        zip.start_file("[Content_Types].xml", options).expect("Operation failed");
+        zip.start_file("[Content_Types].xml", options)
+            .expect("Operation failed");
         zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -353,7 +359,8 @@ async fn test_pptx_mixed_shapes_extraction() {
 </Relationships>"#).expect("Operation failed");
 
         // Add ppt/presentation.xml
-        zip.start_file("ppt/presentation.xml", options).expect("Operation failed");
+        zip.start_file("ppt/presentation.xml", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -367,14 +374,16 @@ async fn test_pptx_mixed_shapes_extraction() {
         .expect("Operation failed");
 
         // Add ppt/_rels/presentation.xml.rels
-        zip.start_file("ppt/_rels/presentation.xml.rels", options).expect("Operation failed");
+        zip.start_file("ppt/_rels/presentation.xml.rels", options)
+            .expect("Operation failed");
         zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
 </Relationships>"#).expect("Operation failed");
 
         // Add slide with various shapes - some with txBody, some without
-        zip.start_file("ppt/slides/slide1.xml", options).expect("Operation failed");
+        zip.start_file("ppt/slides/slide1.xml", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -456,7 +465,8 @@ async fn test_pptx_mixed_shapes_extraction() {
         .expect("Operation failed");
 
         // Add empty rels
-        zip.start_file("ppt/slides/_rels/slide1.xml.rels", options).expect("Operation failed");
+        zip.start_file("ppt/slides/_rels/slide1.xml.rels", options)
+            .expect("Operation failed");
         zip.write_all(
             br#"<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">

@@ -173,7 +173,7 @@ pub fn apply_extraction_overrides(
             config.language_detection = None;
         }
     }
-    
+
     // Handle output format with deprecation warning for --content-format
     let final_output_format = output_format.or_else(|| {
         if content_format.is_some() {
@@ -181,7 +181,7 @@ pub fn apply_extraction_overrides(
         }
         content_format
     });
-    
+
     if let Some(content_fmt) = final_output_format {
         config.output_format = content_fmt.into();
     }

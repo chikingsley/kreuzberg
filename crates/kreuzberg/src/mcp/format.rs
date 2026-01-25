@@ -38,22 +38,21 @@ use crate::{ExtractionConfig, ExtractionResult as KreuzbergResult};
 /// ```
 fn merge_configs(base: &ExtractionConfig, override_json: serde_json::Value) -> Result<ExtractionConfig, String> {
     // Serialize base config to JSON
-    let mut config_json = serde_json::to_value(base)
-        .map_err(|e| format!("Failed to serialize base config to JSON: {}", e))?;
+    let mut config_json =
+        serde_json::to_value(base).map_err(|e| format!("Failed to serialize base config to JSON: {}", e))?;
 
     // Merge JSON value into config JSON (simple field-by-field merge)
     // For each key in the provided JSON, override the corresponding key in config JSON
-    if let serde_json::Value::Object(json_obj) = override_json {
-        if let serde_json::Value::Object(ref mut config_obj) = config_json {
-            for (key, value) in json_obj {
-                config_obj.insert(key, value);
-            }
+    if let serde_json::Value::Object(json_obj) = override_json
+        && let Some(config_obj) = config_json.as_object_mut()
+    {
+        for (key, value) in json_obj {
+            config_obj.insert(key, value);
         }
     }
 
     // Deserialize merged JSON back to ExtractionConfig
-    serde_json::from_value(config_json)
-        .map_err(|e| format!("Failed to deserialize merged config: {}", e))
+    serde_json::from_value(config_json).map_err(|e| format!("Failed to deserialize merged config: {}", e))
 }
 
 /// Build extraction config from MCP parameters.
@@ -180,7 +179,10 @@ mod tests {
         // use_cache should be preserved from default_config
         assert!(!config.use_cache, "use_cache should be preserved from default config");
         // enable_quality_processing should be preserved
-        assert!(config.enable_quality_processing, "enable_quality_processing should be preserved");
+        assert!(
+            config.enable_quality_processing,
+            "enable_quality_processing should be preserved"
+        );
         // force_ocr should be overridden
         assert!(config.force_ocr, "force_ocr should be overridden to true");
     }
@@ -229,9 +231,15 @@ mod tests {
         // force_ocr should be overridden
         assert!(config.force_ocr, "force_ocr should be overridden to true");
         // use_cache should be preserved from default_config
-        assert!(!config.use_cache, "use_cache should be preserved from default config (false)");
+        assert!(
+            !config.use_cache,
+            "use_cache should be preserved from default config (false)"
+        );
         // enable_quality_processing should be preserved
-        assert!(config.enable_quality_processing, "enable_quality_processing should be preserved (true)");
+        assert!(
+            config.enable_quality_processing,
+            "enable_quality_processing should be preserved (true)"
+        );
     }
 
     #[test]
@@ -260,9 +268,15 @@ mod tests {
             "output_format should be overridden to markdown"
         );
         // force_ocr should be preserved (not in override)
-        assert!(config.force_ocr, "force_ocr should be preserved from default config (true)");
+        assert!(
+            config.force_ocr,
+            "force_ocr should be preserved from default config (true)"
+        );
         // enable_quality_processing should be preserved
-        assert!(!config.enable_quality_processing, "enable_quality_processing should be preserved (false)");
+        assert!(
+            !config.enable_quality_processing,
+            "enable_quality_processing should be preserved (false)"
+        );
     }
 
     #[test]
@@ -282,7 +296,10 @@ mod tests {
 
         // Before the fix: merged.use_cache would be false (WRONG - fell back to base)
         // After the fix: merged.use_cache should be true (CORRECT - override applied)
-        assert!(merged.use_cache, "Should use explicit override even if it matches default");
+        assert!(
+            merged.use_cache,
+            "Should use explicit override even if it matches default"
+        );
     }
 
     #[test]

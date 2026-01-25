@@ -82,7 +82,9 @@ async fn test_extract_multiple_file_types() {
         let file_path = dir.path().join(filename);
         fs::write(&file_path, content).expect("Operation failed");
 
-        let result = extract_file(&file_path, None, &config).await.expect("Async operation failed");
+        let result = extract_file(&file_path, None, &config)
+            .await
+            .expect("Async operation failed");
 
         assert_eq!(result.mime_type, expected_mime, "MIME type mismatch for {}", filename);
         assert!(

@@ -548,7 +548,10 @@ fn test_ocr_concurrent_same_file() {
         handles.push(handle);
     }
 
-    let successes: usize = handles.into_iter().map(|h| if h.join().expect("Iterator failed") { 1 } else { 0 }).sum();
+    let successes: usize = handles
+        .into_iter()
+        .map(|h| if h.join().expect("Iterator failed") { 1 } else { 0 })
+        .sum();
 
     tracing::debug!("Concurrent processing: {}/5 threads succeeded", successes);
 
@@ -615,7 +618,10 @@ fn test_ocr_concurrent_different_files() {
         handles.push(handle);
     }
 
-    let successes: usize = handles.into_iter().map(|h| if h.join().expect("Iterator failed") { 1 } else { 0 }).sum();
+    let successes: usize = handles
+        .into_iter()
+        .map(|h| if h.join().expect("Iterator failed") { 1 } else { 0 })
+        .sum();
 
     assert_eq!(
         successes, 2,

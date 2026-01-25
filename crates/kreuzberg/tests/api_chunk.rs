@@ -106,7 +106,9 @@ async fn test_chunk_response_structure() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("Failed to convert to bytes");
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to convert to bytes");
     let chunk_response: ChunkResponse = serde_json::from_slice(&body).expect("Failed to deserialize");
 
     // Verify response structure
@@ -175,7 +177,9 @@ async fn test_chunk_with_defaults() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("Failed to convert to bytes");
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to convert to bytes");
     let chunk_response: ChunkResponse = serde_json::from_slice(&body).expect("Failed to deserialize");
 
     // Verify defaults are applied
@@ -228,7 +232,9 @@ async fn test_chunk_case_insensitive_chunker_type() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("Failed to convert to bytes");
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to convert to bytes");
     let chunk_response: ChunkResponse = serde_json::from_slice(&body).expect("Failed to deserialize");
 
     // Verify it's normalized to lowercase
@@ -265,7 +271,9 @@ async fn test_chunk_long_text() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("Failed to convert to bytes");
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to convert to bytes");
     let chunk_response: ChunkResponse = serde_json::from_slice(&body).expect("Failed to deserialize");
 
     // Should have multiple chunks
@@ -303,7 +311,9 @@ async fn test_chunk_custom_config() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("Failed to convert to bytes");
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to convert to bytes");
     let chunk_response: ChunkResponse = serde_json::from_slice(&body).expect("Failed to deserialize");
 
     // Verify custom config was applied

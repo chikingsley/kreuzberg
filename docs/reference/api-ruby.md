@@ -284,19 +284,19 @@ result = Kreuzberg.extract_file_sync("document.pdf", config: config)
 
 !!! warning "Deprecated API"
     The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
-    
+
     **Old pattern (no longer supported):**
     ```ruby
     config = Kreuzberg::Config::Extraction.new(force_ocr: true)
     ```
-    
+
     **New pattern:**
     ```ruby
     config = Kreuzberg::Config::Extraction.new(
       ocr: Kreuzberg::OcrConfig.new(backend: "tesseract")
     )
     ```
-    
+
     The new approach provides more granular control over OCR behavior through the OcrConfig object.
 
 Object-oriented configuration using Ruby classes.

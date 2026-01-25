@@ -125,7 +125,9 @@ fn test_extraction_config_values_are_correct_types() {
         "use_cache should be boolean"
     );
     assert!(
-        json.get("enable_quality_processing").expect("Value not found").is_boolean(),
+        json.get("enable_quality_processing")
+            .expect("Value not found")
+            .is_boolean(),
         "enable_quality_processing should be boolean"
     );
     assert!(
@@ -155,7 +157,10 @@ fn test_extraction_config_with_custom_values() {
 
     assert_eq!(json.get("use_cache").expect("Value not found"), &json!(false));
     assert_eq!(json.get("force_ocr").expect("Value not found"), &json!(true));
-    assert_eq!(json.get("max_concurrent_extractions").expect("Value not found"), &json!(8));
+    assert_eq!(
+        json.get("max_concurrent_extractions").expect("Value not found"),
+        &json!(8)
+    );
 }
 
 #[test]

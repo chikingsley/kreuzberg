@@ -542,7 +542,11 @@ async fn test_chunking_with_embeddings() {
         "Should have embeddings_generated metadata"
     );
     assert_eq!(
-        result.metadata.additional.get("embeddings_generated").expect("Value not found"),
+        result
+            .metadata
+            .additional
+            .get("embeddings_generated")
+            .expect("Value not found"),
         &serde_json::Value::Bool(true)
     );
 

@@ -474,7 +474,10 @@ async fn test_processor_execution_order_within_stage() {
 
     let config = ExtractionConfig::default();
     for processor in processors {
-        processor.process(&mut result, &config).await.expect("Async operation failed");
+        processor
+            .process(&mut result, &config)
+            .await
+            .expect("Async operation failed");
     }
 
     assert_eq!(result.content, "start [high] [medium] [low]");
