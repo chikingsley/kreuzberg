@@ -27,7 +27,7 @@ clap = { workspace = true }
 
 async-trait = { workspace = true }
 
-sysinfo = "0.37"
+sysinfo = "0.38"
 
 ahash = { workspace = true }
 num_cpus = { workspace = true }

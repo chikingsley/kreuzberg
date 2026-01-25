@@ -9,14 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.1.2] - 2026-01-25
+
 ### Added
 
 #### Language Bindings
 - **Ruby**: Ruby 4.0 support
   - Updated gemspec to support Ruby 3.2.0 through 4.x
-  - Updated RuboCop target version to 4.0
   - Tested with Ruby 4.0.1: all tests pass with Magnus bindings
   - No breaking changes required in binding code
+
+### Fixed
+
+#### Language Bindings
+- **Ruby**: Fixed gem native extension build failure
+  - Vendor script now correctly updates native Cargo.toml paths to use vendored crates
+  - Fixed sed pattern matching (5 parent directories, not 6)
+
+- **Go**: Fixed Windows timeout in Go tests
+  - Removed `init()` function in helpers_test.go that caused FFI mutex deadlock on Windows
+  - Now uses lazy initialization via `sync.Once` pattern
+
+### Changed
+
+#### Dependencies
+- Updated dependencies across the project
 
 ---
 

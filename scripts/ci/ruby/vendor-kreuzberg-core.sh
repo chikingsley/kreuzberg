@@ -97,6 +97,26 @@ sed -i.bak \
   "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml"
 rm -f "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml.bak"
 
+# Update native extension Cargo.toml to use vendored paths
+echo "Updating native extension paths to vendored crates..."
+NATIVE_CARGO_TOML="$REPO_ROOT/packages/ruby/ext/kreuzberg_rb/native/Cargo.toml"
+if [ -f "$NATIVE_CARGO_TOML" ]; then
+  # Update kreuzberg path (5 parent dirs: ../../../../../crates/kreuzberg)
+  sed -i.bak \
+    's|path = "\.\./\.\./\.\./\.\./\.\./crates/kreuzberg"|path = "../../../vendor/kreuzberg"|g' \
+    "$NATIVE_CARGO_TOML"
+
+  # Update kreuzberg-ffi path (5 parent dirs: ../../../../../crates/kreuzberg-ffi)
+  sed -i.bak \
+    's|path = "\.\./\.\./\.\./\.\./\.\./crates/kreuzberg-ffi"|path = "../../../vendor/kreuzberg-ffi"|g' \
+    "$NATIVE_CARGO_TOML"
+
+  rm -f "$NATIVE_CARGO_TOML.bak"
+  echo "✓ Updated native extension paths to use vendor directory"
+else
+  echo "⚠ Warning: native Cargo.toml not found at $NATIVE_CARGO_TOML"
+fi
+
 # Generate vendor workspace Cargo.toml with extracted versions
 cat >"$REPO_ROOT/packages/ruby/vendor/Cargo.toml" <<EOF
 [workspace]
