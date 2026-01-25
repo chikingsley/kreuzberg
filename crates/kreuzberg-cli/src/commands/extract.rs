@@ -101,6 +101,11 @@ pub fn batch_command(paths: Vec<PathBuf>, config: ExtractionConfig, format: Outp
 }
 
 /// Apply extraction CLI overrides to config
+///
+/// # Deprecation Notices
+///
+/// - `output_format` (via `--output-format`): Recommended for all new code
+/// - `content_format` (via `--content-format`): Deprecated since 4.2.0, use `--output-format` instead
 #[allow(clippy::too_many_arguments)]
 pub fn apply_extraction_overrides(
     config: &mut ExtractionConfig,
@@ -112,6 +117,7 @@ pub fn apply_extraction_overrides(
     chunk_overlap: Option<usize>,
     quality: Option<bool>,
     detect_language: Option<bool>,
+    output_format: Option<ContentOutputFormatArg>,
     content_format: Option<ContentOutputFormatArg>,
 ) {
     if let Some(ocr_flag) = ocr {
@@ -167,7 +173,16 @@ pub fn apply_extraction_overrides(
             config.language_detection = None;
         }
     }
-    if let Some(content_fmt) = content_format {
+    
+    // Handle output format with deprecation warning for --content-format
+    let final_output_format = output_format.or_else(|| {
+        if content_format.is_some() {
+            eprintln!("warning: '--content-format' is deprecated since 4.2.0, use '--output-format' instead");
+        }
+        content_format
+    });
+    
+    if let Some(content_fmt) = final_output_format {
         config.output_format = content_fmt.into();
     }
 }

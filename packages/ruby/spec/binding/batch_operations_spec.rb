@@ -592,4 +592,84 @@ RSpec.describe 'Batch Operations' do
       paths.each { |p| FileUtils.rm_f(p) }
     end
   end
+
+  describe 'batch with output and result formats' do
+    it 'batch processes with output_format' do
+      paths = []
+      file = Tempfile.new(['format_test', '.txt']).tap do |f|
+        f.write('Test content for output format')
+        f.close
+      end
+      paths << file.path
+
+      config = Kreuzberg::Config::Extraction.new(output_format: 'markdown')
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
+
+      expect(results).to be_an Array
+      expect(results.length).to eq 1
+      expect(results[0]).to be_a Kreuzberg::Result
+
+      paths.each { |p| FileUtils.rm_f(p) }
+    end
+
+    it 'batch processes with result_format' do
+      paths = []
+      file = Tempfile.new(['format_test', '.txt']).tap do |f|
+        f.write('Test content for result format')
+        f.close
+      end
+      paths << file.path
+
+      config = Kreuzberg::Config::Extraction.new(result_format: 'unified')
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
+
+      expect(results).to be_an Array
+      expect(results.length).to eq 1
+      expect(results[0]).to be_a Kreuzberg::Result
+
+      paths.each { |p| FileUtils.rm_f(p) }
+    end
+
+    it 'batch processes with both output and result formats' do
+      paths = []
+      file = Tempfile.new(['format_test', '.txt']).tap do |f|
+        f.write('Test content for both formats')
+        f.close
+      end
+      paths << file.path
+
+      config = Kreuzberg::Config::Extraction.new(
+        output_format: 'plain',
+        result_format: 'element_based'
+      )
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
+
+      expect(results).to be_an Array
+      expect(results.length).to eq 1
+      expect(results[0]).to be_a Kreuzberg::Result
+
+      paths.each { |p| FileUtils.rm_f(p) }
+    end
+
+    it 'batch processes with chunking and output_format' do
+      paths = []
+      file = Tempfile.new(['format_test', '.txt']).tap do |f|
+        f.write('Test content ' * 100)
+        f.close
+      end
+      paths << file.path
+
+      config = Kreuzberg::Config::Extraction.new(
+        output_format: 'markdown',
+        chunking: { max_chars: 1000 }
+      )
+      results = Kreuzberg.batch_extract_files_sync(paths: paths, config: config)
+
+      expect(results).to be_an Array
+      expect(results.length).to eq 1
+      expect(results[0]).to be_a Kreuzberg::Result
+
+      paths.each { |p| FileUtils.rm_f(p) }
+    end
+  end
 end

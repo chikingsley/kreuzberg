@@ -79,12 +79,14 @@ mod tests {
     #[test]
     fn test_build_config_with_invalid_config_json() {
         let default_config = ExtractionConfig::default();
+        // Provide invalid type for a field (string instead of boolean)
         let config_json = serde_json::json!({
-            "invalid_field": "value"
+            "use_cache": "not_a_boolean"
         });
 
         let result = build_config(&default_config, Some(config_json));
         assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid extraction config"));
     }
 
     #[test]

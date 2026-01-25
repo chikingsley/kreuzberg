@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
  * - Builder pattern
  * - Invalid JSON handling
  * - Round-trip serialization
+ * - New fields: useCache, enableQualityProcessing, forceOcr, maxConcurrentExtractions, resultFormat, outputEncoding
  */
 #[CoversClass(ExtractionConfig::class)]
 #[Group('unit')]
@@ -60,6 +61,12 @@ final class ExtractionConfigTest extends TestCase
         $this->assertTrue($config->extractTables);
         $this->assertFalse($config->preserveFormatting);
         $this->assertNull($config->outputFormat);
+        $this->assertFalse($config->useCache);
+        $this->assertFalse($config->enableQualityProcessing);
+        $this->assertFalse($config->forceOcr);
+        $this->assertSame(4, $config->maxConcurrentExtractions);
+        $this->assertSame('unified', $config->resultFormat);
+        $this->assertSame('plain', $config->outputEncoding);
     }
 
     #[Test]
@@ -77,6 +84,12 @@ final class ExtractionConfigTest extends TestCase
             extractTables: true,
             preserveFormatting: true,
             outputFormat: 'markdown',
+            useCache: true,
+            enableQualityProcessing: true,
+            forceOcr: true,
+            maxConcurrentExtractions: 8,
+            resultFormat: 'split',
+            outputEncoding: 'json',
         );
 
         $this->assertSame($ocrConfig, $config->ocr);
@@ -86,6 +99,12 @@ final class ExtractionConfigTest extends TestCase
         $this->assertTrue($config->extractTables);
         $this->assertTrue($config->preserveFormatting);
         $this->assertSame('markdown', $config->outputFormat);
+        $this->assertTrue($config->useCache);
+        $this->assertTrue($config->enableQualityProcessing);
+        $this->assertTrue($config->forceOcr);
+        $this->assertSame(8, $config->maxConcurrentExtractions);
+        $this->assertSame('split', $config->resultFormat);
+        $this->assertSame('json', $config->outputEncoding);
     }
 
     #[Test]
@@ -94,7 +113,7 @@ final class ExtractionConfigTest extends TestCase
         $config = new ExtractionConfig(
             extractImages: true,
             extractTables: false,
-            preserveFormatting: true,  // Explicitly set to non-default to include in array
+            preserveFormatting: true,
         );
         $array = $config->toArray();
 
@@ -136,6 +155,12 @@ final class ExtractionConfigTest extends TestCase
         $this->assertNull($config->ocr);
         $this->assertFalse($config->extractImages);
         $this->assertTrue($config->extractTables);
+        $this->assertFalse($config->useCache);
+        $this->assertFalse($config->enableQualityProcessing);
+        $this->assertFalse($config->forceOcr);
+        $this->assertSame(4, $config->maxConcurrentExtractions);
+        $this->assertSame('unified', $config->resultFormat);
+        $this->assertSame('plain', $config->outputEncoding);
     }
 
     #[Test]
@@ -154,6 +179,12 @@ final class ExtractionConfigTest extends TestCase
             'extract_tables' => false,
             'preserve_formatting' => true,
             'output_format' => 'json',
+            'use_cache' => true,
+            'enable_quality_processing' => true,
+            'force_ocr' => true,
+            'max_concurrent_extractions' => 16,
+            'result_format' => 'nested',
+            'output_encoding' => 'base64',
         ];
         $config = ExtractionConfig::fromArray($data);
 
@@ -169,6 +200,12 @@ final class ExtractionConfigTest extends TestCase
         $this->assertFalse($config->extractTables);
         $this->assertTrue($config->preserveFormatting);
         $this->assertSame('json', $config->outputFormat);
+        $this->assertTrue($config->useCache);
+        $this->assertTrue($config->enableQualityProcessing);
+        $this->assertTrue($config->forceOcr);
+        $this->assertSame(16, $config->maxConcurrentExtractions);
+        $this->assertSame('nested', $config->resultFormat);
+        $this->assertSame('base64', $config->outputEncoding);
     }
 
     #[Test]
@@ -178,6 +215,8 @@ final class ExtractionConfigTest extends TestCase
             ocr: new OcrConfig(backend: 'tesseract'),
             extractImages: true,
             outputFormat: 'xml',
+            useCache: true,
+            maxConcurrentExtractions: 6,
         );
         $json = $config->toJson();
 
@@ -187,6 +226,8 @@ final class ExtractionConfigTest extends TestCase
         $this->assertArrayHasKey('ocr', $decoded);
         $this->assertTrue($decoded['extract_images']);
         $this->assertSame('xml', $decoded['output_format']);
+        $this->assertTrue($decoded['use_cache']);
+        $this->assertSame(6, $decoded['max_concurrent_extractions']);
     }
 
     #[Test]
@@ -196,12 +237,20 @@ final class ExtractionConfigTest extends TestCase
             'ocr' => ['backend' => 'easyocr'],
             'extract_images' => true,
             'extract_tables' => true,
+            'use_cache' => true,
+            'force_ocr' => false,
+            'max_concurrent_extractions' => 12,
+            'result_format' => 'split',
         ]);
         $config = ExtractionConfig::fromJson($json);
 
         $this->assertNotNull($config->ocr);
         $this->assertTrue($config->extractImages);
         $this->assertTrue($config->extractTables);
+        $this->assertTrue($config->useCache);
+        $this->assertFalse($config->forceOcr);
+        $this->assertSame(12, $config->maxConcurrentExtractions);
+        $this->assertSame('split', $config->resultFormat);
     }
 
     #[Test]
@@ -215,6 +264,12 @@ final class ExtractionConfigTest extends TestCase
             extractTables: false,
             preserveFormatting: true,
             outputFormat: 'markdown',
+            useCache: true,
+            enableQualityProcessing: true,
+            forceOcr: false,
+            maxConcurrentExtractions: 8,
+            resultFormat: 'split',
+            outputEncoding: 'json',
         );
 
         $json = $original->toJson();
@@ -227,6 +282,12 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame($original->extractTables, $restored->extractTables);
         $this->assertSame($original->preserveFormatting, $restored->preserveFormatting);
         $this->assertSame($original->outputFormat, $restored->outputFormat);
+        $this->assertSame($original->useCache, $restored->useCache);
+        $this->assertSame($original->enableQualityProcessing, $restored->enableQualityProcessing);
+        $this->assertSame($original->forceOcr, $restored->forceOcr);
+        $this->assertSame($original->maxConcurrentExtractions, $restored->maxConcurrentExtractions);
+        $this->assertSame($original->resultFormat, $restored->resultFormat);
+        $this->assertSame($original->outputEncoding, $restored->outputEncoding);
     }
 
     #[Test]
@@ -266,6 +327,24 @@ final class ExtractionConfigTest extends TestCase
     }
 
     #[Test]
+    public function it_enforces_readonly_on_use_cache_property(): void
+    {
+        $this->expectException(\Error::class);
+
+        $config = new ExtractionConfig(useCache: true);
+        $config->useCache = false;
+    }
+
+    #[Test]
+    public function it_enforces_readonly_on_max_concurrent_extractions_property(): void
+    {
+        $this->expectException(\Error::class);
+
+        $config = new ExtractionConfig(maxConcurrentExtractions: 8);
+        $config->maxConcurrentExtractions = 4;
+    }
+
+    #[Test]
     public function it_creates_from_file(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'extract_');
@@ -278,6 +357,8 @@ final class ExtractionConfigTest extends TestCase
                 'extract_images' => true,
                 'extract_tables' => false,
                 'ocr' => ['backend' => 'tesseract'],
+                'use_cache' => true,
+                'max_concurrent_extractions' => 10,
             ]));
 
             $config = ExtractionConfig::fromFile($tempFile);
@@ -285,6 +366,8 @@ final class ExtractionConfigTest extends TestCase
             $this->assertTrue($config->extractImages);
             $this->assertFalse($config->extractTables);
             $this->assertNotNull($config->ocr);
+            $this->assertTrue($config->useCache);
+            $this->assertSame(10, $config->maxConcurrentExtractions);
         } finally {
             if (file_exists($tempFile)) {
                 unlink($tempFile);
@@ -322,9 +405,91 @@ final class ExtractionConfigTest extends TestCase
     }
 
     #[Test]
+    public function it_handles_type_coercion_for_use_cache(): void
+    {
+        $data = ['use_cache' => 1];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsBool($config->useCache);
+        $this->assertTrue($config->useCache);
+    }
+
+    #[Test]
+    public function it_handles_type_coercion_for_enable_quality_processing(): void
+    {
+        $data = ['enable_quality_processing' => 0];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsBool($config->enableQualityProcessing);
+        $this->assertFalse($config->enableQualityProcessing);
+    }
+
+    #[Test]
+    public function it_handles_type_coercion_for_force_ocr(): void
+    {
+        $data = ['force_ocr' => 'true'];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsBool($config->forceOcr);
+        $this->assertTrue($config->forceOcr);
+    }
+
+    #[Test]
+    public function it_handles_type_coercion_for_max_concurrent_extractions(): void
+    {
+        $data = ['max_concurrent_extractions' => '8'];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsInt($config->maxConcurrentExtractions);
+        $this->assertSame(8, $config->maxConcurrentExtractions);
+    }
+
+    #[Test]
+    public function it_handles_type_coercion_for_result_format(): void
+    {
+        $data = ['result_format' => 123];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsString($config->resultFormat);
+        $this->assertSame('123', $config->resultFormat);
+    }
+
+    #[Test]
+    public function it_handles_type_coercion_for_output_encoding(): void
+    {
+        $data = ['output_encoding' => 456];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsString($config->outputEncoding);
+        $this->assertSame('456', $config->outputEncoding);
+    }
+
+    #[Test]
     public function it_has_builder_method(): void
     {
         $this->assertTrue(method_exists(ExtractionConfig::class, 'builder'));
+    }
+
+    #[Test]
+    public function it_supports_builder_with_new_fields(): void
+    {
+        $config = ExtractionConfig::builder()
+            ->withExtractImages(true)
+            ->withUseCache(true)
+            ->withEnableQualityProcessing(true)
+            ->withForceOcr(true)
+            ->withMaxConcurrentExtractions(12)
+            ->withResultFormat('split')
+            ->withOutputEncoding('json')
+            ->build();
+
+        $this->assertTrue($config->extractImages);
+        $this->assertTrue($config->useCache);
+        $this->assertTrue($config->enableQualityProcessing);
+        $this->assertTrue($config->forceOcr);
+        $this->assertSame(12, $config->maxConcurrentExtractions);
+        $this->assertSame('split', $config->resultFormat);
+        $this->assertSame('json', $config->outputEncoding);
     }
 
     #[Test]
@@ -364,5 +529,110 @@ final class ExtractionConfigTest extends TestCase
 
         $this->assertStringContainsString("\n", $json);
         $this->assertStringContainsString('  ', $json);
+    }
+
+    #[Test]
+    public function it_serializes_non_default_values_for_new_fields(): void
+    {
+        $config = new ExtractionConfig(
+            useCache: true,
+            enableQualityProcessing: true,
+            forceOcr: true,
+            maxConcurrentExtractions: 10,
+            resultFormat: 'nested',
+            outputEncoding: 'base64',
+        );
+        $array = $config->toArray();
+
+        $this->assertTrue($array['use_cache']);
+        $this->assertTrue($array['enable_quality_processing']);
+        $this->assertTrue($array['force_ocr']);
+        $this->assertSame(10, $array['max_concurrent_extractions']);
+        $this->assertSame('nested', $array['result_format']);
+        $this->assertSame('base64', $array['output_encoding']);
+    }
+
+    #[Test]
+    public function it_omits_default_values_for_new_fields_in_serialization(): void
+    {
+        $config = new ExtractionConfig(
+            useCache: false,
+            enableQualityProcessing: false,
+            forceOcr: false,
+            maxConcurrentExtractions: 4,
+            resultFormat: 'unified',
+            outputEncoding: 'plain',
+        );
+        $array = $config->toArray();
+
+        $this->assertArrayNotHasKey('use_cache', $array);
+        $this->assertArrayNotHasKey('enable_quality_processing', $array);
+        $this->assertArrayNotHasKey('force_ocr', $array);
+        $this->assertArrayNotHasKey('max_concurrent_extractions', $array);
+        $this->assertArrayNotHasKey('result_format', $array);
+        $this->assertArrayNotHasKey('output_encoding', $array);
+    }
+
+    #[Test]
+    public function it_allows_various_max_concurrent_extractions_values(): void
+    {
+        $values = [1, 2, 4, 8, 16, 32, 100];
+
+        foreach ($values as $value) {
+            $config = new ExtractionConfig(maxConcurrentExtractions: $value);
+            $this->assertSame($value, $config->maxConcurrentExtractions);
+        }
+    }
+
+    #[Test]
+    public function it_allows_various_result_formats(): void
+    {
+        $formats = ['unified', 'split', 'nested', 'custom'];
+
+        foreach ($formats as $format) {
+            $config = new ExtractionConfig(resultFormat: $format);
+            $this->assertSame($format, $config->resultFormat);
+        }
+    }
+
+    #[Test]
+    public function it_allows_various_output_encodings(): void
+    {
+        $encodings = ['plain', 'json', 'base64', 'xml'];
+
+        foreach ($encodings as $encoding) {
+            $config = new ExtractionConfig(outputEncoding: $encoding);
+            $this->assertSame($encoding, $config->outputEncoding);
+        }
+    }
+
+    #[Test]
+    public function it_provides_complete_builder_chain_with_all_new_fields(): void
+    {
+        $config = ExtractionConfig::builder()
+            ->withOcr(new OcrConfig())
+            ->withExtractImages(true)
+            ->withExtractTables(false)
+            ->withPreserveFormatting(true)
+            ->withOutputFormat('markdown')
+            ->withUseCache(true)
+            ->withEnableQualityProcessing(true)
+            ->withForceOcr(true)
+            ->withMaxConcurrentExtractions(16)
+            ->withResultFormat('split')
+            ->withOutputEncoding('json')
+            ->build();
+
+        $this->assertNotNull($config->ocr);
+        $this->assertTrue($config->extractImages);
+        $this->assertFalse($config->extractTables);
+        $this->assertTrue($config->preserveFormatting);
+        $this->assertSame('markdown', $config->outputFormat);
+        $this->assertTrue($config->useCache);
+        $this->assertTrue($config->enableQualityProcessing);
+        $this->assertTrue($config->forceOcr);
+        $this->assertSame(16, $config->maxConcurrentExtractions);
+        $this->assertSame('split', $config->resultFormat);
+        $this->assertSame('json', $config->outputEncoding);
     }
 }

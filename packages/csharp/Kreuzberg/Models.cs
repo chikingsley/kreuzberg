@@ -1130,6 +1130,20 @@ public sealed class ExtractionConfig
     /// </summary>
     [JsonPropertyName("max_concurrent_extractions")]
     public int? MaxConcurrentExtractions { get; init; }
+    /// <summary>
+    /// Content output format (plain, markdown, djot, html).
+    /// Default: plain
+    /// </summary>
+    [JsonPropertyName("output_format")]
+    public string? OutputFormat { get; init; }
+
+    /// <summary>
+    /// Result structure format (unified, element_based).
+    /// Default: unified
+    /// </summary>
+    [JsonPropertyName("result_format")]
+    public string? ResultFormat { get; init; }
+
 }
 
 /// <summary>

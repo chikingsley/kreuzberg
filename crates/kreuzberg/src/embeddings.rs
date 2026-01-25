@@ -219,10 +219,10 @@ pub fn get_or_init_model(
         // This prevents panics that cannot unwind through FFI boundaries
         fn ensure_onnx_available() -> Result<(), String> {
             // Check if ORT_DYLIB_PATH is already set and valid
-            if let Ok(path) = std::env::var("ORT_DYLIB_PATH") {
-                if std::path::Path::new(&path).exists() {
-                    return Ok(());
-                }
+            if let Ok(path) = std::env::var("ORT_DYLIB_PATH")
+                && std::path::Path::new(&path).exists()
+            {
+                return Ok(());
             }
 
             // Check common installation paths and set ORT_DYLIB_PATH if found

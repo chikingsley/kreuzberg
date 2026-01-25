@@ -54,7 +54,9 @@ impl ExtractionConfig {
         postprocessor=None,
         html_options=None,
         max_concurrent_extractions=None,
-        pages=None
+        pages=None,
+        result_format=None,
+        output_format=None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -72,6 +74,8 @@ impl ExtractionConfig {
         html_options: Option<Bound<'_, PyDict>>,
         max_concurrent_extractions: Option<usize>,
         pages: Option<PageConfig>,
+        result_format: Option<String>,
+        output_format: Option<String>,
     ) -> PyResult<Self> {
         let (html_options_inner, html_options_dict) = parse_html_options_dict(html_options)?;
         Ok(Self {
@@ -90,8 +94,36 @@ impl ExtractionConfig {
                 html_options: html_options_inner,
                 max_concurrent_extractions,
                 pages: pages.map(Into::into),
-                result_format: Default::default(),
-                output_format: Default::default(),
+                result_format: if let Some(rf) = result_format {
+                    match rf.to_lowercase().as_str() {
+                        "unified" => kreuzberg::types::OutputFormat::Unified,
+                        "element_based" | "element-based" => kreuzberg::types::OutputFormat::ElementBased,
+                        other => {
+                            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                                "Invalid result_format: {}. Must be 'unified' or 'element_based'",
+                                other
+                            )));
+                        }
+                    }
+                } else {
+                    kreuzberg::types::OutputFormat::Unified
+                },
+                output_format: if let Some(of) = output_format {
+                    match of.to_lowercase().as_str() {
+                        "plain" => kreuzberg::core::config::formats::OutputFormat::Plain,
+                        "markdown" => kreuzberg::core::config::formats::OutputFormat::Markdown,
+                        "djot" => kreuzberg::core::config::formats::OutputFormat::Djot,
+                        "html" => kreuzberg::core::config::formats::OutputFormat::Html,
+                        other => {
+                            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                                "Invalid output_format: {}. Must be 'plain', 'markdown', 'djot', or 'html'",
+                                other
+                            )));
+                        }
+                    }
+                } else {
+                    kreuzberg::core::config::formats::OutputFormat::Plain
+                },
             },
             html_options_dict,
         })
@@ -238,6 +270,44 @@ impl ExtractionConfig {
     #[setter]
     fn set_pages(&mut self, value: Option<PageConfig>) {
         self.inner.pages = value.map(Into::into);
+    }
+
+    #[getter]
+    fn result_format(&self) -> String {
+        match self.inner.result_format {
+            kreuzberg::types::OutputFormat::Unified => "unified".to_string(),
+            kreuzberg::types::OutputFormat::ElementBased => "element_based".to_string(),
+        }
+    }
+
+    #[setter]
+    fn set_result_format(&mut self, value: String) {
+        self.inner.result_format = match value.to_lowercase().as_str() {
+            "unified" => kreuzberg::types::OutputFormat::Unified,
+            "element_based" | "element-based" => kreuzberg::types::OutputFormat::ElementBased,
+            _ => kreuzberg::types::OutputFormat::Unified, // Default on invalid
+        };
+    }
+
+    #[getter]
+    fn output_format(&self) -> String {
+        match self.inner.output_format {
+            kreuzberg::core::config::formats::OutputFormat::Plain => "plain".to_string(),
+            kreuzberg::core::config::formats::OutputFormat::Markdown => "markdown".to_string(),
+            kreuzberg::core::config::formats::OutputFormat::Djot => "djot".to_string(),
+            kreuzberg::core::config::formats::OutputFormat::Html => "html".to_string(),
+        }
+    }
+
+    #[setter]
+    fn set_output_format(&mut self, value: String) {
+        self.inner.output_format = match value.to_lowercase().as_str() {
+            "plain" => kreuzberg::core::config::formats::OutputFormat::Plain,
+            "markdown" => kreuzberg::core::config::formats::OutputFormat::Markdown,
+            "djot" => kreuzberg::core::config::formats::OutputFormat::Djot,
+            "html" => kreuzberg::core::config::formats::OutputFormat::Html,
+            _ => kreuzberg::core::config::formats::OutputFormat::Plain, // Default on invalid
+        };
     }
 
     fn __repr__(&self) -> String {

@@ -14,8 +14,13 @@ defmodule Kreuzberg.ExtractionConfig do
   ### Boolean Flags (Top-level)
 
     * `:use_cache` - Enable result caching (default: true)
-    * `:enable_quality_processing` - Enable quality post-processing (default: false)
+    * `:enable_quality_processing` - Enable quality post-processing (default: true)
     * `:force_ocr` - Force OCR even for searchable PDFs (default: false)
+
+  ### Output Format Flags
+
+    * `:output_format` - Content text format (default: "plain") - "plain", "markdown", "djot", "html"
+    * `:result_format` - Result structure format (default: "unified") - "unified", "element_based"
 
   ### Nested Configuration Maps (Optional)
 
@@ -36,6 +41,10 @@ defmodule Kreuzberg.ExtractionConfig do
   - `enable_quality_processing`: true - Quality processing is enabled by default for better extraction results
   - `force_ocr`: false - OCR is only used when necessary (searchable PDFs bypass OCR)
 
+  Format defaults:
+  - `output_format`: "plain" - Raw extracted text (no formatting)
+  - `result_format`: "unified" - All content in unified content field
+
   All nested configurations default to nil, allowing the Rust implementation to apply
   its own defaults.
 
@@ -43,6 +52,7 @@ defmodule Kreuzberg.ExtractionConfig do
 
   The `validate/1` function ensures:
   - Boolean fields are actually booleans
+  - Format fields are valid enum values
   - Nested configurations are maps or nil
   - No invalid field names are used
 
@@ -56,9 +66,18 @@ defmodule Kreuzberg.ExtractionConfig do
       iex> Kreuzberg.ExtractionConfig.validate(config)
       {:ok, config}
 
-      # Create config that forces OCR
+      # Create config with markdown output format
+      iex> config = %Kreuzberg.ExtractionConfig{
+      ...>   output_format: "markdown",
+      ...>   result_format: "unified"
+      ...> }
+      iex> Kreuzberg.ExtractionConfig.validate(config)
+      {:ok, config}
+
+      # Create config that forces OCR with element-based result format
       iex> config = %Kreuzberg.ExtractionConfig{
       ...>   force_ocr: true,
+      ...>   result_format: "element_based",
       ...>   enable_quality_processing: true
       ...> }
       iex> Kreuzberg.ExtractionConfig.validate(config)
@@ -68,6 +87,11 @@ defmodule Kreuzberg.ExtractionConfig do
       iex> config = %Kreuzberg.ExtractionConfig{use_cache: "yes"}
       iex> Kreuzberg.ExtractionConfig.validate(config)
       {:error, "Field 'use_cache' must be a boolean"}
+
+      # Validate invalid format
+      iex> config = %Kreuzberg.ExtractionConfig{output_format: "invalid"}
+      iex> Kreuzberg.ExtractionConfig.validate(config)
+      {:error, "Field 'output_format' must be one of: plain, markdown, djot, html"}
 
       # Convert to map for NIF
       iex> config = %Kreuzberg.ExtractionConfig{chunking: %{"size" => 512}}
@@ -81,16 +105,22 @@ defmodule Kreuzberg.ExtractionConfig do
         "pages" => nil,
         "token_reduction" => nil,
         "keywords" => nil,
-        "pdf_config" => nil,
+        "pdf_options" => nil,
         "use_cache" => true,
-        "enable_quality_processing" => false,
-        "force_ocr" => false
+        "enable_quality_processing" => true,
+        "force_ocr" => false,
+        "output_format" => "plain",
+        "result_format" => "unified"
       }
   """
 
   @type config_map :: %{String.t() => any()}
 
   @type nested_config :: config_map | nil
+
+  @type output_format :: String.t()
+
+  @type result_format :: String.t()
 
   @type t :: %__MODULE__{
           chunking: nested_config,
@@ -104,7 +134,9 @@ defmodule Kreuzberg.ExtractionConfig do
           pdf_options: nested_config,
           use_cache: boolean(),
           enable_quality_processing: boolean(),
-          force_ocr: boolean()
+          force_ocr: boolean(),
+          output_format: output_format,
+          result_format: result_format
         }
 
   defstruct [
@@ -119,7 +151,9 @@ defmodule Kreuzberg.ExtractionConfig do
     :pdf_options,
     use_cache: true,
     enable_quality_processing: true,
-    force_ocr: false
+    force_ocr: false,
+    output_format: "plain",
+    result_format: "unified"
   ]
 
   @doc """
@@ -152,10 +186,12 @@ defmodule Kreuzberg.ExtractionConfig do
     * `"use_cache"` - Enable caching (boolean)
     * `"enable_quality_processing"` - Enable quality processing (boolean)
     * `"force_ocr"` - Force OCR usage (boolean)
+    * `"output_format"` - Content text format (string: "plain", "markdown", "djot", "html")
+    * `"result_format"` - Result structure format (string: "unified", "element_based")
 
   ## Examples
 
-      iex> config = %Kreuzberg.ExtractionConfig{chunking: %{"size" => 512}}
+      iex> config = %Kreuzberg.ExtractionConfig{chunking: %{"size" => 512}, output_format: "markdown"}
       iex> Kreuzberg.ExtractionConfig.to_map(config)
       %{
         "chunking" => %{"size" => 512},
@@ -169,7 +205,9 @@ defmodule Kreuzberg.ExtractionConfig do
         "pdf_options" => nil,
         "use_cache" => true,
         "enable_quality_processing" => true,
-        "force_ocr" => false
+        "force_ocr" => false,
+        "output_format" => "markdown",
+        "result_format" => "unified"
       }
 
       iex> config = %Kreuzberg.ExtractionConfig{}
@@ -186,14 +224,16 @@ defmodule Kreuzberg.ExtractionConfig do
         "pdf_options" => nil,
         "use_cache" => true,
         "enable_quality_processing" => true,
-        "force_ocr" => false
+        "force_ocr" => false,
+        "output_format" => "plain",
+        "result_format" => "unified"
       }
 
       iex> Kreuzberg.ExtractionConfig.to_map(nil)
       nil
 
-      iex> Kreuzberg.ExtractionConfig.to_map(%{"use_cache" => false})
-      %{"use_cache" => false}
+      iex> Kreuzberg.ExtractionConfig.to_map(%{"use_cache" => false, "output_format" => "markdown"})
+      %{"use_cache" => false, "output_format" => "markdown"}
   """
   @spec to_map(t() | map() | nil | list()) :: map() | nil
   def to_map(nil), do: nil
@@ -215,7 +255,9 @@ defmodule Kreuzberg.ExtractionConfig do
       "pdf_options" => normalize_nested_config(config.pdf_options),
       "use_cache" => config.use_cache,
       "enable_quality_processing" => config.enable_quality_processing,
-      "force_ocr" => config.force_ocr
+      "force_ocr" => config.force_ocr,
+      "output_format" => normalize_format_value(config.output_format),
+      "result_format" => normalize_format_value(config.result_format)
     }
   end
 
@@ -293,11 +335,20 @@ defmodule Kreuzberg.ExtractionConfig do
   @doc false
   defp normalize_keywords_config(other), do: other
 
+  @doc false
+  defp normalize_format_value(value) when is_binary(value) do
+    String.downcase(value)
+  end
+
+  @doc false
+  defp normalize_format_value(value), do: value
+
   @doc """
   Validates an ExtractionConfig for correct field types and values.
 
   Ensures that:
   - Boolean fields (use_cache, enable_quality_processing, force_ocr) are actually booleans
+  - Format fields (output_format, result_format) are valid enum values
   - Nested configuration fields are maps or nil
   - All values are valid according to the configuration schema
 
@@ -319,6 +370,10 @@ defmodule Kreuzberg.ExtractionConfig do
       iex> Kreuzberg.ExtractionConfig.validate(config)
       {:ok, config}
 
+      iex> config = %Kreuzberg.ExtractionConfig{output_format: "markdown", result_format: "unified"}
+      iex> Kreuzberg.ExtractionConfig.validate(config)
+      {:ok, config}
+
       iex> config = %Kreuzberg.ExtractionConfig{chunking: %{"size" => 1024}}
       iex> Kreuzberg.ExtractionConfig.validate(config)
       {:ok, config}
@@ -326,6 +381,10 @@ defmodule Kreuzberg.ExtractionConfig do
       iex> config = %Kreuzberg.ExtractionConfig{use_cache: "yes"}
       iex> Kreuzberg.ExtractionConfig.validate(config)
       {:error, "Field 'use_cache' must be a boolean, got: string"}
+
+      iex> config = %Kreuzberg.ExtractionConfig{output_format: "invalid"}
+      iex> Kreuzberg.ExtractionConfig.validate(config)
+      {:error, "Field 'output_format' must be one of: plain, markdown, djot, html, got: invalid"}
 
       iex> config = %Kreuzberg.ExtractionConfig{chunking: "invalid"}
       iex> Kreuzberg.ExtractionConfig.validate(config)
@@ -341,6 +400,8 @@ defmodule Kreuzberg.ExtractionConfig do
          :ok <-
            validate_boolean_field(config.enable_quality_processing, "enable_quality_processing"),
          :ok <- validate_boolean_field(config.force_ocr, "force_ocr"),
+         :ok <- validate_output_format(config.output_format),
+         :ok <- validate_result_format(config.result_format),
          :ok <- validate_nested_field(config.chunking, "chunking"),
          :ok <- validate_chunking_config(config.chunking),
          :ok <- validate_nested_field(config.ocr, "ocr"),
@@ -478,7 +539,9 @@ defmodule Kreuzberg.ExtractionConfig do
       pdf_options: Map.get(map, "pdf_options"),
       use_cache: Map.get(map, "use_cache", true),
       enable_quality_processing: Map.get(map, "enable_quality_processing", true),
-      force_ocr: Map.get(map, "force_ocr", false)
+      force_ocr: Map.get(map, "force_ocr", false),
+      output_format: Map.get(map, "output_format", "plain"),
+      result_format: Map.get(map, "result_format", "unified")
     }
 
     {:ok, config}
@@ -507,6 +570,37 @@ defmodule Kreuzberg.ExtractionConfig do
     else
       {:error, "Field '#{field_name}' must be a map or nil, got: #{type_name(value)}"}
     end
+  end
+
+  @doc false
+  defp validate_output_format(value) when is_binary(value) do
+    case String.downcase(value) do
+      "plain" -> :ok
+      "markdown" -> :ok
+      "djot" -> :ok
+      "html" -> :ok
+      _invalid -> {:error, "Field 'output_format' must be one of: plain, markdown, djot, html, got: #{value}"}
+    end
+  end
+
+  @doc false
+  defp validate_output_format(value) do
+    {:error, "Field 'output_format' must be a string, got: #{type_name(value)}"}
+  end
+
+  @doc false
+  defp validate_result_format(value) when is_binary(value) do
+    case String.downcase(value) do
+      "unified" -> :ok
+      "element_based" -> :ok
+      "elementbased" -> :ok
+      _invalid -> {:error, "Field 'result_format' must be one of: unified, element_based, got: #{value}"}
+    end
+  end
+
+  @doc false
+  defp validate_result_format(value) do
+    {:error, "Field 'result_format' must be a string, got: #{type_name(value)}"}
   end
 
   @doc false

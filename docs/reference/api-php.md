@@ -530,6 +530,23 @@ echo $mimeType; // "application/pdf"
 
 ## Configuration
 
+!!! warning "Deprecated API"
+    The `$outputFormat` property has been deprecated in favor of the new configuration object approach.
+    
+    **Old pattern (no longer supported):**
+    ```php
+    $config = new ExtractionConfig();
+    $config->outputFormat = 'markdown';
+    ```
+    
+    **New pattern:**
+    ```php
+    $config = new ExtractionConfig();
+    $config->outputFormat = OutputFormat::MARKDOWN;
+    ```
+    
+    For more control, use the full configuration builder with `OutputConfig` object.
+
 ### ExtractionConfig
 
 Main configuration class for extraction operations.
@@ -551,7 +568,6 @@ readonly class ExtractionConfig
         public bool $extractImages = false,
         public bool $extractTables = true,
         public bool $preserveFormatting = false,
-        public ?string $outputFormat = null,
     );
 }
 ```
@@ -569,7 +585,6 @@ readonly class ExtractionConfig
 - `$extractImages` (bool): Extract images from documents. Default: false
 - `$extractTables` (bool): Extract tables from documents. Default: true
 - `$preserveFormatting` (bool): Preserve original formatting. Default: false
-- `$outputFormat` (string|null): Output format ("markdown", "plain"). Default: null
 
 **Examples:**
 
@@ -599,7 +614,6 @@ $config = new ExtractionConfig(
     extractImages: true,
     extractTables: true,
     preserveFormatting: true,
-    outputFormat: 'markdown'
 );
 ```
 

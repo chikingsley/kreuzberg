@@ -169,6 +169,15 @@ class ExtractionConfig:
         html_options (dict[str, Any] | None): HTML conversion options for
             converting documents to markdown. Default: None
 
+        result_format (str): Result format for extraction output.
+            Specifies whether results use unified format (all content in `content` field)
+            or element-based format (with semantic elements for Unstructured-compatible output).
+            Values: "unified" (default), "element_based". Default: "unified"
+
+        output_format (str): Output content format.
+            Controls the format of the extracted content.
+            Values: "plain" (default), "markdown", "djot", "html". Default: "plain"
+
     Example:
         Basic extraction with defaults:
             >>> from kreuzberg import ExtractionConfig, extract_file_sync
@@ -198,6 +207,8 @@ class ExtractionConfig:
     max_concurrent_extractions: int | None
     html_options: dict[str, Any] | None
     pages: PageConfig | None
+    result_format: str
+    output_format: str
 
     def __init__(
         self,
@@ -216,6 +227,8 @@ class ExtractionConfig:
         max_concurrent_extractions: int | None = None,
         html_options: dict[str, Any] | None = None,
         pages: PageConfig | None = None,
+        result_format: str | None = None,
+        output_format: str | None = None,
     ) -> None: ...
     @staticmethod
     def from_file(path: str | Path) -> ExtractionConfig: ...

@@ -1,6 +1,7 @@
 package kreuzberg_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -1495,5 +1496,249 @@ func TestAllConfigTypes_CanBeNil(t *testing.T) {
 		if cfg == nil {
 			t.Error("config should be nil")
 		}
+	}
+}
+
+// ============================================================================
+// OutputFormat and ResultFormat Tests
+// ============================================================================
+
+func TestOutputFormat_Constants(t *testing.T) {
+	tests := []struct {
+		name     string
+		format   kreuzberg.OutputFormat
+		expected string
+	}{
+		{"Plain", kreuzberg.OutputFormatPlain, "plain"},
+		{"Markdown", kreuzberg.OutputFormatMarkdown, "markdown"},
+		{"Djot", kreuzberg.OutputFormatDjot, "djot"},
+		{"HTML", kreuzberg.OutputFormatHTML, "html"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if string(tt.format) != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, string(tt.format))
+			}
+		})
+	}
+}
+
+func TestResultFormat_Constants(t *testing.T) {
+	tests := []struct {
+		name     string
+		format   kreuzberg.ResultFormat
+		expected string
+	}{
+		{"Unified", kreuzberg.ResultFormatUnified, "unified"},
+		{"ElementBased", kreuzberg.ResultFormatElementBased, "element_based"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if string(tt.format) != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, string(tt.format))
+			}
+		})
+	}
+}
+
+func TestWithOutputFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		format   string
+		expected string
+	}{
+		{"Plain format", "plain", "plain"},
+		{"Markdown format", "markdown", "markdown"},
+		{"Djot format", "djot", "djot"},
+		{"HTML format", "html", "html"},
+		{"Empty format", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := kreuzberg.NewExtractionConfig(
+				kreuzberg.WithOutputFormat(tt.format),
+			)
+
+			if config.OutputFormat != tt.expected {
+				t.Errorf("expected OutputFormat %q, got %q", tt.expected, config.OutputFormat)
+			}
+		})
+	}
+}
+
+func TestWithResultFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		format   string
+		expected string
+	}{
+		{"Unified format", "unified", "unified"},
+		{"ElementBased format", "element_based", "element_based"},
+		{"Empty format", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := kreuzberg.NewExtractionConfig(
+				kreuzberg.WithResultFormat(tt.format),
+			)
+
+			if config.ResultFormat != tt.expected {
+				t.Errorf("expected ResultFormat %q, got %q", tt.expected, config.ResultFormat)
+			}
+		})
+	}
+}
+
+func TestOutputFormat_WithOtherOptions(t *testing.T) {
+	config := kreuzberg.NewExtractionConfig(
+		kreuzberg.WithUseCache(true),
+		kreuzberg.WithOutputFormat("markdown"),
+		kreuzberg.WithEnableQualityProcessing(false),
+	)
+
+	if config.OutputFormat != "markdown" {
+		t.Errorf("expected OutputFormat 'markdown', got %q", config.OutputFormat)
+	}
+
+	if config.UseCache == nil || !*config.UseCache {
+		t.Error("expected UseCache to be true")
+	}
+
+	if config.EnableQualityProcessing == nil || *config.EnableQualityProcessing {
+		t.Error("expected EnableQualityProcessing to be false")
+	}
+}
+
+func TestResultFormat_WithOtherOptions(t *testing.T) {
+	config := kreuzberg.NewExtractionConfig(
+		kreuzberg.WithForceOCR(true),
+		kreuzberg.WithResultFormat("element_based"),
+		kreuzberg.WithMaxConcurrentExtractions(4),
+	)
+
+	if config.ResultFormat != "element_based" {
+		t.Errorf("expected ResultFormat 'element_based', got %q", config.ResultFormat)
+	}
+
+	if config.ForceOCR == nil || !*config.ForceOCR {
+		t.Error("expected ForceOCR to be true")
+	}
+
+	if config.MaxConcurrentExtractions == nil || *config.MaxConcurrentExtractions != 4 {
+		t.Errorf("expected MaxConcurrentExtractions 4, got %v", config.MaxConcurrentExtractions)
+	}
+}
+
+func TestOutputFormat_JSON_Marshaling(t *testing.T) {
+	config := &kreuzberg.ExtractionConfig{
+		OutputFormat: "markdown",
+		ResultFormat: "unified",
+	}
+
+	data, err := json.Marshal(config)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+
+	// Check that the JSON contains the expected fields
+	if !bytes.Contains(data, []byte(`"output_format":"markdown"`)) {
+		t.Error("expected output_format field in JSON")
+	}
+
+	if !bytes.Contains(data, []byte(`"result_format":"unified"`)) {
+		t.Error("expected result_format field in JSON")
+	}
+}
+
+func TestOutputFormat_JSON_Unmarshaling(t *testing.T) {
+	jsonData := []byte(`{
+		"output_format": "djot",
+		"result_format": "element_based"
+	}`)
+
+	var config kreuzberg.ExtractionConfig
+	err := json.Unmarshal(jsonData, &config)
+	if err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	if config.OutputFormat != "djot" {
+		t.Errorf("expected OutputFormat 'djot', got %q", config.OutputFormat)
+	}
+
+	if config.ResultFormat != "element_based" {
+		t.Errorf("expected ResultFormat 'element_based', got %q", config.ResultFormat)
+	}
+}
+
+func TestOutputFormat_JSON_EmptyValues(t *testing.T) {
+	config := &kreuzberg.ExtractionConfig{
+		OutputFormat: "",
+		ResultFormat: "",
+	}
+
+	data, err := json.Marshal(config)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+
+	// Empty strings should be omitted due to omitempty tag
+	if bytes.Contains(data, []byte(`"output_format"`)) {
+		t.Error("expected output_format field to be omitted for empty value")
+	}
+
+	if bytes.Contains(data, []byte(`"result_format"`)) {
+		t.Error("expected result_format field to be omitted for empty value")
+	}
+}
+
+func TestOutputFormat_DefaultValues(t *testing.T) {
+	config := kreuzberg.NewExtractionConfig()
+
+	if config.OutputFormat != "" {
+		t.Errorf("expected OutputFormat to be empty by default, got %q", config.OutputFormat)
+	}
+
+	if config.ResultFormat != "" {
+		t.Errorf("expected ResultFormat to be empty by default, got %q", config.ResultFormat)
+	}
+}
+
+func TestOutputResultFormat_Combined(t *testing.T) {
+	config := kreuzberg.NewExtractionConfig(
+		kreuzberg.WithOutputFormat("html"),
+		kreuzberg.WithResultFormat("element_based"),
+	)
+
+	if config.OutputFormat != "html" {
+		t.Errorf("expected OutputFormat 'html', got %q", config.OutputFormat)
+	}
+
+	if config.ResultFormat != "element_based" {
+		t.Errorf("expected ResultFormat 'element_based', got %q", config.ResultFormat)
+	}
+
+	// Verify they don't interfere with each other
+	data, err := json.Marshal(config)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+
+	var restored kreuzberg.ExtractionConfig
+	err = json.Unmarshal(data, &restored)
+	if err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	if restored.OutputFormat != "html" {
+		t.Errorf("expected restored OutputFormat 'html', got %q", restored.OutputFormat)
+	}
+
+	if restored.ResultFormat != "element_based" {
+		t.Errorf("expected restored ResultFormat 'element_based', got %q", restored.ResultFormat)
 	}
 }

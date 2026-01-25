@@ -5,6 +5,7 @@
 //! is completely removed from the binary at compile time.
 
 #![cfg(not(feature = "profiling"))]
+#![allow(clippy::assertions_on_constants)]
 
 /// Verify that profiling is successfully excluded from the build when feature is disabled.
 ///

@@ -7,7 +7,7 @@ namespace Kreuzberg\Config;
 /**
  * Builder class for constructing ExtractionConfig instances with a fluent interface.
  *
- * This builder pattern addresses the 12-parameter constructor issue in ExtractionConfig,
+ * This builder pattern addresses the 18-parameter constructor issue in ExtractionConfig,
  * providing a clean, readable way to configure extraction behavior through method chaining.
  *
  * @example
@@ -21,6 +21,8 @@ namespace Kreuzberg\Config;
  *     ->withChunking(new ChunkingConfig(maxChunkSize: 1000))
  *     ->withExtractImages(true)
  *     ->withExtractTables(true)
+ *     ->withUseCache(true)
+ *     ->withMaxConcurrentExtractions(8)
  *     ->build();
  * ```
  */
@@ -38,6 +40,12 @@ class ExtractionConfigBuilder
     private bool $extractTables = true;
     private bool $preserveFormatting = false;
     private ?string $outputFormat = null;
+    private bool $useCache = false;
+    private bool $enableQualityProcessing = false;
+    private bool $forceOcr = false;
+    private int $maxConcurrentExtractions = 4;
+    private string $resultFormat = 'unified';
+    private string $outputEncoding = 'plain';
 
     /**
      * Set the OCR configuration.
@@ -184,6 +192,78 @@ class ExtractionConfigBuilder
     }
 
     /**
+     * Set whether to enable caching of extraction results.
+     *
+     * @param bool $useCache Whether to cache extraction results
+     * @return self For method chaining
+     */
+    public function withUseCache(bool $useCache): self
+    {
+        $this->useCache = $useCache;
+        return $this;
+    }
+
+    /**
+     * Set whether to enable quality processing enhancements.
+     *
+     * @param bool $enableQualityProcessing Whether to apply quality processing
+     * @return self For method chaining
+     */
+    public function withEnableQualityProcessing(bool $enableQualityProcessing): self
+    {
+        $this->enableQualityProcessing = $enableQualityProcessing;
+        return $this;
+    }
+
+    /**
+     * Set whether to force OCR on all documents.
+     *
+     * @param bool $forceOcr Whether to force OCR processing
+     * @return self For method chaining
+     */
+    public function withForceOcr(bool $forceOcr): self
+    {
+        $this->forceOcr = $forceOcr;
+        return $this;
+    }
+
+    /**
+     * Set the maximum number of concurrent extraction operations.
+     *
+     * @param int $maxConcurrentExtractions Maximum concurrent operations
+     * @return self For method chaining
+     */
+    public function withMaxConcurrentExtractions(int $maxConcurrentExtractions): self
+    {
+        $this->maxConcurrentExtractions = $maxConcurrentExtractions;
+        return $this;
+    }
+
+    /**
+     * Set the result format for structured output.
+     *
+     * @param string $resultFormat Result format (e.g., 'unified', 'split', 'nested')
+     * @return self For method chaining
+     */
+    public function withResultFormat(string $resultFormat): self
+    {
+        $this->resultFormat = $resultFormat;
+        return $this;
+    }
+
+    /**
+     * Set the output encoding format.
+     *
+     * @param string $outputEncoding Output encoding (e.g., 'plain', 'json', 'base64')
+     * @return self For method chaining
+     */
+    public function withOutputEncoding(string $outputEncoding): self
+    {
+        $this->outputEncoding = $outputEncoding;
+        return $this;
+    }
+
+    /**
      * Build and return the configured ExtractionConfig instance.
      *
      * @return ExtractionConfig The constructed configuration object
@@ -203,6 +283,12 @@ class ExtractionConfigBuilder
             extractTables: $this->extractTables,
             preserveFormatting: $this->preserveFormatting,
             outputFormat: $this->outputFormat,
+            useCache: $this->useCache,
+            enableQualityProcessing: $this->enableQualityProcessing,
+            forceOcr: $this->forceOcr,
+            maxConcurrentExtractions: $this->maxConcurrentExtractions,
+            resultFormat: $this->resultFormat,
+            outputEncoding: $this->outputEncoding,
         );
     }
 }

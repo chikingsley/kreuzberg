@@ -717,7 +717,7 @@ module Kreuzberg
                   :ocr, :chunking, :language_detection, :pdf_options,
                   :image_extraction, :image_preprocessing, :postprocessor,
                   :token_reduction, :keywords, :html_options, :pages,
-                  :max_concurrent_extractions
+                  :max_concurrent_extractions, :output_format, :result_format
 
       # Load configuration from a file.
       #
@@ -738,7 +738,7 @@ module Kreuzberg
         use_cache enable_quality_processing force_ocr ocr chunking
         language_detection pdf_options image_extraction image_preprocessing
         postprocessor token_reduction keywords html_options pages
-        max_concurrent_extractions
+        max_concurrent_extractions output_format result_format
       ].freeze
 
       # Aliases for backward compatibility
@@ -804,7 +804,9 @@ module Kreuzberg
         keywords: nil,
         html_options: nil,
         pages: nil,
-        max_concurrent_extractions: nil
+        max_concurrent_extractions: nil,
+        output_format: nil,
+        result_format: nil
       )
         @use_cache = use_cache ? true : false
         @enable_quality_processing = enable_quality_processing ? true : false
@@ -821,9 +823,12 @@ module Kreuzberg
         @html_options = normalize_config(html_options, HtmlOptions)
         @pages = normalize_config(pages, PageConfig)
         @max_concurrent_extractions = max_concurrent_extractions&.to_i
+        @output_format = output_format&.to_s
+        @result_format = result_format&.to_s
       end
 
       # rubocop:disable Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/MethodLength
       def to_h
         {
           use_cache: @use_cache,
@@ -840,9 +845,12 @@ module Kreuzberg
           keywords: @keywords&.to_h,
           html_options: @html_options&.to_h,
           pages: @pages&.to_h,
-          max_concurrent_extractions: @max_concurrent_extractions
+          max_concurrent_extractions: @max_concurrent_extractions,
+          output_format: @output_format,
+          result_format: @result_format
         }.compact
       end
+      # rubocop:enable Metrics/MethodLength
       # rubocop:enable Metrics/CyclomaticComplexity
 
       # Serialize configuration to JSON string
@@ -981,6 +989,10 @@ module Kreuzberg
           @pages = normalize_config(value, PageConfig)
         when :max_concurrent_extractions
           @max_concurrent_extractions = value&.to_i
+        when :output_format
+          @output_format = value&.to_s
+        when :result_format
+          @result_format = value&.to_s
         else
           raise ArgumentError, "Unknown configuration key: #{key}"
         end
@@ -1028,6 +1040,8 @@ module Kreuzberg
         @html_options = merged.html_options
         @pages = merged.pages
         @max_concurrent_extractions = merged.max_concurrent_extractions
+        @output_format = merged.output_format
+        @result_format = merged.result_format
       end
     end
   end

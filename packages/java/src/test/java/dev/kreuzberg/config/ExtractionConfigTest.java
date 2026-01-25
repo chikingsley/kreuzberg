@@ -26,6 +26,8 @@ final class ExtractionConfigTest {
 		assertThat(config.isUseCache()).isTrue();
 		assertThat(config.isEnableQualityProcessing()).isFalse();
 		assertThat(config.isForceOcr()).isFalse();
+		assertNull(config.getOutputFormat());
+		assertNull(config.getResultFormat());
 		assertNull(config.getOcr());
 		assertNull(config.getChunking());
 		assertNull(config.getLanguageDetection());
@@ -59,6 +61,104 @@ final class ExtractionConfigTest {
 		ExtractionConfig config = ExtractionConfig.builder().forceOcr(true).build();
 
 		assertThat(config.isForceOcr()).isTrue();
+	}
+
+	@Test
+	@DisplayName("should set output format to markdown")
+	void shouldSetOutputFormatMarkdown() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("markdown").build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("markdown");
+	}
+
+	@Test
+	@DisplayName("should set output format to djot")
+	void shouldSetOutputFormatDjot() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("djot").build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("djot");
+	}
+
+	@Test
+	@DisplayName("should set output format to html")
+	void shouldSetOutputFormatHtml() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("html").build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("html");
+	}
+
+	@Test
+	@DisplayName("should set output format to plain")
+	void shouldSetOutputFormatPlain() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("plain").build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("plain");
+	}
+
+	@Test
+	@DisplayName("should set result format to element_based")
+	void shouldSetResultFormatElementBased() {
+		ExtractionConfig config = ExtractionConfig.builder().resultFormat("element_based").build();
+
+		assertThat(config.getResultFormat()).isEqualTo("element_based");
+	}
+
+	@Test
+	@DisplayName("should set result format to unified")
+	void shouldSetResultFormatUnified() {
+		ExtractionConfig config = ExtractionConfig.builder().resultFormat("unified").build();
+
+		assertThat(config.getResultFormat()).isEqualTo("unified");
+	}
+
+	@Test
+	@DisplayName("should set both output and result formats")
+	void shouldSetBothFormats() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("markdown").resultFormat("element_based")
+				.build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("markdown");
+		assertThat(config.getResultFormat()).isEqualTo("element_based");
+	}
+
+	@Test
+	@DisplayName("should include output_format in toMap")
+	void shouldIncludeOutputFormatInMap() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("markdown").build();
+
+		java.util.Map<String, Object> map = config.toMap();
+
+		assertThat(map).containsEntry("output_format", "markdown");
+	}
+
+	@Test
+	@DisplayName("should include result_format in toMap")
+	void shouldIncludeResultFormatInMap() {
+		ExtractionConfig config = ExtractionConfig.builder().resultFormat("element_based").build();
+
+		java.util.Map<String, Object> map = config.toMap();
+
+		assertThat(map).containsEntry("result_format", "element_based");
+	}
+
+	@Test
+	@DisplayName("should not include null output format in toMap")
+	void shouldNotIncludeNullOutputFormatInMap() {
+		ExtractionConfig config = ExtractionConfig.builder().build();
+
+		java.util.Map<String, Object> map = config.toMap();
+
+		assertThat(map).doesNotContainKey("output_format");
+	}
+
+	@Test
+	@DisplayName("should not include null result format in toMap")
+	void shouldNotIncludeNullResultFormatInMap() {
+		ExtractionConfig config = ExtractionConfig.builder().build();
+
+		java.util.Map<String, Object> map = config.toMap();
+
+		assertThat(map).doesNotContainKey("result_format");
 	}
 
 	@Test
@@ -183,13 +283,16 @@ final class ExtractionConfigTest {
 		PageConfig pageConfig = PageConfig.builder().extractPages(true).build();
 
 		ExtractionConfig config = ExtractionConfig.builder().useCache(true).enableQualityProcessing(true).forceOcr(true)
-				.ocr(ocrConfig).chunking(chunkingConfig).languageDetection(langConfig).pdfOptions(pdfConfig)
-				.imageExtraction(imageExtConfig).imagePreprocessing(imgPreConfig).postprocessor(postConfig)
-				.tokenReduction(tokenConfig).pages(pageConfig).maxConcurrentExtractions(4).build();
+				.outputFormat("markdown").resultFormat("element_based").ocr(ocrConfig).chunking(chunkingConfig)
+				.languageDetection(langConfig).pdfOptions(pdfConfig).imageExtraction(imageExtConfig)
+				.imagePreprocessing(imgPreConfig).postprocessor(postConfig).tokenReduction(tokenConfig).pages(pageConfig)
+				.maxConcurrentExtractions(4).build();
 
 		assertThat(config.isUseCache()).isTrue();
 		assertThat(config.isEnableQualityProcessing()).isTrue();
 		assertThat(config.isForceOcr()).isTrue();
+		assertThat(config.getOutputFormat()).isEqualTo("markdown");
+		assertThat(config.getResultFormat()).isEqualTo("element_based");
 		assertNotNull(config.getOcr());
 		assertNotNull(config.getChunking());
 		assertNotNull(config.getLanguageDetection());
@@ -206,11 +309,13 @@ final class ExtractionConfigTest {
 	@DisplayName("should convert to map representation")
 	void shouldConvertToMap() {
 		OcrConfig ocrConfig = OcrConfig.builder().backend("tesseract").build();
-		ExtractionConfig config = ExtractionConfig.builder().useCache(true).forceOcr(false).ocr(ocrConfig).build();
+		ExtractionConfig config = ExtractionConfig.builder().useCache(true).forceOcr(false).ocr(ocrConfig)
+				.outputFormat("html").resultFormat("unified").build();
 
 		java.util.Map<String, Object> map = config.toMap();
 
-		assertThat(map).containsKey("use_cache").containsKey("force_ocr");
+		assertThat(map).containsKey("use_cache").containsKey("force_ocr").containsKey("output_format")
+				.containsKey("result_format");
 	}
 
 	@Test
@@ -218,11 +323,13 @@ final class ExtractionConfigTest {
 	void shouldSupportBuilderChaining() {
 		OcrConfig ocrConfig = OcrConfig.builder().backend("tesseract").build();
 		ExtractionConfig config = ExtractionConfig.builder().useCache(false).enableQualityProcessing(true)
-				.forceOcr(true).ocr(ocrConfig).build();
+				.forceOcr(true).outputFormat("djot").resultFormat("element_based").ocr(ocrConfig).build();
 
 		assertThat(config.isUseCache()).isFalse();
 		assertThat(config.isEnableQualityProcessing()).isTrue();
 		assertThat(config.isForceOcr()).isTrue();
+		assertThat(config.getOutputFormat()).isEqualTo("djot");
+		assertThat(config.getResultFormat()).isEqualTo("element_based");
 		assertNotNull(config.getOcr());
 	}
 
@@ -242,10 +349,11 @@ final class ExtractionConfigTest {
 	@Test
 	@DisplayName("should create independent builder instances")
 	void shouldCreateIndependentBuilderInstances() {
-		ExtractionConfig config1 = ExtractionConfig.builder().useCache(true).build();
-		ExtractionConfig config2 = ExtractionConfig.builder().useCache(false).build();
+		ExtractionConfig config1 = ExtractionConfig.builder().useCache(true).outputFormat("markdown").build();
+		ExtractionConfig config2 = ExtractionConfig.builder().useCache(false).outputFormat("html").build();
 
 		assertThat(config1.isUseCache()).isNotEqualTo(config2.isUseCache());
+		assertThat(config1.getOutputFormat()).isNotEqualTo(config2.getOutputFormat());
 	}
 
 	@Test
@@ -263,5 +371,23 @@ final class ExtractionConfigTest {
 		assertNull(config.getTokenReduction());
 		assertNull(config.getKeywords());
 		assertNull(config.getPages());
+	}
+
+	@Test
+	@DisplayName("should set output format independently")
+	void shouldSetOutputFormatIndependently() {
+		ExtractionConfig config = ExtractionConfig.builder().outputFormat("markdown").build();
+
+		assertThat(config.getOutputFormat()).isEqualTo("markdown");
+		assertNull(config.getResultFormat());
+	}
+
+	@Test
+	@DisplayName("should set result format independently")
+	void shouldSetResultFormatIndependently() {
+		ExtractionConfig config = ExtractionConfig.builder().resultFormat("element_based").build();
+
+		assertNull(config.getOutputFormat());
+		assertThat(config.getResultFormat()).isEqualTo("element_based");
 	}
 }

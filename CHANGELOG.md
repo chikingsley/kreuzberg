@@ -11,6 +11,161 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.2.0] - 2026-XX-XX
+
+### Added
+
+#### MCP Interface
+- **Full `config` parameter support**: All `ExtractionConfig` options now available via MCP tools
+  - Enables complete configuration pass-through from AI agents to Rust core
+  - Standardizes parameter handling across all MCP tools
+  - Eliminates top-level parameter duplication in tool schemas
+
+#### CLI
+- **`--output-format` flag**: Canonical replacement for `--content-format` (markdown, djot, html, plain)
+  - `--content-format` continues to work for backward compatibility
+  - Takes precedence over environment variable `KREUZBERG_OUTPUT_FORMAT`
+
+- **`--result-format` flag**: Controls result structure (unified, element_based)
+  - Maps to `config.result_format` in API
+  - Enables AI agents to request semantic element extraction at command line
+
+- **`--config-json` flag**: Inline JSON configuration passed directly to extractor
+  - Base configuration object with all `ExtractionConfig` fields
+  - Overrides config file settings; CLI flags override inline JSON
+
+- **`--config-json-base64` flag**: Base64-encoded JSON configuration
+  - Enables clean passing of complex configurations through shell invocations
+  - Decoded and merged following precedence rules
+
+#### API - All Language Bindings
+- **`outputFormat` / `output_format` field**: Enum with Plain, Markdown, Djot, HTML variants
+  - Available in: Python, TypeScript, Ruby, Go, Java, PHP, C#, Elixir
+  - Enables unified output format control across all bindings
+  - Defaults to Markdown for consistency
+
+- **`resultFormat` / `result_format` field**: Enum with Unified, ElementBased variants
+  - Available in: Python, TypeScript, Ruby, Go, Java, PHP, C#, Elixir
+  - Enables semantic element extraction control at API level
+  - Defaults to Unified for backward compatibility
+
+#### Go Bindings
+- **`OutputFormat` and `ResultFormat` types**: With functional option constructors
+  - `WithOutputFormat(format)` and `WithResultFormat(format)` functional options
+  - Idiomatic Go enum pattern with string serialization
+  - Complete parity with other language bindings
+
+#### Java Bindings
+- **`outputFormat` and `resultFormat` in Builder pattern**: Full ExtractionConfig.Builder integration
+  - `builder.outputFormat(OutputFormat.MARKDOWN)` and `builder.resultFormat(ResultFormat.UNIFIED)`
+  - Proper enum types with serialization support
+
+#### PHP Bindings
+- **6 missing configuration fields added**:
+  - `useCache` - Enable/disable caching
+  - `enableQualityProcessing` - Enable quality processing
+  - `forceOcr` - Force OCR extraction
+  - `maxConcurrentExtractions` - Concurrency limit
+  - `resultFormat` - Result structure control
+  - `outputFormat` - Output format control
+  - All fields properly typed and documented
+
+#### Testing
+- **API consistency validator**: `scripts/verify_api_parity.py` tool
+  - Scans all 10 language bindings for API parity
+  - Validates all `ExtractionConfig` fields present in each binding
+  - Generates detailed parity matrix (10x40+ fields)
+  - Integrated into CI pipeline via `task verify:api-parity`
+  - Fails build if API drift detected
+
+- **300+ new tests**: Cross-language serialization and API consistency tests
+  - Python: Comprehensive ExtractionConfig serialization tests
+  - TypeScript: All OutputFormat and ResultFormat combinations
+  - Ruby: RBS type definition validation
+  - Go: Functional option validation
+  - Java: Builder pattern validation
+  - PHP: Reflection-based field verification
+  - All bindings: Round-trip serialization tests
+
+#### Documentation
+- **API Consistency Guide**: `docs/API_CONSISTENCY.md` - canonical reference for all binding APIs
+  - Field-by-field mapping across all 10 languages
+  - Serialization format specifications
+  - Breaking change documentation
+  - Migration path for configuration updates
+
+- **Cross-Language Serialization Tests**: `examples/serialization/` with test cases for all languages
+  - JSON configuration files with complex nested structures
+  - Expected output for each language binding
+  - Validation scripts for each ecosystem
+
+### Changed
+
+#### API Parity
+- **All 10 language bindings now expose identical API surface**:
+  - Python, TypeScript, Ruby, Go, Java, PHP, C#, Elixir, WebAssembly, WASM
+  - Every field in `ExtractionConfig` available in all bindings
+  - Consistent naming conventions (snake_case for Python/Ruby/PHP/Go, camelCase for TypeScript/Java/C#)
+  - Type safety enforced in all languages
+
+#### Configuration Precedence
+- **CLI flag > inline JSON > config file > defaults**: Clear precedence hierarchy
+  - Example: `--output-format html` overrides `--config-json '{"outputFormat":"markdown"}'`
+  - Ensures predictable behavior in complex configuration scenarios
+
+#### MCP Schema Evolution
+- **Top-level parameters removed from MCP tools**: `enable_ocr` and `force_ocr` now under `config` object
+  - Simplifies schema complexity
+  - Single configuration object instead of scattered parameters
+  - MCP agents use updated schema immediately on next session
+
+### BREAKING CHANGES ⚠️
+
+**MCP Interface Only (AI-only, no user impact)**
+
+The following breaking changes affect **MCP tools only**. Since MCP is used exclusively by AI agents and agents automatically query fresh schema on each invocation, there is zero impact on end users or downstream systems.
+
+- **Removed**: `enable_ocr` top-level parameter from `extract` and `extract_file` MCP tools
+  - **Migration**: Use `config.ocr.enable_ocr` instead
+  - Example before: `{"enable_ocr": true}`
+  - Example after: `{"config": {"ocr": {"enable_ocr": true}}}`
+
+- **Removed**: `force_ocr` top-level parameter from `extract` and `extract_file` MCP tools
+  - **Migration**: Use `config.force_ocr` instead
+  - Example before: `{"force_ocr": true}`
+  - Example after: `{"config": {"force_ocr": true}}`
+
+- **Deprecated**: All MCP tools now require `config` object parameter
+  - Old parameter names still accepted in v4.2 but log deprecation warnings
+  - Will be removed in v5.0
+  - **Rationale**: MCP interface is AI-only; AI agents automatically use new schema on next session; backward compatibility not needed
+
+### Deprecated
+
+#### CLI (backward compatible)
+
+- **`--content-format` flag**: Use `--output-format` instead
+  - Both flags work in v4.2.0; `--content-format` logs deprecation warning
+  - Removed in v5.0.0
+  - Rationale: Unified flag naming with `--result-format`
+
+#### Environment Variables (backward compatible)
+
+- **`KREUZBERG_CONTENT_FORMAT`**: Use `KREUZBERG_OUTPUT_FORMAT` instead
+  - Both environment variables work in v4.2.0
+  - Removed in v5.0.0
+
+### Migration
+
+See **[Migration Guide v4.1 → v4.2](docs/migration/v4.1-to-v4.2.md)** for:
+
+- Complete migration instructions for all 10 language bindings
+- Before/after examples for CLI, API, and MCP usage
+- Configuration precedence examples
+- Troubleshooting common migration issues
+
+---
+
 ## [4.1.2] - 2026-01-25
 
 ### Added

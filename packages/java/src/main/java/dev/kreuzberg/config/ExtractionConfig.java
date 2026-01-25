@@ -32,6 +32,8 @@ public final class ExtractionConfig {
 	private final boolean useCacheSet;
 	private final boolean enableQualityProcessingSet;
 	private final boolean forceOcrSet;
+	private final String outputFormat;
+	private final String resultFormat;
 	private final OcrConfig ocr;
 	private final ChunkingConfig chunking;
 	private final LanguageDetectionConfig languageDetection;
@@ -54,6 +56,8 @@ public final class ExtractionConfig {
 		this.useCacheSet = builder.useCacheSet;
 		this.enableQualityProcessingSet = builder.enableQualityProcessingSet;
 		this.forceOcrSet = builder.forceOcrSet;
+		this.outputFormat = builder.outputFormat;
+		this.resultFormat = builder.resultFormat;
 		this.ocr = builder.ocr;
 		this.chunking = builder.chunking;
 		this.languageDetection = builder.languageDetection;
@@ -86,6 +90,26 @@ public final class ExtractionConfig {
 
 	public boolean isForceOcr() {
 		return forceOcr;
+	}
+
+	/**
+	 * Get the content output format.
+	 *
+	 * @return output format (plain, markdown, djot, html), or null if not set
+	 * @since 4.2.0
+	 */
+	public String getOutputFormat() {
+		return outputFormat;
+	}
+
+	/**
+	 * Get the result structure format.
+	 *
+	 * @return result format (unified, element_based), or null if not set
+	 * @since 4.2.0
+	 */
+	public String getResultFormat() {
+		return resultFormat;
 	}
 
 	public OcrConfig getOcr() {
@@ -391,6 +415,12 @@ public final class ExtractionConfig {
 		if (includeDefaults || forceOcrSet) {
 			map.put("force_ocr", forceOcr);
 		}
+		if (outputFormat != null) {
+			map.put("output_format", outputFormat);
+		}
+		if (resultFormat != null) {
+			map.put("result_format", resultFormat);
+		}
 		if (ocr != null) {
 			map.put("ocr", ocr.toMap());
 		}
@@ -447,6 +477,12 @@ public final class ExtractionConfig {
 		}
 		if (raw.containsKey("force_ocr")) {
 			builder.forceOcr(asBoolean(raw.get("force_ocr"), builder.forceOcr));
+		}
+		if (raw.containsKey("output_format")) {
+			builder.outputFormat(asString(raw.get("output_format")));
+		}
+		if (raw.containsKey("result_format")) {
+			builder.resultFormat(asString(raw.get("result_format")));
 		}
 		Map<String, Object> ocrMap = asMap(raw.get("ocr"));
 		if (ocrMap != null) {
@@ -529,6 +565,16 @@ public final class ExtractionConfig {
 		return null;
 	}
 
+	private static String asString(Object value) {
+		if (value instanceof String) {
+			return (String) value;
+		}
+		if (value != null) {
+			return value.toString();
+		}
+		return null;
+	}
+
 	@SuppressWarnings("unchecked")
 	private static Map<String, Object> asMap(Object value) {
 		if (value instanceof Map) {
@@ -544,6 +590,8 @@ public final class ExtractionConfig {
 		private boolean useCacheSet = false;
 		private boolean enableQualityProcessingSet = false;
 		private boolean forceOcrSet = false;
+		private String outputFormat;
+		private String resultFormat;
 		private OcrConfig ocr;
 		private ChunkingConfig chunking;
 		private LanguageDetectionConfig languageDetection;
@@ -577,6 +625,36 @@ public final class ExtractionConfig {
 		public Builder forceOcr(boolean forceOcr) {
 			this.forceOcr = forceOcr;
 			this.forceOcrSet = true;
+			return this;
+		}
+
+		/**
+		 * Set the content output format.
+		 *
+		 * <p>
+		 * Valid formats: plain, markdown, djot, html
+		 *
+		 * @param format the output format
+		 * @return this builder for chaining
+		 * @since 4.2.0
+		 */
+		public Builder outputFormat(String format) {
+			this.outputFormat = format;
+			return this;
+		}
+
+		/**
+		 * Set the result structure format.
+		 *
+		 * <p>
+		 * Valid formats: unified, element_based
+		 *
+		 * @param format the result format
+		 * @return this builder for chaining
+		 * @since 4.2.0
+		 */
+		public Builder resultFormat(String format) {
+			this.resultFormat = format;
 			return this;
 		}
 

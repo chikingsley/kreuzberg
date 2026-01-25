@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING, Any
 # ~keep: This must be imported FIRST before any Rust bindings
 # ~keep: It sets up dynamic library paths for bundled native libraries (pdfium, etc.)
 from kreuzberg import _setup_lib_path  # noqa: F401
+from kreuzberg._deprecation import deprecated
 from kreuzberg._internal_bindings import (
     ChunkingConfig,
     EmbeddingConfig,
@@ -631,6 +632,10 @@ def detect_mime_type_from_path(path: str | Path) -> str:
 
 def discover_extraction_config() -> ExtractionConfig | None:
     """Discover extraction configuration from the environment.
+
+    .. deprecated:: 4.2.0
+        Consider using :func:`load_extraction_config_from_file` with explicit
+        configuration paths for more predictable behavior.
 
     Attempts to locate a Kreuzberg configuration file using the following strategy:
     1. If KREUZBERG_CONFIG_PATH environment variable is set, load from that path

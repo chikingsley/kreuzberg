@@ -127,6 +127,22 @@ func WithMaxConcurrentExtractions(max int) ExtractionOption {
 	}
 }
 
+// WithOutputFormat sets the content output format.
+// Options: "plain", "markdown", "djot", "html"
+func WithOutputFormat(format string) ExtractionOption {
+	return func(c *ExtractionConfig) {
+		c.OutputFormat = format
+	}
+}
+
+// WithResultFormat sets the result structure format.
+// Options: "unified", "element_based"
+func WithResultFormat(format string) ExtractionOption {
+	return func(c *ExtractionConfig) {
+		c.ResultFormat = format
+	}
+}
+
 // ============================================================================
 // OCRConfig Options
 // ============================================================================

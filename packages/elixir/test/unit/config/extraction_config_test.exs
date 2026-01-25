@@ -264,4 +264,210 @@ defmodule KreuzbergTest.Unit.Config.ExtractionConfigTest do
       assert map_size(config.chunking) == 100
     end
   end
+
+  describe "output_format configuration" do
+    @tag :unit
+    test "creates with default output_format" do
+      config = %ExtractionConfig{}
+      assert config.output_format == "plain"
+    end
+
+    @tag :unit
+    test "creates with custom output_format" do
+      config = %ExtractionConfig{output_format: "markdown"}
+      assert config.output_format == "markdown"
+    end
+
+    @tag :unit
+    test "validates plain output_format" do
+      config = %ExtractionConfig{output_format: "plain"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates markdown output_format" do
+      config = %ExtractionConfig{output_format: "markdown"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates djot output_format" do
+      config = %ExtractionConfig{output_format: "djot"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates html output_format" do
+      config = %ExtractionConfig{output_format: "html"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "rejects invalid output_format" do
+      config = %ExtractionConfig{output_format: "invalid"}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "output_format"
+      assert reason =~ "plain"
+      assert reason =~ "markdown"
+    end
+
+    @tag :unit
+    test "rejects non-string output_format" do
+      config = %ExtractionConfig{output_format: 123}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "output_format"
+      assert reason =~ "string"
+    end
+
+    @tag :unit
+    test "normalizes output_format to lowercase in to_map" do
+      config = %ExtractionConfig{output_format: "Markdown"}
+      map = ExtractionConfig.to_map(config)
+      assert map["output_format"] == "markdown"
+    end
+  end
+
+  describe "result_format configuration" do
+    @tag :unit
+    test "creates with default result_format" do
+      config = %ExtractionConfig{}
+      assert config.result_format == "unified"
+    end
+
+    @tag :unit
+    test "creates with custom result_format" do
+      config = %ExtractionConfig{result_format: "element_based"}
+      assert config.result_format == "element_based"
+    end
+
+    @tag :unit
+    test "validates unified result_format" do
+      config = %ExtractionConfig{result_format: "unified"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates element_based result_format" do
+      config = %ExtractionConfig{result_format: "element_based"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates elementbased variant of result_format" do
+      config = %ExtractionConfig{result_format: "elementbased"}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "rejects invalid result_format" do
+      config = %ExtractionConfig{result_format: "invalid"}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "result_format"
+      assert reason =~ "unified"
+      assert reason =~ "element_based"
+    end
+
+    @tag :unit
+    test "rejects non-string result_format" do
+      config = %ExtractionConfig{result_format: :atom}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "result_format"
+      assert reason =~ "string"
+    end
+
+    @tag :unit
+    test "normalizes result_format to lowercase in to_map" do
+      config = %ExtractionConfig{result_format: "Element_Based"}
+      map = ExtractionConfig.to_map(config)
+      assert map["result_format"] == "element_based"
+    end
+  end
+
+  describe "format configurations in to_map" do
+    @tag :unit
+    test "includes both output_format and result_format in serialization" do
+      config = %ExtractionConfig{
+        output_format: "markdown",
+        result_format: "element_based"
+      }
+
+      map = ExtractionConfig.to_map(config)
+
+      assert map["output_format"] == "markdown"
+      assert map["result_format"] == "element_based"
+    end
+
+    @tag :unit
+    test "serializes all format fields with defaults" do
+      config = %ExtractionConfig{}
+      map = ExtractionConfig.to_map(config)
+
+      assert map["output_format"] == "plain"
+      assert map["result_format"] == "unified"
+      assert is_boolean(map["use_cache"])
+      assert is_boolean(map["enable_quality_processing"])
+    end
+
+    @tag :unit
+    test "round-trips format fields through JSON" do
+      original = %ExtractionConfig{
+        output_format: "markdown",
+        result_format: "element_based",
+        use_cache: false
+      }
+
+      map = ExtractionConfig.to_map(original)
+      json = Jason.encode!(map)
+      {:ok, decoded} = Jason.decode(json)
+
+      assert decoded["output_format"] == "markdown"
+      assert decoded["result_format"] == "element_based"
+      assert decoded["use_cache"] == false
+    end
+  end
+
+  describe "complete configuration with format fields" do
+    @tag :unit
+    test "validates config with all format options" do
+      config = %ExtractionConfig{
+        use_cache: false,
+        enable_quality_processing: true,
+        force_ocr: true,
+        output_format: "markdown",
+        result_format: "element_based",
+        chunking: %{"size" => 512},
+        ocr: %{"backend" => "tesseract"}
+      }
+
+      assert {:ok, validated} = ExtractionConfig.validate(config)
+      assert validated.output_format == "markdown"
+      assert validated.result_format == "element_based"
+    end
+
+    @tag :unit
+    test "preserves format fields in struct creation" do
+      config = %ExtractionConfig{
+        output_format: "html",
+        result_format: "unified",
+        use_cache: true
+      }
+
+      assert config.output_format == "html"
+      assert config.result_format == "unified"
+      assert config.use_cache == true
+    end
+
+    @tag :unit
+    test "pattern matches on format fields" do
+      config = %ExtractionConfig{
+        output_format: "markdown",
+        result_format: "element_based"
+      }
+
+      assert %ExtractionConfig{
+               output_format: "markdown",
+               result_format: "element_based"
+             } = config
+    end
+  end
 end

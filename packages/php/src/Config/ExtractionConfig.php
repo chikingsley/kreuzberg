@@ -156,6 +156,80 @@ readonly class ExtractionConfig
          * @default null
          */
         public ?string $outputFormat = null,
+
+        /**
+         * Enable caching of extraction results.
+         *
+         * When enabled, extraction results are cached to avoid redundant processing
+         * of the same documents. Cache key is based on document content hash.
+         *
+         * @var bool
+         * @default false
+         */
+        public bool $useCache = false,
+
+        /**
+         * Enable quality processing enhancements.
+         *
+         * When enabled, applies advanced quality improvement techniques including
+         * text smoothing, error correction, and content validation to improve
+         * extraction output quality.
+         *
+         * @var bool
+         * @default false
+         */
+        public bool $enableQualityProcessing = false,
+
+        /**
+         * Force OCR on all documents regardless of document type.
+         *
+         * When enabled, OCR will be applied even to documents that typically
+         * have machine-readable text. Useful for ensuring consistent text extraction
+         * quality across heterogeneous document collections.
+         *
+         * @var bool
+         * @default false
+         */
+        public bool $forceOcr = false,
+
+        /**
+         * Maximum number of concurrent extraction operations.
+         *
+         * Controls the degree of parallelism for batch extraction operations.
+         * Higher values allow more documents to be processed concurrently but consume more resources.
+         * Minimum recommended value: 1, typical range: 2-16.
+         *
+         * @var int
+         * @default 4
+         */
+        public int $maxConcurrentExtractions = 4,
+
+        /**
+         * Result format for structured output.
+         *
+         * Specifies how results are formatted when structured output is requested.
+         * Common values:
+         * - 'unified': Single unified format combining all extraction results
+         * - 'split': Separate results for text, tables, images, and metadata
+         * - 'nested': Hierarchical result structure preserving document structure
+         *
+         * @var string
+         * @default 'unified'
+         */
+        public string $resultFormat = 'unified',
+
+        /**
+         * Output encoding format.
+         *
+         * Specifies the encoding for text output. Common values:
+         * - 'plain': Plain text (UTF-8)
+         * - 'json': JSON-encoded text
+         * - 'base64': Base64-encoded content
+         *
+         * @var string
+         * @default 'plain'
+         */
+        public string $outputEncoding = 'plain',
     ) {
     }
 
@@ -192,6 +266,48 @@ readonly class ExtractionConfig
         if ($outputFormat !== null && !is_string($outputFormat)) {
             /** @var string $outputFormat */
             $outputFormat = (string) $outputFormat;
+        }
+
+        /** @var bool $useCache */
+        $useCache = $data['use_cache'] ?? false;
+        if (!is_bool($useCache)) {
+            /** @var bool $useCache */
+            $useCache = (bool) $useCache;
+        }
+
+        /** @var bool $enableQualityProcessing */
+        $enableQualityProcessing = $data['enable_quality_processing'] ?? false;
+        if (!is_bool($enableQualityProcessing)) {
+            /** @var bool $enableQualityProcessing */
+            $enableQualityProcessing = (bool) $enableQualityProcessing;
+        }
+
+        /** @var bool $forceOcr */
+        $forceOcr = $data['force_ocr'] ?? false;
+        if (!is_bool($forceOcr)) {
+            /** @var bool $forceOcr */
+            $forceOcr = (bool) $forceOcr;
+        }
+
+        /** @var int $maxConcurrentExtractions */
+        $maxConcurrentExtractions = $data['max_concurrent_extractions'] ?? 4;
+        if (!is_int($maxConcurrentExtractions)) {
+            /** @var int $maxConcurrentExtractions */
+            $maxConcurrentExtractions = (int) $maxConcurrentExtractions;
+        }
+
+        /** @var string $resultFormat */
+        $resultFormat = $data['result_format'] ?? 'unified';
+        if (!is_string($resultFormat)) {
+            /** @var string $resultFormat */
+            $resultFormat = (string) $resultFormat;
+        }
+
+        /** @var string $outputEncoding */
+        $outputEncoding = $data['output_encoding'] ?? 'plain';
+        if (!is_string($outputEncoding)) {
+            /** @var string $outputEncoding */
+            $outputEncoding = (string) $outputEncoding;
         }
 
         $ocr = null;
@@ -271,6 +387,12 @@ readonly class ExtractionConfig
             extractTables: $extractTables,
             preserveFormatting: $preserveFormatting,
             outputFormat: $outputFormat,
+            useCache: $useCache,
+            enableQualityProcessing: $enableQualityProcessing,
+            forceOcr: $forceOcr,
+            maxConcurrentExtractions: $maxConcurrentExtractions,
+            resultFormat: $resultFormat,
+            outputEncoding: $outputEncoding,
         );
     }
 
@@ -478,6 +600,24 @@ readonly class ExtractionConfig
         }
         if ($this->outputFormat !== null) {
             $result['output_format'] = $this->outputFormat;
+        }
+        if ($this->useCache) {
+            $result['use_cache'] = true;
+        }
+        if ($this->enableQualityProcessing) {
+            $result['enable_quality_processing'] = true;
+        }
+        if ($this->forceOcr) {
+            $result['force_ocr'] = true;
+        }
+        if ($this->maxConcurrentExtractions !== 4) {
+            $result['max_concurrent_extractions'] = $this->maxConcurrentExtractions;
+        }
+        if ($this->resultFormat !== 'unified') {
+            $result['result_format'] = $this->resultFormat;
+        }
+        if ($this->outputEncoding !== 'plain') {
+            $result['output_encoding'] = $this->outputEncoding;
         }
 
         return array_filter($result, static fn ($value): bool => $value !== null);

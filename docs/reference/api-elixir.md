@@ -158,7 +158,6 @@ IO.puts(result.content)
 
 ```elixir title="with_config.exs"
 config = %Kreuzberg.ExtractionConfig{
-  force_ocr: true,
   ocr: %{"language" => "eng"}
 }
 {:ok, result} = Kreuzberg.extract_file("scanned.pdf", nil, config)
@@ -838,6 +837,23 @@ IO.inspect(atom)
 
 ## Configuration
 
+!!! warning "Deprecated API"
+    The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
+    
+    **Old pattern (no longer supported):**
+    ```elixir
+    config = %Kreuzberg.ExtractionConfig{force_ocr: true}
+    ```
+    
+    **New pattern:**
+    ```elixir
+    config = %Kreuzberg.ExtractionConfig{
+      ocr: %Kreuzberg.OcrConfig{backend: "tesseract"}
+    }
+    ```
+    
+    The new approach provides more granular control over OCR behavior through the OcrConfig struct.
+
 ### ExtractionConfig
 
 Main configuration struct for extraction operations.
@@ -857,7 +873,6 @@ Main configuration struct for extraction operations.
   pdf_options: map() | nil,
   use_cache: boolean(),
   enable_quality_processing: boolean(),
-  force_ocr: boolean()
 }
 ```
 
@@ -874,14 +889,13 @@ Main configuration struct for extraction operations.
 - `pdf_options` (map | nil): PDF-specific options
 - `use_cache` (boolean): Enable result caching (default: true)
 - `enable_quality_processing` (boolean): Enable quality post-processing (default: true)
-- `force_ocr` (boolean): Force OCR even for searchable PDFs (default: false)
 
 **Example - Basic configuration:**
 
 ```elixir title="basic_config.exs"
 config = %Kreuzberg.ExtractionConfig{
   use_cache: true,
-  force_ocr: false
+  ocr: %Kreuzberg.OcrConfig{backend: "tesseract"}
 }
 
 {:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
@@ -891,7 +905,6 @@ config = %Kreuzberg.ExtractionConfig{
 
 ```elixir title="ocr_config.exs"
 config = %Kreuzberg.ExtractionConfig{
-  force_ocr: true,
   ocr: %{
     "enabled" => true,
     "language" => "eng",

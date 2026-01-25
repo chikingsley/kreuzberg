@@ -71,7 +71,9 @@ result = Kreuzberg.extract_file_sync("scanned.pdf", config: config)
 ```ruby title="config.rb"
 require 'kreuzberg'
 
-config = Kreuzberg::Config::Extraction.new(force_ocr: true)
+config = Kreuzberg::Config::Extraction.new(
+  ocr: Kreuzberg::OcrConfig.new(backend: "tesseract")
+)
 result = Kreuzberg.extract_file_sync("document.pdf", config: config)
 ```
 
@@ -235,7 +237,6 @@ config = {
       enable_table_detection: true
     }
   },
-  force_ocr: false,
   pdf_options: {
     passwords: ['password1', 'password2'],
     extract_images: true,
@@ -262,7 +263,6 @@ result = Kreuzberg.extract_file_sync("document.pdf", config: config)
     - `tessedit_char_whitelist` (String): Character whitelist. Default: nil
     - `tessedit_char_blacklist` (String): Character blacklist. Default: nil
 
-- `force_ocr` (Boolean): Force OCR even for text-based PDFs. Default: false
 
 - `pdf_options` (Hash): PDF-specific options
   - `passwords` (Array<String>): Passwords to try for encrypted PDFs. Default: nil
@@ -282,13 +282,30 @@ result = Kreuzberg.extract_file_sync("document.pdf", config: config)
 
 ### Kreuzberg::Config::Extraction
 
+!!! warning "Deprecated API"
+    The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
+    
+    **Old pattern (no longer supported):**
+    ```ruby
+    config = Kreuzberg::Config::Extraction.new(force_ocr: true)
+    ```
+    
+    **New pattern:**
+    ```ruby
+    config = Kreuzberg::Config::Extraction.new(
+      ocr: Kreuzberg::OcrConfig.new(backend: "tesseract")
+    )
+    ```
+    
+    The new approach provides more granular control over OCR behavior through the OcrConfig object.
+
 Object-oriented configuration using Ruby classes.
 
 **Example:**
 
 ```ruby title="config.rb"
 config = Kreuzberg::Config::Extraction.new(
-  force_ocr: true,
+  # OCR now configured via ocr.backend
   ocr: Kreuzberg::Config::Ocr.new(
     backend: 'tesseract',
     language: 'eng'

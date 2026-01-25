@@ -485,14 +485,6 @@ fn main() -> Result<()> {
                 config = load_config_from_json(&json_str).context("Failed to parse decoded --config-json-base64")?;
             }
 
-            // Handle --content-format deprecation (prefer --output-format)
-            let final_output_format = output_format.or_else(|| {
-                if content_format.is_some() {
-                    eprintln!("Warning: --content-format is deprecated, use --output-format instead");
-                }
-                content_format
-            });
-
             apply_extraction_overrides(
                 &mut config,
                 ocr,
@@ -503,7 +495,8 @@ fn main() -> Result<()> {
                 chunk_overlap,
                 quality,
                 detect_language,
-                final_output_format,
+                output_format,
+                content_format,
             );
 
             extract_command(path, config, mime_type, format)?;
@@ -537,14 +530,6 @@ fn main() -> Result<()> {
                 config = load_config_from_json(&json_str).context("Failed to parse decoded --config-json-base64")?;
             }
 
-            // Handle --content-format deprecation (prefer --output-format)
-            let final_output_format = output_format.or_else(|| {
-                if content_format.is_some() {
-                    eprintln!("Warning: --content-format is deprecated, use --output-format instead");
-                }
-                content_format
-            });
-
             apply_extraction_overrides(
                 &mut config,
                 ocr,
@@ -555,7 +540,8 @@ fn main() -> Result<()> {
                 None,
                 quality,
                 None,
-                final_output_format,
+                output_format,
+                content_format,
             );
 
             batch_command(paths, config, format)?;

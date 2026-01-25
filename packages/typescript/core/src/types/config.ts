@@ -495,6 +495,43 @@ export interface ExtractionConfig {
 	maxConcurrentExtractions?: number;
 
 	/**
+	 * Content text format (default: Plain).
+	 * Controls the format of the extracted content:
+	 * - "plain": Raw extracted text (default)
+	 * - "markdown": Markdown formatted output
+	 * - "djot": Djot markup format
+	 * - "html": HTML formatted output
+	 *
+	 * @example
+	 * ```typescript
+	 * // Get markdown formatted output
+	 * const config: ExtractionConfig = {
+	 *   outputFormat: "markdown"
+	 * };
+	 * ```
+	 */
+	outputFormat?: "plain" | "markdown" | "djot" | "html";
+
+	/**
+	 * Result structure format (default: Unified).
+	 * Controls whether results are returned in unified format with all
+	 * content in the content field, or element-based format with semantic
+	 * elements (for Unstructured-compatible output).
+	 *
+	 * - "unified": All content in the content field with metadata at result level (default)
+	 * - "element_based": Semantic elements (headings, paragraphs, tables, etc.) for Unstructured compatibility
+	 *
+	 * @example
+	 * ```typescript
+	 * // Get element-based output for Unstructured compatibility
+	 * const config: ExtractionConfig = {
+	 *   resultFormat: "element_based"
+	 * };
+	 * ```
+	 */
+	resultFormat?: "unified" | "element_based";
+
+	/**
 	 * Serialize the configuration to a JSON string.
 	 *
 	 * Converts this configuration object to its JSON representation.

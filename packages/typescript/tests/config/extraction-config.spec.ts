@@ -450,3 +450,241 @@ describe("WASM: ExtractionConfig", () => {
 		});
 	});
 });
+
+describe("output and result format fields", () => {
+	describe("outputFormat field", () => {
+		it("should accept plain output format", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "plain",
+			};
+
+			expect(config.outputFormat).toBe("plain");
+		});
+
+		it("should accept markdown output format", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "markdown",
+			};
+
+			expect(config.outputFormat).toBe("markdown");
+		});
+
+		it("should accept html output format", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "html",
+			};
+
+			expect(config.outputFormat).toBe("html");
+		});
+
+		it("should accept djot output format", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "djot",
+			};
+
+			expect(config.outputFormat).toBe("djot");
+		});
+
+		it("should be optional", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+			};
+
+			expect(config.outputFormat).toBeUndefined();
+		});
+
+		it("should default to plain when not specified", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+				enableQualityProcessing: true,
+			};
+
+			// Field is optional, so it should be undefined if not explicitly set
+			expect(config.outputFormat).toBeUndefined();
+		});
+	});
+
+	describe("resultFormat field", () => {
+		it("should accept unified result format", () => {
+			const config: ExtractionConfig = {
+				resultFormat: "unified",
+			};
+
+			expect(config.resultFormat).toBe("unified");
+		});
+
+		it("should accept element_based result format", () => {
+			const config: ExtractionConfig = {
+				resultFormat: "element_based",
+			};
+
+			expect(config.resultFormat).toBe("element_based");
+		});
+
+		it("should be optional", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+			};
+
+			expect(config.resultFormat).toBeUndefined();
+		});
+
+		it("should default to unified when not specified", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+				enableQualityProcessing: true,
+			};
+
+			// Field is optional, so it should be undefined if not explicitly set
+			expect(config.resultFormat).toBeUndefined();
+		});
+	});
+
+	describe("format fields together", () => {
+		it("should support both outputFormat and resultFormat together", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "markdown",
+				resultFormat: "unified",
+			};
+
+			expect(config.outputFormat).toBe("markdown");
+			expect(config.resultFormat).toBe("unified");
+		});
+
+		it("should support markdown output with element_based result", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "markdown",
+				resultFormat: "element_based",
+			};
+
+			expect(config.outputFormat).toBe("markdown");
+			expect(config.resultFormat).toBe("element_based");
+		});
+
+		it("should support html output with element_based result", () => {
+			const config: ExtractionConfig = {
+				outputFormat: "html",
+				resultFormat: "element_based",
+			};
+
+			expect(config.outputFormat).toBe("html");
+			expect(config.resultFormat).toBe("element_based");
+		});
+
+		it("should support format fields with other configurations", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+				enableQualityProcessing: true,
+				outputFormat: "markdown",
+				resultFormat: "unified",
+				ocr: {
+					backend: "tesseract",
+					language: "eng",
+				},
+				chunking: {
+					chunkSize: 512,
+					chunkOverlap: 128,
+				},
+			};
+
+			expect(config.useCache).toBe(true);
+			expect(config.outputFormat).toBe("markdown");
+			expect(config.resultFormat).toBe("unified");
+			expect(config.ocr).toBeDefined();
+			expect(config.chunking).toBeDefined();
+		});
+	});
+
+	describe("configuration composition with formats", () => {
+		it("should support composing configs with format fields", () => {
+			const baseConfig: ExtractionConfig = {
+				useCache: true,
+				outputFormat: "plain",
+			};
+
+			const formattedConfig: ExtractionConfig = {
+				...baseConfig,
+				outputFormat: "markdown",
+				resultFormat: "element_based",
+			};
+
+			expect(formattedConfig.useCache).toBe(true);
+			expect(formattedConfig.outputFormat).toBe("markdown");
+			expect(formattedConfig.resultFormat).toBe("element_based");
+		});
+
+		it("should support merging format with processing configs", () => {
+			const processingConfig: ExtractionConfig = {
+				enableQualityProcessing: true,
+				forceOcr: false,
+			};
+
+			const formatConfig: ExtractionConfig = {
+				outputFormat: "markdown",
+				resultFormat: "unified",
+			};
+
+			const merged: ExtractionConfig = {
+				...processingConfig,
+				...formatConfig,
+			};
+
+			expect(merged.enableQualityProcessing).toBe(true);
+			expect(merged.forceOcr).toBe(false);
+			expect(merged.outputFormat).toBe("markdown");
+			expect(merged.resultFormat).toBe("unified");
+		});
+	});
+
+	describe("serialization with formats", () => {
+		it("should serialize config with outputFormat to JSON", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+				outputFormat: "markdown",
+			};
+
+			const json = JSON.stringify(config);
+			expect(json).toContain("outputFormat");
+			expect(json).toContain("markdown");
+
+			const parsed = JSON.parse(json) as ExtractionConfig;
+			expect(parsed.outputFormat).toBe("markdown");
+		});
+
+		it("should serialize config with resultFormat to JSON", () => {
+			const config: ExtractionConfig = {
+				useCache: true,
+				resultFormat: "element_based",
+			};
+
+			const json = JSON.stringify(config);
+			expect(json).toContain("resultFormat");
+			expect(json).toContain("element_based");
+
+			const parsed = JSON.parse(json) as ExtractionConfig;
+			expect(parsed.resultFormat).toBe("element_based");
+		});
+
+		it("should serialize and deserialize full config with formats", () => {
+			const original: ExtractionConfig = {
+				useCache: true,
+				enableQualityProcessing: true,
+				outputFormat: "markdown",
+				resultFormat: "unified",
+				ocr: {
+					backend: "tesseract",
+					language: "eng",
+				},
+			};
+
+			const json = JSON.stringify(original);
+			const deserialized = JSON.parse(json) as ExtractionConfig;
+
+			expect(deserialized.useCache).toBe(original.useCache);
+			expect(deserialized.enableQualityProcessing).toBe(original.enableQualityProcessing);
+			expect(deserialized.outputFormat).toBe(original.outputFormat);
+			expect(deserialized.resultFormat).toBe(original.resultFormat);
+			expect(deserialized.ocr?.backend).toBe(original.ocr?.backend);
+		});
+	});
+});

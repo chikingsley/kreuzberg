@@ -550,7 +550,7 @@ async function enableOcr(): Promise<void>
 
 **Example - Basic OCR:**
 
-```typescript title="enable_ocr.ts"
+```typescript title="ocr_config.ts"
 import { initWasm, enableOcr, extractBytes } from '@kreuzberg/wasm';
 
 async function main() {
@@ -852,6 +852,26 @@ const normalized2 = normalizeMimeType('text/plain');      // 'text/plain'
 
 ## Configuration Loading
 
+!!! warning "Deprecated API"
+    The `enable_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
+    
+    **Old pattern (no longer supported):**
+    ```typescript
+    const config = { enable_ocr: true };
+    ```
+    
+    **New pattern:**
+    ```typescript
+    const config = {
+      ocr: {
+        backend: 'tesseract',
+        languages: ['eng']
+      }
+    };
+    ```
+    
+    The new approach provides more granular control over OCR behavior through the OCR configuration object.
+
 ### loadConfigFromString()
 
 Load extraction configuration from a string in YAML, JSON, or TOML format.
@@ -885,8 +905,8 @@ import { loadConfigFromString, extractBytes } from '@kreuzberg/wasm';
 
 const yamlConfig = `
 extract_tables: true
-enable_ocr: true
-ocr_config:
+ocr:
+  backend: tesseract
   languages: [eng, deu]
 `;
 
@@ -899,7 +919,7 @@ const result = await extractBytes(data, 'application/pdf', config);
 ```typescript title="load_config_json.ts"
 import { loadConfigFromString } from '@kreuzberg/wasm';
 
-const jsonConfig = '{"extract_tables":true,"enable_ocr":true}';
+const jsonConfig = '{"extract_tables":true}';
 const config = loadConfigFromString(jsonConfig, 'json');
 ```
 
@@ -910,7 +930,7 @@ import { loadConfigFromString } from '@kreuzberg/wasm';
 
 const tomlConfig = `
 extract_tables = true
-enable_ocr = true
+// OCR now configured via config.ocr.backend
 
 [ocr_config]
 languages = ["eng", "deu"]
@@ -1259,7 +1279,6 @@ Configuration object for extraction. All fields are optional; defaults are used 
 - `extract_tables` (boolean): Extract tables as structured data
 - `extract_images` (boolean): Extract embedded images
 - `extract_metadata` (boolean): Extract document metadata
-- `enable_ocr` (boolean): Enable OCR for images and scanned PDFs
 - `ocr_config` (OcrConfig): OCR configuration
 - `enable_chunking` (boolean): Split text into semantic chunks
 - `chunking_config` (ChunkingConfig): Text chunking configuration

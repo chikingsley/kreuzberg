@@ -202,6 +202,8 @@ module Kreuzberg
       attr_reader html_options: HtmlOptions?
       attr_reader pages: PageConfig?
       attr_reader max_concurrent_extractions: Integer?
+      attr_reader output_format: String?
+      attr_reader result_format: String?
 
       def self.from_file: (String path) -> Extraction
       def initialize: (
@@ -219,7 +221,9 @@ module Kreuzberg
         ?keywords: (Keywords | Hash[Symbol, untyped])?,
         ?html_options: (HtmlOptions | Hash[Symbol, untyped])?,
         ?pages: (PageConfig | Hash[Symbol, untyped])?,
-        ?max_concurrent_extractions: Integer?
+        ?max_concurrent_extractions: Integer?,
+        ?output_format: String?,
+        ?result_format: String?
       ) -> void
       def to_h: () -> Hash[Symbol, untyped]
 

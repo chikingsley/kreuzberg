@@ -85,6 +85,8 @@ type ExtractionConfig struct {
 	HTMLOptions              *HTMLConversionOptions   `json:"html_options,omitempty"`
 	Pages                    *PageConfig              `json:"pages,omitempty"`
 	MaxConcurrentExtractions *int                     `json:"max_concurrent_extractions,omitempty"`
+	OutputFormat             string                   `json:"output_format,omitempty"`
+	ResultFormat             string                   `json:"result_format,omitempty"`
 }
 
 // OCRConfig selects and configures OCR backends.
@@ -290,3 +292,25 @@ type PageConfig struct {
 	InsertPageMarkers *bool   `json:"insert_page_markers,omitempty"`
 	MarkerFormat      *string `json:"marker_format,omitempty"`
 }
+
+// OutputFormat controls the format of extracted content.
+// Options: "plain", "markdown", "djot", "html"
+// Default: "markdown" (via Rust)
+type OutputFormat string
+
+const (
+	OutputFormatPlain    OutputFormat = "plain"
+	OutputFormatMarkdown OutputFormat = "markdown"
+	OutputFormatDjot     OutputFormat = "djot"
+	OutputFormatHTML     OutputFormat = "html"
+)
+
+// ResultFormat controls the result structure.
+// Options: "unified", "element_based"
+// Default: "unified" (via Rust)
+type ResultFormat string
+
+const (
+	ResultFormatUnified      ResultFormat = "unified"
+	ResultFormatElementBased ResultFormat = "element_based"
+)

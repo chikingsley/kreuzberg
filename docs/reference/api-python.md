@@ -348,12 +348,30 @@ Same as [`batch_extract_bytes_sync()`](#batch_extract_bytes_sync).
 
 ### ExtractionConfig
 
+
+
+!!! warning "Deprecated API"
+    The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
+    
+    **Old pattern (no longer supported):**
+    ```python
+    config = ExtractionConfig(force_ocr=True)
+    ```
+    
+    **New pattern:**
+    ```python
+    config = ExtractionConfig(
+        ocr=OcrConfig(backend="tesseract")
+    )
+    ```
+    
+    The new approach provides more granular control over OCR behavior through the `OcrConfig` object.
+
 Main configuration class for extraction operations.
 
 **Fields:**
 
 - `ocr` (OcrConfig | None): OCR configuration. Default: None (no OCR)
-- `force_ocr` (bool): Force OCR even for text-based PDFs. Default: False
 - `pdf_options` (PdfConfig | None): PDF-specific configuration. Default: None
 - `chunking` (ChunkingConfig | None): Text chunking configuration. Default: None
 - `language_detection` (LanguageDetectionConfig | None): Language detection configuration. Default: None
@@ -368,7 +386,6 @@ from kreuzberg import ExtractionConfig, OcrConfig, PdfConfig
 
 config = ExtractionConfig(
     ocr=OcrConfig(backend="tesseract", language="eng"),
-    force_ocr=False,
     pdf_options=PdfConfig(
         passwords=["password1", "password2"],
         extract_images=True
