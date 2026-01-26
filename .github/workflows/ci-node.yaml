@@ -53,6 +53,8 @@ on:
 concurrency:
   group: ci-node-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+  # Note: Matrix jobs will run sequentially to avoid GitHub cache API rate limits
+  # when multiple platforms try to save large Rust build artifacts simultaneously
 
 env:
   CARGO_TERM_COLOR: always
@@ -72,6 +74,10 @@ jobs:
     name: Node Build + Smoke (${{ matrix.target }})
     if: ${{ github.actor != 'dependabot[bot]' }}
     timeout-minutes: ${{ matrix.os == 'windows-latest' && 360 || 180 }}
+    # Serialize matrix jobs to prevent concurrent cache API writes that trigger rate limits
+    concurrency:
+      group: ci-node-build-${{ github.event.pull_request.number || github.ref }}-${{ matrix.platform }}
+      cancel-in-progress: false
     strategy:
       fail-fast: true
       matrix:
@@ -79,19 +85,40 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             platform: linux-x64
+            matrix-index: 1
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             platform: linux-arm64
+            matrix-index: 2
           - os: macos-latest
             target: aarch64-apple-darwin
             platform: macos-arm64
+            matrix-index: 3
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             platform: windows-x64
+            matrix-index: 4
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         id: checkout
+
+      - name: Serialize matrix job execution (prevent cache API rate limits)
+        shell: bash
+        run: |
+          MATRIX_INDEX=${{ matrix.matrix-index }}
+          MATRIX_SIZE=4
+
+          # Calculate delay based on matrix index to stagger cache saves
+          # Each job delays by 5 minutes to avoid concurrent cache API writes
+          if [ "$MATRIX_INDEX" -gt 1 ]; then
+            DELAY_SECONDS=$(((MATRIX_INDEX - 1) * 300))
+            echo "Matrix index: $MATRIX_INDEX of $MATRIX_SIZE"
+            echo "Delaying cache save by $DELAY_SECONDS seconds to prevent GitHub cache API rate limits"
+            sleep "$DELAY_SECONDS"
+          else
+            echo "First matrix job (index $MATRIX_INDEX) - proceeding immediately"
+          fi
 
       - name: Dump system information
         shell: bash

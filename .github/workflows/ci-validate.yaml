@@ -119,7 +119,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "4.0"
+          ruby-version: "3.3"
           bundler-cache: true
           working-directory: packages/ruby
 
@@ -128,7 +128,7 @@ jobs:
         id: setup-java
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '24'
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -139,7 +139,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
