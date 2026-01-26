@@ -95,13 +95,13 @@ public static class DeprecatedExtensions
     {
         return new ExtractionConfig
         {
-            ImageExtraction = config.ImageExtraction,
+            UseCache = config.UseCache,
+            EnableQualityProcessing = enable,
             Ocr = config.Ocr,
             Chunking = config.Chunking,
-            Cache = config.Cache,
-            EnableQualityProcessing = enable,
-            CustomProcessors = config.CustomProcessors,
-            Metadata = config.Metadata
+            MaxConcurrentExtractions = config.MaxConcurrentExtractions,
+            OutputFormat = config.OutputFormat,
+            ResultFormat = config.ResultFormat
         };
     }
 
@@ -122,18 +122,18 @@ public static class DeprecatedExtensions
         var newOcr = new OcrConfig
         {
             Backend = backend,
-            Languages = ocr.Languages,
-            DPI = ocr.DPI
+            Language = ocr.Language,
+            TesseractConfig = ocr.TesseractConfig
         };
         return new ExtractionConfig
         {
-            ImageExtraction = config.ImageExtraction,
+            UseCache = config.UseCache,
+            EnableQualityProcessing = config.EnableQualityProcessing,
             Ocr = newOcr,
             Chunking = config.Chunking,
-            Cache = config.Cache,
-            EnableQualityProcessing = config.EnableQualityProcessing,
-            CustomProcessors = config.CustomProcessors,
-            Metadata = config.Metadata
+            MaxConcurrentExtractions = config.MaxConcurrentExtractions,
+            OutputFormat = config.OutputFormat,
+            ResultFormat = config.ResultFormat
         };
     }
 }
