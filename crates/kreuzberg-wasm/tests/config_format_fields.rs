@@ -8,6 +8,7 @@
 
 use js_sys::Uint8Array;
 use kreuzberg_wasm::*;
+use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
@@ -59,7 +60,8 @@ fn test_extract_with_default_output_format() {
         "useCache": false
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with default output format should succeed");
 }
@@ -73,7 +75,8 @@ fn test_extract_with_plain_output_format() {
         "outputFormat": "plain"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with plain output format should succeed");
 }
@@ -87,7 +90,8 @@ fn test_extract_with_markdown_output_format() {
         "outputFormat": "markdown"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with markdown output format should succeed");
 }
@@ -101,7 +105,8 @@ fn test_extract_with_html_output_format() {
         "outputFormat": "html"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with html output format should succeed");
 }
@@ -115,7 +120,8 @@ fn test_extract_with_djot_output_format() {
         "outputFormat": "djot"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with djot output format should succeed");
 }
@@ -128,7 +134,8 @@ fn test_extract_with_default_result_format() {
         "useCache": false
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with default result format should succeed");
 }
@@ -142,7 +149,8 @@ fn test_extract_with_unified_result_format() {
         "resultFormat": "unified"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(result.is_ok(), "Extraction with unified result format should succeed");
 }
@@ -156,7 +164,8 @@ fn test_extract_with_element_based_result_format() {
         "resultFormat": "element_based"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(
         result.is_ok(),
@@ -174,7 +183,8 @@ fn test_extract_with_both_formats() {
         "resultFormat": "unified"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(
         result.is_ok(),
@@ -192,7 +202,8 @@ fn test_extract_with_element_format_and_markdown_output() {
         "resultFormat": "element_based"
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(
         result.is_ok(),
@@ -213,7 +224,8 @@ fn test_extract_with_complex_config() {
         "maxConcurrentExtractions": 4
     });
 
-    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), Some(config.into()));
+    let js_config = serde_wasm_bindgen::to_value(&config).ok();
+    let result = extract_bytes_sync_wasm(data, "application/pdf".to_string(), js_config);
 
     assert!(
         result.is_ok(),

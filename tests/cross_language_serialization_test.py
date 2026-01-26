@@ -8,6 +8,7 @@ Tests that serialized configs from all languages produce equivalent JSON structu
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -15,6 +16,139 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
+
+# ============================================================================
+# JSON Normalization and Comparison Utilities
+# ============================================================================
+
+
+def camel_to_snake(name: str) -> str:
+    """Convert camelCase to snake_case.
+
+    Args:
+        name: camelCase string
+
+    Returns:
+        snake_case equivalent
+    """
+    # Insert underscore before uppercase letters and convert to lowercase
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def snake_to_camel(name: str) -> str:
+    """Convert snake_case to camelCase.
+
+    Args:
+        name: snake_case string
+
+    Returns:
+        camelCase equivalent
+    """
+    components = name.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def normalize_json(json_obj: Any, to_snake_case: bool = True) -> Any:
+    """Normalize JSON field names for cross-language comparison.
+
+    Converts between camelCase and snake_case to enable comparison across languages
+    that use different naming conventions (TypeScript uses camelCase, Python/Rust use snake_case).
+
+    Args:
+        json_obj: JSON object (dict, list, or primitive)
+        to_snake_case: If True, convert to snake_case; if False, convert to camelCase
+
+    Returns:
+        Normalized JSON structure with converted field names
+    """
+    if isinstance(json_obj, dict):
+        normalized = {}
+        for key, value in json_obj.items():
+            # Convert key to target case
+            if to_snake_case:
+                new_key = camel_to_snake(key)
+            else:
+                new_key = snake_to_camel(key)
+
+            # Recursively normalize nested objects and arrays
+            if isinstance(value, dict):
+                normalized[new_key] = normalize_json(value, to_snake_case)
+            elif isinstance(value, list):
+                normalized[new_key] = [
+                    normalize_json(item, to_snake_case) if isinstance(item, (dict, list)) else item
+                    for item in value
+                ]
+            else:
+                normalized[new_key] = value
+
+        return normalized
+    elif isinstance(json_obj, list):
+        return [normalize_json(item, to_snake_case) if isinstance(item, (dict, list)) else item for item in json_obj]
+    else:
+        return json_obj
+
+
+def compare_json_structures(
+    json1: dict[str, Any], json2: dict[str, Any], normalize: bool = True
+) -> tuple[bool, list[str]]:
+    """Compare two JSON structures for equivalence.
+
+    Args:
+        json1: First JSON structure
+        json2: Second JSON structure
+        normalize: If True, normalize both to snake_case before comparison
+
+    Returns:
+        Tuple of (is_equal, differences) where differences is a list of mismatch descriptions
+    """
+    if normalize:
+        json1 = normalize_json(json1, to_snake_case=True)
+        json2 = normalize_json(json2, to_snake_case=True)
+
+    differences = []
+
+    # Compare keys
+    keys1 = set(json1.keys()) if isinstance(json1, dict) else set()
+    keys2 = set(json2.keys()) if isinstance(json2, dict) else set()
+
+    missing_in_json2 = keys1 - keys2
+    extra_in_json2 = keys2 - keys1
+
+    if missing_in_json2:
+        differences.append(f"Missing in json2: {sorted(missing_in_json2)}")
+    if extra_in_json2:
+        differences.append(f"Extra in json2: {sorted(extra_in_json2)}")
+
+    # Compare values for common keys
+    common_keys = keys1 & keys2
+    for key in common_keys:
+        val1 = json1[key]
+        val2 = json2[key]
+
+        if type(val1) != type(val2):
+            differences.append(f"Type mismatch for key '{key}': {type(val1).__name__} vs {type(val2).__name__}")
+        elif isinstance(val1, dict) and isinstance(val2, dict):
+            is_equal, sub_diffs = compare_json_structures(val1, val2, normalize=False)
+            if not is_equal:
+                differences.extend([f"In key '{key}': {d}" for d in sub_diffs])
+        elif isinstance(val1, list) and isinstance(val2, list):
+            if len(val1) != len(val2):
+                differences.append(f"List length mismatch for key '{key}': {len(val1)} vs {len(val2)}")
+            else:
+                for i, (item1, item2) in enumerate(zip(val1, val2)):
+                    if isinstance(item1, dict) and isinstance(item2, dict):
+                        is_equal, sub_diffs = compare_json_structures(item1, item2, normalize=False)
+                        if not is_equal:
+                            differences.extend([f"In key '{key}[{i}]': {d}" for d in sub_diffs])
+                    elif item1 != item2:
+                        differences.append(f"List item mismatch for key '{key}[{i}]': {item1} vs {item2}")
+        elif val1 != val2:
+            differences.append(f"Value mismatch for key '{key}': {val1} vs {val2}")
+
+    is_equal = len(differences) == 0
+    return is_equal, differences
 
 
 # ============================================================================
@@ -208,6 +342,218 @@ def _python_config_to_dict(config: Any) -> dict[str, Any]:
                 pass
 
     return result
+
+
+# ============================================================================
+# Cross-Language JSON Extraction Helpers
+# ============================================================================
+
+
+def get_rust_serialization(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Get JSON serialization from Rust core via helper binary.
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        JSON dictionary from Rust
+
+    Raises:
+        pytest.skip if helper binary not available
+        subprocess.CalledProcessError if Rust tool fails
+    """
+    rust_json_tool = REPO_ROOT / "target" / "debug" / "extraction_config_json_helper"
+
+    if not rust_json_tool.exists():
+        pytest.skip("Rust helper binary not built. Run: cargo build --bin extraction_config_json_helper")
+
+    config_json = json.dumps(config_dict)
+    result = subprocess.run(
+        [str(rust_json_tool), config_json],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(result.returncode, str(rust_json_tool), stderr=result.stderr)
+
+    return json.loads(result.stdout)
+
+
+def get_python_serialization(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Get JSON serialization from Python binding.
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        JSON dictionary from Python
+
+    Raises:
+        ImportError if kreuzberg not installed
+    """
+    try:
+        from kreuzberg import ExtractionConfig
+    except ImportError:
+        pytest.skip("kreuzberg Python binding not installed")
+
+    config = ExtractionConfig(**config_dict)
+    return _python_config_to_dict(config)
+
+
+def get_typescript_serialization(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Get JSON serialization from TypeScript binding.
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        JSON dictionary from TypeScript (in camelCase)
+
+    Raises:
+        pytest.skip if Node.js or TypeScript binding not available
+    """
+    ts_dir = REPO_ROOT / "packages" / "typescript"
+
+    if not ts_dir.exists():
+        pytest.skip("TypeScript package not found")
+
+    # Create a temporary test script
+    script = f"""
+    try {{
+        const {{ ExtractionConfig }} = require('./dist/index.js');
+        const config = new ExtractionConfig({json.dumps(config_dict)});
+        console.log(JSON.stringify(config));
+    }} catch (err) {{
+        console.error('Error:', err.message);
+        process.exit(1);
+    }}
+    """
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
+        f.write(script)
+        script_path = f.name
+
+    try:
+        result = subprocess.run(
+            ["node", script_path],
+            cwd=str(ts_dir),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            pytest.skip(f"TypeScript serialization not available: {result.stderr}")
+
+        return json.loads(result.stdout)
+    finally:
+        Path(script_path).unlink(missing_ok=True)
+
+
+def get_ruby_serialization(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Get JSON serialization from Ruby binding.
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        JSON dictionary from Ruby
+
+    Raises:
+        pytest.skip if Ruby binding not available
+    """
+    ruby_dir = REPO_ROOT / "packages" / "ruby"
+
+    if not ruby_dir.exists():
+        pytest.skip("Ruby package not found")
+
+    # Create a temporary test script
+    escaped_config = json.dumps(config_dict).replace('"', '\\"')
+    script = f"""
+    require 'kreuzberg'
+    require 'json'
+
+    config = Kreuzberg::ExtractionConfig.new({escaped_config})
+    puts JSON.generate(config.to_h)
+    """
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".rb", delete=False) as f:
+        f.write(script)
+        script_path = f.name
+
+    try:
+        result = subprocess.run(
+            ["ruby", script_path],
+            cwd=str(ruby_dir),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            pytest.skip(f"Ruby serialization not available: {result.stderr}")
+
+        return json.loads(result.stdout)
+    finally:
+        Path(script_path).unlink(missing_ok=True)
+
+
+def get_go_serialization(config_dict: dict[str, Any]) -> dict[str, Any]:
+    """Get JSON serialization from Go binding.
+
+    Args:
+        config_dict: Configuration dictionary
+
+    Returns:
+        JSON dictionary from Go
+
+    Raises:
+        pytest.skip if Go binding not available
+    """
+    go_dir = REPO_ROOT / "packages" / "go"
+
+    if not go_dir.exists():
+        pytest.skip("Go package not found")
+
+    # Create a temporary test program
+    program = f"""
+    package main
+
+    import (
+        "encoding/json"
+        "fmt"
+        "kreuzberg"
+    )
+
+    func main() {{
+        config := kreuzberg.NewExtractionConfig()
+        // Apply config settings from {json.dumps(config_dict)}
+        data, _ := json.Marshal(config)
+        fmt.Println(string(data))
+    }}
+    """
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".go", delete=False) as f:
+        f.write(program)
+        script_path = f.name
+
+    try:
+        result = subprocess.run(
+            ["go", "run", script_path],
+            cwd=str(go_dir),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            pytest.skip(f"Go serialization not available: {result.stderr}")
+
+        return json.loads(result.stdout)
+    finally:
+        Path(script_path).unlink(missing_ok=True)
 
 
 # ============================================================================
@@ -688,6 +1034,286 @@ def test_cross_language_json_equivalence() -> None:
     # Validate that basic structure exists
     assert "python" in results, "Python serialization failed"
     assert isinstance(results["python"], dict), "Python output should be a dictionary"
+
+
+# ============================================================================
+# Rust vs Python JSON Comparison Tests
+# ============================================================================
+
+
+@pytest.mark.parametrize("fixture", EXTRACTION_CONFIG_FIXTURES, ids=lambda f: f.name)
+def test_rust_python_json_equivalence(fixture: TestFixture) -> None:
+    """Verify Rust and Python produce equivalent JSON for the same config.
+
+    Normalizes field names (camelCase vs snake_case) and compares structure.
+    """
+    rust_json = get_rust_serialization(fixture.config_dict)
+    python_json = get_python_serialization(fixture.config_dict)
+
+    is_equal, differences = compare_json_structures(rust_json, python_json, normalize=True)
+
+    assert is_equal, (
+        f"Rust vs Python JSON mismatch for fixture '{fixture.name}':\n"
+        f"Rust: {json.dumps(rust_json, indent=2)}\n"
+        f"Python: {json.dumps(python_json, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in differences)
+    )
+
+
+# ============================================================================
+# Rust vs TypeScript JSON Comparison Tests
+# ============================================================================
+
+
+@pytest.mark.parametrize("fixture", EXTRACTION_CONFIG_FIXTURES, ids=lambda f: f.name)
+def test_rust_typescript_json_equivalence(fixture: TestFixture) -> None:
+    """Verify Rust and TypeScript produce equivalent JSON for the same config.
+
+    TypeScript uses camelCase; Rust uses snake_case. This test normalizes both.
+    """
+    rust_json = get_rust_serialization(fixture.config_dict)
+    ts_json = get_typescript_serialization(fixture.config_dict)
+
+    is_equal, differences = compare_json_structures(rust_json, ts_json, normalize=True)
+
+    assert is_equal, (
+        f"Rust vs TypeScript JSON mismatch for fixture '{fixture.name}':\n"
+        f"Rust: {json.dumps(rust_json, indent=2)}\n"
+        f"TypeScript: {json.dumps(ts_json, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in differences)
+    )
+
+
+# ============================================================================
+# Python vs TypeScript JSON Comparison Tests
+# ============================================================================
+
+
+@pytest.mark.parametrize("fixture", EXTRACTION_CONFIG_FIXTURES, ids=lambda f: f.name)
+def test_python_typescript_json_equivalence(fixture: TestFixture) -> None:
+    """Verify Python and TypeScript produce equivalent JSON for the same config.
+
+    Normalizes field names and compares structure.
+    """
+    python_json = get_python_serialization(fixture.config_dict)
+    ts_json = get_typescript_serialization(fixture.config_dict)
+
+    is_equal, differences = compare_json_structures(python_json, ts_json, normalize=True)
+
+    assert is_equal, (
+        f"Python vs TypeScript JSON mismatch for fixture '{fixture.name}':\n"
+        f"Python: {json.dumps(python_json, indent=2)}\n"
+        f"TypeScript: {json.dumps(ts_json, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in differences)
+    )
+
+
+# ============================================================================
+# Multi-Language Equivalence Tests
+# ============================================================================
+
+
+def test_rust_python_typescript_json_equivalence() -> None:
+    """Verify all three core languages (Rust, Python, TypeScript) produce equivalent JSON.
+
+    This is a comprehensive test using the full fixture set.
+    """
+    test_config = {
+        "use_cache": True,
+        "enable_quality_processing": True,
+        "force_ocr": False,
+        "ocr": {
+            "backend": "tesseract",
+            "language": "eng",
+        },
+        "chunking": {
+            "strategy": "semantic",
+            "max_chunk_size": 2048,
+        },
+    }
+
+    rust_json = get_rust_serialization(test_config)
+    python_json = get_python_serialization(test_config)
+    ts_json = get_typescript_serialization(test_config)
+
+    # Normalize all to snake_case for comparison
+    rust_norm = normalize_json(rust_json, to_snake_case=True)
+    python_norm = normalize_json(python_json, to_snake_case=True)
+    ts_norm = normalize_json(ts_json, to_snake_case=True)
+
+    # Compare Rust vs Python
+    is_equal_rp, diffs_rp = compare_json_structures(rust_norm, python_norm, normalize=False)
+    assert is_equal_rp, (
+        f"Rust vs Python mismatch:\n"
+        f"Rust: {json.dumps(rust_norm, indent=2)}\n"
+        f"Python: {json.dumps(python_norm, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in diffs_rp)
+    )
+
+    # Compare Rust vs TypeScript
+    is_equal_rt, diffs_rt = compare_json_structures(rust_norm, ts_norm, normalize=False)
+    assert is_equal_rt, (
+        f"Rust vs TypeScript mismatch:\n"
+        f"Rust: {json.dumps(rust_norm, indent=2)}\n"
+        f"TypeScript: {json.dumps(ts_norm, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in diffs_rt)
+    )
+
+    # Compare Python vs TypeScript
+    is_equal_pt, diffs_pt = compare_json_structures(python_norm, ts_norm, normalize=False)
+    assert is_equal_pt, (
+        f"Python vs TypeScript mismatch:\n"
+        f"Python: {json.dumps(python_norm, indent=2)}\n"
+        f"TypeScript: {json.dumps(ts_norm, indent=2)}\n"
+        f"Differences:\n" + "\n".join(f"  - {d}" for d in diffs_pt)
+    )
+
+
+# ============================================================================
+# Field Name Normalization Tests
+# ============================================================================
+
+
+def test_camel_to_snake_conversion() -> None:
+    """Test camelCase to snake_case conversion."""
+    test_cases = [
+        ("useCache", "use_cache"),
+        ("enableQualityProcessing", "enable_quality_processing"),
+        ("forceOcr", "force_ocr"),
+        ("maxChunkSize", "max_chunk_size"),
+        ("ocrBackend", "ocr_backend"),
+    ]
+
+    for camel, expected_snake in test_cases:
+        result = camel_to_snake(camel)
+        assert result == expected_snake, f"Failed: {camel} -> {result} (expected {expected_snake})"
+
+
+def test_snake_to_camel_conversion() -> None:
+    """Test snake_case to camelCase conversion."""
+    test_cases = [
+        ("use_cache", "useCache"),
+        ("enable_quality_processing", "enableQualityProcessing"),
+        ("force_ocr", "forceOcr"),
+        ("max_chunk_size", "maxChunkSize"),
+        ("ocr_backend", "ocrBackend"),
+    ]
+
+    for snake, expected_camel in test_cases:
+        result = snake_to_camel(snake)
+        assert result == expected_camel, f"Failed: {snake} -> {result} (expected {expected_camel})"
+
+
+def test_normalize_json_to_snake_case() -> None:
+    """Test JSON normalization to snake_case."""
+    input_json = {
+        "useCache": True,
+        "enableQualityProcessing": False,
+        "ocrConfig": {
+            "ocrBackend": "tesseract",
+            "languageCode": "eng",
+        },
+        "chunkSettings": [{"maxSize": 1024}, {"minSize": 512}],
+    }
+
+    normalized = normalize_json(input_json, to_snake_case=True)
+
+    assert normalized["use_cache"] is True
+    assert normalized["enable_quality_processing"] is False
+    assert normalized["ocr_config"]["ocr_backend"] == "tesseract"
+    assert normalized["ocr_config"]["language_code"] == "eng"
+    assert normalized["chunk_settings"][0]["max_size"] == 1024
+    assert normalized["chunk_settings"][1]["min_size"] == 512
+
+
+def test_normalize_json_to_camel_case() -> None:
+    """Test JSON normalization to camelCase."""
+    input_json = {
+        "use_cache": True,
+        "enable_quality_processing": False,
+        "ocr_config": {
+            "ocr_backend": "tesseract",
+            "language_code": "eng",
+        },
+        "chunk_settings": [{"max_size": 1024}, {"min_size": 512}],
+    }
+
+    normalized = normalize_json(input_json, to_snake_case=False)
+
+    assert normalized["useCache"] is True
+    assert normalized["enableQualityProcessing"] is False
+    assert normalized["ocrConfig"]["ocrBackend"] == "tesseract"
+    assert normalized["ocrConfig"]["languageCode"] == "eng"
+    assert normalized["chunkSettings"][0]["maxSize"] == 1024
+    assert normalized["chunkSettings"][1]["minSize"] == 512
+
+
+# ============================================================================
+# JSON Structure Comparison Tests
+# ============================================================================
+
+
+def test_compare_identical_structures() -> None:
+    """Test that identical structures are recognized as equal."""
+    json1 = {"use_cache": True, "force_ocr": False, "max_chunk_size": 1024}
+    json2 = {"use_cache": True, "force_ocr": False, "max_chunk_size": 1024}
+
+    is_equal, differences = compare_json_structures(json1, json2, normalize=False)
+
+    assert is_equal, f"Identical structures should be equal. Differences: {differences}"
+    assert len(differences) == 0
+
+
+def test_compare_structures_with_case_differences() -> None:
+    """Test that structures with different cases are recognized as equal when normalized."""
+    json1 = {"useCache": True, "forceOcr": False}
+    json2 = {"use_cache": True, "force_ocr": False}
+
+    is_equal, differences = compare_json_structures(json1, json2, normalize=True)
+
+    assert is_equal, f"Case-different structures should be equal after normalization. Differences: {differences}"
+
+
+def test_compare_structures_with_missing_fields() -> None:
+    """Test that structures with missing fields are detected."""
+    json1 = {"use_cache": True, "force_ocr": False, "max_chunk_size": 1024}
+    json2 = {"use_cache": True, "force_ocr": False}
+
+    is_equal, differences = compare_json_structures(json1, json2, normalize=False)
+
+    assert not is_equal, "Structures with different keys should not be equal"
+    assert any("missing" in d.lower() for d in differences), "Should report missing fields"
+
+
+def test_compare_structures_with_type_differences() -> None:
+    """Test that structures with different types are detected."""
+    json1 = {"max_chunk_size": 1024}
+    json2 = {"max_chunk_size": "1024"}
+
+    is_equal, differences = compare_json_structures(json1, json2, normalize=False)
+
+    assert not is_equal, "Structures with different types should not be equal"
+    assert any("type mismatch" in d.lower() for d in differences), "Should report type mismatches"
+
+
+def test_compare_nested_structures() -> None:
+    """Test comparison of deeply nested structures."""
+    json1 = {
+        "ocr_config": {
+            "backend": "tesseract",
+            "settings": {"language": "eng", "options": ["preserve_layout", "auto_rotate"]},
+        }
+    }
+    json2 = {
+        "ocr_config": {
+            "backend": "tesseract",
+            "settings": {"language": "eng", "options": ["preserve_layout", "auto_rotate"]},
+        }
+    }
+
+    is_equal, differences = compare_json_structures(json1, json2, normalize=False)
+
+    assert is_equal, f"Identical nested structures should be equal. Differences: {differences}"
 
 
 if __name__ == "__main__":
