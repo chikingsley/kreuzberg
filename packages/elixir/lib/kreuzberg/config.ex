@@ -33,6 +33,8 @@ defmodule Kreuzberg.ExtractionConfig do
     * `:token_reduction` - Token reduction settings for optimizing output size
     * `:keywords` - Keyword extraction configuration
     * `:pdf_options` - PDF-specific options (requires pdf feature to be enabled)
+    * `:html_options` - HTML to Markdown conversion options (quality, format, preprocessing options)
+    * `:max_concurrent_extractions` - Maximum concurrent extractions in batch operations (positive integer or nil)
 
   ## Default Values
 
@@ -132,6 +134,8 @@ defmodule Kreuzberg.ExtractionConfig do
           token_reduction: nested_config,
           keywords: nested_config,
           pdf_options: nested_config,
+          max_concurrent_extractions: non_neg_integer() | nil,
+          html_options: config_map | nil,
           use_cache: boolean(),
           enable_quality_processing: boolean(),
           force_ocr: boolean(),
@@ -149,6 +153,8 @@ defmodule Kreuzberg.ExtractionConfig do
     :token_reduction,
     :keywords,
     :pdf_options,
+    :max_concurrent_extractions,
+    :html_options,
     use_cache: true,
     enable_quality_processing: true,
     force_ocr: false,
@@ -183,6 +189,8 @@ defmodule Kreuzberg.ExtractionConfig do
     * `"token_reduction"` - Token reduction settings (map or nil)
     * `"keywords"` - Keyword extraction configuration (map or nil)
     * `"pdf_options"` - PDF-specific options (map or nil)
+    * `"max_concurrent_extractions"` - Maximum concurrent extractions (positive integer or nil)
+    * `"html_options"` - HTML to Markdown conversion options (map or nil)
     * `"use_cache"` - Enable caching (boolean)
     * `"enable_quality_processing"` - Enable quality processing (boolean)
     * `"force_ocr"` - Force OCR usage (boolean)
@@ -253,6 +261,8 @@ defmodule Kreuzberg.ExtractionConfig do
       "token_reduction" => normalize_nested_config(config.token_reduction),
       "keywords" => normalize_keywords_config(config.keywords),
       "pdf_options" => normalize_nested_config(config.pdf_options),
+      "max_concurrent_extractions" => config.max_concurrent_extractions,
+      "html_options" => normalize_nested_config(config.html_options),
       "use_cache" => config.use_cache,
       "enable_quality_processing" => config.enable_quality_processing,
       "force_ocr" => config.force_ocr,
@@ -412,7 +422,9 @@ defmodule Kreuzberg.ExtractionConfig do
          :ok <- validate_nested_field(config.pages, "pages"),
          :ok <- validate_nested_field(config.token_reduction, "token_reduction"),
          :ok <- validate_nested_field(config.keywords, "keywords"),
-         :ok <- validate_nested_field(config.pdf_options, "pdf_options") do
+         :ok <- validate_nested_field(config.pdf_options, "pdf_options"),
+         :ok <- validate_max_concurrent_extractions(config.max_concurrent_extractions),
+         :ok <- validate_nested_field(config.html_options, "html_options") do
       {:ok, config}
     end
   end
@@ -537,6 +549,8 @@ defmodule Kreuzberg.ExtractionConfig do
       token_reduction: Map.get(map, "token_reduction"),
       keywords: Map.get(map, "keywords"),
       pdf_options: Map.get(map, "pdf_options"),
+      max_concurrent_extractions: Map.get(map, "max_concurrent_extractions"),
+      html_options: Map.get(map, "html_options"),
       use_cache: Map.get(map, "use_cache", true),
       enable_quality_processing: Map.get(map, "enable_quality_processing", true),
       force_ocr: Map.get(map, "force_ocr", false),
@@ -550,6 +564,23 @@ defmodule Kreuzberg.ExtractionConfig do
   end
 
   defp from_map(_), do: {:error, "Configuration must be a map"}
+
+  @doc false
+  defp validate_max_concurrent_extractions(nil), do: :ok
+
+  @doc false
+  defp validate_max_concurrent_extractions(value) when is_integer(value) and value > 0, do: :ok
+
+  @doc false
+  defp validate_max_concurrent_extractions(value) when is_integer(value) and value <= 0 do
+    {:error, "Field 'max_concurrent_extractions' must be a positive integer, got: #{value}"}
+  end
+
+  @doc false
+  defp validate_max_concurrent_extractions(value) do
+    {:error,
+     "Field 'max_concurrent_extractions' must be a positive integer or nil, got: #{type_name(value)}"}
+  end
 
   @doc false
   defp validate_boolean_field(value, field_name) do
@@ -575,11 +606,21 @@ defmodule Kreuzberg.ExtractionConfig do
   @doc false
   defp validate_output_format(value) when is_binary(value) do
     case String.downcase(value) do
-      "plain" -> :ok
-      "markdown" -> :ok
-      "djot" -> :ok
-      "html" -> :ok
-      _invalid -> {:error, "Field 'output_format' must be one of: plain, markdown, djot, html, got: #{value}"}
+      "plain" ->
+        :ok
+
+      "markdown" ->
+        :ok
+
+      "djot" ->
+        :ok
+
+      "html" ->
+        :ok
+
+      _invalid ->
+        {:error,
+         "Field 'output_format' must be one of: plain, markdown, djot, html, got: #{value}"}
     end
   end
 
@@ -591,10 +632,17 @@ defmodule Kreuzberg.ExtractionConfig do
   @doc false
   defp validate_result_format(value) when is_binary(value) do
     case String.downcase(value) do
-      "unified" -> :ok
-      "element_based" -> :ok
-      "elementbased" -> :ok
-      _invalid -> {:error, "Field 'result_format' must be one of: unified, element_based, got: #{value}"}
+      "unified" ->
+        :ok
+
+      "element_based" ->
+        :ok
+
+      "elementbased" ->
+        :ok
+
+      _invalid ->
+        {:error, "Field 'result_format' must be one of: unified, element_based, got: #{value}"}
     end
   end
 
@@ -689,7 +737,8 @@ defmodule Kreuzberg.ExtractionConfig do
         {:error, "Field 'confidence' must be between 0.0 and 1.0, got: #{value}"}
 
       value ->
-        {:error, "Field 'confidence' must be a number between 0.0 and 1.0, got: #{type_name(value)}"}
+        {:error,
+         "Field 'confidence' must be a number between 0.0 and 1.0, got: #{type_name(value)}"}
     end
   end
 

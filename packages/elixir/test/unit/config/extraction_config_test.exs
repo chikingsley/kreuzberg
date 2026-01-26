@@ -470,4 +470,259 @@ defmodule KreuzbergTest.Unit.Config.ExtractionConfigTest do
              } = config
     end
   end
+
+  describe "max_concurrent_extractions field" do
+    @tag :unit
+    test "creates with default nil value" do
+      config = %ExtractionConfig{}
+      assert config.max_concurrent_extractions == nil
+    end
+
+    @tag :unit
+    test "creates with custom positive integer" do
+      config = %ExtractionConfig{max_concurrent_extractions: 8}
+      assert config.max_concurrent_extractions == 8
+    end
+
+    @tag :unit
+    test "validates positive integer max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: 4}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates nil max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: nil}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "rejects zero for max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: 0}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "max_concurrent_extractions"
+      assert reason =~ "positive"
+    end
+
+    @tag :unit
+    test "rejects negative integer for max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: -1}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "max_concurrent_extractions"
+      assert reason =~ "positive"
+    end
+
+    @tag :unit
+    test "rejects non-integer for max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: "8"}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "max_concurrent_extractions"
+      assert reason =~ "integer"
+    end
+
+    @tag :unit
+    test "rejects float for max_concurrent_extractions" do
+      config = %ExtractionConfig{max_concurrent_extractions: 8.5}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "max_concurrent_extractions"
+      assert reason =~ "integer"
+    end
+
+    @tag :unit
+    test "includes max_concurrent_extractions in to_map" do
+      config = %ExtractionConfig{max_concurrent_extractions: 16}
+      map = ExtractionConfig.to_map(config)
+      assert map["max_concurrent_extractions"] == 16
+    end
+
+    @tag :unit
+    test "includes nil max_concurrent_extractions in to_map" do
+      config = %ExtractionConfig{max_concurrent_extractions: nil}
+      map = ExtractionConfig.to_map(config)
+      assert map["max_concurrent_extractions"] == nil
+    end
+
+    @tag :unit
+    test "round-trips max_concurrent_extractions through JSON" do
+      original = %ExtractionConfig{max_concurrent_extractions: 12}
+      map = ExtractionConfig.to_map(original)
+      json = Jason.encode!(map)
+      {:ok, decoded} = Jason.decode(json)
+      assert decoded["max_concurrent_extractions"] == 12
+    end
+
+    @tag :unit
+    test "pattern matches on max_concurrent_extractions field" do
+      config = %ExtractionConfig{max_concurrent_extractions: 8}
+      assert %ExtractionConfig{max_concurrent_extractions: 8} = config
+    end
+  end
+
+  describe "html_options field" do
+    @tag :unit
+    test "creates with default nil value" do
+      config = %ExtractionConfig{}
+      assert config.html_options == nil
+    end
+
+    @tag :unit
+    test "creates with custom map" do
+      html_opts = %{"heading_style" => "atx", "code_block_style" => "fenced"}
+      config = %ExtractionConfig{html_options: html_opts}
+      assert config.html_options == html_opts
+    end
+
+    @tag :unit
+    test "validates map for html_options" do
+      config = %ExtractionConfig{html_options: %{"option" => "value"}}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates nil for html_options" do
+      config = %ExtractionConfig{html_options: nil}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "validates empty map for html_options" do
+      config = %ExtractionConfig{html_options: %{}}
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "rejects non-map for html_options" do
+      config = %ExtractionConfig{html_options: "invalid"}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "html_options"
+      assert reason =~ "map"
+    end
+
+    @tag :unit
+    test "rejects list for html_options" do
+      config = %ExtractionConfig{html_options: ["invalid"]}
+      assert {:error, reason} = ExtractionConfig.validate(config)
+      assert reason =~ "html_options"
+      assert reason =~ "map"
+    end
+
+    @tag :unit
+    test "includes html_options in to_map" do
+      html_opts = %{"style" => "atx"}
+      config = %ExtractionConfig{html_options: html_opts}
+      map = ExtractionConfig.to_map(config)
+      assert map["html_options"] == html_opts
+    end
+
+    @tag :unit
+    test "includes nil html_options in to_map" do
+      config = %ExtractionConfig{html_options: nil}
+      map = ExtractionConfig.to_map(config)
+      assert map["html_options"] == nil
+    end
+
+    @tag :unit
+    test "round-trips html_options through JSON" do
+      original = %ExtractionConfig{
+        html_options: %{"heading_style" => "setext", "embed_images" => true}
+      }
+
+      map = ExtractionConfig.to_map(original)
+      json = Jason.encode!(map)
+      {:ok, decoded} = Jason.decode(json)
+      assert decoded["html_options"]["heading_style"] == "setext"
+      assert decoded["html_options"]["embed_images"] == true
+    end
+
+    @tag :unit
+    test "pattern matches on html_options field" do
+      html_opts = %{"option" => "value"}
+      config = %ExtractionConfig{html_options: html_opts}
+      assert %ExtractionConfig{html_options: ^html_opts} = config
+    end
+
+    @tag :unit
+    test "normalizes atom keys in html_options map" do
+      config = %ExtractionConfig{html_options: %{heading_style: "atx"}}
+      map = ExtractionConfig.to_map(config)
+      # Keys should be normalized to strings
+      assert map["html_options"]["heading_style"] == "atx"
+    end
+  end
+
+  describe "combined new fields" do
+    @tag :unit
+    test "validates config with both new fields" do
+      config = %ExtractionConfig{
+        max_concurrent_extractions: 16,
+        html_options: %{"heading_style" => "atx"}
+      }
+
+      assert {:ok, _} = ExtractionConfig.validate(config)
+    end
+
+    @tag :unit
+    test "serializes both new fields in to_map" do
+      config = %ExtractionConfig{
+        max_concurrent_extractions: 8,
+        html_options: %{"style" => "atx", "embed_images" => false}
+      }
+
+      map = ExtractionConfig.to_map(config)
+      assert map["max_concurrent_extractions"] == 8
+      assert map["html_options"]["style"] == "atx"
+      assert map["html_options"]["embed_images"] == false
+    end
+
+    @tag :unit
+    test "validates complete config with all fields including new ones" do
+      config = %ExtractionConfig{
+        use_cache: true,
+        enable_quality_processing: false,
+        force_ocr: true,
+        max_concurrent_extractions: 4,
+        html_options: %{"heading_style" => "setext"},
+        output_format: "markdown",
+        result_format: "element_based",
+        chunking: %{"size" => 1024},
+        ocr: %{"backend" => "tesseract"}
+      }
+
+      assert {:ok, validated} = ExtractionConfig.validate(config)
+      assert validated.max_concurrent_extractions == 4
+      assert validated.html_options["heading_style"] == "setext"
+    end
+
+    @tag :unit
+    test "pattern matches on multiple new fields" do
+      config = %ExtractionConfig{
+        max_concurrent_extractions: 12,
+        html_options: %{"option" => "value"}
+      }
+
+      assert %ExtractionConfig{
+               max_concurrent_extractions: 12,
+               html_options: %{"option" => "value"}
+             } = config
+    end
+
+    @tag :unit
+    test "round-trips complete config through JSON" do
+      original = %ExtractionConfig{
+        max_concurrent_extractions: 8,
+        html_options: %{"heading_style" => "atx"},
+        output_format: "markdown",
+        force_ocr: true
+      }
+
+      map = ExtractionConfig.to_map(original)
+      json = Jason.encode!(map)
+      {:ok, decoded} = Jason.decode(json)
+
+      assert decoded["max_concurrent_extractions"] == 8
+      assert decoded["html_options"]["heading_style"] == "atx"
+      assert decoded["output_format"] == "markdown"
+      assert decoded["force_ocr"] == true
+    end
+  end
 end

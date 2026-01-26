@@ -67,6 +67,7 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame(4, $config->maxConcurrentExtractions);
         $this->assertSame('unified', $config->resultFormat);
         $this->assertSame('plain', $config->outputEncoding);
+        $this->assertNull($config->htmlOptions);
     }
 
     #[Test]
@@ -75,6 +76,7 @@ final class ExtractionConfigTest extends TestCase
         $ocrConfig = new OcrConfig(backend: 'tesseract');
         $pdfConfig = new PdfConfig(extractImages: true);
         $chunkingConfig = new ChunkingConfig(maxChars: 1024);
+        $htmlOptions = ['heading_style' => 'atx', 'code_block_style' => 'fenced'];
 
         $config = new ExtractionConfig(
             ocr: $ocrConfig,
@@ -90,6 +92,7 @@ final class ExtractionConfigTest extends TestCase
             maxConcurrentExtractions: 8,
             resultFormat: 'split',
             outputEncoding: 'json',
+            htmlOptions: $htmlOptions,
         );
 
         $this->assertSame($ocrConfig, $config->ocr);
@@ -105,6 +108,7 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame(8, $config->maxConcurrentExtractions);
         $this->assertSame('split', $config->resultFormat);
         $this->assertSame('json', $config->outputEncoding);
+        $this->assertSame($htmlOptions, $config->htmlOptions);
     }
 
     #[Test]
@@ -161,6 +165,7 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame(4, $config->maxConcurrentExtractions);
         $this->assertSame('unified', $config->resultFormat);
         $this->assertSame('plain', $config->outputEncoding);
+        $this->assertNull($config->htmlOptions);
     }
 
     #[Test]
@@ -185,6 +190,7 @@ final class ExtractionConfigTest extends TestCase
             'max_concurrent_extractions' => 16,
             'result_format' => 'nested',
             'output_encoding' => 'base64',
+            'html_options' => ['heading_style' => 'setext', 'list_style' => 'dash'],
         ];
         $config = ExtractionConfig::fromArray($data);
 
@@ -206,6 +212,9 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame(16, $config->maxConcurrentExtractions);
         $this->assertSame('nested', $config->resultFormat);
         $this->assertSame('base64', $config->outputEncoding);
+        $this->assertIsArray($config->htmlOptions);
+        $this->assertSame('setext', $config->htmlOptions['heading_style']);
+        $this->assertSame('dash', $config->htmlOptions['list_style']);
     }
 
     #[Test]
@@ -256,6 +265,7 @@ final class ExtractionConfigTest extends TestCase
     #[Test]
     public function it_round_trips_through_json(): void
     {
+        $htmlOptions = ['heading_style' => 'atx', 'code_block_style' => 'fenced'];
         $original = new ExtractionConfig(
             ocr: new OcrConfig(backend: 'tesseract', language: 'eng'),
             pdf: new PdfConfig(extractImages: true),
@@ -270,6 +280,7 @@ final class ExtractionConfigTest extends TestCase
             maxConcurrentExtractions: 8,
             resultFormat: 'split',
             outputEncoding: 'json',
+            htmlOptions: $htmlOptions,
         );
 
         $json = $original->toJson();
@@ -288,6 +299,7 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame($original->maxConcurrentExtractions, $restored->maxConcurrentExtractions);
         $this->assertSame($original->resultFormat, $restored->resultFormat);
         $this->assertSame($original->outputEncoding, $restored->outputEncoding);
+        $this->assertSame($original->htmlOptions, $restored->htmlOptions);
     }
 
     #[Test]
@@ -342,6 +354,15 @@ final class ExtractionConfigTest extends TestCase
 
         $config = new ExtractionConfig(maxConcurrentExtractions: 8);
         $config->maxConcurrentExtractions = 4;
+    }
+
+    #[Test]
+    public function it_enforces_readonly_on_html_options_property(): void
+    {
+        $this->expectException(\Error::class);
+
+        $config = new ExtractionConfig(htmlOptions: ['heading_style' => 'atx']);
+        $config->htmlOptions = ['heading_style' => 'setext'];
     }
 
     #[Test]
@@ -607,8 +628,60 @@ final class ExtractionConfigTest extends TestCase
     }
 
     #[Test]
+    public function it_handles_html_options_in_serialization(): void
+    {
+        $htmlOptions = [
+            'heading_style' => 'atx',
+            'code_block_style' => 'fenced',
+            'list_style' => 'dash',
+        ];
+        $config = new ExtractionConfig(htmlOptions: $htmlOptions);
+        $array = $config->toArray();
+
+        $this->assertArrayHasKey('html_options', $array);
+        $this->assertSame($htmlOptions, $array['html_options']);
+    }
+
+    #[Test]
+    public function it_handles_html_options_in_deserialization(): void
+    {
+        $data = [
+            'html_options' => [
+                'heading_style' => 'setext',
+                'code_block_style' => 'indented',
+            ],
+        ];
+        $config = ExtractionConfig::fromArray($data);
+
+        $this->assertIsArray($config->htmlOptions);
+        $this->assertSame('setext', $config->htmlOptions['heading_style']);
+        $this->assertSame('indented', $config->htmlOptions['code_block_style']);
+    }
+
+    #[Test]
+    public function it_omits_null_html_options_from_serialization(): void
+    {
+        $config = new ExtractionConfig(htmlOptions: null);
+        $array = $config->toArray();
+
+        $this->assertArrayNotHasKey('html_options', $array);
+    }
+
+    #[Test]
+    public function it_handles_empty_html_options_array(): void
+    {
+        $config = new ExtractionConfig(htmlOptions: []);
+        $array = $config->toArray();
+
+        // Empty array should still be included in serialization
+        $this->assertArrayHasKey('html_options', $array);
+        $this->assertSame([], $array['html_options']);
+    }
+
+    #[Test]
     public function it_provides_complete_builder_chain_with_all_new_fields(): void
     {
+        $htmlOptions = ['heading_style' => 'atx'];
         $config = ExtractionConfig::builder()
             ->withOcr(new OcrConfig())
             ->withExtractImages(true)
@@ -621,6 +694,7 @@ final class ExtractionConfigTest extends TestCase
             ->withMaxConcurrentExtractions(16)
             ->withResultFormat('split')
             ->withOutputEncoding('json')
+            ->withHtmlOptions($htmlOptions)
             ->build();
 
         $this->assertNotNull($config->ocr);
@@ -634,5 +708,6 @@ final class ExtractionConfigTest extends TestCase
         $this->assertSame(16, $config->maxConcurrentExtractions);
         $this->assertSame('split', $config->resultFormat);
         $this->assertSame('json', $config->outputEncoding);
+        $this->assertSame($htmlOptions, $config->htmlOptions);
     }
 }

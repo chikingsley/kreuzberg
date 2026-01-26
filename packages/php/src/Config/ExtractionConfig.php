@@ -230,6 +230,17 @@ readonly class ExtractionConfig
          * @default 'plain'
          */
         public string $outputEncoding = 'plain',
+
+        /**
+         * HTML to Markdown conversion options.
+         *
+         * Configures how HTML documents are converted to Markdown, including heading styles,
+         * list formatting, code block styles, and preprocessing options.
+         *
+         * @var array<string, mixed>|null
+         * @default null
+         */
+        public ?array $htmlOptions = null,
     ) {
     }
 
@@ -374,6 +385,13 @@ readonly class ExtractionConfig
             $keywords = KeywordConfig::fromArray($keywordsData);
         }
 
+        $htmlOptions = null;
+        if (isset($data['html_options']) && is_array($data['html_options'])) {
+            /** @var array<string, mixed> $htmlOptionsData */
+            $htmlOptionsData = $data['html_options'];
+            $htmlOptions = $htmlOptionsData;
+        }
+
         return new self(
             ocr: $ocr,
             pdf: $pdf,
@@ -393,6 +411,7 @@ readonly class ExtractionConfig
             maxConcurrentExtractions: $maxConcurrentExtractions,
             resultFormat: $resultFormat,
             outputEncoding: $outputEncoding,
+            htmlOptions: $htmlOptions,
         );
     }
 
@@ -586,6 +605,7 @@ readonly class ExtractionConfig
             'pages' => $this->page?->toArray(),
             'language_detection' => $this->languageDetection?->toArray(),
             'keywords' => $this->keywords?->toArray(),
+            'html_options' => $this->htmlOptions,
         ];
 
         // Add simple boolean/string fields only if explicitly set to non-default values

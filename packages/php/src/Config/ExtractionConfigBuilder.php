@@ -46,6 +46,8 @@ class ExtractionConfigBuilder
     private int $maxConcurrentExtractions = 4;
     private string $resultFormat = 'unified';
     private string $outputEncoding = 'plain';
+    /** @var array<string, mixed>|null */
+    private ?array $htmlOptions = null;
 
     /**
      * Set the OCR configuration.
@@ -264,6 +266,18 @@ class ExtractionConfigBuilder
     }
 
     /**
+     * Set the HTML to Markdown conversion options.
+     *
+     * @param array<string, mixed>|null $htmlOptions HTML conversion configuration
+     * @return self For method chaining
+     */
+    public function withHtmlOptions(?array $htmlOptions = null): self
+    {
+        $this->htmlOptions = $htmlOptions;
+        return $this;
+    }
+
+    /**
      * Build and return the configured ExtractionConfig instance.
      *
      * @return ExtractionConfig The constructed configuration object
@@ -289,6 +303,7 @@ class ExtractionConfigBuilder
             maxConcurrentExtractions: $this->maxConcurrentExtractions,
             resultFormat: $this->resultFormat,
             outputEncoding: $this->outputEncoding,
+            htmlOptions: $this->htmlOptions,
         );
     }
 }
