@@ -27,15 +27,22 @@
 //! # Ok(())
 //! # }
 //! ```
-use calamine::{Data, Range, Reader, open_workbook_auto};
+use calamine::{Data, DataRef, Range, Reader, open_workbook_auto};
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
-use std::io::Cursor;
+use std::io::{Cursor, Read, Seek};
 use std::path::Path;
 
 use crate::error::{KreuzbergError, Result};
 use crate::extraction::capacity;
 use crate::types::{ExcelSheet, ExcelWorkbook};
+
+/// Maximum number of cells in a Range's bounding box before we consider it pathological.
+/// This threshold is set to prevent OOM when processing files with sparse data at extreme
+/// positions (e.g., Excel Solver files that have cells at A1 and XFD1048575).
+///
+/// 100 million cells at ~64 bytes each = ~6.4 GB, which is a reasonable upper limit.
+const MAX_BOUNDING_BOX_CELLS: u64 = 100_000_000;
 
 #[cfg(feature = "office")]
 use crate::extraction::office_metadata::{
@@ -45,11 +52,13 @@ use crate::extraction::office_metadata::{
 use serde_json::Value;
 
 pub fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
+    let lower_path = file_path.to_lowercase();
+
     #[cfg(feature = "office")]
-    let office_metadata = if file_path.to_lowercase().ends_with(".xlsx")
-        || file_path.to_lowercase().ends_with(".xlsm")
-        || file_path.to_lowercase().ends_with(".xlam")
-        || file_path.to_lowercase().ends_with(".xltm")
+    let office_metadata = if lower_path.ends_with(".xlsx")
+        || lower_path.ends_with(".xlsm")
+        || lower_path.ends_with(".xlam")
+        || lower_path.ends_with(".xltm")
     {
         extract_xlsx_office_metadata_from_file(file_path).ok()
     } else {
@@ -59,7 +68,19 @@ pub fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
     #[cfg(not(feature = "office"))]
     let office_metadata: Option<HashMap<String, String>> = None;
 
-    // We analyze the error and only wrap format errors, letting real IO errors bubble up ~keep
+    // For XLSX files, use specialized handler with OOM protection
+    if lower_path.ends_with(".xlsx")
+        || lower_path.ends_with(".xlsm")
+        || lower_path.ends_with(".xlam")
+        || lower_path.ends_with(".xltm")
+    {
+        let file = std::fs::File::open(file_path)?;
+        let workbook = calamine::Xlsx::new(std::io::BufReader::new(file))
+            .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
+        return process_xlsx_workbook(workbook, office_metadata);
+    }
+
+    // For other formats, use open_workbook_auto
     let workbook = match open_workbook_auto(Path::new(file_path)) {
         Ok(wb) => wb,
         Err(calamine::Error::Io(io_err)) => {
@@ -94,7 +115,7 @@ pub fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<ExcelWorkbo
         ".xlsx" | ".xlsm" | ".xlam" | ".xltm" => {
             let workbook = calamine::Xlsx::new(cursor)
                 .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
-            process_workbook(workbook, office_metadata)
+            process_xlsx_workbook(workbook, office_metadata)
         }
         ".xls" | ".xla" => {
             let workbook = calamine::Xls::new(cursor)
@@ -116,6 +137,194 @@ pub fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<ExcelWorkbo
             file_extension
         ))),
     }
+}
+
+/// Process XLSX workbooks with special handling for pathological sparse files.
+///
+/// This function uses calamine's `worksheet_cells_reader()` API to detect sheets with
+/// extreme bounding boxes BEFORE allocating memory for the full Range. This prevents
+/// OOM when processing files like Excel Solver files that have cells at both A1 and
+/// XFD1048575, creating a bounding box of ~17 billion cells.
+fn process_xlsx_workbook<RS: Read + Seek>(
+    mut workbook: calamine::Xlsx<RS>,
+    office_metadata: Option<HashMap<String, String>>,
+) -> Result<ExcelWorkbook> {
+    let sheet_names = workbook.sheet_names();
+    let mut sheets = Vec::with_capacity(sheet_names.len());
+
+    for name in &sheet_names {
+        // Use worksheet_cells_reader to stream cells and detect pathological bounding boxes
+        match process_xlsx_sheet_safe(&mut workbook, name) {
+            Ok(sheet) => sheets.push(sheet),
+            Err(e) => {
+                // Log but don't fail - continue with other sheets
+                tracing::warn!("Failed to process sheet '{}': {}", name, e);
+            }
+        }
+    }
+
+    let metadata = extract_metadata(&workbook, &sheet_names, office_metadata);
+    Ok(ExcelWorkbook { sheets, metadata })
+}
+
+/// Process a single XLSX sheet safely by pre-checking the bounding box.
+///
+/// This function streams cells to compute the actual bounding box without allocating
+/// a full Range, then only creates the Range if the bounding box is within safe limits.
+fn process_xlsx_sheet_safe<RS: Read + Seek>(workbook: &mut calamine::Xlsx<RS>, sheet_name: &str) -> Result<ExcelSheet> {
+    // First pass: stream cells to compute actual bounding box and collect cell data
+    let (cells, row_min, row_max, col_min, col_max) = {
+        let mut cell_reader = workbook
+            .worksheet_cells_reader(sheet_name)
+            .map_err(|e| KreuzbergError::parsing(format!("Failed to read sheet '{}': {}", sheet_name, e)))?;
+
+        let mut cells: Vec<((u32, u32), Data)> = Vec::new();
+        let mut row_min = u32::MAX;
+        let mut row_max = 0u32;
+        let mut col_min = u32::MAX;
+        let mut col_max = 0u32;
+
+        // Stream through all cells, tracking bounds
+        while let Ok(Some(cell)) = cell_reader.next_cell() {
+            let (row, col) = cell.get_position();
+            row_min = row_min.min(row);
+            row_max = row_max.max(row);
+            col_min = col_min.min(col);
+            col_max = col_max.max(col);
+
+            // Convert DataRef to owned Data
+            let data: Data = match cell.get_value() {
+                DataRef::Empty => Data::Empty,
+                DataRef::String(s) => Data::String(s.clone()),
+                DataRef::SharedString(s) => Data::String(s.to_string()),
+                DataRef::Float(f) => Data::Float(*f),
+                DataRef::Int(i) => Data::Int(*i),
+                DataRef::Bool(b) => Data::Bool(*b),
+                DataRef::DateTime(dt) => Data::DateTime(*dt),
+                DataRef::DateTimeIso(s) => Data::DateTimeIso(s.clone()),
+                DataRef::DurationIso(s) => Data::DurationIso(s.clone()),
+                DataRef::Error(e) => Data::Error(e.clone()),
+            };
+            cells.push(((row, col), data));
+        }
+        (cells, row_min, row_max, col_min, col_max)
+    }; // cell_reader is dropped here, releasing the borrow
+
+    // Check if sheet is empty
+    if cells.is_empty() {
+        return Ok(ExcelSheet {
+            name: sheet_name.to_owned(),
+            markdown: format!("## {}\n\n*Empty sheet*", sheet_name),
+            row_count: 0,
+            col_count: 0,
+            cell_count: 0,
+            table_cells: None,
+        });
+    }
+
+    // Calculate bounding box size
+    let bb_rows = (row_max - row_min + 1) as u64;
+    let bb_cols = (col_max - col_min + 1) as u64;
+    let bb_cells = bb_rows.saturating_mul(bb_cols);
+
+    // Check for pathological bounding box
+    if bb_cells > MAX_BOUNDING_BOX_CELLS {
+        // Sheet has sparse data at extreme positions - process directly from cells
+        return process_sparse_sheet_from_cells(sheet_name, cells, row_min, row_max, col_min, col_max);
+    }
+
+    // Safe to create a Range - bounding box is within limits
+    // Use calamine's normal worksheet_range which will create the Range
+    let range = workbook
+        .worksheet_range(sheet_name)
+        .map_err(|e| KreuzbergError::parsing(format!("Failed to parse sheet '{}': {}", sheet_name, e)))?;
+
+    Ok(process_sheet(sheet_name, &range))
+}
+
+/// Process a sparse sheet directly from collected cells without creating a full Range.
+///
+/// This is used when the bounding box would exceed MAX_BOUNDING_BOX_CELLS.
+/// Instead of creating a dense Range, we generate markdown directly from the sparse cells.
+fn process_sparse_sheet_from_cells(
+    sheet_name: &str,
+    cells: Vec<((u32, u32), Data)>,
+    row_min: u32,
+    row_max: u32,
+    col_min: u32,
+    col_max: u32,
+) -> Result<ExcelSheet> {
+    let cell_count = cells.len();
+    let bb_rows = (row_max - row_min + 1) as usize;
+    let bb_cols = (col_max - col_min + 1) as usize;
+
+    // Create a warning message about the sparse data
+    let mut markdown = String::with_capacity(500 + cell_count * 50);
+    write!(
+        markdown,
+        "## {}\n\n*Note: Sheet contains sparse data spanning {} rows x {} columns ({} actual cells). \
+         Bounding box too large for dense extraction. Showing actual cell data below.*\n\n",
+        sheet_name, bb_rows, bb_cols, cell_count
+    )
+    .expect("write to String cannot fail");
+
+    // Group cells by row for tabular display
+    let mut cells_by_row: HashMap<u32, Vec<(u32, &Data)>> = HashMap::new();
+    for ((row, col), data) in &cells {
+        cells_by_row.entry(*row).or_default().push((*col, data));
+    }
+
+    // Sort rows and output as simple key-value pairs
+    let mut rows: Vec<_> = cells_by_row.keys().copied().collect();
+    rows.sort_unstable();
+
+    // Limit output to first 1000 cells to avoid huge output
+    let mut output_count = 0;
+    const MAX_OUTPUT_CELLS: usize = 1000;
+
+    for row in rows {
+        if output_count >= MAX_OUTPUT_CELLS {
+            write!(markdown, "\n... ({} more cells not shown)\n", cell_count - output_count)
+                .expect("write to String cannot fail");
+            break;
+        }
+
+        let mut row_cells = cells_by_row.remove(&row).unwrap_or_default();
+        row_cells.sort_by_key(|(col, _)| *col);
+
+        for (col, data) in row_cells {
+            if output_count >= MAX_OUTPUT_CELLS {
+                break;
+            }
+            let cell_ref = col_to_excel_letter(col);
+            let cell_str = format_cell_to_string(data);
+            if !cell_str.is_empty() {
+                writeln!(markdown, "- **{}{}**: {}", cell_ref, row + 1, cell_str).expect("write to String cannot fail");
+                output_count += 1;
+            }
+        }
+    }
+
+    Ok(ExcelSheet {
+        name: sheet_name.to_owned(),
+        markdown,
+        row_count: bb_rows,
+        col_count: bb_cols,
+        cell_count,
+        table_cells: None, // No structured table for sparse sheets
+    })
+}
+
+/// Convert a 0-indexed column number to Excel-style letter(s) (A, B, ..., Z, AA, AB, ...).
+fn col_to_excel_letter(col: u32) -> String {
+    let mut result = String::new();
+    let mut n = col + 1; // 1-indexed for calculation
+    while n > 0 {
+        n -= 1;
+        result.insert(0, (b'A' + (n % 26) as u8) as char);
+        n /= 26;
+    }
+    result
 }
 
 fn process_workbook<RS, R>(mut workbook: R, office_metadata: Option<HashMap<String, String>>) -> Result<ExcelWorkbook>
@@ -143,7 +352,10 @@ fn process_sheet(name: &str, range: &Range<Data>) -> ExcelSheet {
     let (rows, cols) = range.get_size();
     let cell_count = range.used_cells().count();
 
-    let estimated_capacity = 50 + (cols * 20) + (rows * cols * 12);
+    // Fix for issue #331: Use actual cell count instead of declared dimensions
+    // to avoid OOM on sparse sheets with extreme dimensions (e.g., Excel Solver files).
+    // Declared dimensions can claim A1:XFD1048575 (~17T cells) while actual data is minimal.
+    let estimated_capacity = 50 + (cols * 20) + (cell_count * 12);
 
     if rows == 0 || cols == 0 {
         let markdown = format!("## {}\n\n*Empty sheet*", name);
@@ -176,6 +388,31 @@ fn process_sheet(name: &str, range: &Range<Data>) -> ExcelSheet {
 ///
 /// Returns (markdown, table_cells) where table_cells is a 2D vector of strings.
 fn generate_markdown_and_cells(sheet_name: &str, range: &Range<Data>, capacity: usize) -> (String, Vec<Vec<String>>) {
+    // Fix for issue #331: Protect against extreme declared dimensions.
+    // Excel Solver files can declare A1:XFD1048575 (1M+ rows) but only have ~26 actual cells.
+    // Calling range.rows().collect() would iterate ALL declared rows causing OOM.
+    const MAX_REASONABLE_ROWS: usize = 100_000; // Cap at 100K rows for safety
+
+    let (declared_rows, _declared_cols) = range.get_size();
+
+    // If declared rows exceed reasonable limit, skip processing to avoid OOM
+    if declared_rows > MAX_REASONABLE_ROWS {
+        let actual_cell_count = range.used_cells().count();
+
+        // If actual data is minimal compared to declared size, it's a sparse/pathological file
+        if actual_cell_count < 10_000 {
+            // Return minimal output instead of OOM
+            let result_capacity = 100 + sheet_name.len();
+            let mut result = String::with_capacity(result_capacity);
+            write!(
+                result,
+                "## {}\n\n*Sheet has extreme declared dimensions ({} rows) with minimal actual data ({} cells). Skipping to prevent OOM.*",
+                sheet_name, declared_rows, actual_cell_count
+            ).unwrap();
+            return (result, Vec::new());
+        }
+    }
+
     let rows: Vec<_> = range.rows().collect();
     if rows.is_empty() {
         let result_capacity = 50 + sheet_name.len();

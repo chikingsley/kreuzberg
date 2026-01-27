@@ -88,3 +88,59 @@ fn test_xlsx_minimal_metadata_extraction() {
 
     println!("✅ XLSX minimal metadata extraction test passed!");
 }
+
+/// Test for issue #331: OOM with XLSX files containing Excel Solver add-in data
+///
+/// This test reproduces the issue where Excel Solver stores configuration data
+/// in cells at extreme positions (XFD1048550-1048575 = column 16384, rows near 1M).
+/// The sheet dimension is set to "A1:XFD1048575", which could cause Kreuzberg
+/// to attempt allocating memory for ~17 trillion cells (16384 × 1048575).
+///
+/// Expected behavior: Should handle extreme dimensions gracefully without OOM.
+/// The file is only 6.8KB and contains minimal actual data.
+#[test]
+fn test_xlsx_excel_solver_extreme_dimensions_no_oom() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("Operation failed")
+        .parent()
+        .expect("Operation failed");
+    let test_file = workspace_root.join("tests/fixtures/xlsx-oom-repro/kreuzberg-oom-repro.xlsx");
+
+    if !test_file.exists() {
+        println!("Skipping test: Test file not found at {:?}", test_file);
+        println!("Run: node tests/fixtures/xlsx-oom-repro/generate-oom-xlsx.mjs");
+        return;
+    }
+
+    let file_path = test_file.to_str().expect("File path should be valid UTF-8");
+
+    // This should NOT cause OOM even though dimension claims A1:XFD1048575
+    // The actual data is minimal (only ~26 cells with Solver metadata)
+    let result = read_excel_file(file_path).expect("Should extract XLSX with extreme dimensions without OOM");
+
+    // Verify we got the actual data, not a massive allocation
+    assert!(!result.sheets.is_empty(), "Should have at least one sheet");
+
+    // The file has normal cells A1, B1 plus Solver cells at extreme positions
+    // Verify we extracted something reasonable, not 17 trillion cells
+    let sheet = &result.sheets[0];
+    assert!(
+        sheet.markdown.len() < 10000,
+        "Sheet markdown content should be small (< 10000 chars), not massive. Got {} chars",
+        sheet.markdown.len()
+    );
+
+    // Verify metadata was extracted
+    assert!(
+        result.metadata.contains_key("sheet_count"),
+        "Should have sheet_count metadata"
+    );
+
+    println!("✅ XLSX Excel Solver extreme dimensions test passed!");
+    println!(
+        "   Sheet markdown length: {} chars (reasonable size)",
+        sheet.markdown.len()
+    );
+    println!("   Successfully handled dimension A1:XFD1048575 without OOM");
+}
