@@ -467,6 +467,24 @@ export interface ExtractionConfig {
 
 	/** Maximum number of concurrent extractions in batch operations. Default: 4. */
 	maxConcurrentExtractions?: number;
+
+	/**
+	 * Output text format for extracted content. Default: "plain".
+	 *
+	 * - "plain": Raw extracted text
+	 * - "markdown": Markdown formatted output
+	 * - "djot": Djot markup format
+	 * - "html": HTML formatted output
+	 */
+	outputFormat?: "plain" | "markdown" | "djot" | "html";
+
+	/**
+	 * Result structure format. Default: "unified".
+	 *
+	 * - "unified": All content in the `content` field (default)
+	 * - "element_based": Semantic element extraction (Unstructured-compatible)
+	 */
+	resultFormat?: "unified" | "element_based";
 }
 
 /**

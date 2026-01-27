@@ -848,6 +848,10 @@ pub struct JsExtractionConfig {
     pub html_options: Option<JsHtmlOptions>,
     pub max_concurrent_extractions: Option<u32>,
     pub pages: Option<JsPageConfig>,
+    /// Output text format: "plain" | "markdown" | "djot" | "html"
+    pub output_format: Option<String>,
+    /// Result structure format: "unified" | "element_based"
+    pub result_format: Option<String>,
 }
 
 impl TryFrom<JsPageConfig> for kreuzberg::core::config::PageConfig {
@@ -903,8 +907,27 @@ impl TryFrom<JsExtractionConfig> for ExtractionConfig {
             html_options,
             max_concurrent_extractions: val.max_concurrent_extractions.map(|v| v as usize),
             pages: val.pages.map(|p| p.try_into()).transpose()?,
-            output_format: Default::default(),
-            result_format: Default::default(),
+            output_format: val
+                .output_format
+                .map(|s| s.parse())
+                .transpose()
+                .map_err(|e: String| Error::new(Status::InvalidArg, e))?
+                .unwrap_or_default(),
+            result_format: val
+                .result_format
+                .map(|s| match s.as_str() {
+                    "unified" => Ok(kreuzberg::types::OutputFormat::Unified),
+                    "element_based" => Ok(kreuzberg::types::OutputFormat::ElementBased),
+                    other => Err(Error::new(
+                        Status::InvalidArg,
+                        format!(
+                            "Invalid result_format: {}. Expected 'unified' or 'element_based'",
+                            other
+                        ),
+                    )),
+                })
+                .transpose()?
+                .unwrap_or_default(),
         })
     }
 }
@@ -995,6 +1018,11 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
             html_options: val.html_options.as_ref().map(JsHtmlOptions::from),
             max_concurrent_extractions: val.max_concurrent_extractions.map(|v| v as u32),
             pages: val.pages.map(JsPageConfig::from),
+            output_format: Some(val.output_format.to_string()),
+            result_format: Some(match val.result_format {
+                kreuzberg::types::OutputFormat::Unified => "unified".to_string(),
+                kreuzberg::types::OutputFormat::ElementBased => "element_based".to_string(),
+            }),
         })
     }
 }
