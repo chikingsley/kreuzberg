@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+#### API
+- **JSON array rejection**: API endpoints now properly reject JSON arrays in request bodies
+  - The `/embed`, `/chunk`, and other endpoints were incorrectly accepting arrays when only objects are valid
+  - Now returns 400 BAD_REQUEST with helpful error message for schema-violating requests
+  - Discovered via schemathesis API contract testing
+
+---
+
 ## [4.2.3] - 2026-01-28
 
 ### Fixed
