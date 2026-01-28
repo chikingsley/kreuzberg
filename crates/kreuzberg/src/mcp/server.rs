@@ -144,7 +144,7 @@ impl KreuzbergMcp {
         Parameters(params): Parameters<super::params::BatchExtractFilesParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         use super::errors::map_kreuzberg_error_to_mcp;
-        use super::format::{build_config, format_extraction_result};
+        use super::format::build_config;
         use crate::{batch_extract_file, batch_extract_file_sync};
 
         let config =
@@ -158,13 +158,7 @@ impl KreuzbergMcp {
             batch_extract_file_sync(params.paths.clone(), &config).map_err(map_kreuzberg_error_to_mcp)?
         };
 
-        let mut response = String::new();
-        for (i, result) in results.iter().enumerate() {
-            response.push_str(&format!("=== Document {}: {} ===\n", i + 1, params.paths[i]));
-            response.push_str(&format_extraction_result(result));
-            response.push_str("\n\n");
-        }
-
+        let response = serde_json::to_string_pretty(&results).unwrap_or_default();
         Ok(CallToolResult::success(vec![Content::text(response)]))
     }
 

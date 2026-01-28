@@ -7,7 +7,6 @@ use anyhow::{Context, Result};
 use kreuzberg::{
     ChunkingConfig, ExtractionConfig, LanguageDetectionConfig, OcrConfig, batch_extract_file_sync, extract_file_sync,
 };
-use serde_json::json;
 use std::path::PathBuf;
 
 use crate::{ContentOutputFormatArg, OutputFormat};
@@ -33,19 +32,10 @@ pub fn extract_command(
             println!("{}", result.content);
         }
         OutputFormat::Json => {
-            let output = json!({
-                "content": result.content,
-                "mime_type": result.mime_type,
-                "metadata": result.metadata,
-                "tables": result.tables.iter().map(|t| json!({
-                    "cells": t.cells,
-                    "markdown": t.markdown,
-                    "page_number": t.page_number,
-                })).collect::<Vec<_>>(),
-            });
+            // Serialize the full ExtractionResult including chunks, images, elements, etc.
             println!(
                 "{}",
-                serde_json::to_string_pretty(&output).context("Failed to serialize extraction result to JSON")?
+                serde_json::to_string_pretty(&result).context("Failed to serialize extraction result to JSON")?
             );
         }
     }
@@ -74,24 +64,10 @@ pub fn batch_command(paths: Vec<PathBuf>, config: ExtractionConfig, format: Outp
             }
         }
         OutputFormat::Json => {
-            let output: Vec<_> = results
-                .iter()
-                .map(|result| {
-                    json!({
-                        "content": result.content,
-                        "mime_type": result.mime_type,
-                        "metadata": result.metadata,
-                        "tables": result.tables.iter().map(|t| json!({
-                            "cells": t.cells,
-                            "markdown": t.markdown,
-                            "page_number": t.page_number,
-                        })).collect::<Vec<_>>(),
-                    })
-                })
-                .collect();
+            // Serialize the full ExtractionResult for each document
             println!(
                 "{}",
-                serde_json::to_string_pretty(&output)
+                serde_json::to_string_pretty(&results)
                     .context("Failed to serialize batch extraction results to JSON")?
             );
         }

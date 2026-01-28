@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.2.3] - 2026-01-28
 
 ### Fixed
 
@@ -17,11 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Now returns 400 BAD_REQUEST with helpful error message for schema-violating requests
   - Discovered via schemathesis API contract testing
 
----
+#### CLI
+- **Full JSON output**: CLI `--format json` now serializes the complete `ExtractionResult` including chunks, embeddings, images, pages, and elements (previously omitted these fields)
 
-## [4.2.3] - 2026-01-28
-
-### Fixed
+#### MCP
+- **Output parity**: MCP tool responses now return full JSON-serialized `ExtractionResult`, matching API and CLI output 1:1 (previously used custom text formatting that omitted chunks, images, and other fields)
 
 #### Elixir Bindings
 - **API parity**: Added `ExtractionConfig.new/0` and `new/1` constructors for consistent struct creation

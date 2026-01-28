@@ -72,28 +72,12 @@ pub(super) fn build_config(
     }
 }
 
-/// Format extraction result as human-readable text.
+/// Format extraction result as JSON string.
+///
+/// Serializes the full `ExtractionResult` to JSON, ensuring 1:1 parity
+/// with the API and CLI JSON output.
 pub(super) fn format_extraction_result(result: &KreuzbergResult) -> String {
-    let mut response = String::new();
-
-    response.push_str(&format!("Content ({} characters):\n", result.content.len()));
-    response.push_str(&result.content);
-    response.push_str("\n\n");
-
-    response.push_str("Metadata:\n");
-    response.push_str(&serde_json::to_string_pretty(&result.metadata).unwrap_or_default());
-    response.push_str("\n\n");
-
-    if !result.tables.is_empty() {
-        response.push_str(&format!("Tables ({}):\n", result.tables.len()));
-        for (i, table) in result.tables.iter().enumerate() {
-            response.push_str(&format!("\nTable {} (page {}):\n", i + 1, table.page_number));
-            response.push_str(&table.markdown);
-            response.push('\n');
-        }
-    }
-
-    response
+    serde_json::to_string_pretty(result).unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -303,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn test_format_extraction_result_with_content() {
+    fn test_format_extraction_result_is_valid_json() {
         let result = KreuzbergResult {
             content: "Sample extracted text".to_string(),
             mime_type: "text/plain".to_string(),
@@ -318,36 +302,27 @@ mod tests {
         };
 
         let formatted = format_extraction_result(&result);
+        let parsed: serde_json::Value = serde_json::from_str(&formatted).expect("Should be valid JSON");
 
-        assert!(formatted.contains("Content (21 characters)"));
-        assert!(formatted.contains("Sample extracted text"));
-        assert!(formatted.contains("Metadata:"));
+        assert_eq!(parsed["content"], "Sample extracted text");
+        assert_eq!(parsed["mime_type"], "text/plain");
+        assert!(parsed["metadata"].is_object());
     }
 
     #[test]
-    fn test_format_extraction_result_with_tables() {
+    fn test_format_extraction_result_includes_tables() {
         let result = KreuzbergResult {
             content: "Document with tables".to_string(),
             mime_type: "application/pdf".to_string(),
             metadata: crate::Metadata::default(),
-            tables: vec![
-                crate::Table {
-                    cells: vec![
-                        vec!["Col1".to_string(), "Col2".to_string()],
-                        vec!["A".to_string(), "B".to_string()],
-                    ],
-                    page_number: 1,
-                    markdown: "| Col1 | Col2 |\n|------|------|\n| A    | B    |".to_string(),
-                },
-                crate::Table {
-                    cells: vec![
-                        vec!["X".to_string(), "Y".to_string()],
-                        vec!["1".to_string(), "2".to_string()],
-                    ],
-                    page_number: 2,
-                    markdown: "| X | Y |\n|---|---|\n| 1 | 2 |".to_string(),
-                },
-            ],
+            tables: vec![crate::Table {
+                cells: vec![
+                    vec!["Col1".to_string(), "Col2".to_string()],
+                    vec!["A".to_string(), "B".to_string()],
+                ],
+                page_number: 1,
+                markdown: "| Col1 | Col2 |\n|------|------|\n| A    | B    |".to_string(),
+            }],
             detected_languages: None,
             chunks: None,
             images: None,
@@ -357,23 +332,33 @@ mod tests {
         };
 
         let formatted = format_extraction_result(&result);
+        let parsed: serde_json::Value = serde_json::from_str(&formatted).expect("Should be valid JSON");
 
-        assert!(formatted.contains("Tables (2)"));
-        assert!(formatted.contains("Table 1 (page 1)"));
-        assert!(formatted.contains("Table 2 (page 2)"));
-        assert!(formatted.contains("| Col1 | Col2 |"));
-        assert!(formatted.contains("| X | Y |"));
+        assert_eq!(parsed["tables"].as_array().unwrap().len(), 1);
+        assert_eq!(parsed["tables"][0]["page_number"], 1);
     }
 
     #[test]
-    fn test_format_extraction_result_empty_content() {
+    fn test_format_extraction_result_includes_chunks_when_present() {
         let result = KreuzbergResult {
-            content: String::new(),
+            content: "Chunked text".to_string(),
             mime_type: "text/plain".to_string(),
             metadata: crate::Metadata::default(),
             tables: vec![],
             detected_languages: None,
-            chunks: None,
+            chunks: Some(vec![crate::Chunk {
+                content: "Chunk 1".to_string(),
+                embedding: None,
+                metadata: crate::ChunkMetadata {
+                    byte_start: 0,
+                    byte_end: 7,
+                    token_count: None,
+                    chunk_index: 0,
+                    total_chunks: 1,
+                    first_page: None,
+                    last_page: None,
+                },
+            }]),
             images: None,
             pages: None,
             elements: None,
@@ -381,13 +366,14 @@ mod tests {
         };
 
         let formatted = format_extraction_result(&result);
+        let parsed: serde_json::Value = serde_json::from_str(&formatted).expect("Should be valid JSON");
 
-        assert!(formatted.contains("Content (0 characters)"));
-        assert!(formatted.contains("Metadata:"));
+        assert_eq!(parsed["chunks"].as_array().unwrap().len(), 1);
+        assert_eq!(parsed["chunks"][0]["content"], "Chunk 1");
     }
 
     #[test]
-    fn test_format_extraction_result_no_tables() {
+    fn test_format_extraction_result_omits_none_fields() {
         let result = KreuzbergResult {
             content: "Simple text".to_string(),
             mime_type: "text/plain".to_string(),
@@ -402,8 +388,11 @@ mod tests {
         };
 
         let formatted = format_extraction_result(&result);
+        let parsed: serde_json::Value = serde_json::from_str(&formatted).expect("Should be valid JSON");
 
-        assert!(formatted.contains("Simple text"));
-        assert!(!formatted.contains("Tables"));
+        // None fields should be omitted via skip_serializing_if
+        assert!(parsed.get("chunks").is_none());
+        assert!(parsed.get("images").is_none());
+        assert!(parsed.get("detected_languages").is_none());
     }
 }
