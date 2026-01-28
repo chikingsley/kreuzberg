@@ -278,17 +278,18 @@ final class EmbeddingConfigTest {
 	}
 
 	@Test
-	@DisplayName("should support integration with ExtractionConfig")
-	void shouldSupportIntegrationWithExtractionConfig() {
-		EmbeddingConfig embeddingConfig = EmbeddingConfig.builder().preset("quality").batchSize(64).normalize(true)
-				.build();
+	@DisplayName("should support integration with ChunkingConfig")
+	void shouldSupportIntegrationWithChunkingConfig() {
+		Map<String, Object> embeddingMap = new HashMap<>();
+		embeddingMap.put("model", "quality");
+		embeddingMap.put("batch_size", 64);
+		embeddingMap.put("normalize", true);
 
-		ExtractionConfig extractionConfig = ExtractionConfig.builder().embedding(embeddingConfig).build();
+		ChunkingConfig chunkingConfig = ChunkingConfig.builder().embedding(embeddingMap).build();
 
-		assertNotNull(extractionConfig.getEmbedding());
-		assertThat(extractionConfig.getEmbedding().getModel()).containsEntry("type", "preset").containsEntry("name",
-				"quality");
-		assertThat(extractionConfig.getEmbedding().getBatchSize()).isEqualTo(64);
+		assertNotNull(chunkingConfig.getEmbedding());
+		assertThat(chunkingConfig.getEmbedding()).containsEntry("model", "quality").containsEntry("batch_size", 64)
+				.containsEntry("normalize", true);
 	}
 
 	@Test

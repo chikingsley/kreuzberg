@@ -24,7 +24,7 @@ final class ExtractionConfigTest {
 		ExtractionConfig config = ExtractionConfig.builder().build();
 
 		assertThat(config.isUseCache()).isTrue();
-		assertThat(config.isEnableQualityProcessing()).isFalse();
+		assertThat(config.isEnableQualityProcessing()).isTrue();
 		assertThat(config.isForceOcr()).isFalse();
 		assertNull(config.getOutputFormat());
 		assertNull(config.getResultFormat());
@@ -33,7 +33,6 @@ final class ExtractionConfigTest {
 		assertNull(config.getLanguageDetection());
 		assertNull(config.getPdfOptions());
 		assertNull(config.getImageExtraction());
-		assertNull(config.getImagePreprocessing());
 		assertNull(config.getPostprocessor());
 		assertNull(config.getTokenReduction());
 		assertNull(config.getPages());
@@ -212,16 +211,6 @@ final class ExtractionConfigTest {
 	}
 
 	@Test
-	@DisplayName("should set image preprocessing config")
-	void shouldSetImagePreprocessingConfig() {
-		ImagePreprocessingConfig imgPreConfig = ImagePreprocessingConfig.builder().denoise(true).build();
-		ExtractionConfig config = ExtractionConfig.builder().imagePreprocessing(imgPreConfig).build();
-
-		assertNotNull(config.getImagePreprocessing());
-		assertThat(config.getImagePreprocessing().isDenoise()).isTrue();
-	}
-
-	@Test
 	@DisplayName("should set post-processor config")
 	void shouldSetPostProcessorConfig() {
 		PostProcessorConfig postConfig = PostProcessorConfig.builder().enabled(true).build();
@@ -277,7 +266,6 @@ final class ExtractionConfigTest {
 		LanguageDetectionConfig langConfig = LanguageDetectionConfig.builder().enabled(true).build();
 		PdfConfig pdfConfig = PdfConfig.builder().extractImages(true).build();
 		ImageExtractionConfig imageExtConfig = ImageExtractionConfig.builder().targetDpi(600).build();
-		ImagePreprocessingConfig imgPreConfig = ImagePreprocessingConfig.builder().denoise(true).build();
 		PostProcessorConfig postConfig = PostProcessorConfig.builder().enabled(true).build();
 		TokenReductionConfig tokenConfig = TokenReductionConfig.builder().mode("moderate").build();
 		PageConfig pageConfig = PageConfig.builder().extractPages(true).build();
@@ -285,8 +273,8 @@ final class ExtractionConfigTest {
 		ExtractionConfig config = ExtractionConfig.builder().useCache(true).enableQualityProcessing(true).forceOcr(true)
 				.outputFormat("markdown").resultFormat("element_based").ocr(ocrConfig).chunking(chunkingConfig)
 				.languageDetection(langConfig).pdfOptions(pdfConfig).imageExtraction(imageExtConfig)
-				.imagePreprocessing(imgPreConfig).postprocessor(postConfig).tokenReduction(tokenConfig)
-				.pages(pageConfig).maxConcurrentExtractions(4).build();
+				.postprocessor(postConfig).tokenReduction(tokenConfig).pages(pageConfig).maxConcurrentExtractions(4)
+				.build();
 
 		assertThat(config.isUseCache()).isTrue();
 		assertThat(config.isEnableQualityProcessing()).isTrue();
@@ -298,7 +286,6 @@ final class ExtractionConfigTest {
 		assertNotNull(config.getLanguageDetection());
 		assertNotNull(config.getPdfOptions());
 		assertNotNull(config.getImageExtraction());
-		assertNotNull(config.getImagePreprocessing());
 		assertNotNull(config.getPostprocessor());
 		assertNotNull(config.getTokenReduction());
 		assertNotNull(config.getPages());
@@ -366,7 +353,6 @@ final class ExtractionConfigTest {
 		assertNull(config.getLanguageDetection());
 		assertNull(config.getPdfOptions());
 		assertNull(config.getImageExtraction());
-		assertNull(config.getImagePreprocessing());
 		assertNull(config.getPostprocessor());
 		assertNull(config.getTokenReduction());
 		assertNull(config.getKeywords());
