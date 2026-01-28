@@ -26,8 +26,8 @@ IO.puts("Total chunks: #{length(chunks)}")
 
 Enum.each(chunks, fn chunk ->
   IO.inspect(%{
-    text_length: String.length(chunk["text"]),
+    text_length: String.length(chunk["content"]),
     page: chunk["page"],
-    boundaries_respected: !String.ends_with?(chunk["text"], [" ", "\n"])
+    boundaries_respected: !String.ends_with?(chunk["content"], [" ", "\n"])
   })
 end)

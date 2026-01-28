@@ -15,7 +15,7 @@ chunks_for_embedding = result.chunks
   |> Enum.map(fn chunk ->
     %{
       "id" => chunk["id"],
-      "text" => chunk["text"],
+      "content" => chunk["content"],
       "metadata" => %{
         "page" => chunk["page"],
         "source" => "document.pdf"

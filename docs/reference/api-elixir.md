@@ -1581,10 +1581,10 @@ if result.chunks do
   result.chunks
   |> Stream.each(fn chunk ->
     # Process each chunk
-    text = chunk["text"]
+    content = chunk["content"]
     metadata = chunk["metadata"]
 
-    IO.puts("Chunk: #{String.length(text)} chars")
+    IO.puts("Chunk: #{String.length(content)} chars")
     IO.puts("Byte range: #{metadata["byte_start"]}-#{metadata["byte_end"]}")
   end)
   |> Stream.run()

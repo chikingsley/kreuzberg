@@ -182,17 +182,17 @@ defmodule KreuzbergTest.Unit.ExtractionResultTest do
 
     test "adds chunks from options" do
       chunks = [
-        %{"text" => "chunk1", "embedding" => [0.1, 0.2]},
-        %{"text" => "chunk2", "embedding" => [0.3, 0.4]}
+        %{"content" => "chunk1", "embedding" => [0.1, 0.2]},
+        %{"content" => "chunk2", "embedding" => [0.3, 0.4]}
       ]
 
       opts = [chunks: chunks]
       result = ExtractionResult.new("content", "text/plain", %{}, [], opts)
 
       assert length(result.chunks) == 2
-      assert Enum.at(result.chunks, 0).text == "chunk1"
+      assert Enum.at(result.chunks, 0).content == "chunk1"
       assert Enum.at(result.chunks, 0).embedding == [0.1, 0.2]
-      assert Enum.at(result.chunks, 1).text == "chunk2"
+      assert Enum.at(result.chunks, 1).content == "chunk2"
       assert Enum.at(result.chunks, 1).embedding == [0.3, 0.4]
     end
 
@@ -229,7 +229,7 @@ defmodule KreuzbergTest.Unit.ExtractionResultTest do
     test "combines all options together" do
       metadata = %{"title" => "Test"}
       tables = [%{"headers" => ["A"]}]
-      chunks = [%{"text" => "chunk"}]
+      chunks = [%{"content" => "chunk"}]
       images = [%{"path" => "image.png"}]
       pages = [%{"number" => 1}]
       languages = ["en", "de"]
@@ -250,7 +250,7 @@ defmodule KreuzbergTest.Unit.ExtractionResultTest do
       assert Enum.at(result.tables, 0).headers == ["A"]
       assert result.detected_languages == languages
       assert length(result.chunks) == 1
-      assert Enum.at(result.chunks, 0).text == "chunk"
+      assert Enum.at(result.chunks, 0).content == "chunk"
       assert length(result.images) == 1
       assert length(result.pages) == 1
       assert Enum.at(result.pages, 0).number == 1
