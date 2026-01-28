@@ -321,3 +321,28 @@ async fn test_chunk_custom_config() {
     assert_eq!(chunk_response.config.overlap, 5);
     assert!(!chunk_response.config.trim);
 }
+
+#[tokio::test]
+async fn test_chunk_rejects_json_array() {
+    let app = create_router(ExtractionConfig::default());
+
+    // Send a JSON array instead of object
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/chunk")
+                .method("POST")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"[["text"], {"text": "content"}]"#))
+                .expect("Operation failed"),
+        )
+        .await
+        .expect("Operation failed");
+
+    // Should reject with 400 or 422, NOT 200
+    assert!(
+        response.status() == StatusCode::BAD_REQUEST || response.status() == StatusCode::UNPROCESSABLE_ENTITY,
+        "Expected 400 or 422, got {}",
+        response.status()
+    );
+}

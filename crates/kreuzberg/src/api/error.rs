@@ -2,6 +2,7 @@
 
 use axum::{
     Json,
+    body::to_bytes,
     extract::{FromRequest, Request, rejection::JsonRejection},
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -16,6 +17,9 @@ use super::types::ErrorResponse;
 ///
 /// This wraps axum's `Json` extractor but uses `ApiError` as the rejection type,
 /// ensuring that all JSON parsing errors are returned as JSON with proper content type.
+///
+/// Additionally, this extractor validates that the root JSON value is an object (not an array),
+/// which prevents serde from incorrectly deserializing JSON arrays into struct fields.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JsonApi<T>(pub T);
 
@@ -27,6 +31,31 @@ where
     type Rejection = ApiError;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        // First, extract the body to check if it's a valid JSON object (not array)
+        let (parts, body) = req.into_parts();
+        let bytes = to_bytes(body, usize::MAX).await.map_err(|_| {
+            ApiError::new(
+                StatusCode::BAD_REQUEST,
+                KreuzbergError::Other("Failed to read request body".to_string()),
+            )
+        })?;
+
+        // Validate that the root JSON is an object, not an array
+        if !bytes.is_empty() {
+            let trimmed = std::str::from_utf8(&bytes).unwrap_or("").trim_start();
+            if trimmed.starts_with('[') {
+                return Err(ApiError::new(
+                    StatusCode::BAD_REQUEST,
+                    KreuzbergError::validation(
+                        "Expected JSON object, but received JSON array. \
+                         Please wrap your data in an object with appropriate fields.",
+                    ),
+                ));
+            }
+        }
+
+        // Reconstruct the request and use the standard Json extractor
+        let req = Request::from_parts(parts, axum::body::Body::from(bytes));
         match Json::<T>::from_request(req, state).await {
             Ok(Json(value)) => Ok(JsonApi(value)),
             Err(rejection) => Err(ApiError::from(rejection)),

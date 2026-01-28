@@ -255,6 +255,66 @@ async fn test_embed_malformed_json() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+/// Test embed endpoint rejects JSON array at root level.
+#[tokio::test]
+async fn test_embed_rejects_json_array() {
+    let app = create_router(ExtractionConfig::default());
+
+    // Send a JSON array instead of object
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/embed")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"[["text1"], {"texts": ["text2"]}]"#))
+                .expect("Operation failed"),
+        )
+        .await
+        .expect("Operation failed");
+
+    // Should reject with 400 or 422, NOT 200
+    assert!(
+        response.status() == StatusCode::BAD_REQUEST || response.status() == StatusCode::UNPROCESSABLE_ENTITY,
+        "Expected 400 or 422, got {}",
+        response.status()
+    );
+}
+
+/// Test embed endpoint rejects simple JSON array with strings.
+#[tokio::test]
+async fn test_embed_rejects_simple_json_array() {
+    let app = create_router(ExtractionConfig::default());
+
+    // Send a simple string array instead of object with texts field
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/embed")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"["text1", "text2", "text3"]"#))
+                .expect("Operation failed"),
+        )
+        .await
+        .expect("Operation failed");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    // Check that error response contains helpful message
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to read response body");
+    let error_response: serde_json::Value = serde_json::from_slice(&body).expect("Failed to parse error response");
+
+    assert!(
+        error_response["message"]
+            .as_str()
+            .map(|msg| msg.contains("array") || msg.contains("object"))
+            .unwrap_or(false)
+    );
+}
+
 /// Test embed endpoint preserves embedding vector values across calls.
 #[tokio::test]
 async fn test_embed_deterministic() {
