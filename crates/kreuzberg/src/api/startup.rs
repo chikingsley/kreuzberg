@@ -2,7 +2,9 @@
 
 use std::net::{IpAddr, SocketAddr};
 
-use crate::{ExtractionConfig, Result, core::ServerConfig, plugins::startup_validation::validate_plugins_at_startup};
+use crate::{
+    ExtractionConfig, Result, core::ServerConfig, extractors, plugins::startup_validation::validate_plugins_at_startup,
+};
 
 use super::{config::load_server_config, router::create_router_with_limits_and_server_config, types::ApiSizeLimits};
 
@@ -80,7 +82,8 @@ pub async fn serve(host: impl AsRef<str>, port: u16) -> Result<()> {
         server_config.max_multipart_field_bytes,
     );
 
-    // Validate plugins at startup
+    // Initialize extractors and validate plugins at startup
+    extractors::ensure_initialized()?;
     validate_plugins_at_startup()?;
 
     serve_with_config_and_limits(host, port, extraction_config, limits).await
@@ -115,7 +118,8 @@ pub async fn serve_with_config(host: impl AsRef<str>, port: u16, config: Extract
         limits.max_request_body_bytes
     );
 
-    // Validate plugins at startup
+    // Initialize extractors and validate plugins at startup
+    extractors::ensure_initialized()?;
     validate_plugins_at_startup()?;
 
     serve_with_config_and_limits(host, port, config, limits).await
@@ -165,7 +169,8 @@ pub async fn serve_with_config_and_limits(
     let addr = SocketAddr::new(ip, port);
     let app = create_router_with_limits_and_server_config(config, limits, server_config);
 
-    // Validate plugins at startup
+    // Initialize extractors and validate plugins at startup
+    extractors::ensure_initialized()?;
     validate_plugins_at_startup()?;
 
     tracing::info!("Starting Kreuzberg API server on http://{}:{}", ip, port);
@@ -224,7 +229,8 @@ pub async fn serve_with_server_config(extraction_config: ExtractionConfig, serve
     let addr = SocketAddr::new(ip, server_config.port);
     let app = create_router_with_limits_and_server_config(extraction_config, limits, server_config.clone());
 
-    // Validate plugins at startup
+    // Initialize extractors and validate plugins at startup
+    extractors::ensure_initialized()?;
     validate_plugins_at_startup()?;
 
     tracing::info!(
