@@ -12,7 +12,7 @@ embedded_chunks = result.chunks
   |> Enum.map(fn {chunk, idx} ->
     %{
       "chunk_id" => idx,
-      "text" => chunk["text"],
+      "content" => chunk["content"],
       "embedding" => chunk["embedding"],
       "page" => chunk["page"],
       "metadata" => %{

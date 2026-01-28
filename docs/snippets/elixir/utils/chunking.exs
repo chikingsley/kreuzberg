@@ -42,8 +42,8 @@ defmodule ChunkingUtils do
           last_size = chunk_text_length(last)
 
           if last_size < threshold do
-            merged_text = "#{last["text"]} #{chunk["text"]}"
-            merged_chunk = Map.put(chunk, "text", merged_text)
+            merged_text = "#{last["content"]} #{chunk["content"]}"
+            merged_chunk = Map.put(chunk, "content", merged_text)
             [merged_chunk | rest]
           else
             [chunk, last | rest]
@@ -66,7 +66,7 @@ defmodule ChunkingUtils do
   # Private helper
   defp chunk_text_length(chunk) do
     chunk
-    |> Map.get("text", "")
+    |> Map.get("content", "")
     |> String.length()
   end
 end

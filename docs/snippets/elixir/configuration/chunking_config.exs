@@ -19,7 +19,7 @@ if result.chunks do
   IO.puts("Generated #{length(result.chunks)} chunks")
 
   Enum.each(result.chunks, fn chunk ->
-    IO.puts("Chunk: #{String.slice(chunk["text"], 0..50)}...")
+    IO.puts("Chunk: #{String.slice(chunk["content"], 0..50)}...")
   end)
 end
 ```

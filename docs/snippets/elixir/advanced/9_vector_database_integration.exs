@@ -19,10 +19,10 @@ config = %ExtractionConfig{
 # Prepare chunks for vector database ingestion
 documents = Enum.map(result.chunks || [], fn chunk ->
   %{
-    text: chunk["text"],
+    content: chunk["content"],
     metadata: %{
       page: chunk["page"],
-      char_count: String.length(chunk["text"])
+      char_count: String.length(chunk["content"])
     }
   }
 end)

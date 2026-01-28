@@ -8,7 +8,7 @@ defmodule Kreuzberg.Chunk do
 
   ## Fields
 
-    * `:text` - The text content of this chunk
+    * `:content` - The text content of this chunk
     * `:embedding` - Vector embedding (list of floats) for semantic search
     * `:metadata` - Optional metadata about the chunk (page number, position, etc.)
     * `:token_count` - Number of tokens in the chunk (if available)
@@ -18,18 +18,18 @@ defmodule Kreuzberg.Chunk do
   ## Examples
 
       iex> chunk = %Kreuzberg.Chunk{
-      ...>   text: "This is a chunk of extracted text",
+      ...>   content: "This is a chunk of extracted text",
       ...>   embedding: [0.1, 0.2, 0.3, 0.4],
       ...>   metadata: %{"page" => 1, "section" => "Introduction"}
       ...> }
-      iex> chunk.text
+      iex> chunk.content
       "This is a chunk of extracted text"
   """
 
   @type embedding :: list(float())
 
   @type t :: %__MODULE__{
-          text: String.t(),
+          content: String.t(),
           embedding: embedding() | nil,
           metadata: map() | nil,
           token_count: integer() | nil,
@@ -38,7 +38,7 @@ defmodule Kreuzberg.Chunk do
         }
 
   defstruct [
-    :text,
+    :content,
     :embedding,
     :metadata,
     :token_count,
@@ -47,11 +47,11 @@ defmodule Kreuzberg.Chunk do
   ]
 
   @doc """
-  Creates a new Chunk struct with required text field.
+  Creates a new Chunk struct with required content field.
 
   ## Parameters
 
-    * `text` - The text content of the chunk
+    * `content` - The text content of the chunk
     * `opts` - Optional keyword list with:
       * `:embedding` - Vector embedding list
       * `:metadata` - Metadata map
@@ -61,12 +61,12 @@ defmodule Kreuzberg.Chunk do
 
   ## Returns
 
-  A `Chunk` struct with the provided text and options.
+  A `Chunk` struct with the provided content and options.
 
   ## Examples
 
       iex> Kreuzberg.Chunk.new("chunk text")
-      %Kreuzberg.Chunk{text: "chunk text"}
+      %Kreuzberg.Chunk{content: "chunk text"}
 
       iex> Kreuzberg.Chunk.new(
       ...>   "chunk text",
@@ -74,15 +74,15 @@ defmodule Kreuzberg.Chunk do
       ...>   metadata: %{"page" => 1}
       ...> )
       %Kreuzberg.Chunk{
-        text: "chunk text",
+        content: "chunk text",
         embedding: [0.1, 0.2],
         metadata: %{"page" => 1}
       }
   """
   @spec new(String.t(), keyword()) :: t()
-  def new(text, opts \\ []) when is_binary(text) do
+  def new(content, opts \\ []) when is_binary(content) do
     %__MODULE__{
-      text: text,
+      content: content,
       embedding: Keyword.get(opts, :embedding),
       metadata: Keyword.get(opts, :metadata),
       token_count: Keyword.get(opts, :token_count),
@@ -96,9 +96,14 @@ defmodule Kreuzberg.Chunk do
 
   Converts a plain map (typically from NIF/Rust) into a proper struct.
 
+  The Rust backend serializes chunks with a "content" field, which aligns
+  with all other language packages. For backward compatibility during migration,
+  maps with "text" keys are also supported (but will be removed in a future version).
+
   ## Parameters
 
-    * `data` - A map containing chunk fields
+    * `data` - A map containing chunk fields. Accepts either "content" (from Rust
+      and all other packages) or "text" (for backward compatibility) as the text field key.
 
   ## Returns
 
@@ -106,20 +111,32 @@ defmodule Kreuzberg.Chunk do
 
   ## Examples
 
-      iex> chunk_map = %{
-      ...>   "text" => "chunk content",
+      # From Rust/NIF (with "content" field) - standard format
+      iex> rust_chunk = %{
+      ...>   "content" => "chunk content from Rust",
       ...>   "embedding" => [0.1, 0.2, 0.3]
       ...> }
-      iex> Kreuzberg.Chunk.from_map(chunk_map)
+      iex> Kreuzberg.Chunk.from_map(rust_chunk)
       %Kreuzberg.Chunk{
-        text: "chunk content",
+        content: "chunk content from Rust",
         embedding: [0.1, 0.2, 0.3]
+      }
+
+      # Legacy format (with "text" field) - for backward compatibility
+      iex> legacy_chunk = %{
+      ...>   "text" => "legacy format chunk",
+      ...>   "embedding" => [0.4, 0.5, 0.6]
+      ...> }
+      iex> Kreuzberg.Chunk.from_map(legacy_chunk)
+      %Kreuzberg.Chunk{
+        content: "legacy format chunk",
+        embedding: [0.4, 0.5, 0.6]
       }
   """
   @spec from_map(map()) :: t()
   def from_map(data) when is_map(data) do
     %__MODULE__{
-      text: data["text"] || "",
+      content: data["content"] || data["text"] || "",
       embedding: data["embedding"],
       metadata: data["metadata"],
       token_count: data["token_count"],
@@ -139,14 +156,15 @@ defmodule Kreuzberg.Chunk do
 
   ## Returns
 
-  A map with string keys representing all fields.
+  A map with string keys representing all fields. Uses "content" key to align
+  with all other language packages.
 
   ## Examples
 
-      iex> chunk = %Kreuzberg.Chunk{text: "content", embedding: [0.1, 0.2]}
+      iex> chunk = %Kreuzberg.Chunk{content: "content", embedding: [0.1, 0.2]}
       iex> Kreuzberg.Chunk.to_map(chunk)
       %{
-        "text" => "content",
+        "content" => "content",
         "embedding" => [0.1, 0.2],
         ...
       }
@@ -154,7 +172,7 @@ defmodule Kreuzberg.Chunk do
   @spec to_map(t()) :: map()
   def to_map(%__MODULE__{} = chunk) do
     %{
-      "text" => chunk.text,
+      "content" => chunk.content,
       "embedding" => chunk.embedding,
       "metadata" => chunk.metadata,
       "token_count" => chunk.token_count,

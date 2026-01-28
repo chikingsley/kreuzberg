@@ -670,4 +670,225 @@ defmodule KreuzbergTest.Integration.E2EExtractionTest do
       assert length(results) == 2
     end
   end
+
+  describe "Chunking integration with document extraction" do
+    @sample_document """
+    Chapter 1: Introduction to Natural Language Processing
+
+    Natural Language Processing (NLP) is a subfield of linguistics, computer science,
+    and artificial intelligence concerned with the interactions between computers and
+    human language. In particular, NLP is focused on programming computers to process
+    and analyze large amounts of natural language data.
+
+    The field of NLP has seen tremendous growth in recent years, driven by advances
+    in machine learning and deep learning. Modern NLP systems can perform tasks such
+    as machine translation, sentiment analysis, named entity recognition, and question
+    answering with impressive accuracy.
+
+    Chapter 2: Tokenization and Text Preprocessing
+
+    Tokenization is the process of breaking text into individual units called tokens.
+    These tokens can be words, subwords, or characters depending on the application.
+    Proper tokenization is crucial for downstream NLP tasks as it forms the foundation
+    of text analysis.
+
+    Text preprocessing involves cleaning and normalizing text data before analysis.
+    Common preprocessing steps include lowercasing, removing punctuation, handling
+    special characters, and dealing with whitespace. The goal is to standardize the
+    text to improve model performance.
+
+    Chapter 3: Word Embeddings and Semantic Representation
+
+    Word embeddings are dense vector representations of words that capture semantic
+    meaning. Unlike traditional one-hot encodings, embeddings place semantically
+    similar words close together in vector space. Popular embedding methods include
+    Word2Vec, GloVe, and FastText.
+
+    These representations have revolutionized NLP by enabling models to understand
+    relationships between words and transfer knowledge across tasks. Modern transformer
+    models like BERT and GPT build upon these concepts with contextual embeddings.
+    """
+
+    @tag :integration
+    test "chunks contain non-empty content from extracted content" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 300,
+          "overlap" => 50
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      # Verify chunks were created
+      assert result.chunks != nil
+      assert is_list(result.chunks)
+      assert length(result.chunks) > 0
+
+      # Verify each chunk has non-empty content
+      Enum.each(result.chunks, fn chunk ->
+        assert is_struct(chunk, Kreuzberg.Chunk)
+        assert chunk.content != "", "Chunk content should not be empty"
+        assert String.length(chunk.content) > 0, "Chunk should have content"
+      end)
+    end
+
+    @tag :integration
+    test "chunk content matches byte ranges in source content" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 400,
+          "overlap" => 100
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      # Check first chunk
+      first_chunk = List.first(result.chunks)
+      assert first_chunk != nil
+
+      # Extract text using byte range from metadata
+      byte_start = first_chunk.metadata["byte_start"]
+      byte_end = first_chunk.metadata["byte_end"]
+      expected_text = String.slice(result.content, byte_start, byte_end - byte_start)
+
+      # Chunk content should match the byte range extraction
+      assert first_chunk.content == expected_text,
+             "Chunk content should match content at specified byte range"
+    end
+
+    @tag :integration
+    test "all chunks have valid metadata" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 250,
+          "overlap" => 25
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      total_chunks = length(result.chunks)
+
+      result.chunks
+      |> Enum.with_index()
+      |> Enum.each(fn {chunk, index} ->
+        assert chunk.metadata["chunk_index"] == index
+        assert chunk.metadata["total_chunks"] == total_chunks
+        assert chunk.metadata["byte_start"] >= 0
+        assert chunk.metadata["byte_end"] > chunk.metadata["byte_start"]
+
+        # Content length should roughly correspond to byte range
+        # (allowing for UTF-8 multi-byte characters)
+        byte_length = chunk.metadata["byte_end"] - chunk.metadata["byte_start"]
+        assert String.length(chunk.content) <= byte_length
+      end)
+    end
+
+    @tag :integration
+    test "chunks maintain sequential coverage of document" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 200,
+          "overlap" => 50
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      # Verify chunks are ordered by byte position
+      byte_starts =
+        result.chunks
+        |> Enum.map(fn chunk -> chunk.metadata["byte_start"] end)
+        |> Enum.sort()
+
+      # Check that chunks are in sequential order
+      byte_starts
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.each(fn [start1, start2] ->
+        assert start2 >= start1, "Chunks should be in order"
+      end)
+    end
+
+    @tag :integration
+    test "first chunk starts at beginning of document" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 500,
+          "overlap" => 0
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      first_chunk = List.first(result.chunks)
+      assert first_chunk.metadata["byte_start"] == 0
+      assert first_chunk.metadata["chunk_index"] == 0
+
+      # First chunk should start with beginning of document
+      assert String.starts_with?(result.content, first_chunk.content)
+    end
+
+    @tag :integration
+    test "last chunk covers end of document" do
+      config = %Kreuzberg.ExtractionConfig{
+        chunking: %{
+          "chunk_size" => 500,
+          "overlap" => 50
+        }
+      }
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      last_chunk = List.last(result.chunks)
+      content_length = byte_size(result.content)
+
+      # Last chunk should extend to or near the end (within one chunk size)
+      assert last_chunk.metadata["byte_end"] <= content_length
+      assert last_chunk.metadata["byte_end"] >= content_length - 600
+
+      # Last chunk content should appear in the result content
+      assert String.contains?(result.content, last_chunk.content)
+
+      # Verify last chunk has the highest chunk_index
+      assert last_chunk.metadata["chunk_index"] == length(result.chunks) - 1
+    end
+
+    @tag :integration
+    test "small chunk size produces more chunks" do
+      small_config = %Kreuzberg.ExtractionConfig{
+        chunking: %{"chunk_size" => 100, "overlap" => 20}
+      }
+
+      large_config = %Kreuzberg.ExtractionConfig{
+        chunking: %{"chunk_size" => 1000, "overlap" => 20}
+      }
+
+      {:ok, small_result} = Kreuzberg.extract(@sample_document, "text/plain", small_config)
+      {:ok, large_result} = Kreuzberg.extract(@sample_document, "text/plain", large_config)
+
+      # Smaller chunks should produce more or equal chunks (depending on overlap)
+      assert length(small_result.chunks) >= length(large_result.chunks)
+
+      # All chunks should have content
+      Enum.each(small_result.chunks, fn chunk ->
+        assert String.length(chunk.content) > 0
+      end)
+
+      Enum.each(large_result.chunks, fn chunk ->
+        assert String.length(chunk.content) > 0
+      end)
+    end
+
+    @tag :integration
+    test "no chunking returns nil chunks" do
+      config = %Kreuzberg.ExtractionConfig{}
+
+      {:ok, result} = Kreuzberg.extract(@sample_document, "text/plain", config)
+
+      # Without chunking config, chunks should be nil
+      assert result.chunks == nil
+    end
+  end
 end

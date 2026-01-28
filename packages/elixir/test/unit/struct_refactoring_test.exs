@@ -99,7 +99,7 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
     test "creates chunk struct with new/2" do
       chunk = Kreuzberg.Chunk.new("chunk text", embedding: [0.1, 0.2], metadata: %{"page" => 1})
 
-      assert chunk.text == "chunk text"
+      assert chunk.content == "chunk text"
       assert chunk.embedding == [0.1, 0.2]
       assert chunk.metadata == %{"page" => 1}
       assert is_struct(chunk, Kreuzberg.Chunk)
@@ -107,27 +107,27 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
 
     test "creates chunk from map" do
       map = %{
-        "text" => "content",
+        "content" => "content",
         "embedding" => [0.3, 0.4, 0.5],
         "token_count" => 15
       }
 
       chunk = Kreuzberg.Chunk.from_map(map)
 
-      assert chunk.text == "content"
+      assert chunk.content == "content"
       assert chunk.embedding == [0.3, 0.4, 0.5]
       assert chunk.token_count == 15
     end
 
     test "converts chunk to map" do
       chunk = %Kreuzberg.Chunk{
-        text: "text",
+        content: "text",
         embedding: [0.1, 0.2]
       }
 
       map = Kreuzberg.Chunk.to_map(chunk)
 
-      assert map["text"] == "text"
+      assert map["content"] == "text"
       assert map["embedding"] == [0.1, 0.2]
     end
   end
@@ -289,7 +289,7 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
     end
 
     test "normalizes chunks to structs" do
-      chunk_map = %{"text" => "chunk", "embedding" => [0.1, 0.2]}
+      chunk_map = %{"content" => "chunk", "embedding" => [0.1, 0.2]}
 
       result =
         Kreuzberg.ExtractionResult.new(
@@ -303,7 +303,7 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
       assert result.chunks != nil
       chunk = Enum.at(result.chunks, 0)
       assert is_struct(chunk, Kreuzberg.Chunk)
-      assert chunk.text == "chunk"
+      assert chunk.content == "chunk"
     end
 
     test "normalizes images to structs" do
@@ -407,7 +407,7 @@ defmodule KreuzbergTest.Unit.StructRefactoringTest do
         metadata: %Kreuzberg.Metadata{},
         tables: [],
         detected_languages: ["en"],
-        chunks: [%Kreuzberg.Chunk{text: "chunk"}],
+        chunks: [%Kreuzberg.Chunk{content: "chunk"}],
         images: [%Kreuzberg.Image{format: "png"}],
         pages: [%Kreuzberg.Page{number: 1, content: "page"}]
       }

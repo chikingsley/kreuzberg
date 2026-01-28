@@ -37,7 +37,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
           embedding: embedding
         )
 
-      assert chunk.text == "Sample text for embedding"
+      assert chunk.content == "Sample text for embedding"
       assert chunk.embedding == embedding
     end
 
@@ -90,7 +90,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
     @tag :integration
     test "creates Chunk from map" do
       chunk_map = %{
-        "text" => "Chunk from map",
+        "content" => "Chunk from map",
         "embedding" => [0.1, 0.2, 0.3],
         "metadata" => %{"source" => "pdf"},
         "token_count" => 3,
@@ -100,7 +100,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
       chunk = Kreuzberg.Chunk.from_map(chunk_map)
 
       assert %Kreuzberg.Chunk{} = chunk
-      assert chunk.text == "Chunk from map"
+      assert chunk.content == "Chunk from map"
       assert chunk.embedding == [0.1, 0.2, 0.3]
       assert chunk.token_count == 3
       assert chunk.confidence == 0.9
@@ -122,7 +122,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
       chunk_map = Kreuzberg.Chunk.to_map(chunk)
 
       assert is_map(chunk_map)
-      assert chunk_map["text"] == "Sample chunk"
+      assert chunk_map["content"] == "Sample chunk"
       assert chunk_map["embedding"] == [0.1, 0.2]
       assert chunk_map["token_count"] == 2
     end
@@ -142,7 +142,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
       chunk_map = Kreuzberg.Chunk.to_map(original)
       restored = Kreuzberg.Chunk.from_map(chunk_map)
 
-      assert restored.text == original.text
+      assert restored.content == original.content
       assert restored.embedding == original.embedding
       assert restored.token_count == original.token_count
       assert restored.confidence == original.confidence
@@ -162,7 +162,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
 
       assert is_binary(json)
       {:ok, decoded} = Jason.decode(json)
-      assert decoded["text"] == "JSON serializable chunk"
+      assert decoded["content"] == "JSON serializable chunk"
       assert decoded["embedding"] == [0.1, 0.2, 0.3]
     end
 
@@ -352,7 +352,7 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
           confidence: 0.95
         )
 
-      assert chunk.text == "Complete chunk"
+      assert chunk.content == "Complete chunk"
       assert chunk.embedding != nil
       assert chunk.metadata != nil
       assert chunk.token_count == 3
@@ -525,10 +525,151 @@ defmodule KreuzbergTest.Integration.EmbeddingGenerationTest do
 
       # All chunks should have same structure
       Enum.each(chunks, fn chunk ->
-        assert is_binary(chunk.text)
+        assert is_binary(chunk.content)
         assert is_list(chunk.embedding)
         assert is_integer(chunk.token_count)
       end)
+    end
+  end
+
+  describe "Chunk Rust FFI compatibility" do
+    @tag :integration
+    test "correctly maps 'content' field from Rust to 'content' field in Elixir" do
+      # This simulates the actual data structure returned from Rust FFI
+      rust_chunk_data = %{
+        "content" => "This is the actual chunk text from Rust",
+        "embedding" => nil,
+        "metadata" => %{
+          "byte_start" => 0,
+          "byte_end" => 39,
+          "chunk_index" => 0,
+          "total_chunks" => 1
+        }
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(rust_chunk_data)
+
+      # Now correctly maps "content" from Rust to "content" in Elixir
+      assert chunk.content == "This is the actual chunk text from Rust"
+      refute chunk.content == ""
+    end
+
+    @tag :integration
+    test "handles Rust chunks with embeddings" do
+      rust_chunk_data = %{
+        "content" => "Chunk with embedding",
+        "embedding" => [0.1, 0.2, 0.3, 0.4],
+        "metadata" => %{
+          "byte_start" => 0,
+          "byte_end" => 20,
+          "chunk_index" => 0,
+          "total_chunks" => 1
+        }
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(rust_chunk_data)
+
+      assert chunk.content == "Chunk with embedding"
+      assert chunk.embedding == [0.1, 0.2, 0.3, 0.4]
+    end
+
+    @tag :integration
+    test "handles complete Rust chunk metadata" do
+      rust_chunk_data = %{
+        "content" => "Complete chunk",
+        "embedding" => [0.5, 0.6],
+        "metadata" => %{
+          "byte_start" => 100,
+          "byte_end" => 114,
+          "chunk_index" => 5,
+          "total_chunks" => 10,
+          "token_count" => 3,
+          "first_page" => 2,
+          "last_page" => 2
+        }
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(rust_chunk_data)
+
+      assert chunk.content == "Complete chunk"
+      assert chunk.metadata["byte_start"] == 100
+      assert chunk.metadata["byte_end"] == 114
+      assert chunk.metadata["chunk_index"] == 5
+      assert chunk.metadata["total_chunks"] == 10
+    end
+
+    @tag :integration
+    test "maintains backward compatibility with 'text' field" do
+      # Manually created chunks in tests might still use "text"
+      elixir_chunk_data = %{
+        "text" => "Manually created chunk",
+        "embedding" => nil,
+        "metadata" => %{}
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(elixir_chunk_data)
+
+      assert chunk.content == "Manually created chunk"
+    end
+
+    @tag :integration
+    test "prefers 'content' over 'text' when both present" do
+      # If both fields exist (edge case), prefer Rust's "content"
+      mixed_data = %{
+        "content" => "From Rust backend",
+        "text" => "Old field value",
+        "embedding" => nil,
+        "metadata" => %{}
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(mixed_data)
+
+      assert chunk.content == "From Rust backend"
+    end
+
+    @tag :integration
+    test "handles empty content from Rust" do
+      rust_chunk_data = %{
+        "content" => "",
+        "embedding" => nil,
+        "metadata" => %{
+          "byte_start" => 0,
+          "byte_end" => 0,
+          "chunk_index" => 0,
+          "total_chunks" => 1
+        }
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(rust_chunk_data)
+
+      assert chunk.content == ""
+    end
+
+    @tag :integration
+    test "defaults to empty string when neither field present" do
+      incomplete_data = %{
+        "embedding" => nil,
+        "metadata" => %{}
+      }
+
+      chunk = Kreuzberg.Chunk.from_map(incomplete_data)
+
+      assert chunk.content == ""
+    end
+
+    @tag :integration
+    test "Chunk.to_map/1 uses 'content' field for cross-package consistency" do
+      chunk = Kreuzberg.Chunk.new(
+        "Sample text",
+        embedding: [0.1, 0.2],
+        metadata: %{"page" => 1}
+      )
+
+      chunk_map = Kreuzberg.Chunk.to_map(chunk)
+
+      # to_map should use "content" for consistency with all other packages
+      assert chunk_map["content"] == "Sample text"
+      refute Map.has_key?(chunk_map, "text")
     end
   end
 end
