@@ -2,6 +2,8 @@ import dev.kreuzberg.ExtractionResult;
 import dev.kreuzberg.Kreuzberg;
 import dev.kreuzberg.KreuzbergException;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,46 +15,63 @@ public final class KreuzbergExtractJava {
     private KreuzbergExtractJava() { }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.err.println("Usage: KreuzbergExtractJava <mode> <file_path> [additional_files...]");
-            System.err.println("Modes: sync, warmup, batch");
+        boolean ocrEnabled = false;
+        List<String> positionalArgs = new ArrayList<>();
+
+        // Parse OCR flags
+        for (String arg : args) {
+            if ("--ocr".equals(arg)) {
+                ocrEnabled = true;
+            } else if ("--no-ocr".equals(arg)) {
+                ocrEnabled = false;
+            } else {
+                positionalArgs.add(arg);
+            }
+        }
+
+        if (positionalArgs.isEmpty()) {
+            System.err.println("Usage: KreuzbergExtractJava [--ocr|--no-ocr] <mode> <file_path> [additional_files...]");
+            System.err.println("Modes: sync, warmup, batch, server");
             System.exit(1);
         }
 
-        String mode = args[0];
-        if (!"sync".equals(mode) && !"warmup".equals(mode) && !"batch".equals(mode)) {
+        String mode = positionalArgs.get(0);
+        if (!"sync".equals(mode) && !"warmup".equals(mode) && !"batch".equals(mode) && !"server".equals(mode)) {
             System.err.printf("Unsupported mode '%s'%n", mode);
             System.exit(1);
         }
 
+        // Enable debug logging if KREUZBERG_BENCHMARK_DEBUG is set
+        boolean debug = "true".equalsIgnoreCase(System.getenv("KREUZBERG_BENCHMARK_DEBUG"));
+
         if ("warmup".equals(mode)) {
-            handleWarmupMode(args);
+            handleWarmupMode(positionalArgs, ocrEnabled, debug);
+            return;
+        } else if ("server".equals(mode)) {
+            handleServerMode(ocrEnabled, debug);
             return;
         } else if ("batch".equals(mode)) {
-            handleBatchMode(args);
+            handleBatchMode(positionalArgs, ocrEnabled, debug);
             return;
         }
 
-        // Enable debug logging if KREUZBERG_BENCHMARK_DEBUG is set
-        boolean debug = "true".equalsIgnoreCase(System.getenv("KREUZBERG_BENCHMARK_DEBUG"));
-        handleSyncMode(args, debug);
+        handleSyncMode(positionalArgs, ocrEnabled, debug);
     }
 
-    private static void handleWarmupMode(String[] args) {
-        if (args.length < 2) {
+    private static void handleWarmupMode(List<String> positionalArgs, boolean ocrEnabled, boolean debug) {
+        if (positionalArgs.size() < 2) {
             System.err.println("Usage: KreuzbergExtractJava warmup <file_path>");
             System.exit(1);
         }
 
-        boolean debug = "true".equalsIgnoreCase(System.getenv("KREUZBERG_BENCHMARK_DEBUG"));
         if (debug) {
             debugLog("Warmup phase starting", "");
         }
 
-        Path path = Path.of(args[1]);
+        Path path = Path.of(positionalArgs.get(1));
         try {
             for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-                Kreuzberg.extractFile(path);
+                Kreuzberg.extractFile(path, null);
                 if (debug && i % 2 == 0) {
                     debugLog("Warmup iteration", String.valueOf(i + 1));
                 }
@@ -70,27 +89,54 @@ public final class KreuzbergExtractJava {
         }
     }
 
-    private static void handleBatchMode(String[] args) {
-        if (args.length < 2) {
+    private static void handleServerMode(boolean ocrEnabled, boolean debug) throws Exception {
+        if (debug) {
+            debugLog("Server mode starting", "");
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String filePath = line.trim();
+            if (filePath.isEmpty()) {
+                continue;
+            }
+            try {
+                Path path = Path.of(filePath);
+                long start = System.nanoTime();
+                ExtractionResult result = Kreuzberg.extractFile(path, null);
+                double elapsedMs = (System.nanoTime() - start) / NANOS_IN_MILLISECOND;
+                String json = toJson(result, elapsedMs);
+                System.out.println(json);
+                System.out.flush();
+            } catch (Exception e) {
+                String errorJson = String.format("{\"error\":%s,\"_extraction_time_ms\":0}", quote(e.getMessage()));
+                System.out.println(errorJson);
+                System.out.flush();
+            }
+        }
+    }
+
+    private static void handleBatchMode(List<String> positionalArgs, boolean ocrEnabled, boolean debug) {
+        if (positionalArgs.size() < 2) {
             System.err.println("Usage: KreuzbergExtractJava batch <file_path> [additional_files...]");
             System.exit(1);
         }
 
-        boolean debug = "true".equalsIgnoreCase(System.getenv("KREUZBERG_BENCHMARK_DEBUG"));
         if (debug) {
-            debugLog("Batch mode starting", String.valueOf(args.length - 1) + " files");
+            debugLog("Batch mode starting", String.valueOf(positionalArgs.size() - 1) + " files");
         }
 
         List<Path> paths = new ArrayList<>();
-        for (int i = 1; i < args.length; i++) {
-            paths.add(Path.of(args[i]));
+        for (int i = 1; i < positionalArgs.size(); i++) {
+            paths.add(Path.of(positionalArgs.get(i)));
         }
 
         long start = System.nanoTime();
         try {
             List<ExtractionResult> results = new ArrayList<>();
             for (Path path : paths) {
-                results.add(Kreuzberg.extractFile(path));
+                results.add(Kreuzberg.extractFile(path, null));
             }
             double totalMs = (System.nanoTime() - start) / NANOS_IN_MILLISECOND;
 
@@ -98,14 +144,16 @@ public final class KreuzbergExtractJava {
                 debugLog("Batch extraction completed", String.valueOf(results.size()) + " results");
             }
 
+            double perFileMs = totalMs / Math.max(results.size(), 1);
+
             if (results.size() == 1) {
-                String json = toJson(results.get(0), totalMs / results.size());
+                String json = toJsonWithBatch(results.get(0), perFileMs, totalMs);
                 System.out.print(json);
             } else {
                 System.out.print("[");
                 for (int i = 0; i < results.size(); i++) {
                     if (i > 0) System.out.print(",");
-                    System.out.print(toJson(results.get(i), totalMs / results.size()));
+                    System.out.print(toJsonWithBatch(results.get(i), perFileMs, totalMs));
                 }
                 System.out.print("]");
             }
@@ -118,8 +166,8 @@ public final class KreuzbergExtractJava {
         }
     }
 
-    private static void handleSyncMode(String[] args, boolean debug) {
-        if (args.length < 2) {
+    private static void handleSyncMode(List<String> positionalArgs, boolean ocrEnabled, boolean debug) {
+        if (positionalArgs.size() < 2) {
             System.err.println("Usage: KreuzbergExtractJava sync <file_path>");
             System.exit(1);
         }
@@ -132,17 +180,18 @@ public final class KreuzbergExtractJava {
             debugLog("java.library.path", System.getProperty("java.library.path"));
             debugLog("LD_LIBRARY_PATH", System.getenv("LD_LIBRARY_PATH"));
             debugLog("DYLD_LIBRARY_PATH", System.getenv("DYLD_LIBRARY_PATH"));
-            debugLog("Input file", args[1]);
+            debugLog("Input file", positionalArgs.get(1));
+            debugLog("OCR enabled", String.valueOf(ocrEnabled));
         }
 
-        Path path = Path.of(args[1]);
+        Path path = Path.of(positionalArgs.get(1));
         ExtractionResult result;
         long start = System.nanoTime();
         try {
             if (debug) {
                 debugLog("Starting extraction", "");
             }
-            result = Kreuzberg.extractFile(path);
+            result = Kreuzberg.extractFile(path, null);
             if (debug) {
                 debugLog("Extraction completed", "");
             }

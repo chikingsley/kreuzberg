@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -32,24 +33,41 @@ func main() {
 	debug("LD_LIBRARY_PATH: %s", os.Getenv("LD_LIBRARY_PATH"))
 	debug("DYLD_LIBRARY_PATH: %s", os.Getenv("DYLD_LIBRARY_PATH"))
 
-	if len(os.Args) < 3 {
-		fmt.Fprintln(os.Stderr, "Usage: kreuzberg_extract_go.go <mode> <file_path> [additional_files...]")
-		fmt.Fprintln(os.Stderr, "Modes: sync, batch")
+	ocrEnabled := false
+	var args []string
+
+	// Parse OCR flags
+	for _, arg := range os.Args[1:] {
+		if arg == "--ocr" {
+			ocrEnabled = true
+		} else if arg == "--no-ocr" {
+			ocrEnabled = false
+		} else {
+			args = append(args, arg)
+		}
+	}
+
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "Usage: kreuzberg_extract_go [--ocr|--no-ocr] <mode> <file_path> [additional_files...]")
+		fmt.Fprintln(os.Stderr, "Modes: sync, batch, server")
 		os.Exit(1)
 	}
 
-	mode := os.Args[1]
-	files := os.Args[2:]
+	mode := args[0]
+	files := args[1:]
 
-	debug("Mode: %s, Files: %v", mode, files)
+	debug("Mode: %s, OCR enabled: %v, Files: %v", mode, ocrEnabled, files)
 
 	switch mode {
+	case "server":
+		debug("Starting server mode")
+		runServer(ocrEnabled)
 	case "sync":
 		if len(files) != 1 {
 			fatal(fmt.Errorf("sync mode requires exactly one file"))
 		}
 		debug("Starting sync extraction for: %s", files[0])
-		result, err := extractSync(files[0])
+		result, err := extractSync(files[0], ocrEnabled)
 		if err != nil {
 			fatal(err)
 		}
@@ -60,7 +78,7 @@ func main() {
 			fatal(fmt.Errorf("batch mode requires at least one file"))
 		}
 		debug("Starting batch extraction for %d files", len(files))
-		results, err := extractBatch(files)
+		results, err := extractBatch(files, ocrEnabled)
 		if err != nil {
 			fatal(err)
 		}
@@ -79,7 +97,68 @@ func getWorkingDir() string {
 	return pwd
 }
 
-func extractSync(path string) (*payload, error) {
+func createConfig(ocrEnabled bool) *kz.ExtractionConfig {
+	config := &kz.ExtractionConfig{
+		UseCache: false,
+	}
+	if ocrEnabled {
+		config.OCR = &kz.OcrConfig{
+			Enabled: true,
+		}
+	}
+	return config
+}
+
+func runServer(ocrEnabled bool) {
+	debug("Server mode: reading paths from stdin")
+	config := createConfig(ocrEnabled)
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for scanner.Scan() {
+		filePath := scanner.Text()
+		if filePath = filepath.Clean(filePath); filePath == "" {
+			continue
+		}
+
+		absPath, err := filepath.Abs(filePath)
+		if err != nil {
+			debug("Failed to resolve path %s: %v", filePath, err)
+			mustEncodeError(err)
+			continue
+		}
+
+		start := time.Now()
+		result, err := kz.ExtractFileSync(absPath, config)
+		if err != nil {
+			debug("Extraction failed for %s: %v", absPath, err)
+			mustEncodeError(err)
+			continue
+		}
+
+		elapsed := time.Since(start).Seconds() * 1000.0
+		meta, err := metadataMap(result.Metadata)
+		if err != nil {
+			debug("metadataMap failed: %v", err)
+			mustEncodeError(err)
+			continue
+		}
+
+		p := &payload{
+			Content:          result.Content,
+			Metadata:         meta,
+			ExtractionTimeMs: elapsed,
+		}
+		mustEncodeNoNewline(p)
+		fmt.Println()
+		os.Stdout.Sync()
+	}
+
+	if err := scanner.Err(); err != nil {
+		debug("Scanner error: %v", err)
+	}
+}
+
+func extractSync(path string, ocrEnabled bool) (*payload, error) {
 	start := time.Now()
 	debug("ExtractFileSync called with path: %s", path)
 
@@ -90,7 +169,8 @@ func extractSync(path string) (*payload, error) {
 	}
 	debug("Resolved absolute path: %s", absPath)
 
-	result, err := kz.ExtractFileSync(absPath, nil)
+	config := createConfig(ocrEnabled)
+	result, err := kz.ExtractFileSync(absPath, config)
 	if err != nil {
 		debug("ExtractFileSync failed: %v", err)
 		return nil, err
@@ -109,7 +189,7 @@ func extractSync(path string) (*payload, error) {
 	}, nil
 }
 
-func extractBatch(paths []string) (any, error) {
+func extractBatch(paths []string, ocrEnabled bool) (any, error) {
 	start := time.Now()
 	debug("BatchExtractFilesSync called with %d files", len(paths))
 
@@ -124,7 +204,8 @@ func extractBatch(paths []string) (any, error) {
 		debug("Resolved path %d: %s -> %s", i, path, absPath)
 	}
 
-	results, err := kz.BatchExtractFilesSync(absPaths, nil)
+	config := createConfig(ocrEnabled)
+	results, err := kz.BatchExtractFilesSync(absPaths, config)
 	if err != nil {
 		debug("BatchExtractFilesSync failed: %v", err)
 		return nil, err
@@ -178,13 +259,45 @@ func metadataMap(meta kz.Metadata) (map[string]any, error) {
 
 func mustEncode(value any) {
 	debug("Encoding result to JSON")
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(value); err != nil {
+	data, err := json.Marshal(value)
+	if err != nil {
 		debug("JSON encoding failed: %v", err)
 		fatal(err)
 	}
+	_, err = os.Stdout.Write(data)
+	if err != nil {
+		debug("JSON write failed: %v", err)
+		fatal(err)
+	}
 	debug("JSON output complete")
+}
+
+func mustEncodeNoNewline(value any) {
+	debug("Encoding result to JSON (no newline)")
+	data, err := json.Marshal(value)
+	if err != nil {
+		debug("JSON encoding failed: %v", err)
+		fatal(err)
+	}
+	_, err = os.Stdout.Write(data)
+	if err != nil {
+		debug("JSON write failed: %v", err)
+		fatal(err)
+	}
+}
+
+func mustEncodeError(err error) {
+	errorMap := map[string]interface{}{
+		"error":                 err.Error(),
+		"_extraction_time_ms": 0,
+	}
+	data, marshalErr := json.Marshal(errorMap)
+	if marshalErr != nil {
+		debug("JSON encoding failed: %v", marshalErr)
+		fmt.Fprintf(os.Stdout, "{\"error\":\"encoding failed\",\"_extraction_time_ms\":0}\n")
+		return
+	}
+	fmt.Println(string(data))
 }
 
 func fatal(err error) {

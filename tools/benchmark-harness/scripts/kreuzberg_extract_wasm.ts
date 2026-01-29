@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
-import { extractFile, initWasm } from "@kreuzberg/wasm";
+import * as readline from "readline";
+import { extractFile, initWasm, ExtractionConfig } from "@kreuzberg/wasm";
 
 interface ExtractionOutput {
 	content: string;
@@ -8,9 +9,17 @@ interface ExtractionOutput {
 	_batch_total_ms?: number;
 }
 
-async function extractAsync(filePath: string): Promise<ExtractionOutput> {
+function createConfig(ocrEnabled: boolean): ExtractionConfig {
+	return {
+		useCache: false,
+		...(ocrEnabled && { ocr: { enabled: true } }),
+	};
+}
+
+async function extractAsync(filePath: string, ocrEnabled: boolean): Promise<ExtractionOutput> {
+	const config = createConfig(ocrEnabled);
 	const start = performance.now();
-	const result = await extractFile(filePath);
+	const result = await extractFile(filePath, config);
 	const durationMs = performance.now() - start;
 
 	return {
@@ -20,9 +29,10 @@ async function extractAsync(filePath: string): Promise<ExtractionOutput> {
 	};
 }
 
-async function extractBatch(filePaths: string[]): Promise<ExtractionOutput[]> {
+async function extractBatch(filePaths: string[], ocrEnabled: boolean): Promise<ExtractionOutput[]> {
+	const config = createConfig(ocrEnabled);
 	const start = performance.now();
-	const results = await Promise.all(filePaths.map((path) => extractFile(path)));
+	const results = await Promise.all(filePaths.map((path) => extractFile(path, config)));
 	const totalDurationMs = performance.now() - start;
 
 	const perFileDurationMs = filePaths.length > 0 ? totalDurationMs / filePaths.length : 0;
@@ -35,41 +45,74 @@ async function extractBatch(filePaths: string[]): Promise<ExtractionOutput[]> {
 	}));
 }
 
+async function runServer(ocrEnabled: boolean): Promise<void> {
+	const rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout,
+		terminal: false,
+	});
+
+	for await (const line of rl) {
+		const filePath = line.trim();
+		if (!filePath) {
+			continue;
+		}
+		try {
+			const payload = await extractAsync(filePath, ocrEnabled);
+			console.log(JSON.stringify(payload));
+		} catch (err) {
+			const error = err as Error;
+			console.log(JSON.stringify({ error: error.message, _extraction_time_ms: 0 }));
+		}
+	}
+}
+
 async function main(): Promise<void> {
-	const args = process.argv.slice(2);
-	if (args.length < 2) {
-		console.error("Usage: kreuzberg_extract_wasm.ts <mode> <file_path> [additional_files...]");
-		console.error("Modes: async, batch");
+	let ocrEnabled = false;
+	const args: string[] = [];
+
+	for (const arg of process.argv.slice(2)) {
+		if (arg === "--ocr") {
+			ocrEnabled = true;
+		} else if (arg === "--no-ocr") {
+			ocrEnabled = false;
+		} else {
+			args.push(arg);
+		}
+	}
+
+	if (args.length < 1) {
+		console.error("Usage: kreuzberg_extract_wasm.ts [--ocr|--no-ocr] <mode> <file_path> [additional_files...]");
+		console.error("Modes: async, batch, server");
 		process.exit(1);
 	}
+
+	// Initialize WASM BEFORE timing measurement
+	await initWasm();
 
 	const mode = args[0];
 	const filePaths = args.slice(1);
 
-	await initWasm();
-
-	if (mode === "async") {
+	if (mode === "server") {
+		await runServer(ocrEnabled);
+	} else if (mode === "async") {
 		if (filePaths.length !== 1) {
 			console.error("Error: async mode requires exactly one file");
 			process.exit(1);
 		}
-		const payload = await extractAsync(filePaths[0]);
+		const payload = await extractAsync(filePaths[0], ocrEnabled);
 		console.log(JSON.stringify(payload));
-		return;
-	}
-
-	if (mode === "batch") {
+	} else if (mode === "batch") {
 		if (filePaths.length < 1) {
 			console.error("Error: batch mode requires at least one file");
 			process.exit(1);
 		}
-		const results = await extractBatch(filePaths);
+		const results = await extractBatch(filePaths, ocrEnabled);
 		console.log(JSON.stringify(filePaths.length === 1 ? results[0] : results));
-		return;
+	} else {
+		console.error(`Error: Unknown mode '${mode}'. Use async, batch, or server`);
+		process.exit(1);
 	}
-
-	console.error(`Error: Unknown mode '${mode}'. Use async or batch`);
-	process.exit(1);
 }
 
 main().catch((err) => {

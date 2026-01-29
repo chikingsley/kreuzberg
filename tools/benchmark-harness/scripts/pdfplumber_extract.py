@@ -1,8 +1,9 @@
 """pdfplumber extraction wrapper for benchmark harness.
 
-Supports two modes:
+Supports three modes:
 - sync: extract text page-by-page (sequential)
 - batch: process multiple files (simulated batch using loop)
+- server: persistent mode reading paths from stdin
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ def extract_sync(file_path: str) -> dict[str, Any]:
     with pdfplumber.open(file_path) as pdf:
         text_parts = []
         for page in pdf.pages:
-            page_text = page.extract_text()
+            page_text = page.extract_text(layout=False)
             if page_text:
                 text_parts.append(page_text)
 
@@ -47,7 +48,7 @@ def extract_batch(file_paths: list[str]) -> list[dict[str, Any]]:
             with pdfplumber.open(file_path) as pdf:
                 text_parts = []
                 for page in pdf.pages:
-                    page_text = page.extract_text()
+                    page_text = page.extract_text(layout=False)
                     if page_text:
                         text_parts.append(page_text)
 
@@ -75,17 +76,40 @@ def extract_batch(file_paths: list[str]) -> list[dict[str, Any]]:
     return results
 
 
+def run_server() -> None:
+    """Persistent server mode: read paths from stdin, write JSON to stdout."""
+    for line in sys.stdin:
+        file_path = line.strip()
+        if not file_path:
+            continue
+        try:
+            payload = extract_sync(file_path)
+            print(json.dumps(payload), flush=True)
+        except Exception as e:
+            print(json.dumps({"error": str(e), "_extraction_time_ms": 0}), flush=True)
+
+
 def main() -> None:
-    if len(sys.argv) < 3:
-        print("Usage: pdfplumber_extract.py <mode> <file_path> [additional_files...]", file=sys.stderr)
-        print("Modes: sync, batch", file=sys.stderr)
+    args = []
+    for arg in sys.argv[1:]:
+        if arg in ("--ocr", "--no-ocr"):
+            pass  # Accepted but ignored - pdfplumber doesn't have OCR config
+        else:
+            args.append(arg)
+
+    if len(args) < 1:
+        print("Usage: pdfplumber_extract.py [--ocr|--no-ocr] <mode> <file_path> [additional_files...]", file=sys.stderr)
+        print("Modes: sync, batch, server", file=sys.stderr)
         sys.exit(1)
 
-    mode = sys.argv[1]
-    file_paths = sys.argv[2:]
+    mode = args[0]
+    file_paths = args[1:]
 
     try:
-        if mode == "sync":
+        if mode == "server":
+            run_server()
+
+        elif mode == "sync":
             if len(file_paths) != 1:
                 print("Error: sync mode requires exactly one file", file=sys.stderr)
                 sys.exit(1)
@@ -105,7 +129,7 @@ def main() -> None:
                 print(json.dumps(results), end="")
 
         else:
-            print(f"Error: Unknown mode '{mode}'. Use sync or batch", file=sys.stderr)
+            print(f"Error: Unknown mode '{mode}'. Use sync, batch, or server", file=sys.stderr)
             sys.exit(1)
 
     except Exception as e:

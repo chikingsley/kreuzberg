@@ -1,10 +1,14 @@
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.metadata.Metadata;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +20,27 @@ public final class TikaExtract {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.err.println("Usage: TikaExtract <mode> <file1> [file2] ...");
-            System.err.println("Modes: sync, batch");
+        boolean ocrEnabled = false;
+        List<String> positionalArgs = new ArrayList<>();
+
+        for (String arg : args) {
+            if ("--ocr".equals(arg)) {
+                ocrEnabled = true;
+            } else if ("--no-ocr".equals(arg)) {
+                ocrEnabled = false;
+            } else {
+                positionalArgs.add(arg);
+            }
+        }
+
+        if (positionalArgs.isEmpty()) {
+            System.err.println("Usage: TikaExtract [--ocr|--no-ocr] <mode> <file1> [file2] ...");
+            System.err.println("Modes: sync, batch, server");
             System.exit(1);
         }
 
-        String mode = args[0];
-        if (!"sync".equals(mode) && !"batch".equals(mode)) {
+        String mode = positionalArgs.get(0);
+        if (!"sync".equals(mode) && !"batch".equals(mode) && !"server".equals(mode)) {
             System.err.printf("Unsupported mode '%s'%n", mode);
             System.exit(1);
         }
@@ -36,18 +53,21 @@ public final class TikaExtract {
             debugLog("os.name", System.getProperty("os.name"));
             debugLog("os.arch", System.getProperty("os.arch"));
             debugLog("Mode", mode);
-            debugLog("Files to process", String.valueOf(args.length - 1));
+            debugLog("OCR enabled", String.valueOf(ocrEnabled));
+            debugLog("Files to process", String.valueOf(positionalArgs.size() - 1));
         }
 
         try {
             if ("sync".equals(mode)) {
-                if (args.length < 2) {
+                if (positionalArgs.size() < 2) {
                     System.err.println("Sync mode requires exactly one file");
                     System.exit(1);
                 }
-                processSyncMode(args[1], debug);
+                processSyncMode(positionalArgs.get(1), ocrEnabled, debug);
+            } else if ("batch".equals(mode)) {
+                processBatchMode(positionalArgs, ocrEnabled, debug);
             } else {
-                processBatchMode(args, debug);
+                processServerMode(ocrEnabled, debug);
             }
         } catch (Exception e) {
             if (debug) {
@@ -60,7 +80,7 @@ public final class TikaExtract {
         }
     }
 
-    private static void processSyncMode(String filePath, boolean debug) throws Exception {
+    private static void processSyncMode(String filePath, boolean ocrEnabled, boolean debug) throws Exception {
         if (debug) {
             debugLog("Input file", filePath);
         }
@@ -73,7 +93,7 @@ public final class TikaExtract {
             if (debug) {
                 debugLog("Starting extraction", "");
             }
-            data = extractFile(path.toFile(), debug);
+            data = extractFile(path.toFile(), ocrEnabled, debug);
             if (debug) {
                 debugLog("Extraction completed", "");
             }
@@ -90,12 +110,18 @@ public final class TikaExtract {
         System.out.print(json);
     }
 
-    private static void processBatchMode(String[] args, boolean debug) throws Exception {
-        List<String> jsonResults = new ArrayList<>();
+    private static void processBatchMode(List<String> positionalArgs, boolean ocrEnabled, boolean debug) throws Exception {
+        List<String> filePaths = new ArrayList<>();
+        for (int i = 1; i < positionalArgs.size(); i++) {
+            filePaths.add(positionalArgs.get(i));
+        }
 
-        for (int i = 1; i < args.length; i++) {
-            String filePath = args[i];
+        long batchStart = System.nanoTime();
+        StringBuilder jsonArray = new StringBuilder();
+        jsonArray.append('[');
 
+        boolean first = true;
+        for (String filePath : filePaths) {
             if (debug) {
                 debugLog("Processing file", filePath);
             }
@@ -103,11 +129,16 @@ public final class TikaExtract {
             try {
                 Path path = Path.of(filePath);
                 long start = System.nanoTime();
-                ExtractionData data = extractFile(path.toFile(), debug);
+                ExtractionData data = extractFile(path.toFile(), ocrEnabled, debug);
                 double elapsedMs = (System.nanoTime() - start) / NANOS_IN_MILLISECOND;
 
-                String json = toJson(data, elapsedMs);
-                jsonResults.add(json);
+                if (!first) {
+                    jsonArray.append(',');
+                }
+                first = false;
+
+                double batchTotalMs = (System.nanoTime() - batchStart) / NANOS_IN_MILLISECOND;
+                jsonArray.append(toJsonWithBatch(data, elapsedMs, batchTotalMs));
 
                 if (debug) {
                     debugLog("File processed", filePath);
@@ -123,18 +154,43 @@ public final class TikaExtract {
             }
         }
 
-        if (jsonResults.isEmpty()) {
+        double totalBatchMs = (System.nanoTime() - batchStart) / NANOS_IN_MILLISECOND;
+        jsonArray.append(']');
+
+        if (first) {
             System.err.println("No files were successfully processed");
             System.exit(1);
             return;
         }
 
-        for (String json : jsonResults) {
-            System.out.println(json);
+        System.out.print(jsonArray.toString());
+    }
+
+    private static void processServerMode(boolean ocrEnabled, boolean debug) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String filePath = line.trim();
+            if (filePath.isEmpty()) {
+                continue;
+            }
+            try {
+                Path path = Path.of(filePath);
+                long start = System.nanoTime();
+                ExtractionData data = extractFile(path.toFile(), ocrEnabled, debug);
+                double elapsedMs = (System.nanoTime() - start) / NANOS_IN_MILLISECOND;
+                String json = toJson(data, elapsedMs);
+                System.out.println(json);
+                System.out.flush();
+            } catch (Exception e) {
+                String errorJson = String.format("{\"error\":%s,\"_extraction_time_ms\":0}", quote(e.getMessage()));
+                System.out.println(errorJson);
+                System.out.flush();
+            }
         }
     }
 
-    private static ExtractionData extractFile(File file, boolean debug) throws Exception {
+    private static ExtractionData extractFile(File file, boolean ocrEnabled, boolean debug) throws Exception {
         if (!file.exists()) {
             throw new IllegalArgumentException("File does not exist: " + file.getAbsolutePath());
         }
@@ -142,9 +198,16 @@ public final class TikaExtract {
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler(-1);
         Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+
+        if (!ocrEnabled) {
+            TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
+            ocrConfig.setSkipOcr(true);
+            context.set(TesseractOCRConfig.class, ocrConfig);
+        }
 
         try (InputStream stream = new FileInputStream(file)) {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, context);
         }
 
         String content = handler.toString();
@@ -164,6 +227,18 @@ public final class TikaExtract {
         builder.append("\"metadata\":{");
         builder.append("\"mimeType\":").append(quote(data.getMimeType()));
         builder.append("},\"_extraction_time_ms\":").append(String.format("%.3f", elapsedMs));
+        builder.append('}');
+        return builder.toString();
+    }
+
+    private static String toJsonWithBatch(ExtractionData data, double elapsedMs, double batchTotalMs) {
+        StringBuilder builder = new StringBuilder();
+        builder.append('{');
+        builder.append("\"content\":").append(quote(data.getContent())).append(',');
+        builder.append("\"metadata\":{");
+        builder.append("\"mimeType\":").append(quote(data.getMimeType()));
+        builder.append("},\"_extraction_time_ms\":").append(String.format("%.3f", elapsedMs));
+        builder.append(",\"_batch_total_ms\":").append(String.format("%.3f", batchTotalMs));
         builder.append('}');
         return builder.toString();
     }

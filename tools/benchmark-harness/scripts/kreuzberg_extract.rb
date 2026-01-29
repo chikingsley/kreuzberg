@@ -50,7 +50,7 @@ rescue LoadError => e
 end
 debug_log "=== Initialization Complete ===" if DEBUG
 
-def extract_sync(file_path)
+def extract_sync(file_path, config = {})
   debug_log "=== SYNC EXTRACTION START ==="
   debug_log "Input: file_path=#{file_path}"
   debug_log "File exists: #{File.exist?(file_path)}"
@@ -60,7 +60,7 @@ def extract_sync(file_path)
   start_wall = Time.now
   debug_log "Timing start (monotonic): #{start_monotonic.round(6)}, wall: #{start_wall.iso8601(6)}"
 
-  result = Kreuzberg.extract_file(file_path)
+  result = Kreuzberg.extract_file(file_path, config: config)
 
   end_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end_wall = Time.now
@@ -92,7 +92,7 @@ rescue StandardError => e
   raise
 end
 
-def extract_batch(file_paths)
+def extract_batch(file_paths, config = {})
   debug_log "=== BATCH EXTRACTION START ==="
   debug_log "Input: #{file_paths.length} files"
   file_paths.each_with_index do |path, idx|
@@ -103,7 +103,7 @@ def extract_batch(file_paths)
   start_wall = Time.now
   debug_log "Timing start (monotonic): #{start_monotonic.round(6)}, wall: #{start_wall.iso8601(6)}"
 
-  results = Kreuzberg.batch_extract_files_sync(paths: file_paths)
+  results = Kreuzberg.batch_extract_files_sync(paths: file_paths, config: config)
 
   end_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end_wall = Time.now
@@ -137,32 +137,95 @@ rescue StandardError => e
   raise
 end
 
+def extract_server(ocr_enabled)
+  debug_log "=== SERVER MODE START ==="
+
+  STDIN.each_line do |line|
+    file_path = line.strip
+    next if file_path.empty?
+
+    debug_log "Processing file: #{file_path}"
+    begin
+      config = {
+        use_cache: false
+      }
+      config[:ocr] = { enabled: true } if ocr_enabled
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      result = Kreuzberg.extract_file(file_path, config: config)
+      duration_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000.0
+
+      payload = {
+        content: result.content,
+        metadata: result.metadata || {},
+        _extraction_time_ms: duration_ms
+      }
+
+      puts JSON.generate(payload)
+      $stdout.flush
+    rescue StandardError => e
+      error_payload = {
+        error: e.message,
+        _extraction_time_ms: 0
+      }
+      puts JSON.generate(error_payload)
+      $stdout.flush
+    end
+  end
+
+  debug_log "=== SERVER MODE END ==="
+end
+
 def main
   debug_log "Ruby script started"
   debug_log "ARGV: #{ARGV.inspect}"
   debug_log "ARGV length: #{ARGV.length}"
 
-  if ARGV.length < 2
-    warn 'Usage: kreuzberg_extract.rb <mode> <file_path> [additional_files...]'
-    warn 'Modes: sync, batch'
+  ocr_enabled = false
+  args = []
+
+  ARGV.each do |arg|
+    if arg == '--ocr'
+      ocr_enabled = true
+    elsif arg == '--no-ocr'
+      ocr_enabled = false
+    else
+      args << arg
+    end
+  end
+
+  if args.length < 1
+    warn 'Usage: kreuzberg_extract.rb [--ocr|--no-ocr] <mode> <file_path> [additional_files...]'
+    warn 'Modes: sync, batch, server'
     warn 'Debug mode: set KREUZBERG_BENCHMARK_DEBUG=true to enable debug logging to stderr'
     exit 1
   end
 
-  mode = ARGV[0]
-  file_paths = ARGV[1..]
+  mode = args[0]
+  file_paths = args[1..]
 
   debug_log "Mode: #{mode}"
+  debug_log "OCR enabled: #{ocr_enabled}"
   debug_log "File paths (#{file_paths.length}): #{file_paths.inspect}"
 
   case mode
+  when 'server'
+    debug_log "Executing server mode"
+    extract_server(ocr_enabled)
+
   when 'sync'
     if file_paths.length != 1
       warn 'Error: sync mode requires exactly one file'
       exit 1
     end
     debug_log "Executing sync mode with file: #{file_paths[0]}"
-    payload = extract_sync(file_paths[0])
+
+    config = {
+      use_cache: false
+    }
+    config[:ocr] = { enabled: true } if ocr_enabled
+
+    payload = extract_sync(file_paths[0], config)
     output = JSON.generate(payload)
     debug_log "Output JSON: #{output}"
     puts output
@@ -174,7 +237,12 @@ def main
     end
     debug_log "Executing batch mode with #{file_paths.length} files"
 
-    results = extract_batch(file_paths)
+    config = {
+      use_cache: false
+    }
+    config[:ocr] = { enabled: true } if ocr_enabled
+
+    results = extract_batch(file_paths, config)
 
     if file_paths.length == 1
       output = JSON.generate(results[0])
@@ -187,7 +255,7 @@ def main
     end
 
   else
-    warn "Error: Unknown mode '#{mode}'. Use sync or batch"
+    warn "Error: Unknown mode '#{mode}'. Use sync, batch, or server"
     exit 1
   end
 

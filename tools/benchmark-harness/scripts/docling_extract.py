@@ -3,6 +3,7 @@
 Supports two modes:
 - sync: convert() - synchronous single-file extraction
 - batch: convert_all() - batch extraction for multiple files
+- server: persistent mode reading paths from stdin
 """
 
 from __future__ import annotations
@@ -15,10 +16,22 @@ from typing import Any
 from docling.document_converter import DocumentConverter
 
 
-def extract_sync(file_path: str) -> dict[str, Any]:
+def create_converter(ocr_enabled: bool) -> DocumentConverter:
+    """Create a DocumentConverter with appropriate settings."""
+    if not ocr_enabled:
+        try:
+            from docling.datamodel.pipeline_options import PipelineOptions
+            options = PipelineOptions(do_ocr=False)
+            return DocumentConverter(pipeline_options=options)
+        except (ImportError, TypeError):
+            # Fallback if PipelineOptions API not available
+            return DocumentConverter()
+    return DocumentConverter()
+
+
+def extract_sync(file_path: str, converter: DocumentConverter) -> dict[str, Any]:
     """Extract using synchronous single-file API."""
     start = time.perf_counter()
-    converter = DocumentConverter()
     result = converter.convert(file_path)
     markdown = result.document.export_to_markdown()
     duration_ms = (time.perf_counter() - start) * 1000.0
@@ -30,10 +43,9 @@ def extract_sync(file_path: str) -> dict[str, Any]:
     }
 
 
-def extract_batch(file_paths: list[str]) -> list[dict[str, Any]]:
+def extract_batch(file_paths: list[str], converter: DocumentConverter) -> list[dict[str, Any]]:
     """Extract multiple files using batch API."""
     start = time.perf_counter()
-    converter = DocumentConverter()
     results = converter.convert_all(file_paths, raises_on_error=False)
     total_duration_ms = (time.perf_counter() - start) * 1000.0
 
@@ -68,21 +80,50 @@ def extract_batch(file_paths: list[str]) -> list[dict[str, Any]]:
     return outputs
 
 
+def run_server(converter: DocumentConverter) -> None:
+    """Persistent server mode: read paths from stdin, write JSON to stdout."""
+    for line in sys.stdin:
+        file_path = line.strip()
+        if not file_path:
+            continue
+        try:
+            payload = extract_sync(file_path, converter)
+            print(json.dumps(payload), flush=True)
+        except Exception as e:
+            print(json.dumps({"error": str(e), "_extraction_time_ms": 0}), flush=True)
+
+
 def main() -> None:
-    if len(sys.argv) < 3:
-        print("Usage: docling_extract.py <mode> <file_path> [additional_files...]", file=sys.stderr)
-        print("Modes: sync, batch", file=sys.stderr)
+    ocr_enabled = False
+    args = []
+    for arg in sys.argv[1:]:
+        if arg == "--ocr":
+            ocr_enabled = True
+        elif arg == "--no-ocr":
+            ocr_enabled = False
+        else:
+            args.append(arg)
+
+    if len(args) < 1:
+        print("Usage: docling_extract.py [--ocr|--no-ocr] <mode> <file_path> [additional_files...]", file=sys.stderr)
+        print("Modes: sync, batch, server", file=sys.stderr)
         sys.exit(1)
 
-    mode = sys.argv[1]
-    file_paths = sys.argv[2:]
+    mode = args[0]
+    file_paths = args[1:]
+
+    # Create converter once (expensive initialization)
+    converter = create_converter(ocr_enabled)
 
     try:
-        if mode == "sync":
+        if mode == "server":
+            run_server(converter)
+
+        elif mode == "sync":
             if len(file_paths) != 1:
                 print("Error: sync mode requires exactly one file", file=sys.stderr)
                 sys.exit(1)
-            payload = extract_sync(file_paths[0])
+            payload = extract_sync(file_paths[0], converter)
             print(json.dumps(payload), end="")
 
         elif mode == "batch":
@@ -91,14 +132,14 @@ def main() -> None:
                 sys.exit(1)
 
             if len(file_paths) == 1:
-                results = extract_batch(file_paths)
+                results = extract_batch(file_paths, converter)
                 print(json.dumps(results[0]), end="")
             else:
-                results = extract_batch(file_paths)
+                results = extract_batch(file_paths, converter)
                 print(json.dumps(results), end="")
 
         else:
-            print(f"Error: Unknown mode '{mode}'. Use sync or batch", file=sys.stderr)
+            print(f"Error: Unknown mode '{mode}'. Use sync, batch, or server", file=sys.stderr)
             sys.exit(1)
 
     except Exception as e:

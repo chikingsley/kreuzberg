@@ -44,7 +44,7 @@ defmodule KreuzbergExtract do
   @doc """
   Extract a single file synchronously.
   """
-  def extract_sync(file_path) do
+  def extract_sync(file_path, config \\ %{}) do
     debug_log("=== SYNC EXTRACTION START ===")
     debug_log("Input: file_path=#{file_path}")
     debug_log("File exists: #{File.exists?(file_path)}")
@@ -58,7 +58,7 @@ defmodule KreuzbergExtract do
     start_wall = DateTime.utc_now()
     debug_log("Timing start (monotonic): #{start_time}, wall: #{DateTime.to_iso8601(start_wall)}")
 
-    result = Kreuzberg.extract_file(file_path)
+    result = Kreuzberg.extract_file(file_path, config)
 
     end_time = System.monotonic_time(:millisecond)
     end_wall = DateTime.utc_now()
@@ -95,7 +95,7 @@ defmodule KreuzbergExtract do
   @doc """
   Extract multiple files in batch mode.
   """
-  def extract_batch(file_paths) do
+  def extract_batch(file_paths, config \\ %{}) do
     debug_log("=== BATCH EXTRACTION START ===")
     debug_log("Input: #{length(file_paths)} files")
 
@@ -111,7 +111,7 @@ defmodule KreuzbergExtract do
     start_wall = DateTime.utc_now()
     debug_log("Timing start (monotonic): #{start_time}, wall: #{DateTime.to_iso8601(start_wall)}")
 
-    result = Kreuzberg.batch_extract_files(file_paths)
+    result = Kreuzberg.batch_extract_files(file_paths, config)
 
     end_time = System.monotonic_time(:millisecond)
     end_wall = DateTime.utc_now()
@@ -158,6 +158,52 @@ defmodule KreuzbergExtract do
   end
 
   @doc """
+  Server mode: read paths from stdin, write JSON to stdout.
+  """
+  def run_server(config \\ %{}) do
+    debug_log("=== SERVER MODE START ===")
+
+    IO.stream(:stdin, :line)
+    |> Stream.map(&String.trim/1)
+    |> Stream.reject(&(&1 == ""))
+    |> Stream.each(fn file_path ->
+      debug_log("Processing file: #{file_path}")
+
+      try do
+        case extract_sync(file_path, config) do
+          {:ok, payload} ->
+            json = Jason.encode!(payload)
+            IO.write(json)
+            IO.write("\n")
+
+          {:error, reason} ->
+            error_payload = %{
+              "error" => inspect(reason),
+              "_extraction_time_ms" => 0
+            }
+
+            json = Jason.encode!(error_payload)
+            IO.write(json)
+            IO.write("\n")
+        end
+      rescue
+        e ->
+          error_payload = %{
+            "error" => inspect(e),
+            "_extraction_time_ms" => 0
+          }
+
+          json = Jason.encode!(error_payload)
+          IO.write(json)
+          IO.write("\n")
+      end
+    end)
+    |> Stream.run()
+
+    debug_log("=== SERVER MODE END ===")
+  end
+
+  @doc """
   Main entry point for the script.
   """
   def main(args) do
@@ -165,18 +211,40 @@ defmodule KreuzbergExtract do
     debug_log("ARGV: #{inspect(args)}")
     debug_log("ARGV length: #{length(args)}")
 
-    case args do
+    # Parse OCR flags
+    {ocr_enabled, remaining_args} =
+      Enum.reduce(args, {false, []}, fn
+        "--ocr", {_, acc} -> {true, acc}
+        "--no-ocr", {_, acc} -> {false, acc}
+        arg, {ocr, acc} -> {ocr, acc ++ [arg]}
+      end)
+
+    config = %{"use_cache" => false}
+
+    config =
+      if ocr_enabled do
+        Map.put(config, "ocr", %{"enabled" => true})
+      else
+        config
+      end
+
+    case remaining_args do
       [] ->
-        IO.puts(:stderr, "Usage: kreuzberg_extract.exs <mode> <file_path> [additional_files...]")
-        IO.puts(:stderr, "Modes: sync, batch")
+        IO.puts(:stderr, "Usage: kreuzberg_extract.exs [--ocr|--no-ocr] <mode> <file_path> [additional_files...]")
+        IO.puts(:stderr, "Modes: sync, batch, server")
         IO.puts(:stderr, "Debug mode: set KREUZBERG_BENCHMARK_DEBUG=true to enable debug logging to stderr")
         System.halt(1)
 
       [mode | file_paths] ->
         debug_log("Mode: #{mode}")
+        debug_log("OCR enabled: #{ocr_enabled}")
         debug_log("File paths (#{length(file_paths)}): #{inspect(file_paths)}")
 
         case mode do
+          "server" ->
+            debug_log("Executing server mode")
+            run_server(config)
+
           "sync" ->
             if length(file_paths) != 1 do
               IO.puts(:stderr, "Error: sync mode requires exactly one file")
@@ -185,7 +253,7 @@ defmodule KreuzbergExtract do
 
             debug_log("Executing sync mode with file: #{hd(file_paths)}")
 
-            case extract_sync(hd(file_paths)) do
+            case extract_sync(hd(file_paths), config) do
               {:ok, payload} ->
                 json = Jason.encode!(payload)
                 debug_log("Output JSON: #{json}")
@@ -204,7 +272,7 @@ defmodule KreuzbergExtract do
 
             debug_log("Executing batch mode with #{length(file_paths)} files")
 
-            case extract_batch(file_paths) do
+            case extract_batch(file_paths, config) do
               {:ok, results} ->
                 json =
                   if length(file_paths) == 1 do
@@ -222,7 +290,7 @@ defmodule KreuzbergExtract do
             end
 
           _ ->
-            IO.puts(:stderr, "Error: Unknown mode '#{mode}'. Use sync or batch")
+            IO.puts(:stderr, "Error: Unknown mode '#{mode}'. Use sync, batch, or server")
             System.halt(1)
         end
 
