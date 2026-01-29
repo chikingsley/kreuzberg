@@ -20,7 +20,22 @@ use std::time::Duration;
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 use tokio::sync::Mutex;
 
-/// Snapshot of memory state at a point in time
+/// Calculate adaptive sampling interval based on file size.
+///
+/// Small files (<100KB) use 1ms sampling for fine-grained measurement.
+/// Medium files (100KB-10MB) use 5ms sampling.
+/// Large files (>10MB) use 10ms sampling to reduce overhead.
+pub fn adaptive_sampling_interval_ms(file_size: u64) -> u64 {
+    if file_size < 100_000 {
+        1
+    } else if file_size < 10_000_000 {
+        5
+    } else {
+        10
+    }
+}
+
+/// Snapshot of memory state at a point in time.
 ///
 /// Captures both virtual memory metrics and optional heap allocation data.
 /// Used for detailed memory growth analysis and leak detection.
@@ -465,6 +480,48 @@ pub struct ResourceStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_adaptive_sampling_interval_small_file() {
+        let interval = adaptive_sampling_interval_ms(50_000);
+        assert_eq!(interval, 1, "Small file (50KB) should use 1ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_boundary_100kb() {
+        let interval = adaptive_sampling_interval_ms(100_000);
+        assert_eq!(interval, 5, "Exactly 100KB boundary should use 5ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_medium_file() {
+        let interval = adaptive_sampling_interval_ms(1_000_000);
+        assert_eq!(interval, 5, "Medium file (1MB) should use 5ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_boundary_10mb() {
+        let interval = adaptive_sampling_interval_ms(10_000_000);
+        assert_eq!(interval, 10, "Exactly 10MB boundary should use 10ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_large_file() {
+        let interval = adaptive_sampling_interval_ms(100_000_000);
+        assert_eq!(interval, 10, "Large file (100MB) should use 10ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_zero_bytes() {
+        let interval = adaptive_sampling_interval_ms(0);
+        assert_eq!(interval, 1, "Zero byte file should use 1ms interval");
+    }
+
+    #[test]
+    fn test_adaptive_sampling_interval_max_u64() {
+        let interval = adaptive_sampling_interval_ms(u64::MAX);
+        assert_eq!(interval, 10, "u64::MAX should use 10ms interval");
+    }
 
     #[test]
     fn test_calculate_percentile() {

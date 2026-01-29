@@ -7,6 +7,7 @@ use crate::adapter::FrameworkAdapter;
 use crate::config::{BenchmarkConfig, BenchmarkMode};
 use crate::fixture::FixtureManager;
 use crate::registry::AdapterRegistry;
+use crate::stats::percentile_r7;
 use crate::types::{BenchmarkResult, DiskSizeInfo, DurationStatistics, IterationResult, PerformanceMetrics};
 use crate::{Error, Result};
 use std::collections::HashMap;
@@ -18,21 +19,6 @@ use std::time::Duration;
 use crate::profile_report::ProfileReport;
 #[cfg(feature = "profiling")]
 use crate::profiling::ProfileGuard;
-
-/// Calculate percentile from duration values
-///
-/// # Arguments
-/// * `values` - Duration values (will be sorted)
-/// * `percentile` - Percentile to calculate (0.0 - 1.0)
-fn calculate_duration_percentile(mut values: Vec<Duration>, percentile: f64) -> Duration {
-    if values.is_empty() {
-        return Duration::from_secs(0);
-    }
-
-    values.sort();
-    let index = ((values.len() as f64 - 1.0) * percentile).max(0.0) as usize;
-    values[index]
-}
 
 /// Calculate amplified iteration count for profiling when needed
 ///
@@ -86,21 +72,27 @@ fn calculate_statistics(iterations: &[IterationResult]) -> DurationStatistics {
     let mean_ms = total_ms / durations.len() as f64;
     let mean = Duration::from_secs_f64(mean_ms / 1000.0);
 
-    let median = calculate_duration_percentile(durations.clone(), 0.50);
+    let mut durations_ms: Vec<f64> = durations.iter().map(|d| d.as_secs_f64() * 1000.0).collect();
+    durations_ms.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let median = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.50) / 1000.0);
 
-    let variance: f64 = durations
-        .iter()
-        .map(|d| {
-            let diff = d.as_secs_f64() * 1000.0 - mean_ms;
-            diff * diff
-        })
-        .sum::<f64>()
-        / durations.len() as f64;
+    let variance: f64 = if durations.len() > 1 {
+        durations
+            .iter()
+            .map(|d| {
+                let diff = d.as_secs_f64() * 1000.0 - mean_ms;
+                diff * diff
+            })
+            .sum::<f64>()
+            / (durations.len() - 1) as f64
+    } else {
+        0.0
+    };
 
     let std_dev_ms = variance.sqrt();
 
-    let p95 = calculate_duration_percentile(durations.clone(), 0.95);
-    let p99 = calculate_duration_percentile(durations, 0.99);
+    let p95 = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.95) / 1000.0);
+    let p99 = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.99) / 1000.0);
 
     DurationStatistics {
         mean,
@@ -383,9 +375,13 @@ impl BenchmarkRunner {
 
         let avg_extraction_duration = if !extraction_durations.is_empty() {
             let total_ms: f64 = extraction_durations.iter().map(|d| d.as_secs_f64() * 1000.0).sum();
-            Some(Duration::from_secs_f64(
-                total_ms / extraction_durations.len() as f64 / 1000.0,
-            ))
+            let avg_ms = total_ms / extraction_durations.len() as f64;
+            // Ensure the average is finite before creating Duration
+            if avg_ms.is_finite() {
+                Some(Duration::from_secs_f64(avg_ms / 1000.0))
+            } else {
+                None
+            }
         } else {
             None
         };
@@ -451,56 +447,79 @@ impl BenchmarkRunner {
             return Ok(result);
         }
 
-        let batch_iterations: Vec<&BenchmarkResult> = all_batch_results.iter().map(|batch| &batch[0]).collect();
+        // Aggregate per-file across iterations
+        if all_batch_results.is_empty() {
+            return Err(Error::Benchmark("No batch results".to_string()));
+        }
 
-        let iterations: Vec<IterationResult> = batch_iterations
-            .iter()
-            .enumerate()
-            .map(|(idx, result)| IterationResult {
-                iteration: idx + 1,
-                duration: result.duration,
-                extraction_duration: result.extraction_duration,
-                metrics: result.metrics.clone(),
-            })
-            .collect();
+        let num_files = all_batch_results[0].len();
+        let mut aggregated_results = Vec::new();
 
-        let statistics = calculate_statistics(&iterations);
-        let aggregated_metrics = aggregate_metrics(&iterations);
+        for file_idx in 0..num_files {
+            let mut file_iterations = Vec::new();
+            for batch in &all_batch_results {
+                if file_idx < batch.len() {
+                    file_iterations.push(&batch[file_idx]);
+                }
+            }
 
-        let extraction_durations: Vec<Duration> =
-            batch_iterations.iter().filter_map(|r| r.extraction_duration).collect();
+            if file_iterations.is_empty() {
+                continue;
+            }
 
-        let avg_extraction_duration = if !extraction_durations.is_empty() {
-            let total_ms: f64 = extraction_durations.iter().map(|d| d.as_secs_f64() * 1000.0).sum();
-            Some(Duration::from_secs_f64(
-                total_ms / extraction_durations.len() as f64 / 1000.0,
-            ))
-        } else {
-            None
-        };
+            let iterations: Vec<IterationResult> = file_iterations
+                .iter()
+                .enumerate()
+                .map(|(idx, result)| IterationResult {
+                    iteration: idx + 1,
+                    duration: result.duration,
+                    extraction_duration: result.extraction_duration,
+                    metrics: result.metrics.clone(),
+                })
+                .collect();
 
-        let subprocess_overhead = avg_extraction_duration.map(|ext| statistics.mean.saturating_sub(ext));
-        let first_result = batch_iterations[0];
+            let statistics = calculate_statistics(&iterations);
+            let aggregated_metrics = aggregate_metrics(&iterations);
 
-        let aggregated_results = vec![BenchmarkResult {
-            framework: first_result.framework.clone(),
-            file_path: first_result.file_path.clone(),
-            file_size: first_result.file_size,
-            success: true,
-            error_message: None,
-            duration: statistics.mean,
-            extraction_duration: avg_extraction_duration,
-            subprocess_overhead,
-            metrics: aggregated_metrics,
-            quality: first_result.quality.clone(),
-            iterations,
-            statistics: Some(statistics),
-            cold_start_duration,
-            file_extension: first_result.file_extension.clone(),
-            framework_capabilities: first_result.framework_capabilities.clone(),
-            pdf_metadata: first_result.pdf_metadata.clone(),
-            ocr_status: first_result.ocr_status,
-        }];
+            let extraction_durations: Vec<Duration> =
+                file_iterations.iter().filter_map(|r| r.extraction_duration).collect();
+
+            let avg_extraction_duration = if !extraction_durations.is_empty() {
+                let total_ms: f64 = extraction_durations.iter().map(|d| d.as_secs_f64() * 1000.0).sum();
+                let avg_ms = total_ms / extraction_durations.len() as f64;
+                // Ensure the average is finite before creating Duration
+                if avg_ms.is_finite() {
+                    Some(Duration::from_secs_f64(avg_ms / 1000.0))
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            let subprocess_overhead = avg_extraction_duration.map(|ext| statistics.mean.saturating_sub(ext));
+            let first_result = file_iterations[0];
+
+            aggregated_results.push(BenchmarkResult {
+                framework: first_result.framework.clone(),
+                file_path: first_result.file_path.clone(),
+                file_size: first_result.file_size,
+                success: true,
+                error_message: None,
+                duration: statistics.mean,
+                extraction_duration: avg_extraction_duration,
+                subprocess_overhead,
+                metrics: aggregated_metrics,
+                quality: first_result.quality.clone(),
+                iterations,
+                statistics: Some(statistics),
+                cold_start_duration,
+                file_extension: first_result.file_extension.clone(),
+                framework_capabilities: first_result.framework_capabilities.clone(),
+                pdf_metadata: first_result.pdf_metadata.clone(),
+                ocr_status: first_result.ocr_status,
+            });
+        }
 
         Ok(aggregated_results)
     }
@@ -566,6 +585,10 @@ impl BenchmarkRunner {
             let mut adapter_files: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
             for (fixture_path, fixture) in self.fixtures.fixtures() {
+                // Skip OCR-requiring fixtures when OCR is disabled
+                if !self.config.ocr_enabled && fixture.requires_ocr() {
+                    continue;
+                }
                 for adapter in &frameworks {
                     if !adapter.supports_format(&fixture.file_type) {
                         continue;
@@ -633,6 +656,10 @@ impl BenchmarkRunner {
             let mut task_queue: Vec<(PathBuf, String, Arc<dyn FrameworkAdapter>)> = Vec::new();
 
             for (fixture_path, fixture) in self.fixtures.fixtures() {
+                // Skip OCR-requiring fixtures when OCR is disabled
+                if !self.config.ocr_enabled && fixture.requires_ocr() {
+                    continue;
+                }
                 for adapter in &frameworks {
                     if !adapter.supports_format(&fixture.file_type) {
                         continue;

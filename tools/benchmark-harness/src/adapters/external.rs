@@ -1,6 +1,8 @@
 use crate::{adapters::subprocess::SubprocessAdapter, error::Result};
 use std::{env, path::PathBuf};
 
+use super::ocr_flag;
+
 /// Helper function to define supported file types for each framework
 ///
 /// Maps framework names to the file extensions they can actually process.
@@ -62,6 +64,7 @@ pub fn create_docling_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("docling_extract.py")?;
     let (command, mut args) = find_python_with_framework("docling")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("sync".to_string());
 
     let supported_formats = get_supported_formats("docling");
@@ -79,6 +82,7 @@ pub fn create_docling_batch_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("docling_extract.py")?;
     let (command, mut args) = find_python_with_framework("docling")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("batch".to_string());
 
     let supported_formats = get_supported_formats("docling-batch");
@@ -96,6 +100,8 @@ pub fn create_unstructured_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("unstructured_extract.py")?;
     let (command, mut args) = find_python_with_framework("unstructured")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
+    args.push("sync".to_string());
 
     let supported_formats = get_supported_formats("unstructured");
     Ok(SubprocessAdapter::new(
@@ -112,6 +118,7 @@ pub fn create_markitdown_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("markitdown_extract.py")?;
     let (command, mut args) = find_python_with_framework("markitdown")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
 
     let supported_formats = get_supported_formats("markitdown");
     Ok(SubprocessAdapter::new(
@@ -253,6 +260,7 @@ pub fn create_tika_adapter() -> Result<SubprocessAdapter> {
         "-cp".to_string(),
         jar_path.to_string_lossy().to_string(),
         script_path.to_string_lossy().to_string(),
+        ocr_flag(),
         "sync".to_string(),
     ];
 
@@ -270,6 +278,7 @@ pub fn create_tika_batch_adapter() -> Result<SubprocessAdapter> {
         "-cp".to_string(),
         jar_path.to_string_lossy().to_string(),
         script_path.to_string_lossy().to_string(),
+        ocr_flag(),
         "batch".to_string(),
     ];
 
@@ -288,6 +297,7 @@ pub fn create_pymupdf4llm_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("pymupdf4llm_extract.py")?;
     let (command, mut args) = find_python_with_framework("pymupdf4llm")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
 
     let supported_formats = get_supported_formats("pymupdf4llm");
     Ok(SubprocessAdapter::new(
@@ -304,6 +314,7 @@ pub fn create_pdfplumber_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("pdfplumber_extract.py")?;
     let (command, mut args) = find_python_with_framework("pdfplumber")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("sync".to_string());
 
     let supported_formats = get_supported_formats("pdfplumber");
@@ -321,6 +332,7 @@ pub fn create_pdfplumber_batch_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("pdfplumber_extract.py")?;
     let (command, mut args) = find_python_with_framework("pdfplumber")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("batch".to_string());
 
     let supported_formats = get_supported_formats("pdfplumber-batch");
@@ -338,6 +350,7 @@ pub fn create_mineru_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("mineru_extract.py")?;
     let (command, mut args) = find_python_with_framework("mineru")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("sync".to_string());
 
     let supported_formats = get_supported_formats("mineru");
@@ -355,6 +368,7 @@ pub fn create_mineru_batch_adapter() -> Result<SubprocessAdapter> {
     let script_path = get_script_path("mineru_extract.py")?;
     let (command, mut args) = find_python_with_framework("mineru")?;
     args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag());
     args.push("batch".to_string());
 
     let supported_formats = get_supported_formats("mineru-batch");

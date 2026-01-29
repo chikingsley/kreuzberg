@@ -18,6 +18,7 @@ pub mod profile_report;
 pub mod profiling;
 pub mod registry;
 pub mod runner;
+pub mod stats;
 pub mod types;
 
 pub use adapter::FrameworkAdapter;

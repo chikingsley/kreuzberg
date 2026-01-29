@@ -47,16 +47,7 @@ impl NativeAdapter {
     /// # Returns
     /// Sampling interval in milliseconds (1, 5, or 10)
     fn calculate_adaptive_sampling_interval(file_size: u64) -> u64 {
-        const SMALL_FILE_THRESHOLD: u64 = 100 * 1024;
-        const MEDIUM_FILE_THRESHOLD: u64 = 1024 * 1024;
-
-        if file_size < SMALL_FILE_THRESHOLD {
-            1
-        } else if file_size < MEDIUM_FILE_THRESHOLD {
-            5
-        } else {
-            10
-        }
+        crate::monitoring::adaptive_sampling_interval_ms(file_size)
     }
 
     /// Create a new native adapter with custom configuration

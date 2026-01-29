@@ -271,7 +271,8 @@ impl FrameworkAdapter for SubprocessAdapter {
 
         let start_time = std::time::Instant::now();
         let monitor = ResourceMonitor::new();
-        monitor.start(Duration::from_millis(10)).await;
+        let sampling_ms = crate::monitoring::adaptive_sampling_interval_ms(file_size);
+        monitor.start(Duration::from_millis(sampling_ms)).await;
 
         let (stdout, _stderr, duration) = match self.execute_subprocess(file_path, timeout).await {
             Ok(result) => result,
@@ -474,14 +475,15 @@ impl FrameworkAdapter for SubprocessAdapter {
             return Ok(results);
         }
 
-        let _total_file_size: u64 = file_paths
+        let total_file_size: u64 = file_paths
             .iter()
             .filter_map(|p| std::fs::metadata(p).ok().map(|m| m.len()))
             .sum();
 
         let start_time = std::time::Instant::now();
         let monitor = ResourceMonitor::new();
-        monitor.start(Duration::from_millis(10)).await;
+        let sampling_ms = crate::monitoring::adaptive_sampling_interval_ms(total_file_size);
+        monitor.start(Duration::from_millis(sampling_ms)).await;
 
         let (_stdout, _stderr, duration) = match self.execute_subprocess_batch(file_paths, timeout).await {
             Ok(result) => result,

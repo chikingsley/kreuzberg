@@ -181,10 +181,21 @@ async fn main() -> Result<()> {
                 warmup_iterations: warmup,
                 benchmark_iterations: iterations,
                 measure_quality,
+                ocr_enabled: ocr,
                 ..Default::default()
             };
 
             config.validate()?;
+
+            // Set OCR env var for subprocess scripts to read
+            // SAFETY: set_var is called once on the main thread before any async tasks start.
+            // The env var is only read synchronously during adapter creation (lines 237-270 below),
+            // which completes before any concurrent work begins at runner.run().await (line 322).
+            // Adapter creation reads the var via ocr_flag() in adapter functions, all of which
+            // execute sequentially before the tokio async runtime spawns worker tasks.
+            unsafe {
+                std::env::set_var("BENCHMARK_OCR_ENABLED", if ocr { "true" } else { "false" });
+            }
 
             let mut extraction_config = if ocr {
                 ExtractionConfig {

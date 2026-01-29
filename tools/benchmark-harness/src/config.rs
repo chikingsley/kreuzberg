@@ -180,6 +180,10 @@ pub struct BenchmarkConfig {
 
     /// Profiling configuration for CPU/memory analysis
     pub profiling: ProfilingConfig,
+
+    /// Whether OCR is enabled for this benchmark run.
+    /// When false, fixtures that require OCR (images, scanned PDFs) are excluded.
+    pub ocr_enabled: bool,
 }
 
 impl Default for BenchmarkConfig {
@@ -196,6 +200,7 @@ impl Default for BenchmarkConfig {
             warmup_iterations: 1,
             benchmark_iterations: 3,
             profiling: ProfilingConfig::default(),
+            ocr_enabled: false,
         }
     }
 }

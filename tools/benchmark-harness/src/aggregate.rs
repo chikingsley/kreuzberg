@@ -72,6 +72,9 @@ pub struct PerformancePercentiles {
     pub duration: Percentiles,
     /// Success rate as percentage (0-100)
     pub success_rate_percent: f64,
+    /// Extraction duration percentiles (p50, p95, p99) in ms
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extraction_duration: Option<Percentiles>,
 }
 
 /// Percentile values for a metric
@@ -258,10 +261,17 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         .filter(|&v| !v.is_nan() && v.is_finite())
         .collect();
 
+    let mut extraction_durations: Vec<f64> = successful
+        .iter()
+        .filter_map(|r| r.extraction_duration.map(|d| d.as_secs_f64() * 1000.0))
+        .filter(|&v| !v.is_nan() && v.is_finite())
+        .collect();
+
     // Sort for percentile calculation (NaN-safe)
     durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     throughputs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     memories.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    extraction_durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     let duration = Percentiles {
         p50: calculate_percentile_value(&durations, 0.50),
@@ -281,6 +291,16 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         p99: calculate_percentile_value(&memories, 0.99),
     };
 
+    let extraction_duration = if !extraction_durations.is_empty() {
+        Some(Percentiles {
+            p50: calculate_percentile_value(&extraction_durations, 0.50),
+            p95: calculate_percentile_value(&extraction_durations, 0.95),
+            p99: calculate_percentile_value(&extraction_durations, 0.99),
+        })
+    } else {
+        None
+    };
+
     let success_rate_percent = if !results.is_empty() {
         (successful.len() as f64 / results.len() as f64) * 100.0
     } else {
@@ -293,6 +313,7 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         memory,
         duration,
         success_rate_percent,
+        extraction_duration,
     }
 }
 
@@ -646,5 +667,260 @@ mod tests {
         // With linear interpolation: index = 0.95 * 4 = 3.8
         // Result = values[3] * 0.2 + values[4] * 0.8 = 4.0 * 0.2 + 5.0 * 0.8 = 4.8
         assert!((p95 - 4.8).abs() < 0.01);
+    }
+
+    // ============================================================================
+    // Tests for extraction_duration aggregation in new format
+    // ============================================================================
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_all_present() {
+        // Test: All results have extraction_duration -> percentiles populated
+        let mut result1 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result1.extraction_duration = Some(Duration::from_millis(80));
+
+        let mut result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 150, 1_000_000.0, 10_000_000);
+        result2.extraction_duration = Some(Duration::from_millis(120));
+
+        let mut result3 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 200, 1_000_000.0, 10_000_000);
+        result3.extraction_duration = Some(Duration::from_millis(160));
+
+        let refs = vec![&result1, &result2, &result3];
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+        assert!((ext_dur.p50 - 120.0).abs() < 0.1); // median: 120
+        assert!(ext_dur.p95 > 120.0); // p95 should be between 120 and 160
+        assert!(ext_dur.p95 <= 160.0);
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_all_none() {
+        // Test: All results have extraction_duration = None -> extraction_duration None
+        let result1 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        let result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 150, 1_000_000.0, 10_000_000);
+        let result3 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 200, 1_000_000.0, 10_000_000);
+
+        let refs = vec![&result1, &result2, &result3];
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_none());
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_mixed() {
+        // Test: Mixed Some/None extraction_duration -> only Some values used
+        let mut result1 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result1.extraction_duration = Some(Duration::from_millis(80));
+
+        let result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 150, 1_000_000.0, 10_000_000);
+        // result2.extraction_duration = None
+
+        let mut result3 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 200, 1_000_000.0, 10_000_000);
+        result3.extraction_duration = Some(Duration::from_millis(160));
+
+        let refs = vec![&result1, &result2, &result3];
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+        // Only 80 and 160 used, median should be 120
+        assert!((ext_dur.p50 - 120.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_filters_invalid() {
+        // Test: NaN/infinite extraction durations filtered out
+        // Note: We can't directly create NaN with Duration, so we test the filtering logic
+        // by ensuring valid values are correctly processed
+        let mut result1 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result1.extraction_duration = Some(Duration::from_millis(80));
+
+        let mut result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 150, 1_000_000.0, 10_000_000);
+        result2.extraction_duration = Some(Duration::from_millis(120));
+
+        let mut result3 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 200, 1_000_000.0, 10_000_000);
+        result3.extraction_duration = Some(Duration::from_millis(160));
+
+        let refs = vec![&result1, &result2, &result3];
+        let percentiles = calculate_percentiles(&refs);
+
+        // All values should be present and valid
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+        assert!(ext_dur.p50.is_finite());
+        assert!(!ext_dur.p50.is_nan());
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_with_failed_results() {
+        // Test: Failed results excluded from extraction_duration calculation
+        let mut result1 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result1.extraction_duration = Some(Duration::from_millis(80));
+
+        let mut result2_failed = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 0, 0.0, 0);
+        result2_failed.success = false;
+        result2_failed.error_message = Some("Failed".to_string());
+        result2_failed.extraction_duration = Some(Duration::from_millis(50)); // Should be ignored
+
+        let mut result3 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 200, 1_000_000.0, 10_000_000);
+        result3.extraction_duration = Some(Duration::from_millis(160));
+
+        let refs = vec![&result1, &result2_failed, &result3];
+        let percentiles = calculate_percentiles(&refs);
+
+        // Only result1 and result3 should be used (80 and 160)
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+        assert_eq!(percentiles.sample_count, 2); // Only 2 successful results
+        assert!((ext_dur.p50 - 120.0).abs() < 0.1); // median: 120
+    }
+
+    #[test]
+    fn test_aggregate_by_ocr_status_extraction_duration() {
+        // Test: Extraction duration aggregated correctly with OCR status split
+        let mut result_no_ocr_1 =
+            create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result_no_ocr_1.extraction_duration = Some(Duration::from_millis(80));
+
+        let mut result_no_ocr_2 =
+            create_test_result("framework1", "pdf", OcrStatus::NotUsed, 150, 1_000_000.0, 10_000_000);
+        result_no_ocr_2.extraction_duration = Some(Duration::from_millis(120));
+
+        let mut result_with_ocr = create_test_result("framework1", "pdf", OcrStatus::Used, 300, 500_000.0, 20_000_000);
+        result_with_ocr.extraction_duration = Some(Duration::from_millis(250));
+
+        let refs = vec![&result_no_ocr_1, &result_no_ocr_2, &result_with_ocr];
+        let (no_ocr, with_ocr) = aggregate_by_ocr_status(&refs);
+
+        // No OCR group
+        assert!(no_ocr.is_some());
+        let no_ocr_perf = no_ocr.unwrap();
+        assert!(no_ocr_perf.extraction_duration.is_some());
+        assert_eq!(no_ocr_perf.extraction_duration.as_ref().unwrap().p50, 100.0); // median of [80, 120]
+
+        // With OCR group
+        assert!(with_ocr.is_some());
+        let with_ocr_perf = with_ocr.unwrap();
+        assert!(with_ocr_perf.extraction_duration.is_some());
+        assert_eq!(with_ocr_perf.extraction_duration.as_ref().unwrap().p50, 250.0);
+    }
+
+    #[test]
+    fn test_aggregate_new_format_extraction_duration_preserved() {
+        // Test: aggregate_new_format preserves extraction_duration statistics
+        let mut result1 = create_test_result(
+            "kreuzberg-sync",
+            "pdf",
+            OcrStatus::NotUsed,
+            100,
+            1_000_000.0,
+            10_000_000,
+        );
+        result1.extraction_duration = Some(Duration::from_millis(80));
+
+        let mut result2 = create_test_result(
+            "kreuzberg-sync",
+            "pdf",
+            OcrStatus::NotUsed,
+            150,
+            1_000_000.0,
+            10_000_000,
+        );
+        result2.extraction_duration = Some(Duration::from_millis(120));
+
+        let results = vec![result1, result2];
+        let aggregated = aggregate_new_format(&results);
+
+        let framework_mode = aggregated.by_framework_mode.get("kreuzberg:single").unwrap();
+        let pdf_stats = framework_mode.by_file_type.get("pdf").unwrap();
+        let no_ocr = pdf_stats.no_ocr.as_ref().unwrap();
+
+        assert!(no_ocr.extraction_duration.is_some());
+        let ext_dur = no_ocr.extraction_duration.as_ref().unwrap();
+        assert!((ext_dur.p50 - 100.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_single_value() {
+        // Test: Single extraction_duration value -> all percentiles return that value
+        let mut result = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+        result.extraction_duration = Some(Duration::from_millis(80));
+
+        let refs = vec![&result];
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+        assert_eq!(ext_dur.p50, 80.0);
+        assert_eq!(ext_dur.p95, 80.0);
+        assert_eq!(ext_dur.p99, 80.0);
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_large_dataset() {
+        // Test: Large dataset with extraction_duration -> percentiles calculated correctly
+        let mut results = vec![];
+        for i in 1..=100 {
+            let mut result =
+                create_test_result("framework1", "pdf", OcrStatus::NotUsed, i * 10, 1_000_000.0, 10_000_000);
+            result.extraction_duration = Some(Duration::from_millis(i * 8));
+            results.push(result);
+        }
+
+        let refs: Vec<&BenchmarkResult> = results.iter().collect();
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_some());
+        let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
+
+        // p50 (median) of 1-100 scaled by 8: around 404-408ms
+        assert!(ext_dur.p50 >= 400.0 && ext_dur.p50 <= 410.0);
+
+        // p95 should be higher than p50
+        assert!(ext_dur.p95 > ext_dur.p50);
+
+        // p99 should be higher than p95
+        assert!(ext_dur.p99 > ext_dur.p95);
+    }
+
+    #[test]
+    fn test_calculate_percentiles_extraction_duration_no_extraction_some_failed() {
+        // Test: No extraction_duration data, some failures -> extraction_duration None
+        let result1_failed = BenchmarkResult {
+            framework: "test".to_string(),
+            file_path: PathBuf::from("test1.pdf"),
+            file_size: 1024,
+            success: false,
+            error_message: Some("Error".to_string()),
+            duration: Duration::from_millis(0),
+            extraction_duration: None,
+            subprocess_overhead: None,
+            metrics: PerformanceMetrics {
+                peak_memory_bytes: 0,
+                avg_cpu_percent: 0.0,
+                throughput_bytes_per_sec: 0.0,
+                p50_memory_bytes: 0,
+                p95_memory_bytes: 0,
+                p99_memory_bytes: 0,
+            },
+            quality: None,
+            iterations: vec![],
+            statistics: None,
+            cold_start_duration: None,
+            file_extension: "pdf".to_string(),
+            framework_capabilities: FrameworkCapabilities::default(),
+            pdf_metadata: None,
+            ocr_status: OcrStatus::NotUsed,
+        };
+
+        let result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
+
+        let refs = vec![&result1_failed, &result2];
+        let percentiles = calculate_percentiles(&refs);
+
+        assert!(percentiles.extraction_duration.is_none());
+        assert_eq!(percentiles.success_rate_percent, 50.0);
     }
 }

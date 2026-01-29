@@ -1,5 +1,6 @@
 //! Aggregation and analysis functions for consolidating multiple benchmark runs
 
+use crate::stats::percentile_r7;
 use crate::types::{BenchmarkResult, QualityMetrics};
 use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
@@ -25,6 +26,8 @@ pub struct FrameworkAggregation {
     pub success_rate: f64,
     pub avg_quality: Option<QualityMetrics>,
     pub by_extension: HashMap<String, ExtensionStats>,
+    pub mean_extraction_duration_ms: f64,
+    pub extraction_duration_std_dev_ms: f64,
 }
 
 /// Aggregation for a single run
@@ -293,9 +296,16 @@ fn aggregate_by_framework_with_runs(runs: &[Vec<BenchmarkResult>]) -> Result<Has
                     success_rate,
                 });
 
-                all_durations.push(mean_duration_ms);
-                all_throughputs.push(mean_throughput_bps);
-                all_memory.push(mean_peak_memory as f64);
+                // Filter out NaN/infinite values when collecting aggregated metrics
+                if mean_duration_ms.is_finite() {
+                    all_durations.push(mean_duration_ms);
+                }
+                if mean_throughput_bps.is_finite() {
+                    all_throughputs.push(mean_throughput_bps);
+                }
+                if (mean_peak_memory as f64).is_finite() {
+                    all_memory.push(mean_peak_memory as f64);
+                }
                 total_files += run_results.len();
                 total_successful += successful.len();
             }
@@ -315,6 +325,14 @@ fn aggregate_by_framework_with_runs(runs: &[Vec<BenchmarkResult>]) -> Result<Has
         let avg_quality = aggregate_quality_metrics(&all_framework_results);
         let by_extension = calculate_extension_stats(&all_framework_results);
 
+        let extraction_durations: Vec<f64> = all_framework_results
+            .iter()
+            .filter_map(|r| r.extraction_duration.map(|d| d.as_secs_f64() * 1000.0))
+            .filter(|v| !v.is_nan() && v.is_finite())
+            .collect();
+        let (mean_extraction_duration_ms, _, extraction_duration_std_dev_ms) =
+            calculate_variance(&extraction_durations);
+
         final_aggregations.insert(
             framework.clone(),
             FrameworkAggregation {
@@ -333,6 +351,8 @@ fn aggregate_by_framework_with_runs(runs: &[Vec<BenchmarkResult>]) -> Result<Has
                 success_rate,
                 avg_quality,
                 by_extension,
+                mean_extraction_duration_ms,
+                extraction_duration_std_dev_ms,
             },
         );
     }
@@ -360,6 +380,13 @@ fn create_framework_aggregation(framework: &str, results: &[&BenchmarkResult]) -
     let avg_quality = aggregate_quality_metrics(results);
     let by_extension = calculate_extension_stats(results);
 
+    let extraction_durations: Vec<f64> = results
+        .iter()
+        .filter_map(|r| r.extraction_duration.map(|d| d.as_secs_f64() * 1000.0))
+        .filter(|v| !v.is_nan() && v.is_finite())
+        .collect();
+    let (mean_extraction_duration_ms, _, extraction_duration_std_dev_ms) = calculate_variance(&extraction_durations);
+
     FrameworkAggregation {
         framework: framework.to_string(),
         total_files: results.len(),
@@ -376,6 +403,8 @@ fn create_framework_aggregation(framework: &str, results: &[&BenchmarkResult]) -
         success_rate,
         avg_quality,
         by_extension,
+        mean_extraction_duration_ms,
+        extraction_duration_std_dev_ms,
     }
 }
 
@@ -671,11 +700,16 @@ pub fn write_consolidated_json(results: &ConsolidatedResults, path: &Path) -> Re
 }
 
 fn calculate_variance(values: &[f64]) -> (f64, f64, f64) {
-    if values.is_empty() {
-        return (0.0, 0.0, 0.0);
+    let filtered: Vec<f64> = values
+        .iter()
+        .copied()
+        .filter(|v| !v.is_nan() && v.is_finite())
+        .collect();
+    if filtered.len() <= 1 {
+        return (if filtered.is_empty() { 0.0 } else { filtered[0] }, 0.0, 0.0);
     }
-    let mean = values.iter().sum::<f64>() / values.len() as f64;
-    let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
+    let mean = filtered.iter().sum::<f64>() / filtered.len() as f64;
+    let variance = filtered.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / (filtered.len() - 1) as f64;
     let std_dev = variance.sqrt();
     (mean, variance, std_dev)
 }
@@ -711,7 +745,13 @@ fn calculate_extension_stats(results: &[&BenchmarkResult]) -> HashMap<String, Ex
         let durations: Vec<f64> = ext_results.iter().map(|r| r.duration.as_secs_f64() * 1000.0).collect();
 
         let (mean_duration, _, _) = calculate_variance(&durations);
-        let p95_duration = calculate_percentile(&durations, 0.95);
+        let mut filtered_durations: Vec<f64> = durations
+            .iter()
+            .copied()
+            .filter(|v| !v.is_nan() && v.is_finite())
+            .collect();
+        filtered_durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let p95_duration = percentile_r7(&filtered_durations, 0.95);
 
         let mean_throughput = if !successful.is_empty() {
             successful
@@ -742,16 +782,6 @@ fn calculate_extension_stats(results: &[&BenchmarkResult]) -> HashMap<String, Ex
         );
     }
     stats
-}
-
-fn calculate_percentile(values: &[f64], percentile: f64) -> f64 {
-    if values.is_empty() {
-        return 0.0;
-    }
-    let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let idx = ((sorted.len() as f64 * percentile) as usize).min(sorted.len() - 1);
-    sorted[idx]
 }
 
 #[cfg(test)]
@@ -806,11 +836,185 @@ mod tests {
     }
 
     #[test]
+    fn test_calculate_variance_bessel_correction() {
+        // Test Bessel's correction: variance of [1,2,3] should be 1.0 (sample variance)
+        // not 0.667 (population variance)
+        let values = vec![1.0, 2.0, 3.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert!((mean - 2.0).abs() < 0.001, "mean should be 2.0, got {}", mean);
+        // Sample variance = ((1-2)^2 + (2-2)^2 + (3-2)^2) / (3-1) = (1+0+1)/2 = 1.0
+        assert!(
+            (variance - 1.0).abs() < 0.001,
+            "variance should be 1.0 (Bessel corrected), got {}",
+            variance
+        );
+        // Standard deviation = sqrt(1.0) = 1.0
+        assert!((std_dev - 1.0).abs() < 0.001, "std_dev should be 1.0, got {}", std_dev);
+    }
+
+    #[test]
+    fn test_calculate_variance_single_element() {
+        // Single element should have variance 0.0 (no variation)
+        let values = vec![5.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert!((mean - 5.0).abs() < 0.001, "mean should be 5.0, got {}", mean);
+        assert!(
+            (variance - 0.0).abs() < 0.001,
+            "variance should be 0.0 for single element, got {}",
+            variance
+        );
+        assert!((std_dev - 0.0).abs() < 0.001, "std_dev should be 0.0, got {}", std_dev);
+    }
+
+    #[test]
+    fn test_calculate_variance_empty_input() {
+        // Empty input should return (0.0, 0.0, 0.0)
+        let values: Vec<f64> = vec![];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert_eq!(mean, 0.0, "mean should be 0.0 for empty input");
+        assert_eq!(variance, 0.0, "variance should be 0.0 for empty input");
+        assert_eq!(std_dev, 0.0, "std_dev should be 0.0 for empty input");
+    }
+
+    #[test]
+    fn test_calculate_variance_nan_filtering() {
+        // Input containing NaN values should be filtered out before calculation
+        let values = vec![1.0, f64::NAN, 2.0, f64::NAN, 3.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        // After filtering: [1.0, 2.0, 3.0]
+        assert!(
+            (mean - 2.0).abs() < 0.001,
+            "mean should be 2.0 after NaN filtering, got {}",
+            mean
+        );
+        assert!(
+            (variance - 1.0).abs() < 0.001,
+            "variance should be 1.0 after NaN filtering, got {}",
+            variance
+        );
+        assert!(
+            (std_dev - 1.0).abs() < 0.001,
+            "std_dev should be 1.0 after NaN filtering, got {}",
+            std_dev
+        );
+    }
+
+    #[test]
+    fn test_calculate_variance_infinity_filtering() {
+        // Input containing f64::INFINITY should be filtered out
+        let values = vec![1.0, f64::INFINITY, 2.0, f64::NEG_INFINITY, 3.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        // After filtering: [1.0, 2.0, 3.0]
+        assert!(
+            (mean - 2.0).abs() < 0.001,
+            "mean should be 2.0 after infinity filtering, got {}",
+            mean
+        );
+        assert!(
+            (variance - 1.0).abs() < 0.001,
+            "variance should be 1.0 after infinity filtering, got {}",
+            variance
+        );
+        assert!(
+            (std_dev - 1.0).abs() < 0.001,
+            "std_dev should be 1.0 after infinity filtering, got {}",
+            std_dev
+        );
+    }
+
+    #[test]
+    fn test_calculate_variance_all_nan_input() {
+        // All NaN input should return (0.0, 0.0, 0.0)
+        let values = vec![f64::NAN, f64::NAN, f64::NAN];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert_eq!(mean, 0.0, "mean should be 0.0 for all-NaN input");
+        assert_eq!(variance, 0.0, "variance should be 0.0 for all-NaN input");
+        assert_eq!(std_dev, 0.0, "std_dev should be 0.0 for all-NaN input");
+    }
+
+    #[test]
+    fn test_calculate_variance_known_values() {
+        // Test with known values: [2,4,4,4,5,5,7,9]
+        // Mean = (2+4+4+4+5+5+7+9) / 8 = 40 / 8 = 5.0
+        // Sample variance = sum((x - 5)^2) / 7
+        // = (9 + 1 + 1 + 1 + 0 + 0 + 4 + 16) / 7
+        // = 32 / 7 ≈ 4.571428...
+        let values = vec![2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert!((mean - 5.0).abs() < 0.001, "mean should be 5.0, got {}", mean);
+        let expected_variance = 32.0 / 7.0;
+        assert!(
+            (variance - expected_variance).abs() < 0.01,
+            "variance should be {}, got {}",
+            expected_variance,
+            variance
+        );
+        assert!(
+            (std_dev - expected_variance.sqrt()).abs() < 0.01,
+            "std_dev should be {}, got {}",
+            expected_variance.sqrt(),
+            std_dev
+        );
+    }
+
+    #[test]
+    fn test_calculate_variance_two_elements() {
+        // Variance of [1,3] should be 2.0
+        // Mean = (1 + 3) / 2 = 2.0
+        // Sample variance = ((1-2)^2 + (3-2)^2) / (2-1) = (1 + 1) / 1 = 2.0
+        let values = vec![1.0, 3.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert!((mean - 2.0).abs() < 0.001, "mean should be 2.0, got {}", mean);
+        assert!(
+            (variance - 2.0).abs() < 0.001,
+            "variance should be 2.0, got {}",
+            variance
+        );
+        assert!(
+            (std_dev - std::f64::consts::SQRT_2).abs() < 0.001,
+            "std_dev should be sqrt(2) ≈ 1.414, got {}",
+            std_dev
+        );
+    }
+
+    #[test]
+    fn test_calculate_variance_mixed_nan_infinity() {
+        // Test filtering with mix of NaN, infinity, and valid values
+        let values = vec![f64::NAN, 10.0, f64::INFINITY, 20.0, f64::NEG_INFINITY, 30.0, f64::NAN];
+        let (mean, variance, _std_dev) = calculate_variance(&values);
+        // After filtering: [10.0, 20.0, 30.0]
+        assert!((mean - 20.0).abs() < 0.001, "mean should be 20.0, got {}", mean);
+        let expected_variance =
+            (((10.0_f64 - 20.0_f64).powi(2)) + ((20.0_f64 - 20.0_f64).powi(2)) + ((30.0_f64 - 20.0_f64).powi(2)))
+                / 2.0_f64;
+        assert!(
+            (variance - expected_variance).abs() < 0.001,
+            "variance should be {}, got {}",
+            expected_variance,
+            variance
+        );
+    }
+
+    #[test]
+    fn test_calculate_variance_identical_values() {
+        // All identical values should have variance 0.0
+        let values = vec![5.0, 5.0, 5.0, 5.0, 5.0];
+        let (mean, variance, std_dev) = calculate_variance(&values);
+        assert!((mean - 5.0).abs() < 0.001, "mean should be 5.0, got {}", mean);
+        assert!(
+            (variance - 0.0).abs() < 0.001,
+            "variance should be 0.0 for identical values, got {}",
+            variance
+        );
+        assert!((std_dev - 0.0).abs() < 0.001, "std_dev should be 0.0, got {}", std_dev);
+    }
+
+    #[test]
     fn test_calculate_variance() {
         let values = vec![1.0, 2.0, 3.0];
         let (mean, variance, std_dev) = calculate_variance(&values);
         assert!((mean - 2.0).abs() < 0.01);
-        assert!(variance > 0.0);
+        assert!((variance - 1.0).abs() < 0.01);
         assert!(std_dev > 0.0);
     }
 
