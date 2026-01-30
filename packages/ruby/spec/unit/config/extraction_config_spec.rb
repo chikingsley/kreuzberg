@@ -13,7 +13,6 @@ RSpec.describe Kreuzberg::Config::Extraction do
       expect(config.language_detection).to be_nil
       expect(config.pdf_options).to be_nil
       expect(config.image_extraction).to be_nil
-      expect(config.image_preprocessing).to be_nil
       expect(config.postprocessor).to be_nil
       expect(config.token_reduction).to be_nil
       expect(config.keywords).to be_nil
@@ -258,7 +257,6 @@ RSpec.describe Kreuzberg::Config::Extraction do
         language_detection: { enabled: true },
         pdf_options: { extract_images: true },
         image_extraction: { target_dpi: 600 },
-        image_preprocessing: { denoise: true },
         postprocessor: { enabled: true },
         token_reduction: { mode: 'light' },
         keywords: { algorithm: 'yake' },
@@ -401,7 +399,6 @@ RSpec.describe Kreuzberg::Config::Extraction do
         language_detection: { enabled: true, min_confidence: 0.9 },
         pdf_options: { extract_images: true, passwords: ['secret'] },
         image_extraction: { target_dpi: 600 },
-        image_preprocessing: { denoise: true, binarization_method: 'sauvola' },
         postprocessor: { enabled: true, enabled_processors: %w[quality] },
         token_reduction: { mode: 'light' },
         keywords: { algorithm: 'yake', max_keywords: 10 },
@@ -415,7 +412,6 @@ RSpec.describe Kreuzberg::Config::Extraction do
       expect(config.language_detection.enabled).to be true
       expect(config.pdf_options.extract_images).to be true
       expect(config.image_extraction.target_dpi).to eq 600
-      expect(config.image_preprocessing.denoise).to be true
       expect(config.postprocessor.enabled).to be true
       expect(config.token_reduction.mode).to eq 'light'
       expect(config.keywords.max_keywords).to eq 10

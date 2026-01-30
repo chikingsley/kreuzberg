@@ -75,5 +75,8 @@ export type {
 	ElementType,
 	ExtractedImage,
 	ExtractionResult,
+	HierarchicalBlock,
+	PageContent,
+	PageHierarchy,
 	Table,
 } from "./results.js";

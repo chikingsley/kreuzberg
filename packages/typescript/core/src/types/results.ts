@@ -226,6 +226,26 @@ export interface Footnote {
 	content: string;
 }
 
+export interface HierarchicalBlock {
+	text: string;
+	fontSize: number;
+	level: string;
+	bbox?: [number, number, number, number] | null;
+}
+
+export interface PageHierarchy {
+	blockCount: number;
+	blocks: HierarchicalBlock[];
+}
+
+export interface PageContent {
+	pageNumber: number;
+	content: string;
+	tables?: Table[];
+	images?: ExtractedImage[];
+	hierarchy?: PageHierarchy | null;
+}
+
 export interface ExtractionResult {
 	content: string;
 	mimeType: string;
@@ -234,6 +254,7 @@ export interface ExtractionResult {
 	detectedLanguages: string[] | null;
 	chunks: Chunk[] | null;
 	images: ExtractedImage[] | null;
+	pages?: PageContent[] | null;
 	elements?: Element[] | null;
 	keywords?: ExtractedKeyword[] | null;
 	djotContent?: DjotContent | null;

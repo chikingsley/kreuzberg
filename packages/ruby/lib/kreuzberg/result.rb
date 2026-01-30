@@ -103,13 +103,48 @@ module Kreuzberg
     #   @return [Array<Table>] Tables on this page
     # @!attribute [r] images
     #   @return [Array<Image>] Images on this page
-    PageContent = Struct.new(:page_number, :content, :tables, :images, keyword_init: true) do
+    # @!attribute [r] text
+    #   @return [String] The text content of this block
+    # @!attribute [r] font_size
+    #   @return [Float] The font size of the text
+    # @!attribute [r] level
+    #   @return [String] The hierarchy level (h1-h6 or body)
+    # @!attribute [r] bbox
+    #   @return [Array<Float>, nil] Bounding box (left, top, right, bottom)
+    HierarchicalBlock = Struct.new(:text, :font_size, :level, :bbox, keyword_init: true) do
+      def to_h
+        { text: text, font_size: font_size, level: level, bbox: bbox }
+      end
+    end
+
+    # @!attribute [r] block_count
+    #   @return [Integer] Number of hierarchy blocks
+    # @!attribute [r] blocks
+    #   @return [Array<HierarchicalBlock>] Hierarchical blocks
+    PageHierarchy = Struct.new(:block_count, :blocks, keyword_init: true) do
+      def to_h
+        { block_count: block_count, blocks: blocks.map(&:to_h) }
+      end
+    end
+
+    # @!attribute [r] page_number
+    #   @return [Integer] Page number (1-indexed)
+    # @!attribute [r] content
+    #   @return [String] Text content for this page
+    # @!attribute [r] tables
+    #   @return [Array<Table>] Tables on this page
+    # @!attribute [r] images
+    #   @return [Array<Image>] Images on this page
+    # @!attribute [r] hierarchy
+    #   @return [PageHierarchy, nil] Hierarchy information for the page
+    PageContent = Struct.new(:page_number, :content, :tables, :images, :hierarchy, keyword_init: true) do
       def to_h
         {
           page_number: page_number,
           content: content,
           tables: tables.map(&:to_h),
-          images: images.map(&:to_h)
+          images: images.map(&:to_h),
+          hierarchy: hierarchy&.to_h
         }
       end
     end
@@ -397,9 +432,28 @@ module Kreuzberg
           page_number: page_hash['page_number'],
           content: page_hash['content'],
           tables: parse_tables(page_hash['tables']),
-          images: parse_images(page_hash['images'])
+          images: parse_images(page_hash['images']),
+          hierarchy: parse_page_hierarchy(page_hash['hierarchy'])
         )
       end
+    end
+
+    def parse_page_hierarchy(hierarchy_data)
+      return nil if hierarchy_data.nil?
+
+      blocks = (hierarchy_data['blocks'] || []).map do |block_hash|
+        HierarchicalBlock.new(
+          text: block_hash['text'],
+          font_size: block_hash['font_size']&.to_f,
+          level: block_hash['level'],
+          bbox: block_hash['bbox']
+        )
+      end
+
+      PageHierarchy.new(
+        block_count: hierarchy_data['block_count'] || 0,
+        blocks: blocks
+      )
     end
 
     def parse_elements(elements_data)

@@ -21,6 +21,7 @@ public final class ExtractionResult {
 	private final List<String> detectedLanguages;
 	private final List<Chunk> chunks;
 	private final List<ExtractedImage> images;
+	private final List<PageContent> pages;
 	private final PageStructure pageStructure;
 	private final List<Element> elements;
 	private final boolean success;
@@ -29,7 +30,7 @@ public final class ExtractionResult {
 	private final Optional<String> subject;
 
 	ExtractionResult(String content, String mimeType, Map<String, Object> metadata, List<Table> tables,
-			List<String> detectedLanguages, List<Chunk> chunks, List<ExtractedImage> images,
+			List<String> detectedLanguages, List<Chunk> chunks, List<ExtractedImage> images, List<PageContent> pages,
 			PageStructure pageStructure, List<Element> elements, boolean success) {
 		this.content = Objects.requireNonNull(content, "content must not be null");
 		this.mimeType = Objects.requireNonNull(mimeType, "mimeType must not be null");
@@ -42,6 +43,7 @@ public final class ExtractionResult {
 		}
 		this.chunks = Collections.unmodifiableList(chunks != null ? chunks : List.of());
 		this.images = Collections.unmodifiableList(images != null ? images : List.of());
+		this.pages = Collections.unmodifiableList(pages != null ? pages : List.of());
 		this.pageStructure = pageStructure;
 		this.elements = Collections.unmodifiableList(elements != null ? elements : List.of());
 		this.success = success;
@@ -76,6 +78,16 @@ public final class ExtractionResult {
 
 	public List<ExtractedImage> getImages() {
 		return images;
+	}
+
+	/**
+	 * Get the per-page content when page extraction is enabled.
+	 *
+	 * @return unmodifiable list of page contents (never null, but may be empty)
+	 * @since 4.2.4
+	 */
+	public List<PageContent> getPages() {
+		return pages;
 	}
 
 	/**
@@ -240,6 +252,7 @@ public final class ExtractionResult {
 	public String toString() {
 		return "ExtractionResult{" + "contentLength=" + content.length() + ", mimeType='" + mimeType + '\''
 				+ ", tables=" + tables.size() + ", detectedLanguages=" + detectedLanguages + ", chunks=" + chunks.size()
-				+ ", images=" + images.size() + ", elements=" + elements.size() + ", success=" + success + '}';
+				+ ", images=" + images.size() + ", pages=" + pages.size() + ", elements=" + elements.size()
+				+ ", success=" + success + '}';
 	}
 }

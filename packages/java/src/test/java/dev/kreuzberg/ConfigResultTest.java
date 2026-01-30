@@ -234,7 +234,7 @@ final class ConfigResultTest {
 		@DisplayName("should return 0 for result without page info")
 		void shouldReturnZeroForNoPages() {
 			ExtractionResult result = new ExtractionResult("content", "text/plain", null, null, null, null, null, null,
-					null, true);
+					null, null, true);
 
 			assertThat(result.getPageCount()).isEqualTo(0);
 		}
@@ -258,7 +258,7 @@ final class ConfigResultTest {
 		@DisplayName("should return 0 for result without chunks")
 		void shouldReturnZeroForNoChunks() {
 			ExtractionResult result = new ExtractionResult("content", "text/plain", null, null, null, null, null, null,
-					null, true);
+					null, null, true);
 
 			assertThat(result.getChunkCount()).isEqualTo(0);
 		}
@@ -282,7 +282,7 @@ final class ConfigResultTest {
 		@DisplayName("should return empty for result without detected language")
 		void shouldReturnEmptyForNoLanguage() {
 			ExtractionResult result = new ExtractionResult("content", "text/plain", null, null, null, null, null, null,
-					null, true);
+					null, null, true);
 
 			Optional<String> language = result.getDetectedLanguage();
 
@@ -336,6 +336,6 @@ final class ConfigResultTest {
 	private static ExtractionResult createTestResult() {
 		return new ExtractionResult("Sample content for testing", "text/plain", Map.of("title", "Sample Title",
 				"author", "Sample Author", "language", "en", "subject", "Sample Subject"), null, null, null, null, null,
-				null, true);
+				null, null, true);
 	}
 }

@@ -14,6 +14,7 @@ namespace Kreuzberg\Types;
  * @property-read string $content Page text content
  * @property-read array<Table> $tables Tables found on this page
  * @property-read array<ExtractedImage> $images Images found on this page
+ * @property-read ?PageHierarchy $hierarchy Hierarchy information for the page
  */
 readonly class PageContent
 {
@@ -26,6 +27,7 @@ readonly class PageContent
         public string $content,
         public array $tables = [],
         public array $images = [],
+        public ?PageHierarchy $hierarchy = null,
     ) {
     }
 
@@ -46,6 +48,9 @@ readonly class PageContent
         /** @var array<array<string, mixed>> $imagesData */
         $imagesData = $data['images'] ?? [];
 
+        /** @var ?array<string, mixed> $hierarchyData */
+        $hierarchyData = isset($data['hierarchy']) && is_array($data['hierarchy']) ? $data['hierarchy'] : null;
+
         return new self(
             pageNumber: $pageNumber,
             content: $content,
@@ -59,6 +64,7 @@ readonly class PageContent
                 static fn (array $image): ExtractedImage => ExtractedImage::fromArray($image),
                 $imagesData,
             ),
+            hierarchy: $hierarchyData !== null ? PageHierarchy::fromArray($hierarchyData) : null,
         );
     }
 }
