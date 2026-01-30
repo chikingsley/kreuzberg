@@ -450,7 +450,7 @@ defmodule KreuzbergTest.Unit.HelpersTest do
     test "handles very deeply nested structures" do
       # Create a 10-level deep structure
       input =
-        Enum.reduce(10..1, %{level10: "value"}, fn i, acc ->
+        Enum.reduce(10..1//-1, %{level10: "value"}, fn i, acc ->
           key = String.to_atom("level#{i}")
           %{key => acc}
         end)
