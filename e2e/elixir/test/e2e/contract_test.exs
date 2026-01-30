@@ -1,0 +1,473 @@
+# Auto-generated tests for contract fixtures.
+
+# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir
+
+defmodule E2E.ContractTest do
+  use ExUnit.Case, async: false
+
+  describe "contract fixtures" do
+    test "api_batch_bytes_async" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_batch_bytes_async",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :batch_async,
+        :bytes,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_batch_bytes_sync" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_batch_bytes_sync",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :batch_sync,
+        :bytes,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_batch_file_async" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_batch_file_async",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :batch_async,
+        :file,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_batch_file_sync" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_batch_file_sync",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :batch_sync,
+        :file,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_extract_bytes_async" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_extract_bytes_async",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :async,
+        :bytes,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_extract_bytes_sync" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_extract_bytes_sync",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :sync,
+        :bytes,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_extract_file_async" do
+      case E2E.Helpers.run_fixture_with_method(
+        "api_extract_file_async",
+        "pdfs/fake_memo.pdf",
+        nil,
+        :async,
+        :file,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "api_extract_file_sync" do
+      case E2E.Helpers.run_fixture(
+        "api_extract_file_sync",
+        "pdfs/fake_memo.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_chunking" do
+      case E2E.Helpers.run_fixture(
+        "config_chunking",
+        "pdfs/fake_memo.pdf",
+        %{chunking: %{max_chars: 500, max_overlap: 50}},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_chunks(min_count: 1, each_has_content: true)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_force_ocr" do
+      case E2E.Helpers.run_fixture(
+        "config_force_ocr",
+        "pdfs/fake_memo.pdf",
+        %{force_ocr: true},
+        requirements: ["tesseract"],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(5)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_images" do
+      case E2E.Helpers.run_fixture(
+        "config_images",
+        "pdfs/embedded_images_tables.pdf",
+        %{images: %{extract_images: true}},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_images(min_count: 1)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_language_detection" do
+      case E2E.Helpers.run_fixture(
+        "config_language_detection",
+        "pdfs/fake_memo.pdf",
+        %{language_detection: %{enabled: true}},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_detected_languages(["eng"], 0.5)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_pages" do
+      case E2E.Helpers.run_fixture(
+        "config_pages",
+        "pdfs/multi_page.pdf",
+        %{pages: %{end: 3, start: 1}},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_use_cache_false" do
+      case E2E.Helpers.run_fixture(
+        "config_use_cache_false",
+        "pdfs/fake_memo.pdf",
+        %{use_cache: false},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "output_format_djot" do
+      case E2E.Helpers.run_fixture(
+        "output_format_djot",
+        "pdfs/fake_memo.pdf",
+        %{output_format: "djot"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "output_format_html" do
+      case E2E.Helpers.run_fixture(
+        "output_format_html",
+        "pdfs/fake_memo.pdf",
+        %{output_format: "html"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "output_format_markdown" do
+      case E2E.Helpers.run_fixture(
+        "output_format_markdown",
+        "pdfs/fake_memo.pdf",
+        %{output_format: "markdown"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "output_format_plain" do
+      case E2E.Helpers.run_fixture(
+        "output_format_plain",
+        "pdfs/fake_memo.pdf",
+        %{output_format: "plain"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "result_format_element_based" do
+      case E2E.Helpers.run_fixture(
+        "result_format_element_based",
+        "pdfs/fake_memo.pdf",
+        %{result_format: "element_based"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_elements(min_count: 1)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "result_format_unified" do
+      case E2E.Helpers.run_fixture(
+        "result_format_unified",
+        "pdfs/fake_memo.pdf",
+        %{result_format: "unified"},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+  end
+end

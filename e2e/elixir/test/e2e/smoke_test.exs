@@ -1,0 +1,170 @@
+# Auto-generated tests for smoke fixtures.
+
+# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir
+
+defmodule E2E.SmokeTest do
+  use ExUnit.Case, async: false
+
+  describe "smoke fixtures" do
+    test "smoke_docx_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_docx_basic",
+        "documents/fake.docx",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
+          |> E2E.Helpers.assert_min_content_length(20)
+          |> E2E.Helpers.assert_content_contains_any(["Lorem", "ipsum", "document", "text"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_html_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_html_basic",
+        "web/simple_table.html",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/html"])
+          |> E2E.Helpers.assert_min_content_length(10)
+          |> E2E.Helpers.assert_content_contains_any(["#", "**", "simple", "HTML"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_image_png" do
+      case E2E.Helpers.run_fixture(
+        "smoke_image_png",
+        "images/sample.png",
+        nil,
+        requirements: [],
+        notes: "Image extraction requires image processing dependencies",
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["image/png"])
+          |> E2E.Helpers.assert_metadata_expectation("format", "PNG")
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_json_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_json_basic",
+        "data_formats/simple.json",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/json"])
+          |> E2E.Helpers.assert_min_content_length(5)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_pdf_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_pdf_basic",
+        "pdfs/fake_memo.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "To Whom it May Concern"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_txt_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_txt_basic",
+        "text/report.txt",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["text/plain"])
+          |> E2E.Helpers.assert_min_content_length(5)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "smoke_xlsx_basic" do
+      case E2E.Helpers.run_fixture(
+        "smoke_xlsx_basic",
+        "spreadsheets/stanley_cups.xlsx",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"])
+          |> E2E.Helpers.assert_min_content_length(100)
+          |> E2E.Helpers.assert_content_contains_all(["Team", "Location", "Stanley Cups", "Blues", "Flyers", "Maple Leafs", "STL", "PHI", "TOR"])
+          |> E2E.Helpers.assert_table_count(1, nil)
+          |> E2E.Helpers.assert_metadata_expectation("sheet_count", %{gte: 2})
+          |> E2E.Helpers.assert_metadata_expectation("sheet_names", %{contains: ["Stanley Cups"]})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+  end
+end

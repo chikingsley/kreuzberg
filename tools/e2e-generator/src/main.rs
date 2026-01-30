@@ -1,4 +1,5 @@
 mod csharp;
+mod elixir;
 mod fixtures;
 mod go;
 mod java;
@@ -54,6 +55,7 @@ enum Language {
     Go,
     Csharp,
     Php,
+    Elixir,
     WasmDeno,
     WasmWorkers,
 }
@@ -73,6 +75,7 @@ fn main() -> Result<()> {
                 Language::Go => go::generate(&fixtures, output.as_path())?,
                 Language::Csharp => csharp::generate(&fixtures, output.as_path())?,
                 Language::Php => php::generate(&fixtures, output.as_path())?,
+                Language::Elixir => elixir::generate(&fixtures, output.as_path())?,
                 Language::WasmDeno => wasm_deno::generate(&fixtures, output.as_path())?,
                 Language::WasmWorkers => wasm_workers::generate(&fixtures, output.as_path())?,
             };

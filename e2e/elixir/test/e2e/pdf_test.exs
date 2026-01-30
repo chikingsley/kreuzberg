@@ -1,0 +1,337 @@
+# Auto-generated tests for pdf fixtures.
+
+# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir
+
+defmodule E2E.PdfTest do
+  use ExUnit.Case, async: false
+
+  describe "pdf fixtures" do
+    test "pdf_assembly_technical" do
+      case E2E.Helpers.run_fixture(
+        "pdf_assembly_technical",
+        "pdfs/assembly_language_for_beginners_al4_b_en.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(5_000)
+          |> E2E.Helpers.assert_content_contains_any(["assembly", "register", "instruction"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_bayesian_data_analysis" do
+      case E2E.Helpers.run_fixture(
+        "pdf_bayesian_data_analysis",
+        "pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10_000)
+          |> E2E.Helpers.assert_content_contains_any(["Bayesian", "probability", "distribution"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_code_and_formula" do
+      case E2E.Helpers.run_fixture(
+        "pdf_code_and_formula",
+        "pdfs/code_and_formula.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(100)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_deep_learning" do
+      case E2E.Helpers.run_fixture(
+        "pdf_deep_learning",
+        "pdfs/fundamentals_of_deep_learning_2014.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(1_000)
+          |> E2E.Helpers.assert_content_contains_any(["neural", "network", "deep learning"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_embedded_images" do
+      case E2E.Helpers.run_fixture(
+        "pdf_embedded_images",
+        "pdfs/embedded_images_tables.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_table_count(0, nil)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_google_doc" do
+      case E2E.Helpers.run_fixture(
+        "pdf_google_doc",
+        "pdfs/google_doc_document.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_large_ciml" do
+      case E2E.Helpers.run_fixture(
+        "pdf_large_ciml",
+        "pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10_000)
+          |> E2E.Helpers.assert_content_contains_any(["machine learning", "algorithm", "training"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_non_english_german" do
+      case E2E.Helpers.run_fixture(
+        "pdf_non_english_german",
+        "pdfs/5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(100)
+          |> E2E.Helpers.assert_content_contains_any(["Intel", "paging"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_right_to_left" do
+      case E2E.Helpers.run_fixture(
+        "pdf_right_to_left",
+        "pdfs/right_to_left_01.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_simple_text" do
+      case E2E.Helpers.run_fixture(
+        "pdf_simple_text",
+        "pdfs/fake_memo.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_content_contains_any(["May 5, 2023", "To Whom it May Concern", "Mallori"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_tables_large" do
+      case E2E.Helpers.run_fixture(
+        "pdf_tables_large",
+        "pdfs_with_tables/large.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(500)
+          |> E2E.Helpers.assert_table_count(1, nil)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_tables_medium" do
+      case E2E.Helpers.run_fixture(
+        "pdf_tables_medium",
+        "pdfs_with_tables/medium.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(100)
+          |> E2E.Helpers.assert_table_count(1, nil)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_tables_small" do
+      case E2E.Helpers.run_fixture(
+        "pdf_tables_small",
+        "pdfs_with_tables/tiny.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(50)
+          |> E2E.Helpers.assert_content_contains_all(["Table 1", "Selected Numbers", "Celsius", "Fahrenheit", "Water Freezing Point", "Water Boiling Point"])
+          |> E2E.Helpers.assert_table_count(1, nil)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "pdf_technical_stat_learning" do
+      case E2E.Helpers.run_fixture(
+        "pdf_technical_stat_learning",
+        "pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_min_content_length(10_000)
+          |> E2E.Helpers.assert_content_contains_any(["statistical", "regression", "learning"])
+          |> E2E.Helpers.assert_metadata_expectation("format_type", %{eq: "pdf"})
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+  end
+end

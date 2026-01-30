@@ -114,3 +114,24 @@ tasks:
     dir: packages/elixir
     cmds:
       - mix docs
+
+  e2e:generate:
+    desc: Generate Elixir E2E tests from fixtures
+    cmds:
+      - cmd: bash scripts/task/e2e-generate.sh elixir
+        platforms: [linux, darwin]
+      - cmd: echo "E2E generation not yet supported on Windows - use WSL or CI"
+        platforms: [windows]
+
+  e2e:test:
+    desc: Run generated Elixir E2E tests
+    dir: e2e/elixir
+    cmds:
+      - mix deps.get
+      - mix test
+
+  e2e:lint:
+    desc: Lint generated Elixir E2E tests
+    dir: e2e/elixir
+    cmds:
+      - mix format --check-formatted

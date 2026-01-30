@@ -1,0 +1,1511 @@
+use crate::fixtures::{Assertions, ExtractionMethod, Fixture, InputType};
+use anyhow::{Context, Result, bail};
+use camino::Utf8Path;
+use itertools::Itertools;
+use serde_json::{Map, Value};
+use std::fmt::Write as _;
+use std::fs;
+
+const ELIXIR_HELPERS_TEMPLATE: &str = r##"# Auto-generated Elixir E2E test helpers
+#
+# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir
+
+defmodule E2E.Helpers do
+  @moduledoc """
+  Test helpers for E2E extraction tests.
+  """
+
+  import ExUnit.Assertions
+
+  @workspace_root Path.expand("../../../..", __DIR__)
+  @test_documents Path.join(@workspace_root, "test_documents")
+
+  def resolve_document(relative) do
+    Path.join(@test_documents, relative)
+  end
+
+  def build_config(nil), do: nil
+  def build_config(raw) when is_map(raw) and map_size(raw) == 0, do: nil
+  def build_config(raw) when is_map(raw) do
+    atomize_keys(raw)
+  end
+
+  defp atomize_keys(value) when is_map(value) do
+    Map.new(value, fn {key, val} ->
+      atom_key = if is_binary(key), do: String.to_atom(key), else: key
+      {atom_key, atomize_keys(val)}
+    end)
+  end
+
+  defp atomize_keys(value) when is_list(value) do
+    Enum.map(value, &atomize_keys/1)
+  end
+
+  defp atomize_keys(value), do: value
+
+  def skip_reason_for(error, fixture_id, requirements, notes \\ nil) do
+    message = Exception.message(error)
+    downcased = String.downcase(message)
+    requirement_hit = Enum.any?(requirements, fn req ->
+      String.contains?(downcased, String.downcase(req))
+    end)
+    missing_dependency = String.contains?(downcased, "missing dependency")
+    unsupported_format = String.contains?(downcased, "unsupported format")
+
+    case {missing_dependency, unsupported_format, requirement_hit} do
+      {true, _, _} ->
+        reason = "missing dependency"
+        details = "Skipping #{fixture_id}: #{reason}. #{inspect(error)}"
+        details = if notes, do: "#{details} Notes: #{notes}", else: details
+        IO.warn(details)
+        details
+
+      {_, true, _} ->
+        reason = "unsupported format"
+        details = "Skipping #{fixture_id}: #{reason}. #{inspect(error)}"
+        details = if notes, do: "#{details} Notes: #{notes}", else: details
+        IO.warn(details)
+        details
+
+      {_, _, true} ->
+        reason = "requires #{Enum.join(requirements, ", ")}"
+        details = "Skipping #{fixture_id}: #{reason}. #{inspect(error)}"
+        details = if notes, do: "#{details} Notes: #{notes}", else: details
+        IO.warn(details)
+        details
+
+      _ ->
+        nil
+    end
+  end
+
+  def run_fixture(fixture_id, relative_path, config_hash, opts \\\\ []) do
+    requirements = Keyword.get(opts, :requirements, [])
+    notes = Keyword.get(opts, :notes, nil)
+    skip_if_missing = Keyword.get(opts, :skip_if_missing, true)
+    run_fixture_with_method(fixture_id, relative_path, config_hash, :sync, :file,
+      requirements: requirements, notes: notes, skip_if_missing: skip_if_missing
+    )
+  end
+
+  def run_fixture_with_method(fixture_id, relative_path, config_hash, method, input_type, opts \\\\ []) do
+    requirements = Keyword.get(opts, :requirements, [])
+    notes = Keyword.get(opts, :notes, nil)
+    skip_if_missing = Keyword.get(opts, :skip_if_missing, true)
+    document_path = resolve_document(relative_path)
+
+    if skip_if_missing and not File.exists?(document_path) do
+      IO.warn("Skipping #{fixture_id}: missing document at #{document_path}")
+      {:skipped, "missing document"}
+    else
+      config = build_config(config_hash)
+
+      try do
+        case perform_extraction(document_path, config, method, input_type) do
+          {:ok, result} ->
+            {:ok, result}
+
+          {:error, reason} ->
+            error = %RuntimeError{message: to_string(reason)}
+
+            case skip_reason_for(error, fixture_id, requirements, notes) do
+              nil -> {:error, reason}
+              skip_msg -> {:skipped, skip_msg}
+            end
+        end
+      rescue
+        e ->
+          case skip_reason_for(e, fixture_id, requirements, notes) do
+            nil -> reraise e, __STACKTRACE__
+            skip_msg -> {:skipped, skip_msg}
+          end
+      end
+    end
+  end
+
+  defp perform_extraction(document_path, config, method, input_type) do
+    mime_type = detect_mime_type(document_path)
+
+    case {method, input_type} do
+      {:sync, :file} ->
+        Kreuzberg.extract_file(document_path, mime_type, config)
+
+      {:sync, :bytes} ->
+        bytes = File.read!(document_path)
+        Kreuzberg.extract(bytes, mime_type, config)
+
+      {:async, :file} ->
+        case Kreuzberg.extract_file_async(document_path, mime_type, config) do
+          {:ok, task} -> Task.await(task, :infinity)
+          error -> error
+        end
+
+      {:async, :bytes} ->
+        bytes = File.read!(document_path)
+
+        case Kreuzberg.extract_async(bytes, mime_type, config) do
+          {:ok, task} -> Task.await(task, :infinity)
+          error -> error
+        end
+
+      {:batch_sync, :file} ->
+        case Kreuzberg.batch_extract_files([document_path], mime_type, config) do
+          {:ok, [first | _]} -> {:ok, first}
+          {:ok, []} -> {:error, "No results from batch extraction"}
+          error -> error
+        end
+
+      {:batch_sync, :bytes} ->
+        bytes = File.read!(document_path)
+
+        case Kreuzberg.batch_extract_bytes([bytes], [mime_type], config) do
+          {:ok, [first | _]} -> {:ok, first}
+          {:ok, []} -> {:error, "No results from batch extraction"}
+          error -> error
+        end
+
+      {:batch_async, :file} ->
+        case Kreuzberg.batch_extract_files_async([document_path], mime_type, config) do
+          {:ok, task} ->
+            case Task.await(task, :infinity) do
+              {:ok, [first | _]} -> {:ok, first}
+              {:ok, []} -> {:error, "No results from batch extraction"}
+              error -> error
+            end
+
+          error ->
+            error
+        end
+
+      {:batch_async, :bytes} ->
+        bytes = File.read!(document_path)
+
+        case Kreuzberg.batch_extract_bytes_async([bytes], [mime_type], config) do
+          {:ok, task} ->
+            case Task.await(task, :infinity) do
+              {:ok, [first | _]} -> {:ok, first}
+              {:ok, []} -> {:error, "No results from batch extraction"}
+              error -> error
+            end
+
+          error ->
+            error
+        end
+
+      _ ->
+        {:error, "Unknown extraction method/input_type combo: #{method}/#{input_type}"}
+    end
+  end
+
+  defp detect_mime_type(document_path) do
+    case Kreuzberg.detect_mime_type_from_path(document_path) do
+      {:ok, mime} -> mime
+      _ -> nil
+    end
+  end
+
+  # Assertion helpers - all return result for piping
+
+  def assert_expected_mime(result, expected) do
+    if Enum.empty?(expected) do
+      result
+    else
+      mime = result.mime_type || ""
+      if Enum.any?(expected, fn token -> String.contains?(mime, token) end) do
+        result
+      else
+        flunk("MIME type '#{mime}' does not match expected: #{inspect(expected)}")
+      end
+    end
+  end
+
+  def assert_min_content_length(result, minimum) do
+    content_len = String.length(result.content || "")
+    if content_len >= minimum do
+      result
+    else
+      flunk("Content length #{content_len} is less than minimum #{minimum}")
+    end
+  end
+
+  def assert_max_content_length(result, maximum) do
+    content_len = String.length(result.content || "")
+    if content_len <= maximum do
+      result
+    else
+      flunk("Content length #{content_len} exceeds maximum #{maximum}")
+    end
+  end
+
+  def assert_content_contains_any(result, snippets) do
+    if Enum.empty?(snippets) do
+      result
+    else
+      lowered = String.downcase(result.content || "")
+      if Enum.any?(snippets, fn snippet -> String.contains?(lowered, String.downcase(snippet)) end) do
+        result
+      else
+        flunk("Content does not contain any of: #{inspect(snippets)}")
+      end
+    end
+  end
+
+  def assert_content_contains_all(result, snippets) do
+    if Enum.empty?(snippets) do
+      result
+    else
+      lowered = String.downcase(result.content || "")
+      if Enum.all?(snippets, fn snippet -> String.contains?(lowered, String.downcase(snippet)) end) do
+        result
+      else
+        flunk("Content does not contain all of: #{inspect(snippets)}")
+      end
+    end
+  end
+
+  def assert_table_count(result, min_count, max_count) do
+    tables = result.tables || []
+    tables_len = length(tables)
+
+    if min_count && tables_len < min_count do
+      flunk("Table count #{tables_len} is less than minimum #{min_count}")
+    end
+
+    if max_count && tables_len > max_count do
+      flunk("Table count #{tables_len} exceeds maximum #{max_count}")
+    end
+
+    result
+  end
+
+  def assert_detected_languages(result, expected, min_confidence) do
+    if Enum.empty?(expected) do
+      result
+    else
+      languages = result.detected_languages || []
+
+      if !Enum.all?(expected, fn lang -> Enum.member?(languages, lang) end) do
+        flunk("Detected languages #{inspect(languages)} do not include all of #{inspect(expected)}")
+      end
+
+      if min_confidence do
+        metadata = result.metadata || %{}
+        confidence = metadata["confidence"] || metadata[:confidence]
+
+        if confidence && confidence < min_confidence do
+          flunk("Language confidence #{confidence} is less than minimum #{min_confidence}")
+        end
+      end
+
+      result
+    end
+  end
+
+  def assert_metadata_expectation(result, path, expectation) do
+    metadata = result.metadata || %{}
+    value = fetch_metadata_value(metadata, path)
+
+    if value == nil do
+      flunk("Metadata path '#{path}' missing in #{inspect(metadata)}")
+    end
+
+    case expectation do
+      expectation when is_map(expectation) ->
+        if Map.has_key?(expectation, :eq) do
+          expected_val = Map.get(expectation, :eq)
+          if !values_equal?(value, expected_val) do
+            flunk("Metadata path '#{path}' value #{inspect(value)} != #{inspect(expected_val)}")
+          end
+        end
+
+        if Map.has_key?(expectation, :gte) do
+          expected_val = Map.get(expectation, :gte)
+          if convert_numeric(value) < convert_numeric(expected_val) do
+            flunk("Metadata path '#{path}' value #{inspect(value)} < #{inspect(expected_val)}")
+          end
+        end
+
+        if Map.has_key?(expectation, :lte) do
+          expected_val = Map.get(expectation, :lte)
+          if convert_numeric(value) > convert_numeric(expected_val) do
+            flunk("Metadata path '#{path}' value #{inspect(value)} > #{inspect(expected_val)}")
+          end
+        end
+
+        if Map.has_key?(expectation, :contains) do
+          contains_val = Map.get(expectation, :contains)
+
+          cond do
+            is_binary(value) && is_binary(contains_val) ->
+              if !String.contains?(value, contains_val) do
+                flunk("Metadata path '#{path}' value does not contain '#{contains_val}'")
+              end
+
+            is_list(value) && is_binary(contains_val) ->
+              if !Enum.member?(value, contains_val) do
+                flunk("Metadata path '#{path}' value does not contain '#{contains_val}'")
+              end
+
+            is_list(value) && is_list(contains_val) ->
+              if !Enum.all?(contains_val, fn item -> Enum.member?(value, item) end) do
+                flunk("Metadata path '#{path}' value does not contain all of #{inspect(contains_val)}")
+              end
+
+            true ->
+              flunk("Unsupported contains expectation for path '#{path}'")
+          end
+        end
+
+      _ ->
+        if !values_equal?(value, expectation) do
+          flunk("Metadata path '#{path}' value #{inspect(value)} != #{inspect(expectation)}")
+        end
+    end
+
+    result
+  end
+
+  def assert_chunks(result, opts) do
+    chunks = result.chunks || []
+    chunks_len = length(chunks)
+
+    if opts[:min_count] && chunks_len < opts[:min_count] do
+      flunk("Chunk count #{chunks_len} is less than minimum #{opts[:min_count]}")
+    end
+
+    if opts[:max_count] && chunks_len > opts[:max_count] do
+      flunk("Chunk count #{chunks_len} exceeds maximum #{opts[:max_count]}")
+    end
+
+    if opts[:each_has_content] do
+      if !Enum.all?(chunks, fn chunk -> chunk.content && String.length(chunk.content) > 0 end) do
+        flunk("Not all chunks have content")
+      end
+    end
+
+    if opts[:each_has_embedding] do
+      if !Enum.all?(chunks, fn chunk -> chunk.embedding end) do
+        flunk("Not all chunks have embeddings")
+      end
+    end
+
+    result
+  end
+
+  def assert_images(result, opts) do
+    images = result.images || []
+    images_len = length(images)
+
+    if opts[:min_count] && images_len < opts[:min_count] do
+      flunk("Image count #{images_len} is less than minimum #{opts[:min_count]}")
+    end
+
+    if opts[:max_count] && images_len > opts[:max_count] do
+      flunk("Image count #{images_len} exceeds maximum #{opts[:max_count]}")
+    end
+
+    if opts[:formats_include] do
+      found_formats = images |> Enum.map(fn img -> img.format end) |> Enum.uniq()
+
+      if !Enum.all?(opts[:formats_include], fn fmt -> Enum.member?(found_formats, fmt) end) do
+        flunk("Image formats #{inspect(found_formats)} do not include all of #{inspect(opts[:formats_include])}")
+      end
+    end
+
+    result
+  end
+
+  def assert_pages(result, opts) do
+    pages = result.pages || []
+    pages_len = length(pages)
+
+    if opts[:min_count] && pages_len < opts[:min_count] do
+      flunk("Page count #{pages_len} is less than minimum #{opts[:min_count]}")
+    end
+
+    if opts[:exact_count] && pages_len != opts[:exact_count] do
+      flunk("Page count #{pages_len} != exact count #{opts[:exact_count]}")
+    end
+
+    result
+  end
+
+  def assert_elements(result, opts) do
+    elements = result.elements || []
+    elements_len = length(elements)
+
+    if opts[:min_count] && elements_len < opts[:min_count] do
+      flunk("Element count #{elements_len} is less than minimum #{opts[:min_count]}")
+    end
+
+    if opts[:types_include] do
+      found_types = elements |> Enum.map(fn elem -> elem.type end) |> Enum.uniq()
+
+      if !Enum.all?(opts[:types_include], fn t -> Enum.member?(found_types, t) end) do
+        flunk("Element types #{inspect(found_types)} do not include all of #{inspect(opts[:types_include])}")
+      end
+    end
+
+    result
+  end
+
+  # Private helpers
+
+  defp fetch_metadata_value(metadata, path) do
+    value = lookup_metadata_path(metadata, path)
+
+    if value == nil do
+      format = metadata["format"] || metadata[:format]
+
+      if is_map(format) do
+        lookup_metadata_path(format, path)
+      else
+        nil
+      end
+    else
+      value
+    end
+  end
+
+  defp lookup_metadata_path(metadata, path) when is_map(metadata) do
+    path
+    |> String.split(".")
+    |> Enum.reduce(metadata, fn segment, current ->
+      if is_map(current) do
+        current[segment] || current[String.to_atom(segment)]
+      else
+        nil
+      end
+    end)
+  end
+
+  defp lookup_metadata_path(_, _), do: nil
+
+  defp values_equal?(lhs, rhs) when is_binary(lhs) and is_binary(rhs), do: lhs == rhs
+  defp values_equal?(lhs, rhs) when is_number(lhs) and is_number(rhs) do
+    convert_numeric(lhs) == convert_numeric(rhs)
+  end
+  defp values_equal?(lhs, rhs), do: lhs == rhs
+
+  defp convert_numeric(value) when is_number(value), do: value
+  defp convert_numeric(value) when is_binary(value) do
+    case Float.parse(value) do
+      {num, ""} -> num
+      _ -> 0.0
+    end
+  end
+  defp convert_numeric(_), do: 0.0
+end
+"##;
+
+const ELIXIR_TEST_HELPER_TEMPLATE: &str = r#"ExUnit.start(exclude: [:skip])
+Code.require_file("support/e2e_helpers.ex", __DIR__)
+"#;
+
+const ELIXIR_MIX_TEMPLATE: &str = r#"defmodule E2E.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :e2e_elixir,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      start_permanent: false,
+      deps: deps(),
+      elixirc_paths: ["test/support"]
+    ]
+  end
+
+  def application do
+    [extra_applications: [:logger]]
+  end
+
+  defp deps do
+    [
+      {:kreuzberg, path: "../../packages/elixir"}
+    ]
+  end
+end
+"#;
+
+const ELIXIR_FORMATTER_TEMPLATE: &str = r#"[
+  line_length: 120,
+  inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}"]
+]
+"#;
+
+pub fn generate(fixtures: &[Fixture], output_root: &Utf8Path) -> Result<()> {
+    let elixir_root = output_root.join("elixir");
+    let test_dir = elixir_root.join("test");
+    let support_dir = test_dir.join("support");
+    let e2e_dir = test_dir.join("e2e");
+
+    fs::create_dir_all(&e2e_dir).context("Failed to create Elixir test/e2e directory")?;
+    fs::create_dir_all(&support_dir).context("Failed to create Elixir test/support directory")?;
+
+    write_mix_file(&elixir_root)?;
+    write_formatter_file(&elixir_root)?;
+    write_test_helper(&test_dir)?;
+    write_helpers(&support_dir)?;
+    clean_test_files(&e2e_dir)?;
+
+    let doc_fixtures: Vec<_> = fixtures.iter().filter(|f| f.is_document_extraction()).collect();
+    let plugin_fixtures: Vec<_> = fixtures.iter().filter(|f| f.is_plugin_api()).collect();
+
+    let mut grouped = doc_fixtures
+        .into_iter()
+        .into_group_map_by(|fixture| fixture.category().to_string())
+        .into_iter()
+        .collect::<Vec<_>>();
+    grouped.sort_by(|a, b| a.0.cmp(&b.0));
+
+    for (category, mut fixtures) in grouped {
+        fixtures.sort_by(|a, b| a.id.cmp(&b.id));
+        let file_name = format!("{}_test.exs", sanitize_identifier(&category));
+        let content = render_category(&category, &fixtures)?;
+        let path = e2e_dir.join(file_name);
+        fs::write(&path, content).with_context(|| format!("Writing {}", path))?;
+    }
+
+    if !plugin_fixtures.is_empty() {
+        generate_plugin_api_tests(&plugin_fixtures, &e2e_dir)?;
+    }
+
+    Ok(())
+}
+
+fn clean_test_files(e2e_dir: &Utf8Path) -> Result<()> {
+    if !e2e_dir.exists() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(e2e_dir.as_std_path())? {
+        let entry = entry?;
+        if entry.path().extension().is_some_and(|ext| ext == "exs") {
+            fs::remove_file(entry.path())?;
+        }
+    }
+
+    Ok(())
+}
+
+fn write_mix_file(elixir_root: &Utf8Path) -> Result<()> {
+    let mix_path = elixir_root.join("mix.exs");
+    fs::write(&mix_path, ELIXIR_MIX_TEMPLATE).context("Failed to write mix.exs")
+}
+
+fn write_formatter_file(elixir_root: &Utf8Path) -> Result<()> {
+    let formatter_path = elixir_root.join(".formatter.exs");
+    fs::write(&formatter_path, ELIXIR_FORMATTER_TEMPLATE).context("Failed to write .formatter.exs")
+}
+
+fn write_test_helper(test_dir: &Utf8Path) -> Result<()> {
+    let helper_path = test_dir.join("test_helper.exs");
+    fs::write(&helper_path, ELIXIR_TEST_HELPER_TEMPLATE).context("Failed to write test_helper.exs")
+}
+
+fn write_helpers(support_dir: &Utf8Path) -> Result<()> {
+    let helpers_path = support_dir.join("e2e_helpers.ex");
+    fs::write(&helpers_path, ELIXIR_HELPERS_TEMPLATE).context("Failed to write e2e_helpers.ex")
+}
+
+fn render_category(category: &str, fixtures: &[&Fixture]) -> Result<String> {
+    let mut buffer = String::new();
+    writeln!(buffer, "# Auto-generated tests for {category} fixtures.")?;
+    writeln!(buffer)?;
+    writeln!(
+        buffer,
+        "# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir"
+    )?;
+    writeln!(buffer)?;
+    writeln!(buffer, "defmodule E2E.{}Test do", sanitize_module_name(category))?;
+    writeln!(buffer, "  use ExUnit.Case, async: false")?;
+    writeln!(buffer)?;
+    writeln!(buffer, "  describe \"{category} fixtures\" do")?;
+
+    for (index, fixture) in fixtures.iter().enumerate() {
+        let is_last = index == fixtures.len() - 1;
+        buffer.push_str(&render_example(fixture, is_last)?);
+    }
+
+    writeln!(buffer, "  end")?;
+    writeln!(buffer, "end")?;
+    Ok(buffer)
+}
+
+fn render_example(fixture: &Fixture, is_last: bool) -> Result<String> {
+    let mut body = String::new();
+    let extraction = fixture.extraction();
+    let method = extraction.method;
+    let input_type = extraction.input_type;
+
+    let method_atom = match method {
+        ExtractionMethod::Sync => ":sync",
+        ExtractionMethod::Async => ":async",
+        ExtractionMethod::BatchSync => ":batch_sync",
+        ExtractionMethod::BatchAsync => ":batch_async",
+    };
+    let input_type_atom = match input_type {
+        InputType::File => ":file",
+        InputType::Bytes => ":bytes",
+    };
+
+    let use_simple_runner = method == ExtractionMethod::Sync && input_type == InputType::File;
+
+    writeln!(body, "    test \"{}\" do", escape_elixir_string_content(&fixture.id))?;
+
+    if use_simple_runner {
+        writeln!(body, "      case E2E.Helpers.run_fixture(")?;
+        writeln!(body, "        {},", render_elixir_string(&fixture.id))?;
+        writeln!(body, "        {},", render_elixir_string(&fixture.document().path))?;
+
+        let config_expr = render_config_expression(&extraction.config)?;
+        match config_expr {
+            None => writeln!(body, "        nil,")?,
+            Some(expr) => writeln!(body, "        {expr},")?,
+        }
+
+        let requirements = render_string_list(&collect_requirements(fixture));
+        let notes_literal = render_optional_string(fixture.skip().notes.as_ref());
+        writeln!(body, "        requirements: {},", requirements)?;
+        writeln!(body, "        notes: {},", notes_literal)?;
+        let skip_flag = if fixture.skip().if_document_missing {
+            "true"
+        } else {
+            "false"
+        };
+        writeln!(body, "        skip_if_missing: {}", skip_flag)?;
+        writeln!(body, "      ) do")?;
+        writeln!(body, "        {{:ok, result}} ->")?;
+    } else {
+        writeln!(body, "      case E2E.Helpers.run_fixture_with_method(")?;
+        writeln!(body, "        {},", render_elixir_string(&fixture.id))?;
+        writeln!(body, "        {},", render_elixir_string(&fixture.document().path))?;
+
+        let config_expr = render_config_expression(&extraction.config)?;
+        match config_expr {
+            None => writeln!(body, "        nil,")?,
+            Some(expr) => writeln!(body, "        {expr},")?,
+        }
+
+        writeln!(body, "        {},", method_atom)?;
+        writeln!(body, "        {},", input_type_atom)?;
+
+        let requirements = render_string_list(&collect_requirements(fixture));
+        let notes_literal = render_optional_string(fixture.skip().notes.as_ref());
+        writeln!(body, "        requirements: {},", requirements)?;
+        writeln!(body, "        notes: {},", notes_literal)?;
+        let skip_flag = if fixture.skip().if_document_missing {
+            "true"
+        } else {
+            "false"
+        };
+        writeln!(body, "        skip_if_missing: {}", skip_flag)?;
+        writeln!(body, "      ) do")?;
+        writeln!(body, "        {{:ok, result}} ->")?;
+    }
+
+    let assertions = render_assertions(&fixture.assertions());
+    if !assertions.is_empty() {
+        body.push_str(&assertions);
+    }
+
+    writeln!(body)?;
+    writeln!(body, "        {{:skipped, reason}} ->")?;
+    writeln!(body, "          IO.puts(\"SKIPPED: #{{reason}}\")")?;
+    writeln!(body)?;
+    writeln!(body, "        {{:error, reason}} ->")?;
+    writeln!(body, "          flunk(\"Extraction failed: #{{inspect(reason)}}\")")?;
+    writeln!(body, "      end")?;
+    writeln!(body, "    end")?;
+    if !is_last {
+        writeln!(body)?;
+    }
+
+    Ok(body)
+}
+
+fn render_assertions(assertions: &Assertions) -> String {
+    // Collect all assertion calls as pipe segments
+    let mut pipes: Vec<String> = Vec::new();
+
+    if !assertions.expected_mime.is_empty() {
+        pipes.push(format!(
+            "E2E.Helpers.assert_expected_mime({})",
+            render_string_list(&assertions.expected_mime)
+        ));
+    }
+
+    if let Some(min) = assertions.min_content_length {
+        pipes.push(format!(
+            "E2E.Helpers.assert_min_content_length({})",
+            render_numeric_literal(min as u64)
+        ));
+    }
+
+    if let Some(max) = assertions.max_content_length {
+        pipes.push(format!(
+            "E2E.Helpers.assert_max_content_length({})",
+            render_numeric_literal(max as u64)
+        ));
+    }
+
+    if !assertions.content_contains_any.is_empty() {
+        pipes.push(format!(
+            "E2E.Helpers.assert_content_contains_any({})",
+            render_string_list(&assertions.content_contains_any)
+        ));
+    }
+
+    if !assertions.content_contains_all.is_empty() {
+        pipes.push(format!(
+            "E2E.Helpers.assert_content_contains_all({})",
+            render_string_list(&assertions.content_contains_all)
+        ));
+    }
+
+    if let Some(tables) = assertions.tables.as_ref() {
+        let min_literal = tables
+            .min
+            .map(|value| render_numeric_literal(value as u64))
+            .unwrap_or_else(|| "nil".into());
+        let max_literal = tables
+            .max
+            .map(|value| render_numeric_literal(value as u64))
+            .unwrap_or_else(|| "nil".into());
+        pipes.push(format!(
+            "E2E.Helpers.assert_table_count({}, {})",
+            min_literal, max_literal
+        ));
+    }
+
+    if let Some(languages) = assertions.detected_languages.as_ref() {
+        let expected = render_string_list(&languages.expects);
+        let min_conf = languages
+            .min_confidence
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "nil".into());
+        pipes.push(format!(
+            "E2E.Helpers.assert_detected_languages({}, {})",
+            expected, min_conf
+        ));
+    }
+
+    if !assertions.metadata.is_empty() {
+        for (path, expectation) in &assertions.metadata {
+            pipes.push(format!(
+                "E2E.Helpers.assert_metadata_expectation({}, {})",
+                render_elixir_string(path),
+                render_elixir_value(expectation)
+            ));
+        }
+    }
+
+    if let Some(chunks) = assertions.chunks.as_ref() {
+        let mut args = Vec::new();
+        if let Some(min) = chunks.min_count {
+            args.push(format!("min_count: {}", render_numeric_literal(min as u64)));
+        }
+        if let Some(max) = chunks.max_count {
+            args.push(format!("max_count: {}", render_numeric_literal(max as u64)));
+        }
+        if let Some(has_content) = chunks.each_has_content {
+            args.push(format!("each_has_content: {}", has_content));
+        }
+        if let Some(has_embedding) = chunks.each_has_embedding {
+            args.push(format!("each_has_embedding: {}", has_embedding));
+        }
+        if !args.is_empty() {
+            pipes.push(format!("E2E.Helpers.assert_chunks({})", args.join(", ")));
+        }
+    }
+
+    if let Some(images) = assertions.images.as_ref() {
+        let mut args = Vec::new();
+        if let Some(min) = images.min_count {
+            args.push(format!("min_count: {}", render_numeric_literal(min as u64)));
+        }
+        if let Some(max) = images.max_count {
+            args.push(format!("max_count: {}", render_numeric_literal(max as u64)));
+        }
+        if let Some(formats) = images.formats_include.as_ref() {
+            args.push(format!("formats_include: {}", render_string_list(formats)));
+        }
+        if !args.is_empty() {
+            pipes.push(format!("E2E.Helpers.assert_images({})", args.join(", ")));
+        }
+    }
+
+    if let Some(pages) = assertions.pages.as_ref() {
+        let mut args = Vec::new();
+        if let Some(min) = pages.min_count {
+            args.push(format!("min_count: {}", render_numeric_literal(min as u64)));
+        }
+        if let Some(exact) = pages.exact_count {
+            args.push(format!("exact_count: {}", render_numeric_literal(exact as u64)));
+        }
+        if !args.is_empty() {
+            pipes.push(format!("E2E.Helpers.assert_pages({})", args.join(", ")));
+        }
+    }
+
+    if let Some(elements) = assertions.elements.as_ref() {
+        let mut args = Vec::new();
+        if let Some(min) = elements.min_count {
+            args.push(format!("min_count: {}", render_numeric_literal(min as u64)));
+        }
+        if let Some(types) = elements.types_include.as_ref() {
+            args.push(format!("types_include: {}", render_string_list(types)));
+        }
+        if !args.is_empty() {
+            pipes.push(format!("E2E.Helpers.assert_elements({})", args.join(", ")));
+        }
+    }
+
+    if pipes.is_empty() {
+        return String::new();
+    }
+
+    let mut buffer = String::new();
+    buffer.push_str("          result\n");
+    for pipe in &pipes {
+        buffer.push_str(&format!("          |> {}\n", pipe));
+    }
+    buffer
+}
+
+fn render_config_expression(config: &Map<String, Value>) -> Result<Option<String>> {
+    if config.is_empty() {
+        Ok(None)
+    } else {
+        let value = Value::Object(config.clone());
+        Ok(Some(render_elixir_value(&value)))
+    }
+}
+
+fn render_elixir_value(value: &Value) -> String {
+    match value {
+        Value::Null => "nil".into(),
+        Value::Bool(b) => if *b { "true" } else { "false" }.into(),
+        Value::Number(n) => render_number_value(n),
+        Value::String(s) => render_elixir_string(s),
+        Value::Array(items) => {
+            if items.is_empty() {
+                "[]".into()
+            } else {
+                let inner = items.iter().map(render_elixir_value).collect::<Vec<_>>().join(", ");
+                format!("[{inner}]")
+            }
+        }
+        Value::Object(map) => render_elixir_map(map),
+    }
+}
+
+fn render_string_list(items: &[String]) -> String {
+    if items.is_empty() {
+        "[]".into()
+    } else {
+        let content = items
+            .iter()
+            .map(|item| render_elixir_string(item))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("[{content}]")
+    }
+}
+
+fn render_optional_string(value: Option<&String>) -> String {
+    match value {
+        Some(text) => render_elixir_string(text),
+        None => "nil".into(),
+    }
+}
+
+fn render_elixir_string(text: &str) -> String {
+    let escaped = text
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r");
+    format!("\"{escaped}\"")
+}
+
+fn sanitize_identifier(input: &str) -> String {
+    let mut output = String::new();
+    for (idx, ch) in input.chars().enumerate() {
+        if ch.is_ascii_alphanumeric() || ch == '_' {
+            if idx == 0 && ch.is_ascii_digit() {
+                output.push('_');
+            }
+            output.push(ch);
+        } else {
+            output.push('_');
+        }
+    }
+    if output.is_empty() { "fixture".into() } else { output }
+}
+
+fn sanitize_module_name(input: &str) -> String {
+    let parts: Vec<_> = input.split('_').collect();
+    parts
+        .iter()
+        .map(|part| {
+            if part.is_empty() {
+                String::new()
+            } else {
+                let mut chars = part.chars();
+                match chars.next() {
+                    Some(first) => first.to_uppercase().chain(chars).collect(),
+                    None => String::new(),
+                }
+            }
+        })
+        .collect()
+}
+
+fn render_elixir_map(map: &Map<String, Value>) -> String {
+    if map.is_empty() {
+        return "%{}".into();
+    }
+
+    let pairs = map
+        .iter()
+        .map(|(key, value)| {
+            if is_atom_key(key) {
+                format!("{}: {}", key, render_elixir_value(value))
+            } else {
+                format!("\"{}\" => {}", key, render_elixir_value(value))
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("%{{{pairs}}}")
+}
+
+fn render_numeric_literal(value: u64) -> String {
+    let digits = value.to_string();
+    if digits.len() <= 3 {
+        return digits;
+    }
+
+    let mut output = String::with_capacity(digits.len() + digits.len() / 3);
+    for (idx, ch) in digits.chars().rev().enumerate() {
+        if idx != 0 && idx % 3 == 0 {
+            output.push('_');
+        }
+        output.push(ch);
+    }
+    output.chars().rev().collect()
+}
+
+fn render_number_value(number: &serde_json::Number) -> String {
+    if let Some(value) = number.as_u64() {
+        render_numeric_literal(value)
+    } else if let Some(value) = number.as_i64() {
+        if value >= 0 {
+            render_numeric_literal(value as u64)
+        } else {
+            let positive = render_numeric_literal(value.unsigned_abs());
+            format!("-{positive}")
+        }
+    } else if let Some(value) = number.as_f64() {
+        value.to_string()
+    } else {
+        number.to_string()
+    }
+}
+
+fn is_atom_key(key: &str) -> bool {
+    if key.is_empty() {
+        return false;
+    }
+
+    let mut chars = key.chars();
+    let first = chars.next().unwrap();
+    if !first.is_ascii_lowercase() && first != '_' {
+        return false;
+    }
+    chars.all(|ch| ch.is_ascii_lowercase() || ch == '_' || ch.is_ascii_digit())
+}
+
+fn collect_requirements(fixture: &Fixture) -> Vec<String> {
+    fixture
+        .skip()
+        .requires_feature
+        .iter()
+        .chain(fixture.document().requires_external_tool.iter())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
+        .collect()
+}
+
+fn escape_elixir_string_content(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}
+
+fn generate_plugin_api_tests(fixtures: &[&Fixture], e2e_dir: &Utf8Path) -> Result<()> {
+    let mut buffer = String::new();
+
+    writeln!(buffer, "# Auto-generated from fixtures/plugin_api/ - DO NOT EDIT")?;
+    writeln!(buffer)?;
+    writeln!(buffer, "# E2E tests for plugin/config/utility APIs.")?;
+    writeln!(buffer)?;
+    writeln!(
+        buffer,
+        "# To regenerate: cargo run -p kreuzberg-e2e-generator -- generate --lang elixir"
+    )?;
+    writeln!(buffer)?;
+
+    let mut grouped_map: std::collections::HashMap<String, Vec<&Fixture>> = std::collections::HashMap::new();
+    for fixture in fixtures.iter() {
+        let category = fixture
+            .api_category
+            .as_ref()
+            .with_context(|| format!("Fixture '{}' missing api_category", fixture.id))?
+            .as_str()
+            .to_string();
+        grouped_map.entry(category).or_default().push(fixture);
+    }
+    let mut grouped: Vec<_> = grouped_map.into_iter().collect();
+    grouped.sort_by(|a, b| a.0.cmp(&b.0));
+
+    for (category, mut fixtures) in grouped {
+        fixtures.sort_by(|a, b| a.id.cmp(&b.id));
+        let module_name = sanitize_module_name(&category);
+        writeln!(buffer, "defmodule E2E.{}Test do", module_name)?;
+        writeln!(buffer, "  use ExUnit.Case, async: false")?;
+        writeln!(buffer)?;
+        writeln!(buffer, "  describe \"{}\" do", to_title_case(&category))?;
+
+        for fixture in fixtures {
+            buffer.push_str(&render_plugin_test(fixture)?);
+        }
+
+        writeln!(buffer, "  end")?;
+        writeln!(buffer, "end")?;
+        writeln!(buffer)?;
+    }
+
+    let path = e2e_dir.join("plugin_apis_test.exs");
+    fs::write(&path, buffer).with_context(|| format!("Writing {}", path))?;
+
+    Ok(())
+}
+
+fn render_plugin_test(fixture: &Fixture) -> Result<String> {
+    let mut buffer = String::new();
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+
+    let test_name = &fixture.description;
+    writeln!(buffer, "    test \"{}\" do", escape_elixir_string_content(test_name))?;
+
+    match test_spec.pattern.as_str() {
+        "simple_list" => render_simple_list_test(&mut buffer, fixture)?,
+        "clear_registry" => render_clear_registry_test(&mut buffer, fixture)?,
+        "graceful_unregister" => render_graceful_unregister_test(&mut buffer, fixture)?,
+        "config_from_file" => render_config_from_file_test(&mut buffer, fixture)?,
+        "config_discover" => render_config_discover_test(&mut buffer, fixture)?,
+        "mime_from_bytes" => render_mime_from_bytes_test(&mut buffer, fixture)?,
+        "mime_from_path" => render_mime_from_path_test(&mut buffer, fixture)?,
+        "mime_extension_lookup" => render_mime_extension_lookup_test(&mut buffer, fixture)?,
+        _ => {
+            bail!("Unknown plugin test pattern: {}", test_spec.pattern);
+        }
+    }
+
+    writeln!(buffer, "    end")?;
+    writeln!(buffer)?;
+
+    Ok(buffer)
+}
+
+fn render_simple_list_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let function_name = &test_spec.function_call.name;
+
+    writeln!(buffer, "      {{:ok, result}} = Kreuzberg.Plugin.{}()", function_name)?;
+    writeln!(buffer, "      assert is_list(result)")?;
+
+    if let Some(item_type) = &test_spec.assertions.list_item_type {
+        match item_type.as_str() {
+            "string" => writeln!(buffer, "      assert Enum.all?(result, &is_binary/1)")?,
+            "number" => writeln!(buffer, "      assert Enum.all?(result, &is_number/1)")?,
+            _ => {}
+        }
+    }
+
+    if let Some(contains) = &test_spec.assertions.list_contains {
+        writeln!(
+            buffer,
+            "      assert Enum.member?(result, \"{}\")",
+            escape_elixir_string_content(contains)
+        )?;
+    }
+
+    Ok(())
+}
+
+fn render_clear_registry_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let clear_function = &test_spec.function_call.name;
+
+    let list_function = clear_function.replace("clear_", "list_");
+
+    writeln!(buffer, "      Kreuzberg.Plugin.{}()", clear_function)?;
+
+    if test_spec.assertions.verify_cleanup {
+        writeln!(buffer, "      {{:ok, result}} = Kreuzberg.Plugin.{}()", list_function)?;
+        writeln!(buffer, "      assert Enum.empty?(result)")?;
+    }
+
+    Ok(())
+}
+
+fn render_graceful_unregister_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let function_name = &test_spec.function_call.name;
+
+    let arg = test_spec
+        .function_call
+        .args
+        .first()
+        .and_then(|v| v.as_str())
+        .unwrap_or("nonexistent-item-xyz");
+
+    writeln!(
+        buffer,
+        "      Kreuzberg.Plugin.{}(\"{}\")",
+        function_name,
+        escape_elixir_string_content(arg)
+    )?;
+    writeln!(buffer, "      # Should not raise an error")?;
+
+    Ok(())
+}
+
+fn render_config_from_file_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let setup = test_spec
+        .setup
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing setup for config_from_file", fixture.id))?;
+
+    let temp_file_name = setup
+        .temp_file_name
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing temp_file_name", fixture.id))?;
+    let temp_file_content = setup
+        .temp_file_content
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing temp_file_content", fixture.id))?;
+
+    writeln!(
+        buffer,
+        "      tmpdir = Path.join(System.tmp_dir!(), \"kreuzberg_e2e_#{{System.unique_integer([:positive])}}\")"
+    )?;
+    writeln!(buffer, "      File.mkdir_p!(tmpdir)")?;
+    writeln!(buffer, "      on_exit(fn -> File.rm_rf!(tmpdir) end)")?;
+    writeln!(
+        buffer,
+        "      config_path = Path.join(tmpdir, \"{}\")",
+        escape_elixir_string_content(temp_file_name)
+    )?;
+    writeln!(buffer, "      config_content = \"\"\"")?;
+    for line in temp_file_content.lines() {
+        if line.trim().is_empty() {
+            writeln!(buffer)?;
+        } else {
+            writeln!(buffer, "      {}", line)?;
+        }
+    }
+    writeln!(buffer, "      \"\"\"")?;
+    writeln!(buffer, "      File.write!(config_path, config_content)")?;
+    writeln!(buffer)?;
+
+    let class_name = test_spec
+        .function_call
+        .class_name
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing class_name", fixture.id))?;
+    let method_name = &test_spec.function_call.name;
+
+    writeln!(
+        buffer,
+        "      {{:ok, config}} = Kreuzberg.{}.{}(config_path)",
+        class_name, method_name
+    )?;
+    writeln!(buffer)?;
+
+    for prop in &test_spec.assertions.object_properties {
+        render_object_property_assertion(buffer, "config", prop, "      ")?;
+    }
+
+    Ok(())
+}
+
+fn render_config_discover_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let setup = test_spec
+        .setup
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing setup for config_discover", fixture.id))?;
+
+    let temp_file_name = setup
+        .temp_file_name
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing temp_file_name", fixture.id))?;
+    let temp_file_content = setup
+        .temp_file_content
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing temp_file_content", fixture.id))?;
+    let subdirectory_name = setup
+        .subdirectory_name
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing subdirectory_name", fixture.id))?;
+
+    writeln!(
+        buffer,
+        "      tmpdir = Path.join(System.tmp_dir!(), \"kreuzberg_e2e_#{{System.unique_integer([:positive])}}\")"
+    )?;
+    writeln!(buffer, "      File.mkdir_p!(tmpdir)")?;
+    writeln!(buffer, "      on_exit(fn -> File.rm_rf!(tmpdir) end)")?;
+    writeln!(
+        buffer,
+        "      config_path = Path.join(tmpdir, \"{}\")",
+        escape_elixir_string_content(temp_file_name)
+    )?;
+    writeln!(buffer, "      config_content = \"\"\"")?;
+    for line in temp_file_content.lines() {
+        if line.trim().is_empty() {
+            writeln!(buffer)?;
+        } else {
+            writeln!(buffer, "      {}", line)?;
+        }
+    }
+    writeln!(buffer, "      \"\"\"")?;
+    writeln!(buffer, "      File.write!(config_path, config_content)")?;
+    writeln!(buffer)?;
+    writeln!(
+        buffer,
+        "      subdir = Path.join(tmpdir, \"{}\")",
+        escape_elixir_string_content(subdirectory_name)
+    )?;
+    writeln!(buffer, "      File.mkdir_p!(subdir)")?;
+    writeln!(buffer)?;
+
+    let class_name = test_spec
+        .function_call
+        .class_name
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing class_name", fixture.id))?;
+    let method_name = &test_spec.function_call.name;
+
+    writeln!(buffer, "      prev_cwd = File.cwd!()")?;
+    writeln!(buffer, "      try do")?;
+    writeln!(buffer, "        File.cd!(subdir)")?;
+    writeln!(
+        buffer,
+        "        {{:ok, config}} = Kreuzberg.{}.{}",
+        class_name, method_name
+    )?;
+    writeln!(buffer)?;
+
+    for prop in &test_spec.assertions.object_properties {
+        render_object_property_assertion(buffer, "config", prop, "        ")?;
+    }
+    writeln!(buffer, "      after")?;
+    writeln!(buffer, "        File.cd!(prev_cwd)")?;
+    writeln!(buffer, "      end")?;
+
+    Ok(())
+}
+
+fn render_mime_from_bytes_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let setup = test_spec
+        .setup
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing setup for mime_from_bytes", fixture.id))?;
+
+    let test_data = setup
+        .test_data
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_data", fixture.id))?;
+
+    let function_name = &test_spec.function_call.name;
+
+    writeln!(
+        buffer,
+        "      test_bytes = \"{}\"",
+        escape_elixir_string_content(test_data)
+    )?;
+    writeln!(
+        buffer,
+        "      {{:ok, result}} = Kreuzberg.{}(test_bytes)",
+        function_name
+    )?;
+
+    if let Some(contains) = &test_spec.assertions.string_contains {
+        writeln!(
+            buffer,
+            "      assert String.contains?(String.downcase(result), \"{}\")",
+            escape_elixir_string_content(&contains.to_lowercase())
+        )?;
+    }
+
+    Ok(())
+}
+
+fn render_mime_from_path_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let function_name = &test_spec.function_call.name;
+
+    writeln!(
+        buffer,
+        "      tmpdir = Path.join(System.tmp_dir!(), \"kreuzberg_e2e_#{{System.unique_integer([:positive])}}\")"
+    )?;
+    writeln!(buffer, "      File.mkdir_p!(tmpdir)")?;
+    writeln!(buffer, "      on_exit(fn -> File.rm_rf!(tmpdir) end)")?;
+    writeln!(buffer, "      test_file = Path.join(tmpdir, \"test.txt\")")?;
+    writeln!(buffer, "      File.write!(test_file, \"Hello, world!\")")?;
+    writeln!(buffer)?;
+    writeln!(buffer, "      {{:ok, result}} = Kreuzberg.{}(test_file)", function_name)?;
+
+    if let Some(contains) = &test_spec.assertions.string_contains {
+        writeln!(
+            buffer,
+            "      assert String.contains?(String.downcase(result), \"{}\")",
+            escape_elixir_string_content(&contains.to_lowercase())
+        )?;
+    }
+
+    Ok(())
+}
+
+fn render_mime_extension_lookup_test(buffer: &mut String, fixture: &Fixture) -> Result<()> {
+    let test_spec = fixture
+        .test_spec
+        .as_ref()
+        .with_context(|| format!("Fixture '{}' missing test_spec", fixture.id))?;
+    let function_name = &test_spec.function_call.name;
+
+    let mime_type = test_spec
+        .function_call
+        .args
+        .first()
+        .and_then(|v| v.as_str())
+        .unwrap_or("application/pdf");
+
+    writeln!(
+        buffer,
+        "      result = Kreuzberg.{}(\"{}\")",
+        function_name,
+        escape_elixir_string_content(mime_type)
+    )?;
+    writeln!(buffer, "      assert is_list(result)")?;
+
+    if let Some(contains) = &test_spec.assertions.list_contains {
+        writeln!(
+            buffer,
+            "      assert Enum.member?(result, \"{}\")",
+            escape_elixir_string_content(contains)
+        )?;
+    }
+
+    Ok(())
+}
+
+fn render_object_property_assertion(
+    buffer: &mut String,
+    var_name: &str,
+    prop: &crate::fixtures::ObjectPropertyAssertion,
+    indent: &str,
+) -> Result<()> {
+    let path_parts: Vec<&str> = prop.path.split('.').collect();
+
+    let mut accessor = var_name.to_string();
+    for part in path_parts {
+        accessor.push('.');
+        accessor.push_str(part);
+    }
+
+    if let Some(exists) = prop.exists {
+        if exists {
+            writeln!(buffer, "{}assert {} != nil", indent, accessor)?;
+        } else {
+            writeln!(buffer, "{}assert {} == nil", indent, accessor)?;
+        }
+    }
+
+    if let Some(value) = &prop.value {
+        match value {
+            Value::Number(n) => {
+                writeln!(buffer, "{}assert {} == {}", indent, accessor, n)?;
+            }
+            Value::Bool(b) => {
+                writeln!(buffer, "{}assert {} == {}", indent, accessor, b)?;
+            }
+            Value::String(s) => {
+                writeln!(
+                    buffer,
+                    "{}assert {} == \"{}\"",
+                    indent,
+                    accessor,
+                    escape_elixir_string_content(s)
+                )?;
+            }
+            _ => {
+                writeln!(
+                    buffer,
+                    "{}assert {} == {}",
+                    indent,
+                    accessor,
+                    render_elixir_value(value)
+                )?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn to_title_case(s: &str) -> String {
+    s.split('_')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
