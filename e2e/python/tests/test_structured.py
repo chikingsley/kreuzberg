@@ -25,6 +25,7 @@ def test_structured_json_basic() -> None:
     helpers.assert_min_content_length(result, 20)
     helpers.assert_content_contains_any(result, ["Sample Document", "Test Author"])
 
+
 def test_structured_json_simple() -> None:
     """Simple JSON document to verify structured extraction."""
 
@@ -39,6 +40,7 @@ def test_structured_json_simple() -> None:
     helpers.assert_expected_mime(result, ["application/json"])
     helpers.assert_min_content_length(result, 10)
     helpers.assert_content_contains_any(result, ["{", "name"])
+
 
 def test_structured_yaml_simple() -> None:
     """Simple YAML document to validate structured extraction."""

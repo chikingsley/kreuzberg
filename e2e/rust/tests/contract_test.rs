@@ -224,7 +224,7 @@ fn test_config_chunking() {
         r#"{
   "chunking": {
     "max_chars": 500,
-    "overlap": 50
+    "max_overlap": 50
   }
 }"#,
     )
@@ -294,8 +294,7 @@ fn test_config_images() {
     let config: ExtractionConfig = serde_json::from_str(
         r#"{
   "images": {
-    "extract": true,
-    "format": "png"
+    "extract_images": true
   }
 }"#,
     )

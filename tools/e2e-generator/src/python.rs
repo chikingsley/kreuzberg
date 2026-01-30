@@ -439,6 +439,9 @@ fn collect_imports(fixtures: &[&Fixture]) -> Vec<String> {
         let extraction = fixture.extraction();
         let func_name = get_extraction_function_name(extraction.method, extraction.input_type);
         imports.insert(func_name);
+        if matches!(extraction.input_type, InputType::Bytes) {
+            imports.insert("detect_mime_type_from_path".to_string());
+        }
     }
     let mut imports: Vec<_> = imports.into_iter().collect();
     imports.sort();
@@ -451,9 +454,9 @@ fn get_extraction_function_name(method: ExtractionMethod, input_type: InputType)
         (ExtractionMethod::Sync, InputType::Bytes) => "extract_bytes_sync".to_string(),
         (ExtractionMethod::Async, InputType::File) => "extract_file".to_string(),
         (ExtractionMethod::Async, InputType::Bytes) => "extract_bytes".to_string(),
-        (ExtractionMethod::BatchSync, InputType::File) => "batch_extract_file_sync".to_string(),
+        (ExtractionMethod::BatchSync, InputType::File) => "batch_extract_files_sync".to_string(),
         (ExtractionMethod::BatchSync, InputType::Bytes) => "batch_extract_bytes_sync".to_string(),
-        (ExtractionMethod::BatchAsync, InputType::File) => "batch_extract_file".to_string(),
+        (ExtractionMethod::BatchAsync, InputType::File) => "batch_extract_files".to_string(),
         (ExtractionMethod::BatchAsync, InputType::Bytes) => "batch_extract_bytes".to_string(),
     }
 }
@@ -503,17 +506,18 @@ fn render_test(fixture: &Fixture) -> Result<String> {
 
     if is_bytes {
         writeln!(code, "    file_bytes = document_path.read_bytes()")?;
+        writeln!(code, "    mime_type = detect_mime_type_from_path(str(document_path))")?;
         writeln!(code)?;
         if is_batch {
             writeln!(
                 code,
-                "    results = {await_prefix}{func_name}([file_bytes], config=config)"
+                "    results = {await_prefix}{func_name}([file_bytes], [mime_type], config=config)"
             )?;
             writeln!(code, "    result = results[0]")?;
         } else {
             writeln!(
                 code,
-                "    result = {await_prefix}{func_name}(file_bytes, config=config)"
+                "    result = {await_prefix}{func_name}(file_bytes, mime_type, config=config)"
             )?;
         }
     } else if is_batch {

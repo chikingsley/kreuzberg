@@ -801,11 +801,11 @@ fn generate_object_property_assertions_rust(
                                 )?;
                             }
                             Value::Bool(b) => {
-                                writeln!(
-                                    buf,
-                                    "    assert_eq!(config.{}.as_ref().unwrap().{}, {});",
-                                    parts[0], parts[1], b
-                                )?;
+                                if *b {
+                                    writeln!(buf, "    assert!(config.{}.as_ref().unwrap().{});", parts[0], parts[1])?;
+                                } else {
+                                    writeln!(buf, "    assert!(!config.{}.as_ref().unwrap().{});", parts[0], parts[1])?;
+                                }
                             }
                             _ => {
                                 writeln!(buf, "    // Complex value assertion not yet implemented for {}", path)?;
@@ -821,7 +821,11 @@ fn generate_object_property_assertions_rust(
                             writeln!(buf, "    assert_eq!(config.{}, \"{}\");", path, escape_rust_string(s))?;
                         }
                         Value::Bool(b) => {
-                            writeln!(buf, "    assert_eq!(config.{}, {});", path, b)?;
+                            if *b {
+                                writeln!(buf, "    assert!(config.{});", path)?;
+                            } else {
+                                writeln!(buf, "    assert!(!config.{});", path)?;
+                            }
                         }
                         _ => {
                             writeln!(buf, "    // Complex value assertion not yet implemented for {}", path)?;

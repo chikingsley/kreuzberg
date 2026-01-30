@@ -594,10 +594,17 @@ fn render_category(category: &str, fixtures: &[&Fixture]) -> Result<String> {
 
 fn collect_ts_imports(fixtures: &[&Fixture]) -> Vec<String> {
     let mut imports = HashSet::new();
+    let mut needs_mime_detect = false;
     for fixture in fixtures {
         let extraction = fixture.extraction();
         let func_name = get_ts_extraction_function_name(extraction.method, extraction.input_type);
         imports.insert(func_name);
+        if matches!(extraction.input_type, InputType::Bytes) {
+            needs_mime_detect = true;
+        }
+    }
+    if needs_mime_detect {
+        imports.insert("detectMimeTypeFromPath".to_string());
     }
     let mut imports: Vec<_> = imports.into_iter().collect();
     imports.sort();
@@ -610,9 +617,9 @@ fn get_ts_extraction_function_name(method: ExtractionMethod, input_type: InputTy
         (ExtractionMethod::Sync, InputType::Bytes) => "extractBytesSync".to_string(),
         (ExtractionMethod::Async, InputType::File) => "extractFile".to_string(),
         (ExtractionMethod::Async, InputType::Bytes) => "extractBytes".to_string(),
-        (ExtractionMethod::BatchSync, InputType::File) => "batchExtractFileSync".to_string(),
+        (ExtractionMethod::BatchSync, InputType::File) => "batchExtractFilesSync".to_string(),
         (ExtractionMethod::BatchSync, InputType::Bytes) => "batchExtractBytesSync".to_string(),
-        (ExtractionMethod::BatchAsync, InputType::File) => "batchExtractFile".to_string(),
+        (ExtractionMethod::BatchAsync, InputType::File) => "batchExtractFiles".to_string(),
         (ExtractionMethod::BatchAsync, InputType::Bytes) => "batchExtractBytes".to_string(),
     }
 }
@@ -670,14 +677,18 @@ fn render_test(fixture: &Fixture) -> Result<String> {
 
     if is_bytes {
         writeln!(body, "      const fileBytes = readFileSync(documentPath);")?;
+        writeln!(body, "      const mimeType = detectMimeTypeFromPath(documentPath);")?;
         if is_batch {
             writeln!(
                 body,
-                "      const results = {await_prefix}{func_name}([fileBytes], config);"
+                "      const results = {await_prefix}{func_name}([fileBytes], [mimeType], config);"
             )?;
             writeln!(body, "      result = results[0];")?;
         } else {
-            writeln!(body, "      result = {await_prefix}{func_name}(fileBytes, config);")?;
+            writeln!(
+                body,
+                "      result = {await_prefix}{func_name}(fileBytes, mimeType, config);"
+            )?;
         }
     } else if is_batch {
         writeln!(

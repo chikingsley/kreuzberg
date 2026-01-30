@@ -12,7 +12,7 @@ mod wasm_deno;
 mod wasm_workers;
 
 use anyhow::Result;
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Parser, Subcommand, ValueEnum};
 use fixtures::load_fixtures;
 
@@ -67,17 +67,32 @@ fn main() -> Result<()> {
         Commands::Generate { lang, fixtures, output } => {
             let fixtures = load_fixtures(fixtures.as_path())?;
             match lang {
-                Language::Rust => rust::generate(&fixtures, output.as_path())?,
-                Language::Python => python::generate(&fixtures, output.as_path())?,
-                Language::Typescript => typescript::generate(&fixtures, output.as_path())?,
+                Language::Rust => {
+                    rust::generate(&fixtures, output.as_path())?;
+                    run_cargo_fmt(&output.join("rust"));
+                }
+                Language::Python => {
+                    python::generate(&fixtures, output.as_path())?;
+                    run_ruff_format(&output.join("python/tests"));
+                }
+                Language::Typescript => {
+                    typescript::generate(&fixtures, output.as_path())?;
+                    run_biome_format(&output.join("typescript"));
+                }
                 Language::Ruby => ruby::generate(&fixtures, output.as_path())?,
                 Language::Java => java::generate(&fixtures, output.as_path())?,
                 Language::Go => go::generate(&fixtures, output.as_path())?,
                 Language::Csharp => csharp::generate(&fixtures, output.as_path())?,
                 Language::Php => php::generate(&fixtures, output.as_path())?,
                 Language::Elixir => elixir::generate(&fixtures, output.as_path())?,
-                Language::WasmDeno => wasm_deno::generate(&fixtures, output.as_path())?,
-                Language::WasmWorkers => wasm_workers::generate(&fixtures, output.as_path())?,
+                Language::WasmDeno => {
+                    wasm_deno::generate(&fixtures, output.as_path())?;
+                    run_biome_format(&output.join("wasm-deno"));
+                }
+                Language::WasmWorkers => {
+                    wasm_workers::generate(&fixtures, output.as_path())?;
+                    run_biome_format(&output.join("wasm-workers"));
+                }
             };
         }
         Commands::List { fixtures } => {
@@ -104,4 +119,68 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn run_biome_format(dir: &Utf8Path) {
+    // Fix lint issues (import ordering)
+    let status = std::process::Command::new("npx")
+        .args(["biome", "check", "--fix", "--unsafe"])
+        .arg(dir.as_str())
+        .status();
+    match status {
+        Ok(s) if s.success() => {}
+        Ok(_) => eprintln!("Warning: biome check --fix returned non-zero for {dir}"),
+        Err(e) => {
+            eprintln!("Warning: failed to run biome: {e}");
+            return;
+        }
+    }
+    // Apply formatting (tabs, line width, trailing commas)
+    let status = std::process::Command::new("npx")
+        .args(["biome", "format", "--write"])
+        .arg(dir.as_str())
+        .status();
+    match status {
+        Ok(s) if s.success() => {}
+        Ok(_) => eprintln!("Warning: biome format returned non-zero for {dir}"),
+        Err(e) => eprintln!("Warning: failed to run biome format: {e}"),
+    }
+}
+
+fn run_cargo_fmt(dir: &Utf8Path) {
+    let status = std::process::Command::new("cargo")
+        .args(["fmt", "--manifest-path"])
+        .arg(dir.join("Cargo.toml").as_str())
+        .status();
+    match status {
+        Ok(s) if s.success() => {}
+        Ok(_) => eprintln!("Warning: cargo fmt returned non-zero for {dir}"),
+        Err(e) => eprintln!("Warning: failed to run cargo fmt: {e}"),
+    }
+}
+
+fn run_ruff_format(dir: &Utf8Path) {
+    // Fix lint issues
+    let status = std::process::Command::new("uv")
+        .args(["run", "ruff", "check", "--fix"])
+        .arg(dir.as_str())
+        .status();
+    match status {
+        Ok(s) if s.success() => {}
+        Ok(_) => eprintln!("Warning: ruff check --fix returned non-zero for {dir}"),
+        Err(e) => {
+            eprintln!("Warning: failed to run ruff: {e}");
+            return;
+        }
+    }
+    // Apply formatting
+    let status = std::process::Command::new("uv")
+        .args(["run", "ruff", "format"])
+        .arg(dir.as_str())
+        .status();
+    match status {
+        Ok(s) if s.success() => {}
+        Ok(_) => eprintln!("Warning: ruff format returned non-zero for {dir}"),
+        Err(e) => eprintln!("Warning: failed to run ruff format: {e}"),
+    }
 }
