@@ -254,6 +254,54 @@ public sealed class ExtractionResult
 }
 
 /// <summary>
+/// A text block with hierarchy level assignment.
+/// </summary>
+public sealed class HierarchicalBlock
+{
+    /// <summary>
+    /// The text content of this block.
+    /// </summary>
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The font size of the text in this block.
+    /// </summary>
+    [JsonPropertyName("font_size")]
+    public float FontSize { get; set; }
+
+    /// <summary>
+    /// The hierarchy level (h1-h6 or body).
+    /// </summary>
+    [JsonPropertyName("level")]
+    public string Level { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Bounding box as [left, top, right, bottom] in PDF units, if available.
+    /// </summary>
+    [JsonPropertyName("bbox")]
+    public float[]? Bbox { get; set; }
+}
+
+/// <summary>
+/// Page hierarchy structure containing heading levels and block information.
+/// </summary>
+public sealed class PageHierarchy
+{
+    /// <summary>
+    /// Number of hierarchy blocks on this page.
+    /// </summary>
+    [JsonPropertyName("block_count")]
+    public int BlockCount { get; set; }
+
+    /// <summary>
+    /// Hierarchical blocks with heading levels.
+    /// </summary>
+    [JsonPropertyName("blocks")]
+    public List<HierarchicalBlock> Blocks { get; set; } = new();
+}
+
+/// <summary>
 /// Extracted content for a single page when page extraction is enabled.
 /// </summary>
 public sealed class PageContent
@@ -281,6 +329,12 @@ public sealed class PageContent
     /// </summary>
     [JsonPropertyName("images")]
     public List<ExtractedImage>? Images { get; set; }
+
+    /// <summary>
+    /// Hierarchy information for the page, if available.
+    /// </summary>
+    [JsonPropertyName("hierarchy")]
+    public PageHierarchy? Hierarchy { get; set; }
 }
 
 /// <summary>

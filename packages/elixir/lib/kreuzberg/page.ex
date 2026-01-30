@@ -12,6 +12,9 @@ defmodule Kreuzberg.Page do
     * `:width` - Page width in inches or centimeters
     * `:height` - Page height in inches or centimeters
     * `:index` - Zero-indexed page index (alternative to number)
+    * `:tables` - Tables found on this page
+    * `:images` - Images found on this page
+    * `:hierarchy` - Hierarchy information (heading levels and blocks)
 
   ## Examples
 
@@ -32,7 +35,10 @@ defmodule Kreuzberg.Page do
           content: String.t() | nil,
           width: float() | nil,
           height: float() | nil,
-          index: integer() | nil
+          index: integer() | nil,
+          tables: list(map()) | nil,
+          images: list(map()) | nil,
+          hierarchy: map() | nil
         }
 
   defstruct [
@@ -40,7 +46,10 @@ defmodule Kreuzberg.Page do
     :content,
     :width,
     :height,
-    :index
+    :index,
+    tables: [],
+    images: [],
+    hierarchy: nil
   ]
 
   @doc """
@@ -125,7 +134,10 @@ defmodule Kreuzberg.Page do
       content: data["content"],
       width: data["width"],
       height: data["height"],
-      index: data["index"]
+      index: data["index"],
+      tables: data["tables"] || [],
+      images: data["images"] || [],
+      hierarchy: data["hierarchy"]
     }
   end
 
@@ -160,7 +172,10 @@ defmodule Kreuzberg.Page do
       "content" => page.content,
       "width" => page.width,
       "height" => page.height,
-      "index" => page.index
+      "index" => page.index,
+      "tables" => page.tables,
+      "images" => page.images,
+      "hierarchy" => page.hierarchy
     }
   end
 

@@ -540,6 +540,30 @@ export interface ExtractedImage {
 }
 
 /**
+ * A text block with hierarchy level assignment.
+ */
+export interface HierarchicalBlock {
+	/** The text content of this block */
+	text: string;
+	/** The font size of the text in this block */
+	font_size: number;
+	/** The hierarchy level (h1-h6 or body) */
+	level: string;
+	/** Bounding box as (left, top, right, bottom) in PDF units */
+	bbox?: [number, number, number, number] | null;
+}
+
+/**
+ * Page hierarchy structure containing heading levels and block information.
+ */
+export interface PageHierarchy {
+	/** Number of hierarchy blocks on this page */
+	block_count: number;
+	/** Hierarchical blocks with heading levels */
+	blocks: HierarchicalBlock[];
+}
+
+/**
  * Per-page content
  */
 export interface PageContent {
@@ -551,6 +575,8 @@ export interface PageContent {
 	tables?: Table[];
 	/** Images on this page */
 	images?: ExtractedImage[];
+	/** Hierarchy information for the page */
+	hierarchy?: PageHierarchy | null;
 }
 
 /**

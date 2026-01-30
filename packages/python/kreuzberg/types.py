@@ -252,6 +252,22 @@ class PageStructure(TypedDict, total=False):
     pages: list[PageInfo] | None
 
 
+class HierarchicalBlock(TypedDict, total=False):
+    """A text block with hierarchy level assignment."""
+
+    text: str
+    font_size: float
+    level: str
+    bbox: tuple[float, float, float, float] | None
+
+
+class PageHierarchy(TypedDict, total=False):
+    """Page hierarchy structure containing heading levels and block information."""
+
+    block_count: int
+    blocks: list[HierarchicalBlock]
+
+
 class PageContent(TypedDict):
     """Content for a single page/slide.
 
@@ -263,6 +279,7 @@ class PageContent(TypedDict):
     content: str
     tables: list[Table]
     images: list[ExtractedImage]
+    hierarchy: PageHierarchy | None
 
 
 ElementType = Literal[
@@ -659,6 +676,7 @@ __all__ = [
     "Footnote",
     "FormattedBlock",
     "HeaderMetadata",
+    "HierarchicalBlock",
     "HtmlImageMetadata",
     "HtmlMetadata",
     "ImageMetadata",
@@ -669,6 +687,7 @@ __all__ = [
     "PageBoundary",
     "PageConfig",
     "PageContent",
+    "PageHierarchy",
     "PageInfo",
     "PageStructure",
     "PageUnitType",

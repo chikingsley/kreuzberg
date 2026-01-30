@@ -24,6 +24,8 @@ final class ResultParser {
 	};
 	private static final TypeReference<List<Element>> ELEMENT_LIST = new TypeReference<>() {
 	};
+	private static final TypeReference<List<PageContent>> PAGE_CONTENT_LIST = new TypeReference<>() {
+	};
 	private static final TypeReference<Map<String, Object>> METADATA_MAP = new TypeReference<>() {
 	};
 	private static final TypeReference<EmbeddingPreset> EMBEDDING_PRESET = new TypeReference<>() {
@@ -35,19 +37,20 @@ final class ResultParser {
 	}
 
 	static ExtractionResult parse(String content, String mimeType, String tablesJson, String detectedLanguagesJson,
-			String metadataJson, String chunksJson, String imagesJson, String pageStructureJson, String elementsJson,
-			boolean success) throws KreuzbergException {
+			String metadataJson, String chunksJson, String imagesJson, String pagesJson, String pageStructureJson,
+			String elementsJson, boolean success) throws KreuzbergException {
 		try {
 			Map<String, Object> metadata = decode(metadataJson, METADATA_MAP, Collections.emptyMap());
 			List<Table> tables = decode(tablesJson, TABLE_LIST, List.of());
 			List<String> detectedLanguages = decode(detectedLanguagesJson, STRING_LIST, List.of());
 			List<Chunk> chunks = decode(chunksJson, CHUNK_LIST, List.of());
 			List<ExtractedImage> images = decode(imagesJson, IMAGE_LIST, List.of());
+			List<PageContent> pages = decode(pagesJson, PAGE_CONTENT_LIST, List.of());
 			PageStructure pageStructure = decode(pageStructureJson, PAGE_STRUCTURE, null);
 			List<Element> elements = decode(elementsJson, ELEMENT_LIST, List.of());
 
 			return new ExtractionResult(content != null ? content : "", mimeType != null ? mimeType : "", metadata,
-					tables, detectedLanguages, chunks, images, pageStructure, elements, success);
+					tables, detectedLanguages, chunks, images, pages, pageStructure, elements, success);
 		} catch (Exception e) {
 			throw new KreuzbergException("Failed to parse extraction result", e);
 		}
@@ -83,8 +86,8 @@ final class ResultParser {
 					wire.tables != null ? wire.tables : List.of(),
 					wire.detectedLanguages != null ? wire.detectedLanguages : List.of(),
 					wire.chunks != null ? wire.chunks : List.of(), wire.images != null ? wire.images : List.of(),
-					wire.pageStructure, wire.elements != null ? wire.elements : List.of(),
-					wire.success == null || wire.success);
+					wire.pages != null ? wire.pages : List.of(), wire.pageStructure,
+					wire.elements != null ? wire.elements : List.of(), wire.success == null || wire.success);
 		} catch (Exception e) {
 			throw new KreuzbergException("Failed to parse result JSON", e);
 		}
@@ -93,7 +96,8 @@ final class ResultParser {
 	static String toJson(ExtractionResult result) throws Exception {
 		WireExtractionResult wire = new WireExtractionResult(result.getContent(), result.getMimeType(),
 				result.getMetadata(), result.getTables(), result.getDetectedLanguages(), result.getChunks(),
-				result.getImages(), result.getPageStructure().orElse(null), result.getElements(), result.isSuccess());
+				result.getImages(), result.getPages(), result.getPageStructure().orElse(null), result.getElements(),
+				result.isSuccess());
 		return MAPPER.writeValueAsString(wire);
 	}
 
@@ -113,6 +117,7 @@ final class ResultParser {
 		private final List<String> detectedLanguages;
 		private final List<Chunk> chunks;
 		private final List<ExtractedImage> images;
+		private final List<PageContent> pages;
 		private final PageStructure pageStructure;
 		private final List<Element> elements;
 		private final Boolean success;
@@ -121,6 +126,7 @@ final class ResultParser {
 				@JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("tables") List<Table> tables,
 				@JsonProperty("detected_languages") List<String> detectedLanguages,
 				@JsonProperty("chunks") List<Chunk> chunks, @JsonProperty("images") List<ExtractedImage> images,
+				@JsonProperty("pages") List<PageContent> pages,
 				@JsonProperty("page_structure") PageStructure pageStructure,
 				@JsonProperty("elements") List<Element> elements, @JsonProperty("success") Boolean success) {
 			this.content = content;
@@ -130,6 +136,7 @@ final class ResultParser {
 			this.detectedLanguages = detectedLanguages;
 			this.chunks = chunks;
 			this.images = images;
+			this.pages = pages;
 			this.pageStructure = pageStructure;
 			this.elements = elements;
 			this.success = success;

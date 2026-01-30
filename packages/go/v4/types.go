@@ -351,12 +351,27 @@ type PageStructure struct {
 	Pages      []PageInfo     `json:"pages,omitempty"`
 }
 
+// HierarchicalBlock represents a text block with hierarchy level assignment.
+type HierarchicalBlock struct {
+	Text     string      `json:"text"`
+	FontSize float32     `json:"font_size"`
+	Level    string      `json:"level"`
+	Bbox     *[4]float32 `json:"bbox,omitempty"`
+}
+
+// PageHierarchy contains heading levels and block information for a page.
+type PageHierarchy struct {
+	BlockCount uint64              `json:"block_count"`
+	Blocks     []HierarchicalBlock `json:"blocks,omitempty"`
+}
+
 // PageContent represents extracted content for a single page.
 type PageContent struct {
 	PageNumber uint64           `json:"page_number"`
 	Content    string           `json:"content"`
 	Tables     []Table          `json:"tables,omitempty"`
 	Images     []ExtractedImage `json:"images,omitempty"`
+	Hierarchy  *PageHierarchy   `json:"hierarchy,omitempty"`
 }
 
 // ElementType defines semantic classification for extracted elements.

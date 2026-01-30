@@ -1217,13 +1217,14 @@ public final class Kreuzberg {
 		String metadataJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.METADATA_OFFSET));
 		String chunksJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.CHUNKS_OFFSET));
 		String imagesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.IMAGES_OFFSET));
+		String pagesJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.PAGES_OFFSET));
 		String pageStructureJson = KreuzbergFFI
 				.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.PAGE_STRUCTURE_OFFSET));
 		String elementsJson = KreuzbergFFI.readCString(result.get(ValueLayout.ADDRESS, KreuzbergFFI.ELEMENTS_OFFSET));
 		boolean success = result.get(ValueLayout.JAVA_BOOLEAN, KreuzbergFFI.SUCCESS_OFFSET);
 
 		return ResultParser.parse(content, mimeType, tablesJson, detectedLanguagesJson, metadataJson, chunksJson,
-				imagesJson, pageStructureJson, elementsJson, success);
+				imagesJson, pagesJson, pageStructureJson, elementsJson, success);
 	}
 
 	/**
@@ -1253,10 +1254,8 @@ public final class Kreuzberg {
 			for (long i = 0; i < count; i++) {
 				MemorySegment ptr = array.getAtIndex(ValueLayout.ADDRESS, i);
 				if (ptr == null || ptr.address() == 0) {
-					results.add(new ExtractionResult("", "",
-
-							Collections.emptyMap(), List.of(), List.of(), List.of(), List.of(), null, List.of(),
-							false));
+					results.add(new ExtractionResult("", "", Collections.emptyMap(), List.of(), List.of(), List.of(),
+							List.of(), List.of(), null, List.of(), false));
 				} else {
 					// Use parseResult (not parseAndFreeResult) to avoid double-free.
 					// Memory is freed collectively by KREUZBERG_FREE_BATCH_RESULT in the finally

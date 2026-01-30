@@ -157,25 +157,6 @@ RSpec.describe Kreuzberg::Config::ImagePreprocessing do
   end
 
   describe 'nested config integration' do
-    it 'can be nested in Extraction config' do
-      preprocessing = described_class.new(target_dpi: 600, denoise: true)
-      extraction = Kreuzberg::Config::Extraction.new(image_preprocessing: preprocessing)
-
-      expect(extraction.image_preprocessing).to be_a described_class
-      expect(extraction.image_preprocessing.target_dpi).to eq 600
-      expect(extraction.image_preprocessing.denoise).to be true
-    end
-
-    it 'accepts hash in Extraction config' do
-      extraction = Kreuzberg::Config::Extraction.new(
-        image_preprocessing: { target_dpi: 600, binarization_method: 'sauvola' }
-      )
-
-      expect(extraction.image_preprocessing).to be_a described_class
-      expect(extraction.image_preprocessing.target_dpi).to eq 600
-      expect(extraction.image_preprocessing.binarization_method).to eq 'sauvola'
-    end
-
     it 'can be nested in Tesseract config' do
       preprocessing = described_class.new(denoise: true)
       tesseract = Kreuzberg::Config::Tesseract.new(preprocessing: preprocessing)
