@@ -751,10 +751,12 @@ defmodule KreuzbergTest.Integration.E2EExtractionTest do
       # Extract text using byte range from metadata
       byte_start = first_chunk.metadata["byte_start"]
       byte_end = first_chunk.metadata["byte_end"]
-      expected_text = String.slice(result.content, byte_start, byte_end - byte_start)
+      expected_text = binary_part(result.content, byte_start, byte_end - byte_start)
 
-      # Chunk content should match the byte range extraction
-      assert first_chunk.content == expected_text,
+      # Normalize line endings for cross-platform consistency (Windows \r\n vs Unix \n)
+      normalize = fn s -> String.replace(s, "\r\n", "\n") end
+
+      assert normalize.(first_chunk.content) == normalize.(expected_text),
              "Chunk content should match content at specified byte range"
     end
 

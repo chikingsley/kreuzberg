@@ -2262,9 +2262,9 @@ defmodule KreuzbergTest.Unit.PluginSystemTest do
 
       # Should be in descending priority order
       [first, second, third] = validators
-      {first_name, first_meta} = first
-      {second_name, second_meta} = second
-      {third_name, third_meta} = third
+      {_first_name, first_meta} = first
+      {_second_name, second_meta} = second
+      {_third_name, third_meta} = third
 
       assert first_meta.priority == 100
       assert second_meta.priority == 50

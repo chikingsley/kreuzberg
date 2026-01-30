@@ -12,7 +12,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
 
   use ExUnit.Case, async: true
 
-  @tag :unit
   describe "extract_pages configuration" do
     test "returns pages array when extract_pages is true" do
       config = %Kreuzberg.ExtractionConfig{
@@ -58,7 +57,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "insert_page_markers configuration" do
     test "page markers appear in content when insert_page_markers is true" do
       config = %Kreuzberg.ExtractionConfig{
@@ -93,7 +91,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "custom marker_format configuration" do
     test "uses custom marker format when specified" do
       custom_format = "=== Page {page_num} ==="
@@ -159,7 +156,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "multi-page PDF handling" do
     test "returns multiple page entries for multi-page PDFs" do
       config = %Kreuzberg.ExtractionConfig{
@@ -189,7 +185,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "page content structure validation" do
     test "page content is binary/string type" do
       config = %Kreuzberg.ExtractionConfig{
@@ -248,7 +243,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "combined page extraction and markers" do
     test "extract_pages and insert_page_markers work together" do
       config = %Kreuzberg.ExtractionConfig{
@@ -287,7 +281,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "page configuration edge cases" do
     test "handles extraction without explicit page config" do
       # No pages config provided
@@ -336,7 +329,6 @@ defmodule Kreuzberg.Unit.PagesExtractionTest do
     end
   end
 
-  @tag :unit
   describe "page extraction with different marker formats" do
     test "markdown-style markers" do
       config = %Kreuzberg.ExtractionConfig{

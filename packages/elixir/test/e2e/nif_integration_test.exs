@@ -133,8 +133,6 @@ defmodule KreuzbergTest.E2E.NIFIntegrationTest do
 
   @tag :e2e
   test "concurrent extraction with different MIME types" do
-    mime_types = ["text/plain", "text/html"]
-
     inputs = [
       {"Plain text", "text/plain"},
       {"<html><p>HTML content</p></html>", "text/html"}

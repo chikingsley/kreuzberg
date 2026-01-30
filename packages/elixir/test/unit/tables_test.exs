@@ -464,12 +464,6 @@ defmodule Kreuzberg.Unit.TablesTest do
       if result.tables && result.tables != [] do
         table = List.first(result.tables)
 
-        # Check for markdown representation
-        has_markdown =
-          Map.has_key?(table, "markdown") or
-            Map.has_key?(table, "markdown_table") or
-            String.contains?(inspect(table), "|")
-
         # At least one format should be present
         assert is_map(table)
       end
@@ -547,10 +541,6 @@ defmodule Kreuzberg.Unit.TablesTest do
             # Second line typically contains dashes for markdown tables
             second_line = Enum.at(lines, 1)
 
-            has_separator =
-              String.contains?(second_line, "-") or
-                String.contains?(second_line, "|")
-
             # Not requiring strict format, but should have some structure
             assert is_binary(markdown)
           end
@@ -615,12 +605,6 @@ defmodule Kreuzberg.Unit.TablesTest do
 
       if result.tables && result.tables != [] do
         table = List.first(result.tables)
-
-        # Table should have structure that preserves formatting context
-        has_format_info =
-          Map.has_key?(table, "cells") or
-            Map.has_key?(table, "markdown") or
-            Map.has_key?(table, "html")
 
         assert is_map(table)
       end
@@ -731,13 +715,6 @@ defmodule Kreuzberg.Unit.TablesTest do
 
       if result.tables && result.tables != [] do
         Enum.each(result.tables, fn table ->
-          # Table location information might be preserved
-          has_location_info =
-            Map.has_key?(table, "page") or
-              Map.has_key?(table, "page_number") or
-              Map.has_key?(table, "location") or
-              Map.has_key?(table, "position")
-
           # At minimum, table should be a valid map
           assert is_map(table)
         end)
