@@ -50,7 +50,6 @@ class ConcurrencyTest {
 			assertEquals(10, results.size(), "All extraction tasks should complete");
 			for (ExtractionResult result : results) {
 				assertNotNull(result.getContent(), "Each extraction should produce content");
-				assertTrue(result.isSuccess(), "All extractions should succeed");
 			}
 		} finally {
 			executor.shutdown();
@@ -83,7 +82,6 @@ class ConcurrencyTest {
 			assertEquals(5, results.size(), "All files should be extracted");
 			for (ExtractionResult result : results) {
 				assertNotNull(result.getContent(), "Each file should be extracted");
-				assertTrue(result.isSuccess(), "All extractions should succeed");
 			}
 		} finally {
 			executor.shutdown();
@@ -107,7 +105,7 @@ class ConcurrencyTest {
 			for (Future<ExtractionResult> future : futures) {
 				try {
 					ExtractionResult result = future.get();
-					if (result != null && result.isSuccess()) {
+					if (result != null && result.getContent() != null) {
 						successCount++;
 					}
 				} catch (Exception e) {
@@ -182,7 +180,7 @@ class ConcurrencyTest {
 			for (Future<ExtractionResult> future : futures) {
 				try {
 					ExtractionResult result = future.get();
-					if (result != null && result.isSuccess()) {
+					if (result != null && result.getContent() != null) {
 						successCount++;
 					}
 				} catch (Exception e) {
@@ -393,7 +391,7 @@ class ConcurrencyTest {
 				futures.add(executor.submit(() -> {
 					try {
 						ExtractionResult result = Kreuzberg.extractFile(testFile);
-						if (result != null && result.isSuccess()) {
+						if (result != null && result.getContent() != null) {
 							successCount.incrementAndGet();
 						}
 						return result;
@@ -519,7 +517,8 @@ class ConcurrencyTest {
 				ExtractionResult concurrent = future.get();
 
 				assertEquals(sequential.getMimeType(), concurrent.getMimeType(), "MIME types should be identical");
-				assertTrue(sequential.isSuccess() == concurrent.isSuccess(), "Success status should match");
+				assertEquals(sequential.getContent() != null, concurrent.getContent() != null,
+						"Content availability should match");
 			}
 		} finally {
 			executor.shutdown();

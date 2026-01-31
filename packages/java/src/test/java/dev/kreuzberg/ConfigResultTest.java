@@ -334,8 +334,7 @@ final class ConfigResultTest {
 	}
 
 	private static ExtractionResult createTestResult() {
-		return new ExtractionResult("Sample content for testing", "text/plain", Map.of("title", "Sample Title",
-				"author", "Sample Author", "language", "en", "subject", "Sample Subject"), null, null, null, null, null,
-				null, null, null);
+		return new ExtractionResult("Sample content for testing", "text/plain", Metadata.empty(), null, null, null,
+				null, null, null, null, null);
 	}
 }

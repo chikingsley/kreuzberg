@@ -40,7 +40,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			ExtractedImage image = result.getImages().get(0);
@@ -72,7 +72,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			for (ExtractedImage image : result.getImages()) {
@@ -103,7 +103,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			for (ExtractedImage image : result.getImages()) {
@@ -146,7 +146,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			for (ExtractedImage image : result.getImages()) {
@@ -185,7 +185,7 @@ final class ImageExtractionAdvancedTest {
 
 			ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-			assertTrue(result.isSuccess(), "Extraction with DPI=" + dpi + " should succeed");
+			assertNotNull(result.getContent(), "Extraction with DPI=" + dpi + " should succeed");
 			assertNotNull(result.getImages(), "Images should be extracted with DPI=" + dpi);
 		}
 	}
@@ -205,7 +205,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			ExtractedImage image = result.getImages().get(0);
@@ -249,7 +249,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			for (ExtractedImage image : result.getImages()) {
@@ -282,7 +282,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		List<ExtractedImage> images = result.getImages();
 		if (!images.isEmpty()) {
@@ -314,7 +314,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			for (ExtractedImage image : result.getImages()) {
@@ -347,7 +347,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		List<ExtractedImage> images = result.getImages();
 		if (images.size() > 1) {
@@ -396,7 +396,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		assertNotNull(result.getImages(), "Images list should not be null");
 		assertTrue(result.getImages().isEmpty(), "No images should be extracted from text-only content");
 		assertNotNull(result.getContent(), "Text content should still be extracted");
@@ -416,7 +416,7 @@ final class ImageExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getImages().isEmpty()) {
 			ExtractedImage image = result.getImages().get(0);
@@ -446,8 +446,8 @@ final class ImageExtractionAdvancedTest {
 		ExtractionResult result1 = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 		ExtractionResult result2 = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result1.isSuccess(), "First extraction should succeed");
-		assertTrue(result2.isSuccess(), "Second extraction should succeed");
+		assertNotNull(result1.getContent(), "First extraction should succeed");
+		assertNotNull(result2.getContent(), "Second extraction should succeed");
 
 		assertEquals(result1.getImages().size(), result2.getImages().size(),
 				"Multiple extractions should produce same number of images");

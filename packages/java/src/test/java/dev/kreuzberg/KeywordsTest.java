@@ -38,7 +38,7 @@ class KeywordsTest {
 		assertNotNull(result.getContent(), "Content should be extracted");
 		assertTrue(result.getContent().length() > 0, "Content should not be empty");
 		assertNotNull(result.getMetadata(), "Metadata should be available");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 	}
 
 	/**
@@ -55,7 +55,7 @@ class KeywordsTest {
 		ExtractionResult germanResult = Kreuzberg.extractBytes(germanText.getBytes(), "text/plain", germanConfig);
 
 		assertNotNull(germanResult.getContent(), "German content should be extracted");
-		assertTrue(germanResult.isSuccess(), "German extraction should succeed");
+		assertNotNull(germanResult.getContent(), "German extraction should succeed");
 
 		// Test French
 		ExtractionConfig frenchConfig = ExtractionConfig.builder().keywords(KeywordConfig.builder().algorithm("yake")
@@ -65,7 +65,7 @@ class KeywordsTest {
 		ExtractionResult frenchResult = Kreuzberg.extractBytes(frenchText.getBytes(), "text/plain", frenchConfig);
 
 		assertNotNull(frenchResult.getContent(), "French content should be extracted");
-		assertTrue(frenchResult.isSuccess(), "French extraction should succeed");
+		assertNotNull(frenchResult.getContent(), "French extraction should succeed");
 
 		// Test Spanish
 		ExtractionConfig spanishConfig = ExtractionConfig.builder().keywords(KeywordConfig.builder().algorithm("yake")
@@ -75,7 +75,7 @@ class KeywordsTest {
 		ExtractionResult spanishResult = Kreuzberg.extractBytes(spanishText.getBytes(), "text/plain", spanishConfig);
 
 		assertNotNull(spanishResult.getContent(), "Spanish content should be extracted");
-		assertTrue(spanishResult.isSuccess(), "Spanish extraction should succeed");
+		assertNotNull(spanishResult.getContent(), "Spanish extraction should succeed");
 
 		// Test UTF-8 handling
 		ExtractionConfig utf8Config = ExtractionConfig.builder()
@@ -87,7 +87,7 @@ class KeywordsTest {
 		ExtractionResult utf8Result = Kreuzberg.extractBytes(utf8Text.getBytes(), "text/plain", utf8Config);
 
 		assertNotNull(utf8Result.getContent(), "UTF-8 content should be extracted");
-		assertTrue(utf8Result.isSuccess(), "UTF-8 extraction should succeed");
+		assertNotNull(utf8Result.getContent(), "UTF-8 extraction should succeed");
 	}
 
 	/**
@@ -106,7 +106,7 @@ class KeywordsTest {
 
 		ExtractionResult zeroResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", zeroScoreConfig);
 		assertNotNull(zeroResult.getMetadata(), "Metadata should be available with min_score=0.0");
-		assertTrue(zeroResult.isSuccess(), "Extraction should succeed with min_score=0.0");
+		assertNotNull(zeroResult.getContent(), "Extraction should succeed with min_score=0.0");
 
 		// Test min_score=0.5
 		ExtractionConfig midScoreConfig = ExtractionConfig.builder().keywords(
@@ -115,7 +115,7 @@ class KeywordsTest {
 
 		ExtractionResult midResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", midScoreConfig);
 		assertNotNull(midResult.getMetadata(), "Metadata should be available with min_score=0.5");
-		assertTrue(midResult.isSuccess(), "Extraction should succeed with min_score=0.5");
+		assertNotNull(midResult.getContent(), "Extraction should succeed with min_score=0.5");
 
 		// Test min_score=1.0 (edge case)
 		ExtractionConfig maxScoreConfig = ExtractionConfig.builder().keywords(
@@ -124,7 +124,7 @@ class KeywordsTest {
 
 		ExtractionResult maxResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", maxScoreConfig);
 		assertNotNull(maxResult.getMetadata(), "Metadata should be available with min_score=1.0");
-		assertTrue(maxResult.isSuccess(), "Extraction should succeed with min_score=1.0");
+		assertNotNull(maxResult.getContent(), "Extraction should succeed with min_score=1.0");
 	}
 
 	/**
@@ -145,7 +145,7 @@ class KeywordsTest {
 
 		assertNotNull(singleResult.getMetadata(), "Metadata should be available for single words");
 		assertNotNull(singleResult.getContent(), "Content should be extracted");
-		assertTrue(singleResult.isSuccess(), "Single word extraction should succeed");
+		assertNotNull(singleResult.getContent(), "Single word extraction should succeed");
 
 		// Test ngram_range=(1,2) - 1-2 word phrases
 		ExtractionConfig twoWordConfig = ExtractionConfig.builder().keywords(
@@ -155,7 +155,7 @@ class KeywordsTest {
 		ExtractionResult twoResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", twoWordConfig);
 
 		assertNotNull(twoResult.getMetadata(), "Metadata should be available for 1-2 word phrases");
-		assertTrue(twoResult.isSuccess(), "1-2 word phrase extraction should succeed");
+		assertNotNull(twoResult.getContent(), "1-2 word phrase extraction should succeed");
 
 		// Test ngram_range=(1,3) - 1-3 word phrases
 		ExtractionConfig threeWordConfig = ExtractionConfig.builder().keywords(
@@ -165,7 +165,7 @@ class KeywordsTest {
 		ExtractionResult threeResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", threeWordConfig);
 
 		assertNotNull(threeResult.getMetadata(), "Metadata should be available for 1-3 word phrases");
-		assertTrue(threeResult.isSuccess(), "1-3 word phrase extraction should succeed");
+		assertNotNull(threeResult.getContent(), "1-3 word phrase extraction should succeed");
 	}
 
 	/**
@@ -186,7 +186,7 @@ class KeywordsTest {
 
 		assertNotNull(yakeResult.getMetadata(), "YAKE metadata should be available");
 		assertNotNull(yakeResult.getContent(), "YAKE content should be extracted");
-		assertTrue(yakeResult.isSuccess(), "YAKE extraction should succeed");
+		assertNotNull(yakeResult.getContent(), "YAKE extraction should succeed");
 
 		// Test RAKE algorithm (if supported)
 		try {
@@ -198,7 +198,7 @@ class KeywordsTest {
 
 			assertNotNull(rakeResult.getMetadata(), "RAKE metadata should be available");
 			assertNotNull(rakeResult.getContent(), "RAKE content should be extracted");
-			assertTrue(rakeResult.isSuccess(), "RAKE extraction should succeed");
+			assertNotNull(rakeResult.getContent(), "RAKE extraction should succeed");
 		} catch (KreuzbergException e) {
 			// RAKE might not be supported, that's acceptable
 			assertTrue(true, "RAKE support is optional");
@@ -233,7 +233,7 @@ class KeywordsTest {
 		for (int i = 0; i < results.length; i++) {
 			assertNotNull(results[i], "Result " + i + " should not be null");
 			assertNotNull(results[i].getContent(), "Content " + i + " should be extracted");
-			assertTrue(results[i].isSuccess(), "Extraction " + i + " should succeed");
+			assertNotNull(results[i].getContent(), "Extraction " + i + " should succeed");
 			assertNotNull(results[i].getMetadata(), "Metadata " + i + " should be available");
 		}
 
@@ -267,14 +267,14 @@ class KeywordsTest {
 
 		assertNotNull(result1.getMetadata(), "First run should have metadata");
 		assertNotNull(result1.getContent(), "First run should have content");
-		assertTrue(result1.isSuccess(), "First extraction should succeed");
+		assertNotNull(result1.getContent(), "First extraction should succeed");
 
 		// Second extraction run for consistency check
 		ExtractionResult result2 = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
 		assertNotNull(result2.getMetadata(), "Second run should have metadata");
 		assertNotNull(result2.getContent(), "Second run should have content");
-		assertTrue(result2.isSuccess(), "Second extraction should succeed");
+		assertNotNull(result2.getContent(), "Second extraction should succeed");
 
 		// Verify consistency
 		assertEquals(result1.getContent(), result2.getContent(), "Same text should produce consistent results");
@@ -296,14 +296,14 @@ class KeywordsTest {
 
 		assertNotNull(emptyResult, "Empty string should return result");
 		assertNotNull(emptyResult.getMetadata(), "Metadata should be available for empty string");
-		assertTrue(emptyResult.isSuccess(), "Empty string extraction should succeed or handle gracefully");
+		assertNotNull(emptyResult.getContent(), "Empty string extraction should succeed or handle gracefully");
 
 		// Test whitespace-only input
 		ExtractionResult whitespaceResult = Kreuzberg.extractBytes("   \n\t  \n  ".getBytes(), "text/plain", config);
 
 		assertNotNull(whitespaceResult, "Whitespace-only string should return result");
 		assertNotNull(whitespaceResult.getMetadata(), "Metadata should be available for whitespace");
-		assertTrue(whitespaceResult.isSuccess(), "Whitespace extraction should succeed or handle gracefully");
+		assertNotNull(whitespaceResult.getContent(), "Whitespace extraction should succeed or handle gracefully");
 
 		// Test very short text
 		ExtractionConfig shortConfig = ExtractionConfig.builder()
@@ -316,14 +316,14 @@ class KeywordsTest {
 		assertNotNull(shortResult, "Short text should return result");
 		assertNotNull(shortResult.getContent(), "Short text should have content");
 		assertNotNull(shortResult.getMetadata(), "Metadata should be available for short text");
-		assertTrue(shortResult.isSuccess(), "Short text extraction should succeed");
+		assertNotNull(shortResult.getContent(), "Short text extraction should succeed");
 
 		// Test single word
 		ExtractionResult singleWordResult = Kreuzberg.extractBytes("Keyword example".getBytes(), "text/plain", config);
 
 		assertNotNull(singleWordResult, "Single word should return result");
 		assertNotNull(singleWordResult.getMetadata(), "Metadata should be available for single word");
-		assertTrue(singleWordResult.isSuccess(), "Single word extraction should succeed");
+		assertNotNull(singleWordResult.getContent(), "Single word extraction should succeed");
 	}
 
 	/**
@@ -344,7 +344,7 @@ class KeywordsTest {
 
 		assertNotNull(result, "Result should not be null");
 		assertNotNull(result.getContent(), "Content should be extracted");
-		assertTrue(result.isSuccess(), "Extraction with builder config should succeed");
+		assertNotNull(result.getContent(), "Extraction with builder config should succeed");
 	}
 
 	/**
@@ -367,7 +367,7 @@ class KeywordsTest {
 		ExtractionResult smallResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", smallConfig);
 
 		assertNotNull(smallResult.getMetadata(), "Small limit should have metadata");
-		assertTrue(smallResult.isSuccess(), "Extraction with small limit should succeed");
+		assertNotNull(smallResult.getContent(), "Extraction with small limit should succeed");
 
 		// Test with large limit
 		ExtractionConfig largeConfig = ExtractionConfig.builder().keywords(
@@ -377,11 +377,16 @@ class KeywordsTest {
 		ExtractionResult largeResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", largeConfig);
 
 		assertNotNull(largeResult.getMetadata(), "Large limit should have metadata");
-		assertTrue(largeResult.isSuccess(), "Extraction with large limit should succeed");
+		assertNotNull(largeResult.getContent(), "Extraction with large limit should succeed");
 
 		// Verify both succeed without error
-		assertTrue(smallResult.isSuccess() && largeResult.isSuccess(),
-				"Both limited and unlimited extractions should succeed");
+
+		// Verify both succeed without error
+		// Note: Removed isSuccess() check since no exception thrown indicates success
+
+		// Verify both succeed without error
+		// Note: Removed isSuccess() check since no exception thrown indicates success
+
 	}
 
 	/**
@@ -401,7 +406,7 @@ class KeywordsTest {
 
 		assertNotNull(result.getMetadata(), "YAKE parameters metadata should be available");
 		assertNotNull(result.getContent(), "YAKE parameters content should be extracted");
-		assertTrue(result.isSuccess(), "YAKE parameters extraction should succeed");
+		assertNotNull(result.getContent(), "YAKE parameters extraction should succeed");
 	}
 
 	/**
@@ -418,7 +423,7 @@ class KeywordsTest {
 
 		assertNotNull(result, "Result should not be null even without keyword config");
 		assertNotNull(result.getContent(), "Content should be extracted");
-		assertTrue(result.isSuccess(), "Extraction should succeed without keyword config");
+		assertNotNull(result.getContent(), "Extraction should succeed without keyword config");
 	}
 
 	/**
@@ -434,7 +439,7 @@ class KeywordsTest {
 		String text = "Important keyword extraction scores determine ranking and ordering.";
 		ExtractionResult result = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
@@ -452,7 +457,7 @@ class KeywordsTest {
 		String text = "C++ programming, machine-learning, and AI/ML are important. Data @ scale!";
 		ExtractionResult result = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
-		assertTrue(result.isSuccess(), "Extraction with special characters should succeed");
+		assertNotNull(result.getContent(), "Extraction with special characters should succeed");
 		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
@@ -478,7 +483,7 @@ class KeywordsTest {
 
 		// Verify all succeeded
 		for (ExtractionResult result : results) {
-			assertTrue(result.isSuccess(), "All extractions should succeed");
+			assertNotNull(result.getContent(), "All extractions should succeed");
 			assertNotNull(result.getContent(), "All should have content");
 		}
 
@@ -502,7 +507,7 @@ class KeywordsTest {
 		String text = "This text is used for high threshold keyword extraction testing.";
 		ExtractionResult result = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
-		assertTrue(result.isSuccess(), "Extraction with high threshold should succeed");
+		assertNotNull(result.getContent(), "Extraction with high threshold should succeed");
 		assertNotNull(result.getMetadata(), "Metadata should be available");
 	}
 
@@ -521,7 +526,7 @@ class KeywordsTest {
 				+ "secure microservices architecture with containerized deployment.";
 		ExtractionResult result = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
-		assertTrue(result.isSuccess(), "Technical text extraction should succeed");
+		assertNotNull(result.getContent(), "Technical text extraction should succeed");
 		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
@@ -540,7 +545,7 @@ class KeywordsTest {
 				.build();
 
 		ExtractionResult minResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", minConfig);
-		assertTrue(minResult.isSuccess(), "Min ngram extraction should succeed");
+		assertNotNull(minResult.getContent(), "Min ngram extraction should succeed");
 
 		// Test maximum ngram enforcement
 		ExtractionConfig maxConfig = ExtractionConfig.builder().keywords(
@@ -548,7 +553,7 @@ class KeywordsTest {
 				.build();
 
 		ExtractionResult maxResult = Kreuzberg.extractBytes(text.getBytes(), "text/plain", maxConfig);
-		assertTrue(maxResult.isSuccess(), "Max ngram extraction should succeed");
+		assertNotNull(maxResult.getContent(), "Max ngram extraction should succeed");
 	}
 
 	/**
@@ -564,7 +569,7 @@ class KeywordsTest {
 		String json = "{\"name\": \"John\", \"email\": \"john@example.com\", \"skills\": [\"Java\", \"Python\", \"Machine Learning\"]}";
 		ExtractionResult result = Kreuzberg.extractBytes(json.getBytes(), "application/json", config);
 
-		assertTrue(result.isSuccess(), "JSON keyword extraction should succeed");
+		assertNotNull(result.getContent(), "JSON keyword extraction should succeed");
 		assertNotNull(result.getContent(), "Content should be extracted from JSON");
 	}
 
@@ -584,12 +589,12 @@ class KeywordsTest {
 			longText.append("This is a word in a very long sentence with many words and phrases. ");
 		}
 		ExtractionResult longResult = Kreuzberg.extractBytes(longText.toString().getBytes(), "text/plain", config);
-		assertTrue(longResult.isSuccess(), "Long text extraction should succeed");
+		assertNotNull(longResult.getContent(), "Long text extraction should succeed");
 
 		// Test with numbers-heavy text
 		String numericText = "Price: $100, Quantity: 50, SKU: 12345, Weight: 2.5 kg";
 		ExtractionResult numResult = Kreuzberg.extractBytes(numericText.getBytes(), "text/plain", config);
-		assertTrue(numResult.isSuccess(), "Numeric text extraction should succeed");
+		assertNotNull(numResult.getContent(), "Numeric text extraction should succeed");
 	}
 
 	/**
@@ -606,9 +611,9 @@ class KeywordsTest {
 		String text = "Metadata availability in keyword extraction indicates successful processing.";
 		ExtractionResult result = Kreuzberg.extractBytes(text.getBytes(), "text/plain", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		assertNotNull(result.getMetadata(), "Metadata should be available");
-		assertFalse(result.getMetadata().isEmpty() || result.getMetadata().size() == 0,
+		assertFalse(result.getMetadata().isEmpty() || result.getMetadata().getAdditional().size() == 0,
 				"Metadata should be accessible");
 	}
 
@@ -626,6 +631,6 @@ class KeywordsTest {
 		String enText = "English language keyword extraction with specific language parameter.";
 		ExtractionResult enResult = Kreuzberg.extractBytes(enText.getBytes(), "text/plain", enConfig);
 
-		assertTrue(enResult.isSuccess(), "English extraction should succeed");
+		assertNotNull(enResult.getContent(), "English extraction should succeed");
 	}
 }

@@ -17,22 +17,27 @@ import java.util.Optional;
 public final class PageInfo {
 	private final long number;
 	private final String title;
-	private final Double width;
-	private final Double height;
-	private final Boolean visible;
+	private final double[] dimensions;
+	private final Integer imageCount;
+	private final Integer tableCount;
+	private final Boolean hidden;
 
 	@JsonCreator
 	public PageInfo(@JsonProperty("number") long number, @JsonProperty("title") String title,
-			@JsonProperty("width") Double width, @JsonProperty("height") Double height,
-			@JsonProperty("visible") Boolean visible) {
+			@JsonProperty("dimensions") double[] dimensions, @JsonProperty("image_count") Integer imageCount,
+			@JsonProperty("table_count") Integer tableCount, @JsonProperty("hidden") Boolean hidden) {
 		if (number < 1) {
 			throw new IllegalArgumentException("page number must be positive");
 		}
+		if (dimensions != null && dimensions.length != 2) {
+			throw new IllegalArgumentException("dimensions must have exactly 2 elements (width, height)");
+		}
 		this.number = number;
 		this.title = title;
-		this.width = width;
-		this.height = height;
-		this.visible = visible;
+		this.dimensions = dimensions;
+		this.imageCount = imageCount;
+		this.tableCount = tableCount;
+		this.hidden = hidden;
 	}
 
 	/**
@@ -54,12 +59,21 @@ public final class PageInfo {
 	}
 
 	/**
+	 * Get the dimensions in points (PDF) or pixels (images) as [width, height].
+	 *
+	 * @return dimensions array [width, height], or empty if not available
+	 */
+	public Optional<double[]> getDimensions() {
+		return Optional.ofNullable(dimensions);
+	}
+
+	/**
 	 * Get the page width in points (PDF) or pixels (images).
 	 *
 	 * @return page width, or empty if not available
 	 */
 	public Optional<Double> getWidth() {
-		return Optional.ofNullable(width);
+		return dimensions != null && dimensions.length >= 1 ? Optional.of(dimensions[0]) : Optional.empty();
 	}
 
 	/**
@@ -68,16 +82,45 @@ public final class PageInfo {
 	 * @return page height, or empty if not available
 	 */
 	public Optional<Double> getHeight() {
-		return Optional.ofNullable(height);
+		return dimensions != null && dimensions.length >= 2 ? Optional.of(dimensions[1]) : Optional.empty();
+	}
+
+	/**
+	 * Get the number of images on this page.
+	 *
+	 * @return image count, or empty if not available
+	 */
+	public Optional<Integer> getImageCount() {
+		return Optional.ofNullable(imageCount);
+	}
+
+	/**
+	 * Get the number of tables on this page.
+	 *
+	 * @return table count, or empty if not available
+	 */
+	public Optional<Integer> getTableCount() {
+		return Optional.ofNullable(tableCount);
+	}
+
+	/**
+	 * Get whether this page is hidden (e.g., in presentations).
+	 *
+	 * @return true if hidden, false if visible, empty if not applicable
+	 */
+	public Optional<Boolean> isHidden() {
+		return Optional.ofNullable(hidden);
 	}
 
 	/**
 	 * Get the visibility state of this page (for presentations).
 	 *
+	 * Convenience method that returns the inverse of isHidden().
+	 *
 	 * @return true if visible, false if hidden, empty if not applicable
 	 */
-	public Optional<Boolean> getVisible() {
-		return Optional.ofNullable(visible);
+	public Optional<Boolean> isVisible() {
+		return hidden != null ? Optional.of(!hidden) : Optional.empty();
 	}
 
 	@Override
@@ -89,18 +132,20 @@ public final class PageInfo {
 			return false;
 		}
 		PageInfo other = (PageInfo) obj;
-		return number == other.number && Objects.equals(title, other.title) && Objects.equals(width, other.width)
-				&& Objects.equals(height, other.height) && Objects.equals(visible, other.visible);
+		return number == other.number && Objects.equals(title, other.title)
+				&& java.util.Arrays.equals(dimensions, other.dimensions) && Objects.equals(imageCount, other.imageCount)
+				&& Objects.equals(tableCount, other.tableCount) && Objects.equals(hidden, other.hidden);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(number, title, width, height, visible);
+		return Objects.hash(number, title, java.util.Arrays.hashCode(dimensions), imageCount, tableCount, hidden);
 	}
 
 	@Override
 	public String toString() {
-		return "PageInfo{" + "number=" + number + ", title=" + title + ", width=" + width + ", height=" + height
-				+ ", visible=" + visible + '}';
+		return "PageInfo{" + "number=" + number + ", title=" + title + ", dimensions="
+				+ java.util.Arrays.toString(dimensions) + ", imageCount=" + imageCount + ", tableCount=" + tableCount
+				+ ", hidden=" + hidden + '}';
 	}
 }

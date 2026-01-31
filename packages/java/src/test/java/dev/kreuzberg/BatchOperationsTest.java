@@ -48,7 +48,7 @@ class BatchOperationsTest {
 		assertEquals(5, results.size(), "Should have 5 results");
 		for (ExtractionResult result : results) {
 			assertNotNull(result, "Each result should not be null");
-			assertTrue(result.isSuccess(), "Each extraction should succeed");
+			assertNotNull(result.getContent(), "Each extraction should succeed");
 		}
 	}
 
@@ -72,7 +72,7 @@ class BatchOperationsTest {
 
 		assertEquals(3, results.size(), "Should extract all file types");
 		for (ExtractionResult result : results) {
-			assertTrue(result.isSuccess(), "All file types should extract successfully");
+			assertNotNull(result.getContent(), "All file types should extract successfully");
 			assertNotNull(result.getMimeType(), "MIME type should be detected");
 		}
 	}
@@ -92,7 +92,7 @@ class BatchOperationsTest {
 		assertEquals(20, results.size(), "Should extract all 20 files");
 		int successCount = 0;
 		for (ExtractionResult result : results) {
-			if (result.isSuccess()) {
+			if (result != null && result.getContent() != null) {
 				successCount++;
 			}
 		}
@@ -240,7 +240,7 @@ class BatchOperationsTest {
 
 		assertEquals(3, results.size(), "Should extract with configuration");
 		for (ExtractionResult result : results) {
-			assertTrue(result.isSuccess(), "All should succeed with config");
+			assertNotNull(result.getContent(), "All should succeed with config");
 		}
 	}
 
@@ -390,8 +390,8 @@ class BatchOperationsTest {
 			var firstContent = results.get(0).getContent();
 
 			assertThrows(UnsupportedOperationException.class, () -> {
-				results.get(0).getMetadata().put("key", "value");
-			}, "Result metadata should be immutable");
+				results.get(0).getMetadata().getAdditional().put("key", "value");
+			}, "Result metadata additional map should be immutable");
 		}
 	}
 
@@ -489,7 +489,7 @@ class BatchOperationsTest {
 		long totalSize = 0;
 		int successCount = 0;
 		for (ExtractionResult result : results) {
-			if (result.isSuccess()) {
+			if (result != null && result.getContent() != null) {
 				successCount++;
 				totalSize += result.getContent().length();
 			}

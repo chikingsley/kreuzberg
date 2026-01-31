@@ -7,6 +7,6 @@ import org.jspecify.annotations.Nullable;
 
 /** HTML link metadata. */
 public record LinkMetadata(@JsonProperty("href") String href, @JsonProperty("text") String text,
-		@JsonProperty("title") @Nullable String title, @JsonProperty("link_type") String linkType,
+		@JsonProperty("title") @Nullable String title, @JsonProperty("link_type") LinkType linkType,
 		@JsonProperty("rel") List<String> rel, @JsonProperty("attributes") Map<String, String> attributes) {
 }

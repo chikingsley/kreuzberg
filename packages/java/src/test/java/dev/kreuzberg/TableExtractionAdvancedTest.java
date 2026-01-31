@@ -35,7 +35,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -71,7 +71,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -110,7 +110,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -143,7 +143,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -179,7 +179,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -221,7 +221,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -258,7 +258,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -299,7 +299,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -341,7 +341,7 @@ final class TableExtractionAdvancedTest {
 		String singleRowHtml = "<table><tr><td>A</td><td>B</td><td>C</td></tr></table>";
 		ExtractionResult singleRowResult = Kreuzberg.extractBytes(singleRowHtml.getBytes(), "text/html", config);
 
-		assertTrue(singleRowResult.isSuccess(), "Single row table extraction should succeed");
+		assertNotNull(singleRowResult.getContent(), "Single row table extraction should succeed");
 		if (!singleRowResult.getTables().isEmpty()) {
 			Table table = singleRowResult.getTables().get(0);
 			assertEquals(1, table.getRowCount(), "Should have exactly 1 row");
@@ -352,7 +352,7 @@ final class TableExtractionAdvancedTest {
 		String singleColHtml = "<table><tr><td>A</td></tr><tr><td>B</td></tr><tr><td>C</td></tr></table>";
 		ExtractionResult singleColResult = Kreuzberg.extractBytes(singleColHtml.getBytes(), "text/html", config);
 
-		assertTrue(singleColResult.isSuccess(), "Single column table extraction should succeed");
+		assertNotNull(singleColResult.getContent(), "Single column table extraction should succeed");
 		if (!singleColResult.getTables().isEmpty()) {
 			Table table = singleColResult.getTables().get(0);
 			assertEquals(1, table.getColumnCount(), "Should have exactly 1 column");
@@ -374,7 +374,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(multiTableHtml.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		List<Table> tables = result.getTables();
 		for (int i = 0; i < tables.size(); i++) {
@@ -406,7 +406,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(htmlContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -440,7 +440,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(complexHtml.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Complex table extraction should succeed");
+		assertNotNull(result.getContent(), "Complex table extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			for (Table table : result.getTables()) {
@@ -472,7 +472,7 @@ final class TableExtractionAdvancedTest {
 
 		ExtractionResult result = Kreuzberg.extractBytes(mergedCellHtml.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Merged cell table extraction should succeed");
+		assertNotNull(result.getContent(), "Merged cell table extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -510,7 +510,7 @@ final class TableExtractionAdvancedTest {
 
 		// Verify all succeeded
 		for (int i = 0; i < results.length; i++) {
-			assertTrue(results[i].isSuccess(), "Extraction " + i + " should succeed");
+			assertNotNull(results[i].getContent(), "Extraction " + i + " should succeed");
 			assertNotNull(results[i].getTables(), "Tables " + i + " should be extracted");
 		}
 

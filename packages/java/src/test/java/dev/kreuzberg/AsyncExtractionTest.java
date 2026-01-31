@@ -55,7 +55,6 @@ final class AsyncExtractionTest {
 		ExtractionResult result = future.get(30, TimeUnit.SECONDS);
 
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
 		assertNotNull(result.getContent(), "Content should be extracted");
 		assertTrue(result.getContent().contains("async extraction"), "Content should be preserved");
 	}
@@ -82,7 +81,7 @@ final class AsyncExtractionTest {
 		ExtractionResult result = future.join();
 
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Content should be extracted");
 		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
@@ -151,7 +150,7 @@ final class AsyncExtractionTest {
 			assertTrue(futures.get(i).isDone(), "Future " + i + " should be done");
 			ExtractionResult result = futures.get(i).get();
 			assertNotNull(result, "Result " + i + " should not be null");
-			assertTrue(result.isSuccess(), "Extraction " + i + " should succeed");
+			assertNotNull(result.getContent(), "Extraction " + i + " should succeed");
 		}
 	}
 
@@ -355,7 +354,7 @@ final class AsyncExtractionTest {
 
 		ExtractionResult finalResult = chainFuture.get();
 		assertNotNull(finalResult, "Final result should not be null");
-		assertTrue(finalResult.isSuccess(), "Final extraction should succeed");
+		assertNotNull(finalResult.getContent(), "Final extraction should succeed");
 	}
 
 	/**
@@ -382,7 +381,7 @@ final class AsyncExtractionTest {
 			if (exception != null) {
 				return false; // Error occurred
 			}
-			return result != null && result.isSuccess();
+			return result != null && result.getContent() != null;
 		});
 
 		Boolean success = handleFuture.get();
@@ -410,7 +409,7 @@ final class AsyncExtractionTest {
 
 		ExtractionResult result = future.get();
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Content should be extracted");
 		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
@@ -438,6 +437,6 @@ final class AsyncExtractionTest {
 
 		ExtractionResult result = future.get();
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction with config should succeed");
+		assertNotNull(result.getContent(), "Extraction with config should succeed");
 	}
 }
