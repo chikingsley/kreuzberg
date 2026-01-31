@@ -186,7 +186,7 @@ fn handle_start_event(
     };
 
     // Try block handlers first
-    if handle_block_start(state, container, attrs, parsed_attrs.clone(), footnotes) {
+    if handle_block_start(state, container, attrs, parsed_attrs.as_ref().cloned(), footnotes) {
         return;
     }
 

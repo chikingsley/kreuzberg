@@ -107,7 +107,7 @@ pub fn extract_bytes_sync(content: &[u8], mime_type: &str, config: &ExtractionCo
 /// It calls `extract_bytes_sync_impl()` to perform the extraction.
 #[cfg(not(feature = "tokio-runtime"))]
 pub fn extract_bytes_sync(content: &[u8], mime_type: &str, config: &ExtractionConfig) -> Result<ExtractionResult> {
-    super::legacy::extract_bytes_sync_impl(content.to_vec(), Some(mime_type.to_string()), Some(config.clone()))
+    super::legacy::extract_bytes_sync_impl(content, Some(mime_type), Some(config))
 }
 
 /// Synchronous wrapper for `batch_extract_file`.

@@ -101,7 +101,7 @@ pub fn parse_eml_content(data: &[u8]) -> Result<EmailExtractionResult> {
 
     let html_content = message.body_html(0).map(|s| s.to_string());
 
-    let cleaned_text = if let Some(plain) = &plain_text {
+    let cleaned_text = if let Some(ref plain) = plain_text {
         plain.clone()
     } else if let Some(html) = &html_content {
         clean_html_content(html)
@@ -174,39 +174,49 @@ pub fn parse_msg_content(data: &[u8]) -> Result<EmailExtractionResult> {
     let to_emails = outlook
         .to
         .iter()
-        .map(|p| p.email.clone())
-        .filter(|e| !e.is_empty())
+        .filter_map(|p| {
+            if p.email.is_empty() {
+                None
+            } else {
+                Some(p.email.clone())
+            }
+        })
         .collect::<Vec<String>>();
 
     let cc_emails = outlook
         .cc
         .iter()
-        .map(|p| p.email.clone())
-        .filter(|e| !e.is_empty())
+        .filter_map(|p| {
+            if p.email.is_empty() {
+                None
+            } else {
+                Some(p.email.clone())
+            }
+        })
         .collect::<Vec<String>>();
 
-    let bcc_emails = if !outlook.bcc.is_empty() {
-        vec![outlook.bcc.clone()]
-    } else {
+    let bcc_emails = if outlook.bcc.is_empty() {
         vec![]
+    } else {
+        vec![outlook.bcc.clone()]
     };
 
-    let date = if !outlook.headers.date.is_empty() {
+    let date = if outlook.headers.date.is_empty() {
+        None
+    } else {
         Some(outlook.headers.date.clone())
-    } else {
-        None
     };
 
-    let message_id = if !outlook.headers.message_id.is_empty() {
+    let message_id = if outlook.headers.message_id.is_empty() {
+        None
+    } else {
         Some(outlook.headers.message_id.clone())
-    } else {
-        None
     };
 
-    let plain_text = if !outlook.body.is_empty() {
-        Some(outlook.body.clone())
-    } else {
+    let plain_text = if outlook.body.is_empty() {
         None
+    } else {
+        Some(outlook.body.clone())
     };
 
     let html_content = None;

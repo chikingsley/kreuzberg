@@ -333,11 +333,13 @@ mod tests {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"#,
             );
             for (i, _) in slides.iter().enumerate() {
-                rels_xml.push_str(&format!(
+                use std::fmt::Write;
+                let _ = write!(
+                    rels_xml,
                     r#"<Relationship Id="rId{}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{}.xml"/>"#,
                     i + 1,
                     i + 1
-                ));
+                );
             }
             rels_xml.push_str("</Relationships>");
             zip.start_file("ppt/_rels/presentation.xml.rels", options).unwrap();

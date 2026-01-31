@@ -44,10 +44,10 @@ impl ExtractionConfig {
         let config: Self = toml::from_str(&content)
             .map_err(|e| KreuzbergError::validation(format!("Invalid TOML in {}: {}", path.display(), e)))?;
 
-        let config_arc = Arc::new(config.clone());
-        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc));
+        let config_arc = Arc::new(config);
+        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc.clone()));
 
-        Ok(config)
+        Ok((*config_arc).clone())
     }
 
     /// Load configuration from a YAML file.
@@ -72,10 +72,10 @@ impl ExtractionConfig {
         let config: Self = serde_yaml_ng::from_str(&content)
             .map_err(|e| KreuzbergError::validation(format!("Invalid YAML in {}: {}", path.display(), e)))?;
 
-        let config_arc = Arc::new(config.clone());
-        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc));
+        let config_arc = Arc::new(config);
+        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc.clone()));
 
-        Ok(config)
+        Ok((*config_arc).clone())
     }
 
     /// Load configuration from a JSON file.
@@ -100,10 +100,10 @@ impl ExtractionConfig {
         let config: Self = serde_json::from_str(&content)
             .map_err(|e| KreuzbergError::validation(format!("Invalid JSON in {}: {}", path.display(), e)))?;
 
-        let config_arc = Arc::new(config.clone());
-        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc));
+        let config_arc = Arc::new(config);
+        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc.clone()));
 
-        Ok(config)
+        Ok((*config_arc).clone())
     }
 
     /// Load configuration from a file, auto-detecting format by extension.
@@ -169,10 +169,10 @@ impl ExtractionConfig {
             }
         };
 
-        let config_arc = Arc::new(config.clone());
-        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc));
+        let config_arc = Arc::new(config);
+        CONFIG_CACHE.insert(path.to_path_buf(), (mtime, config_arc.clone()));
 
-        Ok(config)
+        Ok((*config_arc).clone())
     }
 
     /// Discover configuration file in parent directories.

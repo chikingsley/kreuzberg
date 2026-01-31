@@ -33,11 +33,11 @@
 //! All registered validators must pass for extraction to succeed. If any validator
 //! fails, the extraction fails with a validation error.
 
+use ahash::AHashMap;
 use ext_php_rs::convert::IntoZvalDyn;
 use ext_php_rs::prelude::*;
 use ext_php_rs::types::Zval;
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 use crate::types::ExtractionResult;
 
@@ -49,8 +49,8 @@ thread_local! {
     /// # Note
     ///
     /// PHP is single-threaded, so we use thread_local! storage.
-    static OCR_BACKEND_CALLBACKS: RefCell<HashMap<String, (Zval, Vec<String>)>> =
-        RefCell::new(HashMap::new());
+    static OCR_BACKEND_CALLBACKS: RefCell<AHashMap<String, (Zval, Vec<String>)>> =
+        RefCell::new(AHashMap::new());
 
     /// Global registry of PHP post-processor callbacks.
     ///
@@ -62,14 +62,14 @@ thread_local! {
     /// work differently than in Rust/Python. They don't integrate with the Rust
     /// post-processor registry because Zval is not Send+Sync. Instead, they must
     /// be called manually using `kreuzberg_run_post_processors()`.
-    static POST_PROCESSOR_REGISTRY: RefCell<HashMap<String, Zval>> =
-        RefCell::new(HashMap::new());
+    static POST_PROCESSOR_REGISTRY: RefCell<AHashMap<String, Zval>> =
+        RefCell::new(AHashMap::new());
 
     /// Global registry of PHP validator callbacks.
     ///
     /// Maps validator name -> PHP callable (Zval).
-    static VALIDATOR_REGISTRY: RefCell<HashMap<String, Zval>> =
-        RefCell::new(HashMap::new());
+    static VALIDATOR_REGISTRY: RefCell<AHashMap<String, Zval>> =
+        RefCell::new(AHashMap::new());
 
     /// Global registry of PHP custom extractor callbacks.
     ///
@@ -80,8 +80,8 @@ thread_local! {
     /// PHP is single-threaded, so we use thread_local! storage.
     /// Unlike Rust/Python extractors which use Arc<RwLock<>>, PHP extractors
     /// cannot be Send+Sync due to Zval constraints.
-    static EXTRACTOR_REGISTRY: RefCell<HashMap<String, Zval>> =
-        RefCell::new(HashMap::new());
+    static EXTRACTOR_REGISTRY: RefCell<AHashMap<String, Zval>> =
+        RefCell::new(AHashMap::new());
 }
 
 /// Register a PHP post-processor callback.

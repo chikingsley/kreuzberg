@@ -215,12 +215,14 @@ mod tests {
 
     #[test]
     fn test_hocr_large_document() {
+        use std::fmt::Write;
         let mut hocr = String::from(r#"<div class="ocr_page">"#);
         for i in 0..100 {
-            hocr.push_str(&format!(
+            let _ = write!(
+                hocr,
                 r#"<p class="ocr_par"><span class="ocrx_word">Word{}</span></p>"#,
                 i
-            ));
+            );
         }
         hocr.push_str("</div>");
 

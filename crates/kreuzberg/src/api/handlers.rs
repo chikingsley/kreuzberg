@@ -110,7 +110,7 @@ pub async fn extract_handler(
     mut multipart: Multipart,
 ) -> Result<Json<ExtractResponse>, ApiError> {
     let mut files = Vec::new();
-    let mut config = (*state.default_config).clone();
+    let mut config: Option<crate::core::config::ExtractionConfig> = None;
 
     while let Some(field) = multipart
         .next_field()
@@ -138,12 +138,12 @@ pub async fn extract_handler(
                     .await
                     .map_err(|e| ApiError::validation(crate::error::KreuzbergError::validation(e.to_string())))?;
 
-                config = serde_json::from_str(&config_str).map_err(|e| {
+                config = Some(serde_json::from_str(&config_str).map_err(|e| {
                     ApiError::validation(crate::error::KreuzbergError::validation(format!(
                         "Invalid extraction configuration: {}",
                         e
                     )))
-                })?;
+                })?);
             }
             "output_format" => {
                 let format_str = field
@@ -151,7 +151,9 @@ pub async fn extract_handler(
                     .await
                     .map_err(|e| ApiError::validation(crate::error::KreuzbergError::validation(e.to_string())))?;
 
-                config.output_format = match format_str.to_lowercase().as_str() {
+                // Ensure config exists before modifying output_format
+                let cfg = config.get_or_insert_with(|| (*state.default_config).clone());
+                cfg.output_format = match format_str.to_lowercase().as_str() {
                     "plain" => crate::core::config::OutputFormat::Plain,
                     "markdown" => crate::core::config::OutputFormat::Markdown,
                     "djot" => crate::core::config::OutputFormat::Djot,
@@ -177,18 +179,21 @@ pub async fn extract_handler(
     #[cfg(feature = "otel")]
     tracing::Span::current().record("files_count", files.len());
 
+    // Use provided config or fall back to default from state
+    let final_config = config.as_ref().unwrap_or(&state.default_config);
+
     if files.len() == 1 {
         let (data, mime_type, _file_name) = files
             .into_iter()
             .next()
             .expect("files.len() == 1 guarantees one element exists");
-        let result = extract_bytes(&data, mime_type.as_str(), &config).await?;
+        let result = extract_bytes(&data, mime_type.as_str(), final_config).await?;
         return Ok(Json(vec![result]));
     }
 
     let files_data: Vec<(Vec<u8>, String)> = files.into_iter().map(|(data, mime, _name)| (data, mime)).collect();
 
-    let results = batch_extract_bytes(files_data, &config).await?;
+    let results = batch_extract_bytes(files_data, final_config).await?;
     Ok(Json(results))
 }
 

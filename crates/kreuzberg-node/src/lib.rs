@@ -61,13 +61,13 @@ pub use plugins::{
 };
 
 // Core imports for utilities and FFI types
+use ahash::AHashSet;
 use kreuzberg::{ExtractionConfig, ExtractionResult as RustExtractionResult, KNOWN_FORMATS};
 use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
-use std::collections::HashSet;
 use std::ffi::{CStr, c_char};
 
-static KNOWN_FORMAT_FIELDS: Lazy<HashSet<&'static str>> = Lazy::new(|| KNOWN_FORMATS.iter().copied().collect());
+static KNOWN_FORMAT_FIELDS: Lazy<AHashSet<&'static str>> = Lazy::new(|| KNOWN_FORMATS.iter().copied().collect());
 
 #[allow(unused_extern_crates)]
 extern crate kreuzberg_ffi;

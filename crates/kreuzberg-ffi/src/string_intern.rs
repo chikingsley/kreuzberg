@@ -39,7 +39,7 @@
 //! ```
 
 use crate::{clear_last_error, set_last_error};
-use std::collections::HashMap;
+use ahash::AHashMap;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
@@ -82,7 +82,7 @@ struct InternedString {
 /// Global string interning table.
 struct StringInternTable {
     /// Map from string content to interned entry
-    strings: HashMap<String, InternedString>,
+    strings: AHashMap<String, InternedString>,
 
     /// Total number of intern requests
     total_requests: usize,
@@ -95,7 +95,7 @@ impl StringInternTable {
     /// Create new intern table with pre-populated common strings.
     fn new() -> Self {
         let mut table = Self {
-            strings: HashMap::new(),
+            strings: AHashMap::new(),
             total_requests: 0,
             cache_hits: 0,
         };

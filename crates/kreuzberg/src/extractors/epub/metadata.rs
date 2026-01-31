@@ -27,24 +27,24 @@ pub(super) fn extract_metadata(opf_xml: &str) -> Result<(OepbMetadata, BTreeMap<
 
     let (epub_metadata, _) = parse_opf(opf_xml)?;
 
-    if let Some(identifier) = epub_metadata.identifier.clone() {
-        additional_metadata.insert("identifier".to_string(), serde_json::json!(identifier));
+    if let Some(ref identifier) = epub_metadata.identifier {
+        additional_metadata.insert("identifier".to_string(), serde_json::json!(identifier.clone()));
     }
 
-    if let Some(publisher) = epub_metadata.publisher.clone() {
-        additional_metadata.insert("publisher".to_string(), serde_json::json!(publisher));
+    if let Some(ref publisher) = epub_metadata.publisher {
+        additional_metadata.insert("publisher".to_string(), serde_json::json!(publisher.clone()));
     }
 
-    if let Some(subject) = epub_metadata.subject.clone() {
-        additional_metadata.insert("subject".to_string(), serde_json::json!(subject));
+    if let Some(ref subject) = epub_metadata.subject {
+        additional_metadata.insert("subject".to_string(), serde_json::json!(subject.clone()));
     }
 
-    if let Some(description) = epub_metadata.description.clone() {
-        additional_metadata.insert("description".to_string(), serde_json::json!(description));
+    if let Some(ref description) = epub_metadata.description {
+        additional_metadata.insert("description".to_string(), serde_json::json!(description.clone()));
     }
 
-    if let Some(rights) = epub_metadata.rights.clone() {
-        additional_metadata.insert("rights".to_string(), serde_json::json!(rights));
+    if let Some(ref rights) = epub_metadata.rights {
+        additional_metadata.insert("rights".to_string(), serde_json::json!(rights.clone()));
     }
 
     Ok((epub_metadata, additional_metadata))

@@ -3214,6 +3214,7 @@ dependencies = [
 name = "kreuzberg-ffi"
 version = "4.2.6"
 dependencies = [
+ "ahash",
  "async-trait",
  "cbindgen",
  "criterion 0.8.1",
@@ -3231,6 +3232,7 @@ dependencies = [
 name = "kreuzberg-node"
 version = "4.2.6"
 dependencies = [
+ "ahash",
  "async-trait",
  "base64 0.22.1",
  "crossbeam-channel",
@@ -3280,6 +3282,7 @@ dependencies = [
 name = "kreuzberg-php"
 version = "4.2.6"
 dependencies = [
+ "ahash",
  "async-trait",
  "ctor",
  "ext-php-rs",
@@ -3294,6 +3297,7 @@ dependencies = [
 name = "kreuzberg-py"
 version = "4.2.6"
 dependencies = [
+ "ahash",
  "async-trait",
  "html-to-markdown-rs",
  "kreuzberg",

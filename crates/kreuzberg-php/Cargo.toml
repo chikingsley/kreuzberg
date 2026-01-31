@@ -25,6 +25,7 @@ once_cell = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt", "sync"] }
+ahash = "0.8"
 
 [features]
 default = []

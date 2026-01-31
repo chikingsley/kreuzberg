@@ -30,6 +30,7 @@ lazy_static = "1.5"
 num_cpus = "1.17"
 crossbeam-channel = "0.5"
 futures = "0.3"
+ahash = "0.8"
 
 [build-dependencies]
 napi-build = "2.3"

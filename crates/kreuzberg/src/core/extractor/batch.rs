@@ -65,9 +65,9 @@ pub async fn batch_extract_file(
         return Ok(vec![]);
     }
 
-    let config = Arc::new(config.clone());
+    let config_arc = Arc::new(config.clone());
 
-    let max_concurrent = config
+    let max_concurrent = config_arc
         .max_concurrent_extractions
         .unwrap_or_else(|| (num_cpus::get() as f64 * 1.5).ceil() as usize);
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
@@ -76,7 +76,7 @@ pub async fn batch_extract_file(
 
     for (index, path) in paths.into_iter().enumerate() {
         let path_buf = path.as_ref().to_path_buf();
-        let config_clone = Arc::clone(&config);
+        let config_clone = Arc::clone(&config_arc);
         let semaphore_clone = Arc::clone(&semaphore);
 
         tasks.spawn(async move {
@@ -180,10 +180,9 @@ pub async fn batch_extract_bytes(
         return Ok(vec![]);
     }
 
-    let batch_config = config.clone();
-    let config = Arc::new(batch_config);
+    let config_arc = Arc::new(config.clone());
 
-    let max_concurrent = config
+    let max_concurrent = config_arc
         .max_concurrent_extractions
         .unwrap_or_else(|| (num_cpus::get() as f64 * 1.5).ceil() as usize);
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
@@ -191,7 +190,7 @@ pub async fn batch_extract_bytes(
     let mut tasks = JoinSet::new();
 
     for (index, (bytes, mime_type)) in contents.into_iter().enumerate() {
-        let config_clone = Arc::clone(&config);
+        let config_clone = Arc::clone(&config_arc);
         let semaphore_clone = Arc::clone(&semaphore);
 
         tasks.spawn(async move {

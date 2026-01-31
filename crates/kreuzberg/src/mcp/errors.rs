@@ -4,6 +4,7 @@
 
 use crate::KreuzbergError;
 use rmcp::ErrorData as McpError;
+use std::fmt::Write;
 
 /// Map Kreuzberg errors to MCP error responses with appropriate error codes.
 ///
@@ -21,7 +22,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::Validation { message, source } => {
             let mut error_message = format!("Validation error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::invalid_params(error_message, None)
         }
@@ -41,7 +42,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::Parsing { message, source } => {
             let mut error_message = format!("Parsing error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::parse_error(error_message, None)
         }
@@ -52,7 +53,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::Ocr { message, source } => {
             let mut error_message = format!("OCR processing error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::internal_error(error_message, None)
         }
@@ -60,7 +61,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::Cache { message, source } => {
             let mut error_message = format!("Cache error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::internal_error(error_message, None)
         }
@@ -68,7 +69,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::ImageProcessing { message, source } => {
             let mut error_message = format!("Image processing error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::internal_error(error_message, None)
         }
@@ -76,7 +77,7 @@ pub fn map_kreuzberg_error_to_mcp(error: KreuzbergError) -> McpError {
         KreuzbergError::Serialization { message, source } => {
             let mut error_message = format!("Serialization error: {}", message);
             if let Some(src) = source {
-                error_message.push_str(&format!(" (caused by: {})", src));
+                let _ = write!(error_message, " (caused by: {})", src);
             }
             McpError::internal_error(error_message, None)
         }

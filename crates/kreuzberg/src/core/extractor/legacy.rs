@@ -24,18 +24,18 @@
 /// It replicates the logic of `extract_bytes` but uses synchronous extractor methods.
 #[cfg(not(feature = "tokio-runtime"))]
 pub(super) fn extract_bytes_sync_impl(
-    content: Vec<u8>,
-    mime_type: Option<String>,
-    config: Option<crate::core::config::ExtractionConfig>,
+    content: &[u8],
+    mime_type: Option<&str>,
+    config: Option<&crate::core::config::ExtractionConfig>,
 ) -> crate::Result<crate::types::ExtractionResult> {
     use crate::KreuzbergError;
     use crate::core::extractor::helpers::get_extractor;
     use crate::core::mime;
 
-    let config = config.unwrap_or_default();
+    let cfg = config.cloned().unwrap_or_default();
 
     let validated_mime = if let Some(mime) = mime_type {
-        mime::validate_mime_type(&mime)?
+        mime::validate_mime_type(mime)?
     } else {
         return Err(KreuzbergError::Validation {
             message: "MIME type is required for synchronous extraction".to_string(),
@@ -54,9 +54,9 @@ pub(super) fn extract_bytes_sync_impl(
         ))
     })?;
 
-    let mut result = sync_extractor.extract_sync(&content, &validated_mime, &config)?;
+    let mut result = sync_extractor.extract_sync(content, &validated_mime, &cfg)?;
 
-    result = crate::core::pipeline::run_pipeline_sync(result, &config)?;
+    result = crate::core::pipeline::run_pipeline_sync(result, &cfg)?;
 
     Ok(result)
 }

@@ -43,7 +43,7 @@ pub fn extract_tables_from_events(events: &[Event]) -> Vec<Table> {
                 if !current_row.is_empty()
                     && let Some((ref mut rows, _)) = current_table
                 {
-                    rows.push(current_row.clone());
+                    rows.push(std::mem::take(&mut current_row));
                 }
                 current_row = Vec::new();
             }

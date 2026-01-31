@@ -113,7 +113,7 @@ impl MarkdownExtractor {
                     if !current_row.is_empty()
                         && let Some((ref mut rows, _)) = current_table
                     {
-                        rows.push(current_row.clone());
+                        rows.push(std::mem::take(&mut current_row));
                     }
                     current_row = Vec::new();
                 }
@@ -121,7 +121,7 @@ impl MarkdownExtractor {
                     if !current_row.is_empty()
                         && let Some((ref mut rows, _)) = current_table
                     {
-                        rows.push(current_row.clone());
+                        rows.push(std::mem::take(&mut current_row));
                     }
                     current_row = Vec::new();
                 }

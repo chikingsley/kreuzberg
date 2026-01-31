@@ -448,13 +448,13 @@ fn generate_markdown_and_cells(sheet_name: &str, range: &Range<Data>, capacity: 
             markdown.push_str(" | ");
         }
         let cell_str = format_cell_to_string(cell);
-        header_cells.push(cell_str.clone());
 
         if cell_str.contains('|') || cell_str.contains('\\') {
             escape_markdown_into(&mut markdown, &cell_str);
         } else {
             markdown.push_str(&cell_str);
         }
+        header_cells.push(cell_str);
     }
     markdown.push_str(" |\n");
     cells.push(header_cells);
@@ -475,18 +475,19 @@ fn generate_markdown_and_cells(sheet_name: &str, range: &Range<Data>, capacity: 
             if i > 0 {
                 markdown.push_str(" | ");
             }
-            if let Some(cell) = row.get(i) {
+            let cell_str = if let Some(cell) = row.get(i) {
                 let cell_str = format_cell_to_string(cell);
-                row_cells.push(cell_str.clone());
 
                 if cell_str.contains('|') || cell_str.contains('\\') {
                     escape_markdown_into(&mut markdown, &cell_str);
                 } else {
                     markdown.push_str(&cell_str);
                 }
+                cell_str
             } else {
-                row_cells.push(String::new());
-            }
+                String::new()
+            };
+            row_cells.push(cell_str);
         }
         markdown.push_str(" |\n");
         cells.push(row_cells);

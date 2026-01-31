@@ -180,7 +180,9 @@ pub fn batch_extract_files_sync(
 
     let converted: PyResult<Vec<_>> = results
         .into_iter()
-        .map(|result| ExtractionResult::from_rust(result, py, output_fmt.clone(), result_fmt.clone()))
+        .map(|result| {
+            ExtractionResult::from_rust(result, py, output_fmt.as_ref().cloned(), result_fmt.as_ref().cloned())
+        })
         .collect();
     let list = PyList::new(py, converted?)?;
     Ok(list.unbind())
@@ -383,7 +385,9 @@ pub fn batch_extract_files<'py>(
         Python::attach(|py| {
             let converted: PyResult<Vec<_>> = results
                 .into_iter()
-                .map(|result| ExtractionResult::from_rust(result, py, output_fmt.clone(), result_fmt.clone()))
+                .map(|result| {
+                    ExtractionResult::from_rust(result, py, output_fmt.as_ref().cloned(), result_fmt.as_ref().cloned())
+                })
                 .collect();
             let list = PyList::new(py, converted?)?;
             Ok(list.unbind())
@@ -450,7 +454,9 @@ pub fn batch_extract_bytes<'py>(
         Python::attach(|py| {
             let converted: PyResult<Vec<_>> = results
                 .into_iter()
-                .map(|result| ExtractionResult::from_rust(result, py, output_fmt.clone(), result_fmt.clone()))
+                .map(|result| {
+                    ExtractionResult::from_rust(result, py, output_fmt.as_ref().cloned(), result_fmt.as_ref().cloned())
+                })
                 .collect();
             let list = PyList::new(py, converted?)?;
             Ok(list.unbind())
