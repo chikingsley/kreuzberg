@@ -23,5 +23,4 @@ var jsonTest = @"{
 }";
 
 var metadata = JsonSerializer.Deserialize<Metadata>(jsonTest, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-Console.WriteLine($"FormatType: {metadata?.FormatType}");
 Console.WriteLine($"HTML Metadata: {metadata?.Format?.Html}");

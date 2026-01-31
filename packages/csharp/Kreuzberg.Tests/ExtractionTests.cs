@@ -34,7 +34,7 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractFileSync(pdfPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success, "PDF extraction should succeed");
+
         Assert.NotEmpty(result.Content);
         Assert.Equal("application/pdf", result.MimeType);
     }
@@ -64,7 +64,6 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractBytesSync(bytes, "application/pdf");
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -109,7 +108,6 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractFileSync(docPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -120,7 +118,6 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractFileSync(excelPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -132,7 +129,6 @@ public class ExtractionTests
 
         Assert.NotNull(result);
         Assert.NotNull(result.Metadata);
-        Assert.Equal(FormatType.Excel, result.Metadata.FormatType);
     }
 
     #endregion
@@ -147,7 +143,6 @@ public class ExtractionTests
 
         Assert.NotNull(result);
         Assert.NotNull(result.Metadata);
-        Assert.Equal(FormatType.Image, result.Metadata.FormatType);
     }
 
     [Fact]
@@ -199,7 +194,6 @@ public class ExtractionTests
 
             var result = KreuzbergClient.ExtractFileSync(tempPath);
             Assert.NotNull(result);
-            Assert.True(result.Success);
             Assert.NotEmpty(result.Content);
         }
         finally
@@ -413,7 +407,6 @@ public class ExtractionTests
 
         Assert.NotNull(result);
         // Tables may or may not be extracted depending on the image content
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -522,7 +515,6 @@ public class ExtractionTests
 
         Assert.NotNull(result);
         Assert.NotNull(result.Metadata);
-        Assert.True(result.Metadata.FormatType == FormatType.Pdf || result.Metadata.FormatType != FormatType.Unknown);
     }
 
     #endregion
@@ -596,7 +588,6 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractFileSync(pdfPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -826,7 +817,6 @@ public class ExtractionTests
         var result = KreuzbergClient.ExtractFileSync(pdfPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Content);
     }
 
@@ -928,7 +918,6 @@ public class ExtractionTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]

@@ -36,7 +36,6 @@ public class AsyncOperationsTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -55,7 +54,6 @@ public class AsyncOperationsTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath, config: config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Metadata);
     }
 
@@ -74,7 +72,6 @@ public class AsyncOperationsTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath, config: config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Metadata);
     }
 
@@ -91,7 +88,6 @@ public class AsyncOperationsTests
         var results = await Task.WhenAll(tasks);
 
         Assert.Equal(paths.Length, results.Length);
-        Assert.All(results, r => Assert.True(r.Success));
     }
 
     #endregion
@@ -155,7 +151,6 @@ public class AsyncOperationsTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath, cancellationToken: cts.Token);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -234,7 +229,6 @@ public class AsyncOperationsTests
         var results = await Task.WhenAll(tasks);
 
         Assert.Equal(10, results.Length);
-        Assert.All(results, r => Assert.True(r.Success));
     }
 
     [Fact]
@@ -292,7 +286,6 @@ public class AsyncOperationsTests
         var result = await KreuzbergClient.ExtractFileAsync(pdfPath);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -314,7 +307,6 @@ public class AsyncOperationsTests
         }
 
         Assert.Equal(paths.Length, results.Count);
-        Assert.All(results, r => Assert.True(r.Success));
     }
 
     #endregion
@@ -351,7 +343,6 @@ public class AsyncOperationsTests
         // Wait for valid task and it should succeed
         var validResult = await validTask;
         Assert.NotNull(validResult);
-        Assert.True(validResult.Success);
 
         // Invalid task should fail, but the exception from it shouldn't affect the valid task
         Exception? invalidException = null;
@@ -412,7 +403,6 @@ public class AsyncOperationsTests
             .Unwrap();
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -425,7 +415,6 @@ public class AsyncOperationsTests
         );
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -524,7 +513,6 @@ public class AsyncOperationsTests
         stopwatch.Stop();
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         // Should complete within 30 seconds
         Assert.True(stopwatch.ElapsedMilliseconds < 30000);
     }

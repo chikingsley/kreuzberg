@@ -44,7 +44,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -65,7 +64,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -85,7 +83,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -109,7 +106,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -132,7 +128,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -153,7 +148,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -178,7 +172,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -208,7 +201,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -228,7 +220,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -256,7 +247,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -279,7 +269,6 @@ public class KeywordExtractionTests
         var result = await KreuzbergClient.ExtractFileAsync(textPath, config: config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -380,7 +369,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -400,7 +388,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -512,7 +499,6 @@ public class KeywordExtractionTests
         var result = KreuzbergClient.ExtractFileSync(textPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotEmpty(result.Content);
     }
 
@@ -544,8 +530,6 @@ public class KeywordExtractionTests
 
         Assert.NotNull(yakeResult);
         Assert.NotNull(rakeResult);
-        Assert.True(yakeResult.Success);
-        Assert.True(rakeResult.Success);
     }
 
     #endregion

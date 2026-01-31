@@ -46,7 +46,6 @@ public class TablesTest
         var result = KreuzbergClient.ExtractFileSync(pdfPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Tables);
         Assert.NotEmpty(result.Tables);
 
@@ -190,7 +189,6 @@ public class TablesTest
         var result = KreuzbergClient.ExtractFileSync(pdfPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.Equal("application/pdf", result.MimeType);
 
         if (result.Tables != null && result.Tables.Count > 0)
@@ -226,16 +224,6 @@ public class TablesTest
         Assert.NotNull(result.Metadata);
 
         // DOCX should be properly identified
-        if (result.Metadata.FormatType != FormatType.Unknown)
-        {
-            // Format should be one of the Office types
-            Assert.True(
-                result.Metadata.FormatType == FormatType.Unknown ||
-                result.MimeType.Contains("word") ||
-                result.MimeType.Contains("document"),
-                "DOCX should be identified as document format"
-            );
-        }
 
         // Tables extracted from DOCX should have valid structure
         if (result.Tables != null && result.Tables.Count > 0)
@@ -544,7 +532,6 @@ public class TablesTest
         var result = KreuzbergClient.ExtractFileSync(pdfPath, configWithMetadata);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Tables);
 
         // Metadata should not interfere with table extraction

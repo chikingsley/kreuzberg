@@ -175,12 +175,12 @@ public class MetadataTypesTests
     {
         var link = new LinkMetadata { Href = "https://example.com" };
 
-        link.Attributes["class"] = "external-link";
-        link.Attributes["data-tracking"] = "123";
+        link.Attributes.Add(new List<string> { "class", "external-link" });
+        link.Attributes.Add(new List<string> { "data-tracking", "123" });
 
-        Assert.IsType<Dictionary<string, string>>(link.Attributes);
+        Assert.IsType<List<List<string>>>(link.Attributes);
         Assert.Equal(2, link.Attributes.Count);
-        Assert.Equal("external-link", link.Attributes["class"]);
+        Assert.Contains(new List<string> { "class", "external-link" }, link.Attributes);
     }
 
     [Fact]
@@ -210,12 +210,12 @@ public class MetadataTypesTests
     {
         var image = new HtmlImageMetadata { Src = "image.jpg" };
 
-        image.Attributes["loading"] = "lazy";
-        image.Attributes["data-src"] = "image-hd.jpg";
+        image.Attributes.Add(new List<string> { "loading", "lazy" });
+        image.Attributes.Add(new List<string> { "data-src", "image-hd.jpg" });
 
-        Assert.IsType<Dictionary<string, string>>(image.Attributes);
+        Assert.IsType<List<List<string>>>(image.Attributes);
         Assert.Equal(2, image.Attributes.Count);
-        Assert.Equal("lazy", image.Attributes["loading"]);
+        Assert.Contains(new List<string> { "loading", "lazy" }, image.Attributes);
     }
 
     [Fact]
@@ -345,7 +345,7 @@ public class MetadataTypesTests
             Title = "Test Page",
             LinkType = "internal",
             Rel = new List<string> { "canonical" },
-            Attributes = new Dictionary<string, string> { { "class", "nav-link" } }
+            Attributes = new List<List<string>> { new List<string> { "class", "nav-link" } }
         };
 
         var json = JsonSerializer.Serialize(link, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower });
@@ -359,9 +359,8 @@ public class MetadataTypesTests
         Assert.Equal(link.LinkType, deserialized.LinkType);
         Assert.Single(deserialized.Rel);
         Assert.Equal("canonical", deserialized.Rel[0]);
-        var attributesList = new List<KeyValuePair<string, string>>(deserialized.Attributes);
-        Assert.Single(attributesList);
-        Assert.Equal("nav-link", deserialized.Attributes["class"]);
+        Assert.Single(deserialized.Attributes);
+        Assert.Contains(new List<string> { "class", "nav-link" }, deserialized.Attributes);
     }
 
     [Fact]
@@ -374,7 +373,7 @@ public class MetadataTypesTests
             Title = "Example Photo",
             Dimensions = new[] { 1920, 1080 },
             ImageType = "embedded",
-            Attributes = new Dictionary<string, string> { { "srcset", "photo-small.jpg 800w" } }
+            Attributes = new List<List<string>> { new List<string> { "srcset", "photo-small.jpg 800w" } }
         };
 
         var json = JsonSerializer.Serialize(image, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower });
@@ -390,7 +389,7 @@ public class MetadataTypesTests
         Assert.Equal(1080, deserialized.Dimensions[1]);
         Assert.Equal(image.ImageType, deserialized.ImageType);
         Assert.Single(deserialized.Attributes);
-        Assert.Equal("photo-small.jpg 800w", deserialized.Attributes["srcset"]);
+        Assert.Contains(new List<string> { "srcset", "photo-small.jpg 800w" }, deserialized.Attributes);
     }
 
     [Fact]
@@ -447,7 +446,6 @@ public class MetadataTypesTests
         var result = KreuzbergClient.ExtractFileSync(htmlPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Metadata);
         Assert.NotNull(result.Metadata.Format);
         Assert.NotNull(result.Metadata.Format.Html);
@@ -555,7 +553,7 @@ public class MetadataTypesTests
             Assert.IsType<LinkMetadata>(link);
             Assert.NotEmpty(link.Href);
             Assert.IsType<List<string>>(link.Rel);
-            Assert.IsType<Dictionary<string, string>>(link.Attributes);
+            Assert.IsType<List<List<string>>>(link.Attributes);
         }
     }
 
@@ -580,7 +578,7 @@ public class MetadataTypesTests
         {
             Assert.IsType<HtmlImageMetadata>(image);
             Assert.NotEmpty(image.Src);
-            Assert.IsType<Dictionary<string, string>>(image.Attributes);
+            Assert.IsType<List<List<string>>>(image.Attributes);
         }
     }
 
@@ -778,9 +776,7 @@ public class MetadataTypesTests
         var result = KreuzbergClient.ExtractFileSync(htmlPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Metadata);
-        Assert.Equal(FormatType.Html, result.Metadata.FormatType);
         Assert.NotNull(result.Metadata.Format);
         Assert.Equal(FormatType.Html, result.Metadata.Format.Type);
         Assert.NotNull(result.Metadata.Format.Html);
@@ -872,12 +868,12 @@ public class MetadataTypesTests
         {
             Src = "image.jpg",
             Alt = "Test",
-            Attributes = new Dictionary<string, string>
+            Attributes = new List<List<string>>
             {
-                { "class", "responsive-image" },
-                { "data-lazy", "true" },
-                { "srcset", "image-small.jpg 480w, image-medium.jpg 1024w" },
-                { "sizes", "(max-width: 600px) 100vw, 50vw" }
+                new List<string> { "class", "responsive-image" },
+                new List<string> { "data-lazy", "true" },
+                new List<string> { "srcset", "image-small.jpg 480w, image-medium.jpg 1024w" },
+                new List<string> { "sizes", "(max-width: 600px) 100vw, 50vw" }
             }
         };
 
@@ -887,10 +883,10 @@ public class MetadataTypesTests
 
         Assert.NotNull(deserialized);
         Assert.Equal(4, deserialized.Attributes.Count);
-        Assert.Equal("responsive-image", deserialized.Attributes["class"]);
-        Assert.Equal("true", deserialized.Attributes["data-lazy"]);
-        Assert.Equal("image-small.jpg 480w, image-medium.jpg 1024w", deserialized.Attributes["srcset"]);
-        Assert.Equal("(max-width: 600px) 100vw, 50vw", deserialized.Attributes["sizes"]);
+        Assert.Contains(new List<string> { "class", "responsive-image" }, deserialized.Attributes);
+        Assert.Contains(new List<string> { "data-lazy", "true" }, deserialized.Attributes);
+        Assert.Contains(new List<string> { "srcset", "image-small.jpg 480w, image-medium.jpg 1024w" }, deserialized.Attributes);
+        Assert.Contains(new List<string> { "sizes", "(max-width: 600px) 100vw, 50vw" }, deserialized.Attributes);
     }
 
     [Fact]
@@ -1030,7 +1026,6 @@ public class MetadataTypesTests
         var result = await Task.Run(() => KreuzbergClient.ExtractFileSync(htmlPath, config));
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
         Assert.NotNull(result.Metadata);
         Assert.NotNull(result.Metadata.Format);
         Assert.NotNull(result.Metadata.Format.Html);
@@ -1069,7 +1064,6 @@ public class MetadataTypesTests
             stopwatch.Stop();
 
             Assert.NotNull(result);
-            Assert.True(result.Success);
             Assert.NotNull(result.Metadata.Format.Html);
 
             Assert.True(stopwatch.ElapsedMilliseconds < 30000,
@@ -1133,7 +1127,6 @@ public class MetadataTypesTests
         foreach (var result in results)
         {
             Assert.NotNull(result);
-            Assert.True(result.Success);
             Assert.NotNull(result.Metadata);
             Assert.NotNull(result.Metadata.Format.Html);
         }
@@ -1276,7 +1269,6 @@ public class MetadataTypesTests
             var result = KreuzbergClient.ExtractFileSync(tempPath, config);
 
             Assert.NotNull(result);
-            Assert.True(result.Success);
             Assert.NotNull(result.Metadata.Format.Html);
 
             var afterExtractionMemory = GC.GetTotalMemory(false);

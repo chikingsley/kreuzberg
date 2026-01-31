@@ -202,7 +202,6 @@ public class ImagesTest
 
         // Image files themselves may be extracted as single images
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -220,7 +219,6 @@ public class ImagesTest
         var result = KreuzbergClient.ExtractFileSync(jpegPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -261,7 +259,6 @@ public class ImagesTest
         var result = KreuzbergClient.ExtractFileSync(docxPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     [Fact]
@@ -282,7 +279,6 @@ public class ImagesTest
         // Extraction should succeed; DOCX metadata may not have a specific FormatType
         // as there's no dedicated FormatType.Docx variant, but metadata object should exist
         Assert.NotNull(result);
-        Assert.True(result.Success);
     }
 
     #endregion
@@ -307,7 +303,7 @@ public class ImagesTest
 
         Assert.NotNull(result);
         // Configuration should be accepted without errors
-        Assert.True(result.Success || result.Images == null);
+
     }
 
     [Fact]
@@ -326,7 +322,7 @@ public class ImagesTest
         var result = KreuzbergClient.ExtractFileSync(pdfPath, config);
 
         Assert.NotNull(result);
-        Assert.True(result.Success || result.Images == null);
+
     }
 
     [Fact]
@@ -348,7 +344,7 @@ public class ImagesTest
 
         Assert.NotNull(result);
         // Should process without errors
-        Assert.True(result.Success || result.Images == null);
+
     }
 
     [Fact]
@@ -381,8 +377,6 @@ public class ImagesTest
 
         Assert.NotNull(resultLow);
         Assert.NotNull(resultHigh);
-        Assert.True(resultLow.Success);
-        Assert.True(resultHigh.Success);
         // Different DPI settings should be processed without error
     }
 
@@ -481,7 +475,7 @@ public class ImagesTest
         foreach (var result in results)
         {
             Assert.NotNull(result);
-            Assert.True(result.Success || result.Images == null);
+
         }
     }
 

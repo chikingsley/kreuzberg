@@ -32,13 +32,13 @@ type Chunk struct {
 
 // ChunkMetadata provides positional information for a chunk.
 type ChunkMetadata struct {
-	ByteStart   uint64   `json:"byte_start"`
-	ByteEnd     uint64   `json:"byte_end"`
-	TokenCount  *uint64  `json:"token_count,omitempty"`
-	ChunkIndex  uint64   `json:"chunk_index"`
-	TotalChunks uint64   `json:"total_chunks"`
-	FirstPage   *uint64  `json:"first_page,omitempty"`
-	LastPage    *uint64  `json:"last_page,omitempty"`
+	ByteStart   uint64  `json:"byte_start"`
+	ByteEnd     uint64  `json:"byte_end"`
+	TokenCount  *uint64 `json:"token_count,omitempty"`
+	ChunkIndex  uint64  `json:"chunk_index"`
+	TotalChunks uint64  `json:"total_chunks"`
+	FirstPage   *uint64 `json:"first_page,omitempty"`
+	LastPage    *uint64 `json:"last_page,omitempty"`
 }
 
 // ExtractedImage represents an extracted image, optionally with nested OCR results.
@@ -199,11 +199,11 @@ type EmailMetadata struct {
 
 // ArchiveMetadata summarizes archive contents.
 type ArchiveMetadata struct {
-	Format         string    `json:"format"`
-	FileCount      uint64    `json:"file_count"`
-	FileList       []string  `json:"file_list"`
-	TotalSize      uint64    `json:"total_size"`
-	CompressedSize *uint64   `json:"compressed_size,omitempty"`
+	Format         string   `json:"format"`
+	FileCount      uint64   `json:"file_count"`
+	FileList       []string `json:"file_list"`
+	TotalSize      uint64   `json:"total_size"`
+	CompressedSize *uint64  `json:"compressed_size,omitempty"`
 }
 
 // ImageMetadata describes standalone image documents.
@@ -246,10 +246,10 @@ const (
 type ImageType string
 
 const (
-	ImageTypeDataUri  ImageType = "data-uri"
+	ImageTypeDataURI   ImageType = "data-uri"
 	ImageTypeInlineSvg ImageType = "inline-svg"
-	ImageTypeExternal ImageType = "external"
-	ImageTypeRelative ImageType = "relative"
+	ImageTypeExternal  ImageType = "external"
+	ImageTypeRelative  ImageType = "relative"
 )
 
 // TextDirection enumerates text direction types.
@@ -265,9 +265,9 @@ const (
 type StructuredDataType string
 
 const (
-	StructuredDataTypeJSONLD  StructuredDataType = "json-ld"
+	StructuredDataTypeJSONLD    StructuredDataType = "json-ld"
 	StructuredDataTypeMicrodata StructuredDataType = "microdata"
-	StructuredDataTypeRDFa   StructuredDataType = "rdfa"
+	StructuredDataTypeRDFa      StructuredDataType = "rdfa"
 )
 
 //revive:disable-next-line var-naming
@@ -310,12 +310,12 @@ type LinkMetadata struct {
 
 // HTMLImageMetadata represents an image element in HTML.
 type HTMLImageMetadata struct {
-	Src        string       `json:"src"`
-	Alt        *string      `json:"alt,omitempty"`
-	Title      *string      `json:"title,omitempty"`
-	Dimensions *[2]uint32   `json:"dimensions,omitempty"`
-	ImageType  ImageType    `json:"image_type"`
-	Attributes [][2]string  `json:"attributes,omitempty"`
+	Src        string      `json:"src"`
+	Alt        *string     `json:"alt,omitempty"`
+	Title      *string     `json:"title,omitempty"`
+	Dimensions *[2]uint32  `json:"dimensions,omitempty"`
+	ImageType  ImageType   `json:"image_type"`
+	Attributes [][2]string `json:"attributes,omitempty"`
 }
 
 // StructuredData represents structured data (JSON-LD, microdata, etc.) in HTML.
@@ -343,18 +343,18 @@ type OcrMetadata struct {
 
 // ImagePreprocessingMetadata tracks OCR preprocessing steps.
 type ImagePreprocessingMetadata struct {
-	OriginalDimensions [2]uint64     `json:"original_dimensions"`
-	OriginalDPI        [2]float64    `json:"original_dpi"`
-	TargetDPI          int32         `json:"target_dpi"`
-	ScaleFactor        float64       `json:"scale_factor"`
-	AutoAdjusted       bool          `json:"auto_adjusted"`
-	FinalDPI           int32         `json:"final_dpi"`
-	NewDimensions      *[2]uint64    `json:"new_dimensions,omitempty"`
-	ResampleMethod     string        `json:"resample_method"`
-	DimensionClamped   bool          `json:"dimension_clamped"`
-	CalculatedDPI      *int32        `json:"calculated_dpi,omitempty"`
-	SkippedResize      bool          `json:"skipped_resize"`
-	ResizeError        *string       `json:"resize_error,omitempty"`
+	OriginalDimensions [2]uint64  `json:"original_dimensions"`
+	OriginalDPI        [2]float64 `json:"original_dpi"`
+	TargetDPI          int32      `json:"target_dpi"`
+	ScaleFactor        float64    `json:"scale_factor"`
+	AutoAdjusted       bool       `json:"auto_adjusted"`
+	FinalDPI           int32      `json:"final_dpi"`
+	NewDimensions      *[2]uint64 `json:"new_dimensions,omitempty"`
+	ResampleMethod     string     `json:"resample_method"`
+	DimensionClamped   bool       `json:"dimension_clamped"`
+	CalculatedDPI      *int32     `json:"calculated_dpi,omitempty"`
+	SkippedResize      bool       `json:"skipped_resize"`
+	ResizeError        *string    `json:"resize_error,omitempty"`
 }
 
 // ErrorMetadata describes failures in batch operations.
@@ -544,22 +544,22 @@ type FormattedBlock struct {
 type BlockType string
 
 const (
-	BlockTypeParagraph          BlockType = "paragraph"
-	BlockTypeHeading            BlockType = "heading"
-	BlockTypeBlockquote         BlockType = "blockquote"
-	BlockTypeCodeBlock          BlockType = "code_block"
-	BlockTypeListItem           BlockType = "list_item"
-	BlockTypeOrderedList        BlockType = "ordered_list"
-	BlockTypeBulletList         BlockType = "bullet_list"
-	BlockTypeTaskList           BlockType = "task_list"
-	BlockTypeDefinitionList     BlockType = "definition_list"
-	BlockTypeDefinitionTerm     BlockType = "definition_term"
-	BlockTypeDefinitionDesc     BlockType = "definition_description"
-	BlockTypeDiv                BlockType = "div"
-	BlockTypeSection            BlockType = "section"
-	BlockTypeThematicBreak      BlockType = "thematic_break"
-	BlockTypeRawBlock           BlockType = "raw_block"
-	BlockTypeMathDisplay        BlockType = "math_display"
+	BlockTypeParagraph      BlockType = "paragraph"
+	BlockTypeHeading        BlockType = "heading"
+	BlockTypeBlockquote     BlockType = "blockquote"
+	BlockTypeCodeBlock      BlockType = "code_block"
+	BlockTypeListItem       BlockType = "list_item"
+	BlockTypeOrderedList    BlockType = "ordered_list"
+	BlockTypeBulletList     BlockType = "bullet_list"
+	BlockTypeTaskList       BlockType = "task_list"
+	BlockTypeDefinitionList BlockType = "definition_list"
+	BlockTypeDefinitionTerm BlockType = "definition_term"
+	BlockTypeDefinitionDesc BlockType = "definition_description"
+	BlockTypeDiv            BlockType = "div"
+	BlockTypeSection        BlockType = "section"
+	BlockTypeThematicBreak  BlockType = "thematic_break"
+	BlockTypeRawBlock       BlockType = "raw_block"
+	BlockTypeMathDisplay    BlockType = "math_display"
 )
 
 // InlineElement represents an inline element within a block.
@@ -579,22 +579,22 @@ type InlineElement struct {
 type InlineType string
 
 const (
-	InlineTypeText         InlineType = "text"
-	InlineTypeStrong       InlineType = "strong"
-	InlineTypeEmphasis     InlineType = "emphasis"
-	InlineTypeHighlight    InlineType = "highlight"
-	InlineTypeSubscript    InlineType = "subscript"
-	InlineTypeSuperscript  InlineType = "superscript"
-	InlineTypeInsert       InlineType = "insert"
-	InlineTypeDelete       InlineType = "delete"
-	InlineTypeCode         InlineType = "code"
-	InlineTypeLink         InlineType = "link"
-	InlineTypeImage        InlineType = "image"
-	InlineTypeSpan         InlineType = "span"
-	InlineTypeMath         InlineType = "math"
-	InlineTypeRawInline    InlineType = "raw_inline"
-	InlineTypeFootnoteRef  InlineType = "footnote_ref"
-	InlineTypeSymbol       InlineType = "symbol"
+	InlineTypeText        InlineType = "text"
+	InlineTypeStrong      InlineType = "strong"
+	InlineTypeEmphasis    InlineType = "emphasis"
+	InlineTypeHighlight   InlineType = "highlight"
+	InlineTypeSubscript   InlineType = "subscript"
+	InlineTypeSuperscript InlineType = "superscript"
+	InlineTypeInsert      InlineType = "insert"
+	InlineTypeDelete      InlineType = "delete"
+	InlineTypeCode        InlineType = "code"
+	InlineTypeLink        InlineType = "link"
+	InlineTypeImage       InlineType = "image"
+	InlineTypeSpan        InlineType = "span"
+	InlineTypeMath        InlineType = "math"
+	InlineTypeRawInline   InlineType = "raw_inline"
+	InlineTypeFootnoteRef InlineType = "footnote_ref"
+	InlineTypeSymbol      InlineType = "symbol"
 )
 
 // Attributes represents element attributes in Djot.

@@ -20,7 +20,7 @@ public class ImagePreprocessingConfigTests
         Assert.Null(config.Deskew);
         Assert.Null(config.Denoise);
         Assert.Null(config.ContrastEnhance);
-        Assert.Null(config.BinarizationMode);
+        Assert.Null(config.BinarizationMethod);
         Assert.Null(config.InvertColors);
     }
 
@@ -34,7 +34,7 @@ public class ImagePreprocessingConfigTests
             Deskew = true,
             Denoise = true,
             ContrastEnhance = true,
-            BinarizationMode = "otsu",
+            BinarizationMethod = "otsu",
             InvertColors = false
         };
 
@@ -43,7 +43,7 @@ public class ImagePreprocessingConfigTests
         Assert.True(config.Deskew);
         Assert.True(config.Denoise);
         Assert.True(config.ContrastEnhance);
-        Assert.Equal("otsu", config.BinarizationMode);
+        Assert.Equal("otsu", config.BinarizationMethod);
         Assert.False(config.InvertColors);
     }
 
@@ -124,11 +124,11 @@ public class ImagePreprocessingConfigTests
     [InlineData("otsu")]
     [InlineData("adaptive")]
     [InlineData("threshold")]
-    public void BinarizationMode_ShouldAcceptValidMethods(string method)
+    public void BinarizationMethod_ShouldAcceptValidMethods(string method)
     {
-        var config = new ImagePreprocessingConfig { BinarizationMode = method };
+        var config = new ImagePreprocessingConfig { BinarizationMethod = method };
 
-        Assert.Equal(method, config.BinarizationMode);
+        Assert.Equal(method, config.BinarizationMethod);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class ImagePreprocessingConfigTests
             Deskew = null,
             Denoise = null,
             ContrastEnhance = null,
-            BinarizationMode = null,
+            BinarizationMethod = null,
             InvertColors = null
         };
 
@@ -199,7 +199,7 @@ public class ImagePreprocessingConfigTests
         Assert.Null(config.Deskew);
         Assert.Null(config.Denoise);
         Assert.Null(config.ContrastEnhance);
-        Assert.Null(config.BinarizationMode);
+        Assert.Null(config.BinarizationMethod);
         Assert.Null(config.InvertColors);
     }
 
@@ -231,7 +231,7 @@ public class ImagePreprocessingConfigTests
             Deskew = true,
             Denoise = true,
             ContrastEnhance = true,
-            BinarizationMode = "otsu",
+            BinarizationMethod = "otsu",
             InvertColors = false
         };
 
@@ -244,7 +244,7 @@ public class ImagePreprocessingConfigTests
         Assert.True(restored.Deskew);
         Assert.True(restored.Denoise);
         Assert.True(restored.ContrastEnhance);
-        Assert.Equal("otsu", restored.BinarizationMode);
+        Assert.Equal("otsu", restored.BinarizationMethod);
         Assert.False(restored.InvertColors);
     }
 }

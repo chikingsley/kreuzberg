@@ -179,7 +179,6 @@ public class ComprehensiveErrorHandlingTests
             var result = KreuzbergClient.ExtractFileSync(pdfPath, config: null);
 
             Assert.NotNull(result);
-            Assert.True(result.Success);
         }
         catch (KreuzbergParsingException)
         {
@@ -483,7 +482,6 @@ public class ComprehensiveErrorHandlingTests
         );
 
         Assert.NotNull(validResult);
-        Assert.True(validResult.Success);
     }
 
     [Fact]
@@ -500,7 +498,6 @@ public class ComprehensiveErrorHandlingTests
         );
 
         Assert.NotNull(validResult);
-        Assert.True(validResult.Success);
     }
 
     #endregion
