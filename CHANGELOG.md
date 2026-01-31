@@ -16,6 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Ruby Bindings
+- **Overhauled RBS type stubs** (`sig/kreuzberg.rbs`): Exhaustive audit against Ruby source and Rust Magnus bindings to ensure all types match exactly
+  - Added missing `Config::Hierarchy` class and `PDF.hierarchy` attribute
+  - Added missing `Config::KeywordYakeParams`, `Config::KeywordRakeParams` classes
+  - Added `Tesseract.options` and `HtmlOptions.options` attr_readers
+  - Added `Keywords` attr_readers and fixed parameter types to accept `String | Symbol`
+  - Fixed `Config::Extraction` to use `images` attr with `image_extraction` alias (matching Ruby source)
+  - Added missing `Extraction` methods: `discover`, `merge`, `merge!`, `[]`, `[]=`, `get_field`, `to_json`, format setters
+  - Added missing `Result` inner classes: `PageContent`, `HierarchicalBlock`, `PageHierarchy`, `ElementBoundingBox`, `ElementMetadataStruct`, `ElementStruct`
+  - Added `Result` attributes `pages` and `elements`, plus helper methods `page_count`, `chunk_count`, `detected_language`, `metadata_field`
+  - Added `DjotContent.metadata` lazy method declaration
+  - Added `extraction_result_hash.metadata` and `extraction_result_hash.pages` fields; added `page_content_hash` type
+  - Fixed `chunk_hash.chunk_index`/`total_chunks` from optional to required
+  - Fixed `image_hash.is_mask` from optional to required
+  - Fixed `register_ocr_backend` signature to include `name` parameter
+  - Replaced `_OcrBackend.extract_text` with `process_image` (matching actual protocol)
+  - Fixed `_classify_error_native` and `_get_error_details_native` return types to `Hash`
+  - Fixed `validate_mime_type` return type to `String`, `get_extensions_for_mime` to `Array[String]`
+  - Fixed extraction API methods to use keyword arguments (`path:`, `data:`, etc.)
+  - Added 30+ missing native method declarations (validation, config, MIME, result wrappers, plugin management)
+  - All private parsing/serialization methods now declared
+  - Steep type checker passes with zero errors
+
 #### Python Bindings
 - **Overhauled `_internal_bindings.pyi` type stubs**: Exhaustive audit against Rust source to ensure all types, fields, and optionality match exactly
   - Changed `Chunk` from `TypedDict` to proper class (matches PyO3 `#[pyclass]`)

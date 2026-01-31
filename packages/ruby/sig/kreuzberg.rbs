@@ -25,6 +25,8 @@ module Kreuzberg
     end
 
     class Tesseract
+      attr_reader options: Hash[Symbol, untyped]
+
       def initialize: (**untyped options) -> void
       def to_h: () -> Hash[Symbol, untyped]
     end
@@ -82,13 +84,25 @@ module Kreuzberg
       def to_h: () -> Hash[Symbol, untyped]
     end
 
+    class Hierarchy
+      attr_reader enabled: bool
+      attr_reader k_clusters: Integer
+      attr_reader include_bbox: bool
+      attr_reader ocr_coverage_threshold: Float?
+
+      def initialize: (?enabled: bool, ?k_clusters: Integer, ?include_bbox: bool, ?ocr_coverage_threshold: Float?) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def self.from_h: (Hash[Symbol, untyped]?) -> Hierarchy?
+    end
+
     class PDF
       attr_reader extract_images: bool
       attr_reader passwords: Array[String]?
       attr_reader extract_metadata: bool
       attr_reader font_config: FontConfig?
+      attr_reader hierarchy: Hierarchy?
 
-      def initialize: (?extract_images: bool, ?passwords: (Array[String] | String)?, ?extract_metadata: bool, ?font_config: (FontConfig | Hash[Symbol, untyped])?) -> void
+      def initialize: (?extract_images: bool, ?passwords: (Array[String] | String)?, ?extract_metadata: bool, ?font_config: (FontConfig | Hash[Symbol, untyped])?, ?hierarchy: (Hierarchy | Hash[Symbol, untyped])?) -> void
       def to_h: () -> Hash[Symbol, untyped]
     end
 
@@ -160,19 +174,44 @@ module Kreuzberg
     end
 
     class HtmlOptions
+      attr_reader options: Hash[Symbol, untyped]
+
       def initialize: (**untyped options) -> void
       def to_h: () -> Hash[Symbol, untyped]
     end
 
+    class KeywordYakeParams
+      attr_reader window_size: Integer
+
+      def initialize: (?window_size: Integer) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    class KeywordRakeParams
+      attr_reader min_word_length: Integer
+      attr_reader max_words_per_phrase: Integer
+
+      def initialize: (?min_word_length: Integer, ?max_words_per_phrase: Integer) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
     class Keywords
+      attr_reader algorithm: String?
+      attr_reader max_keywords: Integer?
+      attr_reader min_score: Float?
+      attr_reader ngram_range: Array[Integer]?
+      attr_reader language: String?
+      attr_reader yake_params: KeywordYakeParams?
+      attr_reader rake_params: KeywordRakeParams?
+
       def initialize: (
-        ?algorithm: Symbol?,
+        ?algorithm: (Symbol | String)?,
         ?max_keywords: Integer?,
         ?min_score: Float?,
         ?ngram_range: Array[Integer]?,
-        ?language: Symbol?,
-        ?yake_params: Hash[Symbol, untyped]?,
-        ?rake_params: Hash[Symbol, untyped]?
+        ?language: (Symbol | String)?,
+        ?yake_params: (KeywordYakeParams | Hash[Symbol, untyped])?,
+        ?rake_params: (KeywordRakeParams | Hash[Symbol, untyped])?
       ) -> void
       def to_h: () -> Hash[Symbol, untyped]
     end
@@ -194,7 +233,7 @@ module Kreuzberg
       attr_reader chunking: Chunking?
       attr_reader language_detection: LanguageDetection?
       attr_reader pdf_options: PDF?
-      attr_reader image_extraction: ImageExtraction?
+      attr_reader images: ImageExtraction?
       attr_reader postprocessor: PostProcessor?
       attr_reader token_reduction: TokenReduction?
       attr_reader keywords: Keywords?
@@ -204,7 +243,10 @@ module Kreuzberg
       attr_reader output_format: String?
       attr_reader result_format: String?
 
+      alias image_extraction images
+
       def self.from_file: (String path) -> Extraction
+      def self.discover: () -> Extraction?
       def initialize: (
         ?use_cache: bool,
         ?enable_quality_processing: bool,
@@ -224,10 +266,23 @@ module Kreuzberg
         ?result_format: String?
       ) -> void
       def to_h: () -> Hash[Symbol, untyped]
+      def to_json: (*untyped) -> String
+      def get_field: (String | Symbol field_name) -> untyped
+      def merge: (Extraction | Hash[Symbol, untyped] other) -> Extraction
+      def merge!: (Extraction | Hash[Symbol, untyped] other) -> self
+      def []: (Symbol | String key) -> untyped
+      def []=: (Symbol | String key, untyped value) -> untyped
+      def output_format=: (String? value) -> String?
+      def result_format=: (String? value) -> String?
 
       private
 
       def normalize_config: [T] (T | Hash[Symbol, untyped] | nil value, Class klass) -> T?
+      def extract_from_hash: (Hash[Symbol, untyped]? hash, Hash[Symbol, untyped] defaults) -> Hash[Symbol, untyped]
+      def assign_attributes: (Hash[Symbol, untyped] params) -> void
+      def validate_output_format: (untyped value) -> String?
+      def validate_result_format: (untyped value) -> String?
+      def update_from_merged: (Extraction merged) -> void
     end
 
   end
@@ -249,12 +304,21 @@ module Kreuzberg
     content: String,
     mime_type: String,
     metadata_json: String,
+    metadata: Hash[String, untyped],
     tables: Array[table_hash]?,
     detected_languages: Array[String]?,
     chunks: Array[chunk_hash]?,
     images: Array[image_hash]?,
+    pages: Array[page_content_hash]?,
     elements: Array[element_hash]?,
     djot_content: djot_content_hash?
+  }
+
+  type page_content_hash = {
+    page_number: Integer,
+    content: String,
+    tables: Array[table_hash],
+    images: Array[image_hash]
   }
 
   type djot_content_hash = {
@@ -315,8 +379,8 @@ module Kreuzberg
     byte_start: Integer,
     byte_end: Integer,
     token_count: Integer?,
-    chunk_index: Integer?,
-    total_chunks: Integer?,
+    chunk_index: Integer,
+    total_chunks: Integer,
     first_page: Integer?,
     last_page: Integer?,
     embedding: Array[Float]?
@@ -331,7 +395,7 @@ module Kreuzberg
     height: Integer?,
     colorspace: String?,
     bits_per_component: Integer?,
-    is_mask: bool?,
+    is_mask: bool,
     description: String?,
     ocr_result: extraction_result_hash?
   }
@@ -361,8 +425,8 @@ module Kreuzberg
       attr_reader byte_start: Integer
       attr_reader byte_end: Integer
       attr_reader token_count: Integer?
-      attr_reader chunk_index: Integer?
-      attr_reader total_chunks: Integer?
+      attr_reader chunk_index: Integer
+      attr_reader total_chunks: Integer
       attr_reader first_page: Integer?
       attr_reader last_page: Integer?
       attr_reader embedding: Array[Float]?
@@ -372,8 +436,8 @@ module Kreuzberg
         byte_start: Integer,
         byte_end: Integer,
         token_count: Integer?,
-        chunk_index: Integer?,
-        total_chunks: Integer?,
+        chunk_index: Integer,
+        total_chunks: Integer,
         first_page: Integer?,
         last_page: Integer?,
         embedding: Array[Float]?
@@ -390,7 +454,7 @@ module Kreuzberg
       attr_reader height: Integer?
       attr_reader colorspace: String?
       attr_reader bits_per_component: Integer?
-      attr_reader is_mask: bool?
+      attr_reader is_mask: bool
       attr_reader description: String?
       attr_reader ocr_result: Result?
 
@@ -403,18 +467,83 @@ module Kreuzberg
         height: Integer?,
         colorspace: String?,
         bits_per_component: Integer?,
-        is_mask: bool?,
+        is_mask: bool,
         description: String?,
         ocr_result: Result?
       ) -> void
       def to_h: () -> image_hash
     end
 
+    # Page content with text and extracted elements
+    class PageContent
+      attr_reader page_number: Integer
+      attr_reader content: String
+      attr_reader tables: Array[Table]
+      attr_reader images: Array[Image]?
+      attr_reader hierarchy: PageHierarchy?
+
+      def initialize: (page_number: Integer, content: String, tables: Array[Table], images: Array[Image]?, hierarchy: PageHierarchy?) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    # Hierarchical block element (for page hierarchy)
+    class HierarchicalBlock
+      attr_reader text: String
+      attr_reader font_size: Float?
+      attr_reader level: String?
+      attr_reader bbox: Array[Float]?
+
+      def initialize: (text: String, font_size: Float?, level: String?, bbox: Array[Float]?) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    # Page hierarchy information
+    class PageHierarchy
+      attr_reader block_count: Integer
+      attr_reader blocks: Array[HierarchicalBlock]
+
+      def initialize: (block_count: Integer, blocks: Array[HierarchicalBlock]) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    # Element bounding box coordinates
+    class ElementBoundingBox
+      attr_reader x0: Float
+      attr_reader y0: Float
+      attr_reader x1: Float
+      attr_reader y1: Float
+
+      def initialize: (x0: Float, y0: Float, x1: Float, y1: Float) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    # Element metadata
+    class ElementMetadataStruct
+      attr_reader page_number: Integer?
+      attr_reader filename: String?
+      attr_reader coordinates: ElementBoundingBox?
+      attr_reader element_index: Integer?
+      attr_reader additional: Hash[String, String]
+
+      def initialize: (page_number: Integer?, filename: String?, coordinates: ElementBoundingBox?, element_index: Integer?, additional: Hash[String, String]) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    # Structured document element
+    class ElementStruct
+      attr_reader element_id: String
+      attr_reader element_type: String
+      attr_reader text: String
+      attr_reader metadata: ElementMetadataStruct
+
+      def initialize: (element_id: String, element_type: String, text: String, metadata: ElementMetadataStruct) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
     # Structured Djot document representation
     class DjotContent
       attr_reader plain_text: String
       attr_reader blocks: Array[DjotContent::FormattedBlock]
-      attr_reader metadata: Hash[untyped, untyped]
       attr_reader metadata_json: String
       attr_reader tables: Array[untyped]
       attr_reader images: Array[DjotContent::DjotImage]
@@ -424,6 +553,7 @@ module Kreuzberg
 
       def initialize: (untyped hash) -> void
       def to_h: () -> Hash[Symbol, untyped]
+      def metadata: () -> Hash[untyped, untyped]
 
       private
 
@@ -484,11 +614,18 @@ module Kreuzberg
     attr_reader detected_languages: Array[String]?
     attr_reader chunks: Array[Chunk]?
     attr_reader images: Array[Image]?
+    attr_reader pages: Array[PageContent]?
+    attr_reader elements: Array[ElementStruct]?
     attr_reader djot_content: DjotContent?
 
     def initialize: (extraction_result_hash hash) -> void
     def to_h: () -> Hash[Symbol, untyped]
     def to_json: (*untyped) -> String
+
+    def page_count: () -> Integer
+    def chunk_count: () -> Integer
+    def detected_language: () -> String?
+    def metadata_field: (String | Symbol name) -> untyped
 
     private
 
@@ -496,52 +633,65 @@ module Kreuzberg
     def parse_tables: (Array[table_hash]? tables_data) -> Array[Table]
     def parse_detected_languages: (Array[String]? langs_data) -> Array[String]?
     def parse_chunks: (Array[chunk_hash]? chunks_data) -> Array[Chunk]?
+    def parse_images: (Array[image_hash]? images_data) -> Array[Image]?
+    def parse_pages: (Array[page_content_hash]? pages_data) -> Array[PageContent]?
+    def parse_elements: (Array[untyped]? elements_data) -> Array[ElementStruct]?
+    def parse_element: (Hash[String, untyped] element_hash) -> ElementStruct
+    def parse_element_coordinates: (Hash[String, untyped]? coordinates_data) -> ElementBoundingBox?
+    def parse_page_hierarchy: (Hash[String, untyped]? hierarchy_data) -> PageHierarchy?
+    def parse_djot_content: (Hash[String, untyped]? djot_data) -> DjotContent?
+    def get_value: (Hash[String | Symbol, untyped] hash, String key, ?untyped default) -> untyped
+    def serialize_tables: () -> Array[table_hash]
+    def serialize_chunks: () -> Array[chunk_hash]?
+    def serialize_images: () -> Array[image_hash]?
+    def serialize_pages: () -> Array[Hash[Symbol, untyped]]?
+    def serialize_elements: () -> Array[Hash[Symbol, untyped]]?
   end
 
   # Module methods (extraction API)
   def self.extract_file_sync: (
-    String | Pathname path,
+    path: String | Pathname,
     ?mime_type: String?,
     ?config: config_input?
   ) -> Result
 
   def self.extract_bytes_sync: (
-    String data,
-    String mime_type,
+    data: String,
+    mime_type: String,
     ?config: config_input?
   ) -> Result
 
   def self.batch_extract_files_sync: (
-    Array[String | Pathname] paths,
+    paths: Array[String | Pathname],
     ?config: config_input?
   ) -> Array[Result]
 
   def self.batch_extract_bytes_sync: (
-    Array[String] data_array,
-    Array[String] mime_types,
+    data_array: Array[String],
+    mime_types: Array[String],
     ?config: config_input?
   ) -> Array[Result]
 
   def self.extract_file: (
-    String | Pathname path,
+    path: String | Pathname,
     ?mime_type: String?,
     ?config: config_input?
   ) -> Result
 
   def self.extract_bytes: (
-    String data,
-    String mime_type,
+    data: String,
+    mime_type: String,
     ?config: config_input?
   ) -> Result
 
   def self.batch_extract_files: (
-    Array[String | Pathname] paths,
+    paths: Array[String | Pathname],
     ?config: config_input?
   ) -> Array[Result]
 
   def self.batch_extract_bytes: (
-    Array[String] data_array,
-    Array[String] mime_types,
+    data_array: Array[String],
+    mime_types: Array[String],
     ?config: config_input?
   ) -> Array[Result]
 
@@ -549,16 +699,50 @@ module Kreuzberg
   def self.clear_cache: () -> void
   def self.cache_stats: () -> Hash[Symbol | String, Integer]
 
-  # Config loading (native method)
+  # Config loading (native methods)
   def self._config_from_file_native: (String path) -> Hash[Symbol, untyped]
+  def self._config_discover_native: () -> Hash[Symbol, untyped]?
 
   # Error introspection (native methods)
   def self._last_error_code_native: () -> Integer
   def self._last_panic_context_json_native: () -> String?
-  def self._get_error_details_native: () -> Hash[Symbol, untyped]
-  def self._classify_error_native: (String message) -> Integer
+  def self._get_error_details_native: () -> Hash[String, untyped]
+  def self._classify_error_native: (String message) -> Hash[String, untyped]
   def self._error_code_name_native: (Integer code) -> String
   def self._error_code_description_native: (Integer code) -> String
+
+  # MIME type detection
+  def self.detect_mime_type: (String data) -> String
+  def self.detect_mime_type_from_path: (String path) -> String
+  def self.get_extensions_for_mime: (String mime_type) -> Array[String]
+  def self.validate_mime_type: (String mime_type) -> String
+
+  # Validation native methods
+  def self._validate_binarization_method_native: (String method) -> Integer
+  def self._validate_ocr_backend_native: (String backend) -> Integer
+  def self._validate_language_code_native: (String code) -> Integer
+  def self._validate_token_reduction_level_native: (String level) -> Integer
+  def self._validate_tesseract_psm_native: (Integer psm) -> Integer
+  def self._validate_tesseract_oem_native: (Integer oem) -> Integer
+  def self._validate_output_format_native: (String format) -> Integer
+  def self._validate_confidence_native: (Float confidence) -> Integer
+  def self._validate_dpi_native: (Integer dpi) -> Integer
+  def self._validate_chunking_params_native: (Integer max_chars, Integer max_overlap) -> Integer
+  def self._get_valid_binarization_methods_native: () -> String
+  def self._get_valid_language_codes_native: () -> String
+  def self._get_valid_ocr_backends_native: () -> String
+  def self._get_valid_token_reduction_levels_native: () -> String
+
+  # Config wrapper functions
+  def self._config_to_json_native: (String config_json) -> String
+  def self._config_get_field_native: (String config_json, String field_name) -> untyped
+  def self._config_merge_native: (String base_json, String override_json) -> String
+
+  # Result wrapper functions
+  def self._result_page_count_native: (untyped result) -> Integer
+  def self._result_chunk_count_native: (untyped result) -> Integer
+  def self._result_detected_language_native: (untyped result) -> String?
+  def self._result_metadata_field_native: (untyped result, String field_name) -> untyped
 
   # Plugin registration
   def self.register_post_processor: (String name, _PostProcessor processor, ?stage: Symbol?) -> void
@@ -567,7 +751,15 @@ module Kreuzberg
   def self.register_validator: (String name, _Validator validator, ?priority: Integer?) -> void
   def self.unregister_validator: (String name) -> void
   def self.clear_validators: () -> void
-  def self.register_ocr_backend: (_OcrBackend backend) -> void
+  def self.register_ocr_backend: (String name, _OcrBackend backend) -> void
+  def self.unregister_ocr_backend: (String name) -> void
+  def self.list_ocr_backends: () -> Array[String]
+  def self.clear_ocr_backends: () -> void
+  def self.unregister_document_extractor: (String name) -> void
+  def self.list_document_extractors: () -> Array[String]
+  def self.clear_document_extractors: () -> void
+  def self.list_post_processors: () -> Array[String]
+  def self.list_validators: () -> Array[String]
 
   interface _PostProcessor
     def call: (extraction_result_hash result) -> extraction_result_hash
@@ -579,15 +771,15 @@ module Kreuzberg
 
   interface _OcrBackend
     def name: () -> String
-    def extract_text: (String file_path_or_bytes, Hash[Symbol, untyped] config) -> String
+    def process_image: (String image_bytes, Hash[Symbol, untyped] config) -> String
   end
 
   module ErrorContext
     def self.last_error_code: () -> Integer
     def self.last_panic_context: () -> Errors::PanicContext?
     def self.last_panic_context_json: () -> String?
-    def self.error_details: () -> Hash[Symbol, untyped]
-    def self.classify_error: (String message) -> Integer
+    def self.error_details: () -> Hash[String, untyped]
+    def self.classify_error: (String message) -> (Hash[String, untyped] | Integer)
     def self.error_code_name: (Integer code) -> String
     def self.error_code_description: (Integer code) -> String
   end
@@ -673,7 +865,6 @@ module Kreuzberg
 
   module OcrBackendProtocol
     def name: () -> String
-    def extract_text: (String file_path_or_bytes, Hash[Symbol, untyped] config) -> String
-    def process_image: (String file_path_or_bytes, Hash[Symbol, untyped] config) -> String
+    def process_image: (String image_bytes, Hash[Symbol, untyped] config) -> String
   end
 end
