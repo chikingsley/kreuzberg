@@ -98,7 +98,18 @@ impl Fixture {
                 });
             }
 
-            if !matches!(gt.source.as_str(), "pdf_text_layer" | "markdown_file" | "manual") {
+            if !matches!(
+                gt.source.as_str(),
+                "pdf_text_layer"
+                    | "markdown_file"
+                    | "manual"
+                    | "pdftotext"
+                    | "python-docx"
+                    | "python-pptx"
+                    | "openpyxl"
+                    | "codex-vision"
+                    | "raw_source"
+            ) {
                 return Err(Error::InvalidFixture {
                     path: fixture_path.to_path_buf(),
                     reason: format!("invalid ground_truth.source: {}", gt.source),

@@ -328,6 +328,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         }
     }
 
@@ -361,6 +362,7 @@ mod tests {
             framework_capabilities: Default::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         }];
 
         write_json(&results, &output_path).unwrap();

@@ -32,6 +32,8 @@ env:
   RUST_BACKTRACE: short
   RUST_MIN_STACK: 16777216
   RUSTFLAGS: "-C strip=symbols"
+  MEASURE_QUALITY: "true"
+  OCR_ENABLED: "true"
 
 permissions:
   contents: read
@@ -1434,6 +1436,7 @@ jobs:
           MODE: ${{ matrix.mode }}
           ITERATIONS: ${{ env.ITERATIONS }}
           TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
         run: scripts/benchmarks/run-benchmark.sh
 
       - name: Upload artifacts
@@ -1491,6 +1494,7 @@ jobs:
           MODE: ${{ matrix.mode }}
           ITERATIONS: ${{ env.ITERATIONS }}
           TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
         run: scripts/benchmarks/run-benchmark.sh
 
       - name: Upload artifacts
@@ -1746,6 +1750,7 @@ jobs:
           MODE: ${{ matrix.mode }}
           ITERATIONS: ${{ env.ITERATIONS }}
           TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
         run: scripts/benchmarks/run-benchmark.sh
 
       - name: Upload artifacts
@@ -1797,6 +1802,7 @@ jobs:
           MODE: ${{ matrix.mode }}
           ITERATIONS: ${{ env.ITERATIONS }}
           TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
         run: scripts/benchmarks/run-benchmark.sh
 
       - name: Upload artifacts

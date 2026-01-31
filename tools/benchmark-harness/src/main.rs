@@ -173,6 +173,16 @@ async fn main() -> Result<()> {
             use kreuzberg::{ExtractionConfig, OcrConfig};
             use std::sync::Arc;
 
+            // Validate framework names: alphanumeric, hyphens, underscores only
+            for framework in &frameworks {
+                if !framework.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+                    return Err(benchmark_harness::Error::Benchmark(format!(
+                        "Invalid framework name '{}': must contain only alphanumeric characters, hyphens, or underscores",
+                        framework
+                    )));
+                }
+            }
+
             let config = BenchmarkConfig {
                 output_dir: output.clone(),
                 max_concurrent: max_concurrent.unwrap_or_else(num_cpus::get),
@@ -186,16 +196,6 @@ async fn main() -> Result<()> {
             };
 
             config.validate()?;
-
-            // Set OCR env var for subprocess scripts to read
-            // SAFETY: set_var is called once on the main thread before any async tasks start.
-            // The env var is only read synchronously during adapter creation (lines 237-270 below),
-            // which completes before any concurrent work begins at runner.run().await (line 322).
-            // Adapter creation reads the var via ocr_flag() in adapter functions, all of which
-            // execute sequentially before the tokio async runtime spawns worker tasks.
-            unsafe {
-                std::env::set_var("BENCHMARK_OCR_ENABLED", if ocr { "true" } else { "false" });
-            }
 
             let mut extraction_config = if ocr {
                 ExtractionConfig {
@@ -254,24 +254,48 @@ async fn main() -> Result<()> {
                 create_wasm_adapter, create_wasm_batch_adapter,
             };
 
-            try_register!("kreuzberg-python", create_python_adapter, kreuzberg_count);
-            try_register!("kreuzberg-python-batch", create_python_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-go", create_go_adapter, kreuzberg_count);
-            try_register!("kreuzberg-go-batch", create_go_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-node", create_node_adapter, kreuzberg_count);
-            try_register!("kreuzberg-node-batch", create_node_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-wasm", create_wasm_adapter, kreuzberg_count);
-            try_register!("kreuzberg-wasm-batch", create_wasm_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-ruby", create_ruby_adapter, kreuzberg_count);
-            try_register!("kreuzberg-ruby-batch", create_ruby_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-java", create_java_adapter, kreuzberg_count);
-            try_register!("kreuzberg-java-batch", create_java_batch_adapter, kreuzberg_count);
+            try_register!("kreuzberg-python", || create_python_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-python-batch",
+                || create_python_batch_adapter(ocr),
+                kreuzberg_count
+            );
+            try_register!("kreuzberg-go", || create_go_adapter(ocr), kreuzberg_count);
+            try_register!("kreuzberg-go-batch", || create_go_batch_adapter(ocr), kreuzberg_count);
+            try_register!("kreuzberg-node", || create_node_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-node-batch",
+                || create_node_batch_adapter(ocr),
+                kreuzberg_count
+            );
+            try_register!("kreuzberg-wasm", || create_wasm_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-wasm-batch",
+                || create_wasm_batch_adapter(ocr),
+                kreuzberg_count
+            );
+            try_register!("kreuzberg-ruby", || create_ruby_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-ruby-batch",
+                || create_ruby_batch_adapter(ocr),
+                kreuzberg_count
+            );
+            try_register!("kreuzberg-java", || create_java_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-java-batch",
+                || create_java_batch_adapter(ocr),
+                kreuzberg_count
+            );
             try_register!("kreuzberg-csharp", create_csharp_adapter, kreuzberg_count);
             try_register!("kreuzberg-csharp-batch", create_csharp_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-php", create_php_adapter, kreuzberg_count);
-            try_register!("kreuzberg-php-batch", create_php_batch_adapter, kreuzberg_count);
-            try_register!("kreuzberg-elixir", create_elixir_adapter, kreuzberg_count);
-            try_register!("kreuzberg-elixir-batch", create_elixir_batch_adapter, kreuzberg_count);
+            try_register!("kreuzberg-php", || create_php_adapter(ocr), kreuzberg_count);
+            try_register!("kreuzberg-php-batch", || create_php_batch_adapter(ocr), kreuzberg_count);
+            try_register!("kreuzberg-elixir", || create_elixir_adapter(ocr), kreuzberg_count);
+            try_register!(
+                "kreuzberg-elixir-batch",
+                || create_elixir_batch_adapter(ocr),
+                kreuzberg_count
+            );
 
             let total_requested = if frameworks.is_empty() { 19 } else { frameworks.len() };
             eprintln!(
@@ -288,18 +312,22 @@ async fn main() -> Result<()> {
 
             let mut external_count = 0;
 
-            try_register!("docling", create_docling_adapter, external_count);
-            try_register!("docling-batch", create_docling_batch_adapter, external_count);
-            try_register!("markitdown", create_markitdown_adapter, external_count);
+            try_register!("docling", || create_docling_adapter(ocr), external_count);
+            try_register!("docling-batch", || create_docling_batch_adapter(ocr), external_count);
+            try_register!("markitdown", || create_markitdown_adapter(ocr), external_count);
             try_register!("pandoc", create_pandoc_adapter, external_count);
-            try_register!("unstructured", create_unstructured_adapter, external_count);
-            try_register!("tika", create_tika_adapter, external_count);
-            try_register!("tika-batch", create_tika_batch_adapter, external_count);
-            try_register!("pymupdf4llm", create_pymupdf4llm_adapter, external_count);
-            try_register!("pdfplumber", create_pdfplumber_adapter, external_count);
-            try_register!("pdfplumber-batch", create_pdfplumber_batch_adapter, external_count);
-            try_register!("mineru", create_mineru_adapter, external_count);
-            try_register!("mineru-batch", create_mineru_batch_adapter, external_count);
+            try_register!("unstructured", || create_unstructured_adapter(ocr), external_count);
+            try_register!("tika", || create_tika_adapter(ocr), external_count);
+            try_register!("tika-batch", || create_tika_batch_adapter(ocr), external_count);
+            try_register!("pymupdf4llm", || create_pymupdf4llm_adapter(ocr), external_count);
+            try_register!("pdfplumber", || create_pdfplumber_adapter(ocr), external_count);
+            try_register!(
+                "pdfplumber-batch",
+                || create_pdfplumber_batch_adapter(ocr),
+                external_count
+            );
+            try_register!("mineru", || create_mineru_adapter(ocr), external_count);
+            try_register!("mineru-batch", || create_mineru_batch_adapter(ocr), external_count);
 
             eprintln!(
                 "[adapter] Open source extraction frameworks: {}/12 available",
@@ -361,7 +389,7 @@ async fn main() -> Result<()> {
             output,
             baseline: _baseline,
         } => {
-            use benchmark_harness::{consolidate_runs, load_run_results, write_consolidated_json};
+            use benchmark_harness::load_run_results;
 
             if inputs.is_empty() {
                 return Err(benchmark_harness::Error::Benchmark(
@@ -370,8 +398,8 @@ async fn main() -> Result<()> {
             }
 
             println!("Loading benchmark results from {} directory(ies)...", inputs.len());
-            let mut all_runs = Vec::new();
 
+            let mut all_results = Vec::new();
             for input in &inputs {
                 if !input.is_dir() {
                     return Err(benchmark_harness::Error::Benchmark(format!(
@@ -382,19 +410,10 @@ async fn main() -> Result<()> {
                 println!("  Loading from: {}", input.display());
                 let run_results = load_run_results(input)?;
                 println!("    Loaded {} results", run_results.len());
-                all_runs.push(run_results);
+                all_results.extend(run_results);
             }
 
-            println!("\nConsolidating {} run(s)...", all_runs.len());
-            let consolidated = consolidate_runs(all_runs)?;
-
-            // Create new aggregation format
-            println!("\nCreating new aggregation format...");
-            // Flatten all runs into a single vec of BenchmarkResult
-            let all_results: Vec<_> = inputs
-                .iter()
-                .flat_map(|input| load_run_results(input).unwrap_or_default())
-                .collect();
+            println!("\nAggregating {} results...", all_results.len());
             let aggregated = benchmark_harness::aggregate_new_format(&all_results);
             println!(
                 "  Aggregated {} frameworks across {} file types",
@@ -407,33 +426,24 @@ async fn main() -> Result<()> {
                     .len()
             );
 
-            println!("\nConsolidation Summary:");
-            println!("  Total files processed: {}", consolidated.total_files);
-            println!("  Number of runs: {}", consolidated.run_count);
-            println!("  Frameworks analyzed: {}", consolidated.framework_count);
-
             eprintln!("\nFramework Summary:");
-            for (framework, agg) in &consolidated.by_framework {
-                eprintln!("  {}:", framework);
-                eprintln!("    Files processed: {}", agg.total_files);
-                eprintln!("    Mean duration: {:.2} ms", agg.mean_duration_ms);
-                eprintln!("    Std dev: {:.2} ms", agg.duration_std_dev_ms);
-                eprintln!("    Success rate: {:.1}%", agg.success_rate * 100.0);
+            for (key, agg) in &aggregated.by_framework_mode {
+                eprintln!("  {} ({}):", agg.framework, agg.mode);
+                eprintln!("    File types: {}", agg.by_file_type.len());
+                if let Some(cs) = &agg.cold_start {
+                    eprintln!("    Cold start p50: {:.2} ms", cs.p50_ms);
+                }
+                let _ = key; // used as map key
             }
 
             std::fs::create_dir_all(&output).map_err(benchmark_harness::Error::Io)?;
 
-            // Always output JSON format
-            let output_file = output.join("consolidated.json");
-            write_consolidated_json(&consolidated, &output_file)?;
-            println!("\nConsolidated results written to: {}", output_file.display());
-
-            let aggregated_file = output.join("aggregated.json");
-            let json = serde_json::to_string_pretty(&aggregated).map_err(|e| {
-                benchmark_harness::Error::Benchmark(format!("Failed to serialize aggregated results: {}", e))
-            })?;
-            std::fs::write(&aggregated_file, json).map_err(benchmark_harness::Error::Io)?;
-            println!("Aggregated metrics written to: {}", aggregated_file.display());
+            // Single unified output file
+            let output_file = output.join("results.json");
+            let json = serde_json::to_string_pretty(&aggregated)
+                .map_err(|e| benchmark_harness::Error::Benchmark(format!("Failed to serialize results: {}", e)))?;
+            std::fs::write(&output_file, json).map_err(benchmark_harness::Error::Io)?;
+            println!("\nResults written to: {}", output_file.display());
 
             Ok(())
         }

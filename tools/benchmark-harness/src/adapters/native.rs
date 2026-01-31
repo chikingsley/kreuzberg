@@ -129,6 +129,9 @@ impl FrameworkAdapter for NativeAdapter {
 
         let duration = start.elapsed();
 
+        // Capture extracted text for quality assessment
+        let extracted_text = extraction_result.as_ref().ok().map(|r| r.content.clone());
+
         let samples = monitor.stop().await;
         let snapshots = monitor.get_snapshots().await;
         let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
@@ -169,6 +172,7 @@ impl FrameworkAdapter for NativeAdapter {
                 framework_capabilities: FrameworkCapabilities::default(),
                 pdf_metadata: None,
                 ocr_status: self.get_ocr_status(),
+                extracted_text: None,
             });
         }
 
@@ -203,6 +207,7 @@ impl FrameworkAdapter for NativeAdapter {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: self.get_ocr_status(),
+            extracted_text,
         })
     }
 
@@ -278,6 +283,7 @@ impl FrameworkAdapter for NativeAdapter {
                         framework_capabilities: FrameworkCapabilities::default(),
                         pdf_metadata: None,
                         ocr_status: self.get_ocr_status(),
+                        extracted_text: None,
                     }
                 })
                 .collect();
@@ -290,19 +296,12 @@ impl FrameworkAdapter for NativeAdapter {
         let num_files = file_paths.len() as f64;
         let avg_duration_per_file = Duration::from_secs_f64(total_duration.as_secs_f64() / num_files.max(1.0));
 
-        // Ensure we never create success=true with duration=0
-        let avg_duration_per_file = if avg_duration_per_file == Duration::from_secs(0) {
-            Duration::from_nanos(1) // Minimum non-zero duration
-        } else {
-            avg_duration_per_file
-        };
-
         let results: Vec<BenchmarkResult> = file_paths
             .iter()
             .map(|file_path| {
                 let file_size = std::fs::metadata(file_path).map(|m| m.len()).unwrap_or(0);
 
-                let file_throughput = if avg_duration_per_file.as_secs_f64() > 0.0 {
+                let file_throughput = if avg_duration_per_file > Duration::from_secs(0) {
                     file_size as f64 / avg_duration_per_file.as_secs_f64()
                 } else {
                     0.0
@@ -335,6 +334,7 @@ impl FrameworkAdapter for NativeAdapter {
                     framework_capabilities: FrameworkCapabilities::default(),
                     pdf_metadata: None,
                     ocr_status: self.get_ocr_status(),
+                    extracted_text: None,
                 }
             })
             .collect();

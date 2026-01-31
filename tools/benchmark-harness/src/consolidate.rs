@@ -817,6 +817,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         }
     }
 

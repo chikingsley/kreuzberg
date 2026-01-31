@@ -7,6 +7,8 @@ ITERATIONS="${ITERATIONS:-3}"
 TIMEOUT="${TIMEOUT:-900}"
 FIXTURES_DIR="${FIXTURES_DIR:-tools/benchmark-harness/fixtures}"
 HARNESS_PATH="${HARNESS_PATH:-./target/release/benchmark-harness}"
+MEASURE_QUALITY="${MEASURE_QUALITY:-false}"
+OCR_ENABLED="${OCR_ENABLED:-false}"
 
 if [ -z "$FRAMEWORK" ] || [ -z "$MODE" ]; then
   echo "::error::FRAMEWORK and MODE environment variables are required" >&2
@@ -27,6 +29,14 @@ rm -rf "${OUTPUT_DIR}"
 
 MAX_CONCURRENT=$([[ "$MODE" == "single-file" ]] && echo 1 || echo 4)
 
+EXTRA_ARGS=()
+if [ "$MEASURE_QUALITY" = "true" ]; then
+  EXTRA_ARGS+=("--measure-quality")
+fi
+if [ "$OCR_ENABLED" = "true" ]; then
+  EXTRA_ARGS+=("--ocr")
+fi
+
 "${HARNESS_PATH}" \
   run \
   --fixtures "${FIXTURES_DIR}" \
@@ -35,4 +45,5 @@ MAX_CONCURRENT=$([[ "$MODE" == "single-file" ]] && echo 1 || echo 4)
   --iterations "${ITERATIONS}" \
   --timeout "${TIMEOUT}" \
   --mode "${MODE}" \
-  --max-concurrent "${MAX_CONCURRENT}"
+  --max-concurrent "${MAX_CONCURRENT}" \
+  "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}"

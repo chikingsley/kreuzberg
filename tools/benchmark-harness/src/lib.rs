@@ -16,6 +16,7 @@ pub mod output;
 pub mod pool_metrics;
 pub mod profile_report;
 pub mod profiling;
+pub mod quality;
 pub mod registry;
 pub mod runner;
 pub mod stats;
@@ -24,8 +25,9 @@ pub mod types;
 pub use adapter::FrameworkAdapter;
 pub use adapters::{NativeAdapter, NodeAdapter, PythonAdapter, RubyAdapter};
 pub use aggregate::{
-    ConsolidationMetadata, DurationPercentiles, FileTypeAggregation, FrameworkModeAggregation, NewConsolidatedResults,
-    Percentiles, PerformancePercentiles, aggregate_new_format,
+    ComparisonData, ConsolidationMetadata, DeltaMetrics, DurationPercentiles, FileTypeAggregation,
+    FrameworkModeAggregation, NewConsolidatedResults, Percentiles, PerformancePercentiles, QualityPercentiles,
+    RankedFramework, aggregate_new_format,
 };
 pub use config::{BenchmarkConfig, BenchmarkMode, ProfilingConfig, load_framework_sizes};
 pub use consolidate::{
@@ -39,6 +41,7 @@ pub use monitoring::{ResourceMonitor, ResourceSample, ResourceStats};
 pub use output::{write_by_extension_analysis, write_json};
 pub use pool_metrics::{FilePoolMetrics, PoolMetricsReport};
 pub use profile_report::{Hotspot, MemorySnapshot, ProfileReport};
+pub use quality::compute_quality;
 pub use registry::AdapterRegistry;
 pub use runner::BenchmarkRunner;
 pub use types::{BenchmarkResult, DiskSizeInfo, FrameworkCapabilities, PdfMetadata};

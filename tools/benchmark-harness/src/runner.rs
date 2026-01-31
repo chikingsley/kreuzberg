@@ -65,8 +65,8 @@ fn calculate_statistics(iterations: &[IterationResult]) -> DurationStatistics {
 
     let durations: Vec<Duration> = iterations.iter().map(|i| i.duration).collect();
 
-    let min = *durations.iter().min().unwrap();
-    let max = *durations.iter().max().unwrap();
+    let min = *durations.iter().min().unwrap_or(&Duration::from_secs(0));
+    let max = *durations.iter().max().unwrap_or(&Duration::from_secs(0));
 
     let total_ms: f64 = durations.iter().map(|d| d.as_secs_f64() * 1000.0).sum();
     let mean_ms = total_ms / durations.len() as f64;
@@ -209,12 +209,12 @@ impl BenchmarkRunner {
     /// # Arguments
     /// * `result` - Mutable reference to benchmark result to enrich
     fn enrich_with_framework_size(&self, result: &mut BenchmarkResult) {
-        // Strip -sync, -async, -batch suffix to find base framework
+        // Strip -batch suffix FIRST, then -sync/-async to find base framework
         let base_name = result
             .framework
+            .trim_end_matches("-batch")
             .trim_end_matches("-sync")
-            .trim_end_matches("-async")
-            .trim_end_matches("-batch");
+            .trim_end_matches("-async");
 
         if let Some(size_info) = self.framework_sizes.get(base_name) {
             result.framework_capabilities.installation_size = Some(size_info.clone());
@@ -408,6 +408,7 @@ impl BenchmarkRunner {
             framework_capabilities: first_result.framework_capabilities.clone(),
             pdf_metadata: first_result.pdf_metadata.clone(),
             ocr_status: first_result.ocr_status,
+            extracted_text: first_result.extracted_text.clone(),
         })
     }
 
@@ -518,6 +519,7 @@ impl BenchmarkRunner {
                 framework_capabilities: first_result.framework_capabilities.clone(),
                 pdf_metadata: first_result.pdf_metadata.clone(),
                 ocr_status: first_result.ocr_status,
+                extracted_text: first_result.extracted_text.clone(),
             });
         }
 
@@ -688,6 +690,30 @@ impl BenchmarkRunner {
             }
         }
 
+        // Apply quality scoring if enabled
+        if self.config.measure_quality {
+            // Build mapping from document path -> ground truth text
+            let mut ground_truth_map: HashMap<PathBuf, String> = HashMap::new();
+            for (fixture_path, fixture) in self.fixtures.fixtures() {
+                let fixture_dir = fixture_path.parent().unwrap_or_else(|| std::path::Path::new("."));
+                if let Some(gt_path) = fixture.resolve_ground_truth_path(fixture_dir)
+                    && gt_path.exists()
+                    && let Ok(gt_text) = std::fs::read_to_string(&gt_path)
+                {
+                    let doc_path = fixture.resolve_document_path(fixture_dir);
+                    ground_truth_map.insert(doc_path, gt_text);
+                }
+            }
+
+            for result in &mut results {
+                if let Some(ref extracted) = result.extracted_text
+                    && let Some(gt_text) = ground_truth_map.get(&result.file_path)
+                {
+                    result.quality = Some(crate::quality::compute_quality(extracted, gt_text));
+                }
+            }
+        }
+
         for adapter in &frameworks {
             adapter.teardown().await?;
         }
@@ -817,6 +843,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         };
 
         // Test with -async suffix
@@ -838,6 +865,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         };
 
         // Test with -batch suffix
@@ -859,6 +887,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown,
+            extracted_text: None,
         };
 
         // Verify installation_size is None before enrichment

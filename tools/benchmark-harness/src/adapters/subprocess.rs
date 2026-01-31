@@ -48,8 +48,28 @@ impl SubprocessAdapter {
             return true;
         }
 
-        // PyMuPDF supports OCR
+        // PyMuPDF supports OCR via tesseract
         if name_lower.contains("pymupdf") {
+            return true;
+        }
+
+        // Docling supports OCR via EasyOCR/Tesseract
+        if name_lower.contains("docling") {
+            return true;
+        }
+
+        // Unstructured supports OCR via Tesseract
+        if name_lower.contains("unstructured") {
+            return true;
+        }
+
+        // Tika supports OCR via Tika OCR parser
+        if name_lower.contains("tika") {
+            return true;
+        }
+
+        // MinerU supports OCR via PaddleOCR
+        if name_lower.contains("mineru") {
             return true;
         }
 
@@ -247,9 +267,32 @@ impl SubprocessAdapter {
 
     /// Parse extraction result from subprocess output
     ///
-    /// Expected output format: JSON with `content` and optional `metadata` fields
+    /// Expected subprocess output format:
+    /// ```json
+    /// {
+    ///   "content": "extracted text...",          // REQUIRED
+    ///   "_ocr_used": true|false,                 // optional
+    ///   "_extraction_time_ms": 123.45            // optional
+    /// }
+    /// ```
     fn parse_output(&self, stdout: &str) -> Result<serde_json::Value> {
-        serde_json::from_str(stdout).map_err(|e| Error::Benchmark(format!("Failed to parse subprocess output: {}", e)))
+        let parsed: serde_json::Value = serde_json::from_str(stdout)
+            .map_err(|e| Error::Benchmark(format!("Failed to parse subprocess output as JSON: {}", e)))?;
+
+        // Validate that content field exists and is a string
+        if !parsed.is_object() {
+            return Err(Error::Benchmark(
+                "Subprocess output must be a JSON object with 'content' field".to_string(),
+            ));
+        }
+
+        if !parsed.get("content").is_some_and(|v| v.is_string()) {
+            return Err(Error::Benchmark(
+                "Subprocess output missing required 'content' field (must be a string)".to_string(),
+            ));
+        }
+
+        Ok(parsed)
     }
 }
 
@@ -323,6 +366,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                     framework_capabilities,
                     pdf_metadata: None,
                     ocr_status: OcrStatus::Unknown,
+                    extracted_text: None,
                 });
             }
         };
@@ -375,6 +419,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                     framework_capabilities,
                     pdf_metadata: None,
                     ocr_status: OcrStatus::Unknown,
+                    extracted_text: None,
                 });
             }
         };
@@ -383,6 +428,9 @@ impl FrameworkAdapter for SubprocessAdapter {
             .get("_extraction_time_ms")
             .and_then(|v| v.as_f64())
             .map(|ms| Duration::from_secs_f64(ms / 1000.0));
+
+        // Capture extracted text for quality assessment
+        let extracted_text = parsed.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
 
         let subprocess_overhead = extraction_duration.map(|ext| duration.saturating_sub(ext));
 
@@ -450,6 +498,7 @@ impl FrameworkAdapter for SubprocessAdapter {
             framework_capabilities,
             pdf_metadata,
             ocr_status,
+            extracted_text,
         })
     }
 
@@ -485,7 +534,7 @@ impl FrameworkAdapter for SubprocessAdapter {
         let sampling_ms = crate::monitoring::adaptive_sampling_interval_ms(total_file_size);
         monitor.start(Duration::from_millis(sampling_ms)).await;
 
-        let (_stdout, _stderr, duration) = match self.execute_subprocess_batch(file_paths, timeout).await {
+        let (stdout, _stderr, duration) = match self.execute_subprocess_batch(file_paths, timeout).await {
             Ok(result) => result,
             Err(e) => {
                 let samples = monitor.stop().await;
@@ -496,6 +545,8 @@ impl FrameworkAdapter for SubprocessAdapter {
                 // Create one failure result per file instead of a single aggregated failure
                 // Use the actual elapsed time divided by number of files
                 let num_files = file_paths.len() as f64;
+                // Amortized per-file duration: total batch wall time divided by file count.
+                // For concurrent batch processing, this represents average cost, not individual file duration.
                 let avg_duration_per_file = Duration::from_secs_f64(actual_duration.as_secs_f64() / num_files.max(1.0));
 
                 let framework_capabilities = FrameworkCapabilities {
@@ -544,11 +595,8 @@ impl FrameworkAdapter for SubprocessAdapter {
                             file_extension,
                             framework_capabilities: framework_capabilities.clone(),
                             pdf_metadata: None,
-                            ocr_status: if framework_capabilities.ocr_support {
-                                OcrStatus::Used
-                            } else {
-                                OcrStatus::NotUsed
-                            },
+                            ocr_status: OcrStatus::Unknown,
+                            extracted_text: None,
                         }
                     })
                     .collect();
@@ -561,17 +609,28 @@ impl FrameworkAdapter for SubprocessAdapter {
         let snapshots = monitor.get_snapshots().await;
         let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
 
+        // Parse batch output to extract per-file OCR status
+        // Try to parse as JSON array; fall back to Unknown OCR status if parsing fails
+        let batch_ocr_statuses: Vec<OcrStatus> = match serde_json::from_str::<Vec<serde_json::Value>>(&stdout) {
+            Ok(batch_results) => batch_results
+                .iter()
+                .map(|item| {
+                    item.get("_ocr_used")
+                        .and_then(|v| v.as_bool())
+                        .map(|used| if used { OcrStatus::Used } else { OcrStatus::NotUsed })
+                        .unwrap_or(OcrStatus::Unknown)
+                })
+                .collect(),
+            Err(_) => {
+                // If batch output is not a JSON array, fall back to Unknown for all files
+                vec![OcrStatus::Unknown; file_paths.len()]
+            }
+        };
+
         // Create one result per file instead of a single aggregated result
         // Since batch processing doesn't give us per-file timing, we use average duration
         let num_files = file_paths.len() as f64;
         let avg_duration_per_file = Duration::from_secs_f64(duration.as_secs_f64() / num_files.max(1.0));
-
-        // Ensure we never create success=true with duration=0
-        let avg_duration_per_file = if avg_duration_per_file == Duration::from_secs(0) {
-            Duration::from_nanos(1) // Minimum non-zero duration
-        } else {
-            avg_duration_per_file
-        };
 
         let framework_capabilities = FrameworkCapabilities {
             ocr_support: Self::framework_supports_ocr(&self.name),
@@ -581,16 +640,20 @@ impl FrameworkAdapter for SubprocessAdapter {
 
         let results: Vec<BenchmarkResult> = file_paths
             .iter()
-            .map(|file_path| {
+            .enumerate()
+            .map(|(idx, file_path)| {
                 let file_size = std::fs::metadata(file_path).map(|m| m.len()).unwrap_or(0);
 
-                let file_throughput = if avg_duration_per_file.as_secs_f64() > 0.0 {
+                let file_throughput = if avg_duration_per_file > Duration::from_secs(0) {
                     file_size as f64 / avg_duration_per_file.as_secs_f64()
                 } else {
                     0.0
                 };
 
                 let file_extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string();
+
+                // Use per-file OCR status if available, otherwise Unknown
+                let ocr_status = batch_ocr_statuses.get(idx).copied().unwrap_or(OcrStatus::Unknown);
 
                 BenchmarkResult {
                     framework: self.name.clone(),
@@ -616,11 +679,8 @@ impl FrameworkAdapter for SubprocessAdapter {
                     file_extension,
                     framework_capabilities: framework_capabilities.clone(),
                     pdf_metadata: None,
-                    ocr_status: if framework_capabilities.ocr_support {
-                        OcrStatus::Used
-                    } else {
-                        OcrStatus::NotUsed
-                    },
+                    ocr_status,
+                    extracted_text: None,
                 }
             })
             .collect();

@@ -81,6 +81,11 @@ pub struct BenchmarkResult {
     /// OCR usage status for this extraction
     #[serde(default)]
     pub ocr_status: OcrStatus,
+
+    /// Extracted text content (for quality assessment)
+    /// Not serialized to output JSON to save space
+    #[serde(skip)]
+    pub extracted_text: Option<String>,
 }
 
 /// Performance metrics collected during extraction

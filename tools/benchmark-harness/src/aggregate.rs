@@ -14,12 +14,61 @@ use std::collections::HashMap;
 /// Consolidated results using new aggregation format
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewConsolidatedResults {
+    /// Schema version for this output format
+    pub schema_version: String,
     /// Aggregated results grouped by framework:mode combination
     pub by_framework_mode: HashMap<String, FrameworkModeAggregation>,
     /// Disk sizes for each framework
     pub disk_sizes: HashMap<String, DiskSizeInfo>,
+    /// Cross-framework comparison rankings
+    pub comparison: ComparisonData,
     /// Metadata about the consolidation
     pub metadata: ConsolidationMetadata,
+}
+
+/// Cross-framework comparison rankings and deltas
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComparisonData {
+    /// Frameworks ranked by median duration (fastest first)
+    pub performance_ranking: Vec<RankedFramework>,
+    /// Frameworks ranked by median throughput (highest first)
+    pub throughput_ranking: Vec<RankedFramework>,
+    /// Frameworks ranked by median memory usage (lowest first)
+    pub memory_ranking: Vec<RankedFramework>,
+    /// Frameworks ranked by quality score (highest first)
+    pub quality_ranking: Vec<RankedFramework>,
+    /// Performance deltas relative to the fastest framework
+    pub deltas_vs_baseline: HashMap<String, DeltaMetrics>,
+}
+
+/// A framework entry in a ranking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RankedFramework {
+    /// Framework:mode key (e.g., "kreuzberg-rust:single")
+    pub framework_mode: String,
+    /// Rank (1-based)
+    pub rank: usize,
+    /// The metric value used for ranking
+    pub value: f64,
+    /// Ratio relative to the best in this ranking (1.0 = best)
+    pub relative: f64,
+}
+
+/// Performance deltas relative to baseline (fastest framework)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeltaMetrics {
+    /// Duration delta in ms (positive = slower)
+    pub duration_delta_ms: f64,
+    /// Duration delta as percentage
+    pub duration_delta_percent: f64,
+    /// Throughput delta in MB/s (negative = slower)
+    pub throughput_delta_mbs: f64,
+    /// Throughput delta as percentage
+    pub throughput_delta_percent: f64,
+    /// Memory delta in MB (positive = more)
+    pub memory_delta_mb: f64,
+    /// Memory delta as percentage
+    pub memory_delta_percent: f64,
 }
 
 /// Metadata about the consolidation process
@@ -62,8 +111,10 @@ pub struct FileTypeAggregation {
 /// Performance percentiles for a group of results
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformancePercentiles {
-    /// Number of samples in this group
-    pub sample_count: usize,
+    /// Number of successful samples used for percentile calculations
+    pub successful_sample_count: usize,
+    /// Total number of samples in this group (including failed)
+    pub total_sample_count: usize,
     /// Throughput percentiles (p50, p95, p99) in MB/s
     pub throughput: Percentiles,
     /// Memory percentiles (p50, p95, p99) in MB
@@ -75,6 +126,20 @@ pub struct PerformancePercentiles {
     /// Extraction duration percentiles (p50, p95, p99) in ms
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extraction_duration: Option<Percentiles>,
+    /// Quality score percentiles (p50, p95, p99) — 0.0 to 1.0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quality: Option<QualityPercentiles>,
+}
+
+/// Quality percentile values
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityPercentiles {
+    /// Median F1 text score
+    pub f1_text_p50: f64,
+    /// Median F1 numeric score
+    pub f1_numeric_p50: f64,
+    /// Median overall quality score
+    pub quality_score_p50: f64,
 }
 
 /// Percentile values for a metric
@@ -113,8 +178,16 @@ pub fn aggregate_new_format(results: &[BenchmarkResult]) -> NewConsolidatedResul
     // Validate input - HIGH PRIORITY FIX
     if results.is_empty() {
         return NewConsolidatedResults {
+            schema_version: "2.0.0".to_string(),
             by_framework_mode: HashMap::new(),
             disk_sizes: HashMap::new(),
+            comparison: ComparisonData {
+                performance_ranking: Vec::new(),
+                throughput_ranking: Vec::new(),
+                memory_ranking: Vec::new(),
+                quality_ranking: Vec::new(),
+                deltas_vs_baseline: HashMap::new(),
+            },
             metadata: ConsolidationMetadata {
                 total_results: 0,
                 framework_count: 0,
@@ -192,9 +265,13 @@ pub fn aggregate_new_format(results: &[BenchmarkResult]) -> NewConsolidatedResul
         timestamp: chrono::Utc::now().to_rfc3339(),
     };
 
+    let comparison = build_comparison(&aggregated_by_framework_mode);
+
     NewConsolidatedResults {
+        schema_version: "2.0.0".to_string(),
         by_framework_mode: aggregated_by_framework_mode,
         disk_sizes,
+        comparison,
         metadata,
     }
 }
@@ -207,7 +284,10 @@ fn aggregate_by_ocr_status(
 ) -> (Option<PerformancePercentiles>, Option<PerformancePercentiles>) {
     use crate::types::OcrStatus;
 
-    // Include Unknown in no_ocr category (CRITICAL FIX)
+    // OCR status grouping:
+    // - OcrStatus::Used → "with_ocr" group
+    // - OcrStatus::NotUsed → "no_ocr" group
+    // - OcrStatus::Unknown → "no_ocr" group (fallback; unknown is conservatively treated as non-OCR)
     let no_ocr: Vec<&BenchmarkResult> = results
         .iter()
         .filter(|r| r.ocr_status != OcrStatus::Used)
@@ -273,29 +353,30 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
     memories.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     extraction_durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
+    // Build percentiles with NaN/Inf validation
     let duration = Percentiles {
-        p50: calculate_percentile_value(&durations, 0.50),
-        p95: calculate_percentile_value(&durations, 0.95),
-        p99: calculate_percentile_value(&durations, 0.99),
+        p50: sanitize_f64(calculate_percentile_value(&durations, 0.50)),
+        p95: sanitize_f64(calculate_percentile_value(&durations, 0.95)),
+        p99: sanitize_f64(calculate_percentile_value(&durations, 0.99)),
     };
 
     let throughput = Percentiles {
-        p50: calculate_percentile_value(&throughputs, 0.50),
-        p95: calculate_percentile_value(&throughputs, 0.95),
-        p99: calculate_percentile_value(&throughputs, 0.99),
+        p50: sanitize_f64(calculate_percentile_value(&throughputs, 0.50)),
+        p95: sanitize_f64(calculate_percentile_value(&throughputs, 0.95)),
+        p99: sanitize_f64(calculate_percentile_value(&throughputs, 0.99)),
     };
 
     let memory = Percentiles {
-        p50: calculate_percentile_value(&memories, 0.50),
-        p95: calculate_percentile_value(&memories, 0.95),
-        p99: calculate_percentile_value(&memories, 0.99),
+        p50: sanitize_f64(calculate_percentile_value(&memories, 0.50)),
+        p95: sanitize_f64(calculate_percentile_value(&memories, 0.95)),
+        p99: sanitize_f64(calculate_percentile_value(&memories, 0.99)),
     };
 
     let extraction_duration = if !extraction_durations.is_empty() {
         Some(Percentiles {
-            p50: calculate_percentile_value(&extraction_durations, 0.50),
-            p95: calculate_percentile_value(&extraction_durations, 0.95),
-            p99: calculate_percentile_value(&extraction_durations, 0.99),
+            p50: sanitize_f64(calculate_percentile_value(&extraction_durations, 0.50)),
+            p95: sanitize_f64(calculate_percentile_value(&extraction_durations, 0.95)),
+            p99: sanitize_f64(calculate_percentile_value(&extraction_durations, 0.99)),
         })
     } else {
         None
@@ -307,13 +388,48 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         0.0
     };
 
+    // Quality percentiles
+    let quality = {
+        let mut f1_texts: Vec<f64> = successful
+            .iter()
+            .filter_map(|r| r.quality.as_ref().map(|q| q.f1_score_text))
+            .filter(|v| !v.is_nan() && v.is_finite())
+            .collect();
+        let mut f1_numerics: Vec<f64> = successful
+            .iter()
+            .filter_map(|r| r.quality.as_ref().map(|q| q.f1_score_numeric))
+            .filter(|v| !v.is_nan() && v.is_finite())
+            .collect();
+        let mut quality_scores: Vec<f64> = successful
+            .iter()
+            .filter_map(|r| r.quality.as_ref().map(|q| q.quality_score))
+            .filter(|v| !v.is_nan() && v.is_finite())
+            .collect();
+
+        if !quality_scores.is_empty() {
+            f1_texts.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            f1_numerics.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            quality_scores.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+            Some(QualityPercentiles {
+                f1_text_p50: sanitize_f64(calculate_percentile_value(&f1_texts, 0.50)),
+                f1_numeric_p50: sanitize_f64(calculate_percentile_value(&f1_numerics, 0.50)),
+                quality_score_p50: sanitize_f64(calculate_percentile_value(&quality_scores, 0.50)),
+            })
+        } else {
+            None
+        }
+    };
+
     PerformancePercentiles {
-        sample_count: successful.len(), // CRITICAL FIX: Count only successful results used for percentiles
+        successful_sample_count: successful.len(), // CRITICAL FIX: Count only successful results used for percentiles
+        total_sample_count: results.len(),
         throughput,
         memory,
         duration,
         success_rate_percent,
         extraction_duration,
+        quality,
     }
 }
 
@@ -336,34 +452,198 @@ fn aggregate_cold_starts(results: &[&BenchmarkResult]) -> Option<DurationPercent
 
     Some(DurationPercentiles {
         sample_count: cold_starts.len(),
-        p50_ms: calculate_percentile_value(&sorted, 0.50),
-        p95_ms: calculate_percentile_value(&sorted, 0.95),
-        p99_ms: calculate_percentile_value(&sorted, 0.99),
+        p50_ms: sanitize_f64(calculate_percentile_value(&sorted, 0.50)),
+        p95_ms: sanitize_f64(calculate_percentile_value(&sorted, 0.95)),
+        p99_ms: sanitize_f64(calculate_percentile_value(&sorted, 0.99)),
     })
 }
 
 /// Extract framework name and mode from framework string
 ///
+/// Framework naming convention: {base}-{variant}-{mode}
+/// Examples: kreuzberg-rust, kreuzberg-python-sync, kreuzberg-python-batch
+/// Variants: -sync, -async (mapped to "single" mode)
+/// Modes: -batch (mapped to "batch" mode), absence (mapped to "single" mode)
+///
 /// Returns (framework_name, mode) where mode is one of:
-/// - "batch" if ends with "-batch" (after normalizing -sync/-async)
+/// - "batch" if ends with "-batch"
 /// - "single" otherwise (default)
 ///
-/// The -sync/-async suffixes are stripped as they represent implementation details
-/// (blocking vs non-blocking execution), not distinct benchmark modes.
-/// We benchmark only the best/default implementation per language.
+/// The -sync/-async suffixes are stripped for aggregation because we unify
+/// implementations per language — sync vs async is a language-specific detail.
 fn extract_framework_and_mode(framework_name: &str) -> (&str, &str) {
-    // First, normalize by stripping -sync/-async suffixes (implementation detail, not a mode)
-    let normalized = framework_name
-        .strip_suffix("-sync")
-        .or_else(|| framework_name.strip_suffix("-async"))
-        .unwrap_or(framework_name);
-
-    // Now check for batch mode
-    if let Some(base) = normalized.strip_suffix("-batch") {
-        (base, "batch")
+    // First, check and strip -batch suffix (mode indicator)
+    if let Some(base) = framework_name.strip_suffix("-batch") {
+        // Then strip -sync/-async suffixes from the base (implementation details)
+        let normalized = base
+            .strip_suffix("-sync")
+            .or_else(|| base.strip_suffix("-async"))
+            .unwrap_or(base);
+        (normalized, "batch")
     } else {
+        // No -batch suffix, so check and strip -sync/-async suffixes (implementation details)
+        let normalized = framework_name
+            .strip_suffix("-sync")
+            .or_else(|| framework_name.strip_suffix("-async"))
+            .unwrap_or(framework_name);
         (normalized, "single")
     }
+}
+
+/// Build cross-framework comparison rankings from aggregated data
+fn build_comparison(by_framework_mode: &HashMap<String, FrameworkModeAggregation>) -> ComparisonData {
+    // Collect median metrics per framework:mode by averaging across file types
+    let mut metrics: Vec<(String, f64, f64, f64, f64)> = Vec::new(); // (key, duration_p50, throughput_p50, memory_p50, quality_p50)
+
+    for (key, agg) in by_framework_mode {
+        let mut durations = Vec::new();
+        let mut throughputs = Vec::new();
+        let mut memories = Vec::new();
+        let mut qualities = Vec::new();
+
+        for ft in agg.by_file_type.values() {
+            for perf in [&ft.no_ocr, &ft.with_ocr].into_iter().flatten() {
+                durations.push(perf.duration.p50);
+                throughputs.push(perf.throughput.p50);
+                memories.push(perf.memory.p50);
+                if let Some(q) = &perf.quality {
+                    qualities.push(q.quality_score_p50);
+                }
+            }
+        }
+
+        if durations.is_empty() {
+            continue;
+        }
+
+        let avg = |v: &[f64]| -> f64 {
+            if v.is_empty() {
+                f64::NAN
+            } else {
+                v.iter().sum::<f64>() / v.len() as f64
+            }
+        };
+
+        metrics.push((
+            key.clone(),
+            avg(&durations),
+            avg(&throughputs),
+            avg(&memories),
+            avg(&qualities),
+        ));
+    }
+
+    // Performance ranking (lower duration = better, rank 1)
+    let mut perf = metrics.clone();
+    perf.retain(|m| m.1.is_finite()); // Filter out NaN quality scores
+    perf.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    let baseline_dur = perf.first().map(|r| r.1).unwrap_or(1.0);
+    let performance_ranking: Vec<RankedFramework> = perf
+        .iter()
+        .enumerate()
+        .map(|(i, (k, v, ..))| RankedFramework {
+            framework_mode: k.clone(),
+            rank: i + 1,
+            value: *v,
+            relative: if baseline_dur > 0.0 { *v / baseline_dur } else { 1.0 },
+        })
+        .collect();
+
+    // Throughput ranking (higher = better)
+    let mut thr = metrics.clone();
+    thr.retain(|m| m.2.is_finite()); // Filter out NaN throughput values
+    thr.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
+    let baseline_thr = thr.first().map(|r| r.2).unwrap_or(1.0);
+    let throughput_ranking: Vec<RankedFramework> = thr
+        .iter()
+        .enumerate()
+        .map(|(i, (k, _, v, ..))| RankedFramework {
+            framework_mode: k.clone(),
+            rank: i + 1,
+            value: *v,
+            relative: if baseline_thr > 0.0 { *v / baseline_thr } else { 1.0 },
+        })
+        .collect();
+
+    // Memory ranking (lower = better)
+    let mut mem = metrics.clone();
+    mem.retain(|m| m.3.is_finite()); // Filter out NaN memory values
+    mem.sort_by(|a, b| a.3.partial_cmp(&b.3).unwrap_or(std::cmp::Ordering::Equal));
+    let baseline_mem = mem.first().map(|r| r.3).unwrap_or(1.0);
+    let memory_ranking: Vec<RankedFramework> = mem
+        .iter()
+        .enumerate()
+        .map(|(i, (k, _, _, v, _))| RankedFramework {
+            framework_mode: k.clone(),
+            rank: i + 1,
+            value: *v,
+            relative: if baseline_mem > 0.0 { *v / baseline_mem } else { 1.0 },
+        })
+        .collect();
+
+    // Quality ranking (higher = better)
+    let mut qual = metrics.clone();
+    qual.retain(|m| m.4.is_finite()); // Filter out NaN quality scores
+    qual.sort_by(|a, b| b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal));
+    let baseline_qual = qual.first().map(|r| r.4).unwrap_or(1.0);
+    let quality_ranking: Vec<RankedFramework> = qual
+        .iter()
+        .enumerate()
+        .map(|(i, (k, _, _, _, v))| RankedFramework {
+            framework_mode: k.clone(),
+            rank: i + 1,
+            value: *v,
+            relative: if baseline_qual > 0.0 { *v / baseline_qual } else { 1.0 },
+        })
+        .collect();
+
+    // Deltas vs baseline (fastest framework)
+    let mut deltas_vs_baseline = HashMap::new();
+    if let Some(baseline) = metrics
+        .iter()
+        .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+    {
+        for (k, dur, thr, mem_val, _) in &metrics {
+            if k != &baseline.0 {
+                deltas_vs_baseline.insert(
+                    k.clone(),
+                    DeltaMetrics {
+                        duration_delta_ms: dur - baseline.1,
+                        duration_delta_percent: if baseline.1 > 0.0 {
+                            ((dur - baseline.1) / baseline.1) * 100.0
+                        } else {
+                            0.0
+                        },
+                        throughput_delta_mbs: thr - baseline.2,
+                        throughput_delta_percent: if baseline.2 > 0.0 {
+                            ((thr - baseline.2) / baseline.2) * 100.0
+                        } else {
+                            0.0
+                        },
+                        memory_delta_mb: mem_val - baseline.3,
+                        memory_delta_percent: if baseline.3 > 0.0 {
+                            ((mem_val - baseline.3) / baseline.3) * 100.0
+                        } else {
+                            0.0
+                        },
+                    },
+                );
+            }
+        }
+    }
+
+    ComparisonData {
+        performance_ranking,
+        throughput_ranking,
+        memory_ranking,
+        quality_ranking,
+        deltas_vs_baseline,
+    }
+}
+
+/// Sanitize f64 value, replacing NaN or infinity with 0.0
+fn sanitize_f64(v: f64) -> f64 {
+    if v.is_finite() { v } else { 0.0 }
 }
 
 /// Calculate a specific percentile from sorted values using linear interpolation
@@ -383,7 +663,10 @@ fn calculate_percentile_value(sorted_values: &[f64], percentile: f64) -> f64 {
     // Linear interpolation (R-7 method, used by NumPy) - CRITICAL FIX
     let index = percentile * (n as f64 - 1.0);
     let lower = index.floor() as usize;
-    let upper = index.ceil() as usize;
+    let mut upper = index.ceil() as usize;
+
+    // Bounds check: upper never exceeds array length
+    upper = upper.min(sorted_values.len() - 1);
 
     if lower == upper {
         sorted_values[lower]
@@ -433,6 +716,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status,
+            extracted_text: None,
         }
     }
 
@@ -500,8 +784,8 @@ mod tests {
         assert!(pdf_agg.no_ocr.is_some());
         assert!(pdf_agg.with_ocr.is_some());
 
-        assert_eq!(pdf_agg.no_ocr.as_ref().unwrap().sample_count, 1);
-        assert_eq!(pdf_agg.with_ocr.as_ref().unwrap().sample_count, 1);
+        assert_eq!(pdf_agg.no_ocr.as_ref().unwrap().successful_sample_count, 1);
+        assert_eq!(pdf_agg.with_ocr.as_ref().unwrap().successful_sample_count, 1);
     }
 
     #[test]
@@ -515,7 +799,8 @@ mod tests {
         let refs: Vec<&BenchmarkResult> = results.iter().collect();
         let percentiles = calculate_percentiles(&refs);
 
-        assert_eq!(percentiles.sample_count, 3);
+        assert_eq!(percentiles.successful_sample_count, 3);
+        assert_eq!(percentiles.total_sample_count, 3);
         assert_eq!(percentiles.success_rate_percent, 100.0);
         assert!(percentiles.duration.p50 > 0.0);
         assert!(percentiles.throughput.p50 > 0.0);
@@ -566,6 +851,7 @@ mod tests {
             framework_capabilities: Default::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::Unknown, // Unknown status
+            extracted_text: None,
         }];
 
         let aggregated = aggregate_new_format(&results);
@@ -574,7 +860,7 @@ mod tests {
         let framework_mode = aggregated.by_framework_mode.get("test-framework:single").unwrap();
         let file_type = framework_mode.by_file_type.get("pdf").unwrap();
         assert!(file_type.no_ocr.is_some());
-        assert_eq!(file_type.no_ocr.as_ref().unwrap().sample_count, 1);
+        assert_eq!(file_type.no_ocr.as_ref().unwrap().successful_sample_count, 1);
     }
 
     #[test]
@@ -606,6 +892,7 @@ mod tests {
                 framework_capabilities: Default::default(),
                 pdf_metadata: None,
                 ocr_status: OcrStatus::NotUsed,
+                extracted_text: None,
             },
             BenchmarkResult {
                 framework: "test-framework".to_string(),
@@ -632,6 +919,7 @@ mod tests {
                 framework_capabilities: Default::default(),
                 pdf_metadata: None,
                 ocr_status: OcrStatus::NotUsed,
+                extracted_text: None,
             },
         ];
 
@@ -641,8 +929,9 @@ mod tests {
         let file_type = framework_mode.by_file_type.get("pdf").unwrap();
         let no_ocr = file_type.no_ocr.as_ref().unwrap();
 
-        // sample_count should only count successful results
-        assert_eq!(no_ocr.sample_count, 1);
+        // successful_sample_count should only count successful results
+        assert_eq!(no_ocr.successful_sample_count, 1);
+        assert_eq!(no_ocr.total_sample_count, 2);
         // success_rate_percent should account for all results
         assert_eq!(no_ocr.success_rate_percent, 50.0); // 1 success / 2 total = 50%
         // Percentiles based on 1 successful result
@@ -773,7 +1062,8 @@ mod tests {
         // Only result1 and result3 should be used (80 and 160)
         assert!(percentiles.extraction_duration.is_some());
         let ext_dur = percentiles.extraction_duration.as_ref().unwrap();
-        assert_eq!(percentiles.sample_count, 2); // Only 2 successful results
+        assert_eq!(percentiles.successful_sample_count, 2); // Only 2 successful results
+        assert_eq!(percentiles.total_sample_count, 3);
         assert!((ext_dur.p50 - 120.0).abs() < 0.1); // median: 120
     }
 
@@ -913,6 +1203,7 @@ mod tests {
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
             ocr_status: OcrStatus::NotUsed,
+            extracted_text: None,
         };
 
         let result2 = create_test_result("framework1", "pdf", OcrStatus::NotUsed, 100, 1_000_000.0, 10_000_000);
