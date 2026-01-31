@@ -4,9 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.kreuzberg.types.metadata.ImageType;
+import dev.kreuzberg.types.metadata.LinkType;
+import dev.kreuzberg.types.metadata.StructuredDataType;
+import dev.kreuzberg.types.metadata.TextDirection;
 import dev.kreuzberg.ExtractionResult;
 import dev.kreuzberg.Kreuzberg;
 import dev.kreuzberg.KreuzbergException;
+import dev.kreuzberg.Metadata;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,8 +53,8 @@ class MetadataTypesTest {
 		@DisplayName("HtmlMetadata record has correct components")
 		void testHtmlMetadataStructure() {
 			HtmlMetadata metadata = new HtmlMetadata("Test Title", "Test Description", List.of("keyword1", "keyword2"),
-					"Test Author", "https://example.com/canonical", "https://example.com/base", "en", "ltr",
-					Map.of("og:title", "OG Title"), Map.of("twitter:card", "summary"),
+					"Test Author", "https://example.com/canonical", "https://example.com/base", "en",
+					TextDirection.LEFT_TO_RIGHT, Map.of("og:title", "OG Title"), Map.of("twitter:card", "summary"),
 					Map.of("viewport", "width=device-width"), List.of(), List.of(), List.of(), List.of());
 
 			assertNotNull(metadata, "HtmlMetadata should not be null");
@@ -59,7 +64,7 @@ class MetadataTypesTest {
 			assertEquals("https://example.com/canonical", metadata.canonicalUrl());
 			assertEquals("https://example.com/base", metadata.baseHref());
 			assertEquals("en", metadata.language());
-			assertEquals("ltr", metadata.textDirection());
+			assertEquals(TextDirection.LEFT_TO_RIGHT, metadata.textDirection());
 		}
 
 		@Test
@@ -131,7 +136,7 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("LinkMetadata has rel as List<String>")
 		void testLinkMetadataRelIsList() {
-			LinkMetadata link = new LinkMetadata("https://example.com", "Example Link", "Link Title", "hyperlink",
+			LinkMetadata link = new LinkMetadata("https://example.com", "Example Link", "Link Title", LinkType.ANCHOR,
 					List.of("nofollow", "external"), Map.of("data-custom", "value"));
 
 			assertNotNull(link.rel(), "rel should not be null");
@@ -145,7 +150,7 @@ class MetadataTypesTest {
 		void testImageMetadataDimensionsIsArray() {
 			int[] dimensions = {1920, 1080};
 			ImageMetadata image = new ImageMetadata("https://example.com/image.jpg", "Alt text", "Image Title",
-					dimensions, "image/jpeg", Map.of());
+					dimensions, ImageType.EXTERNAL, Map.of());
 
 			assertNotNull(image.dimensions(), "dimensions should not be null");
 			assertInstanceOf(int[].class, image.dimensions(), "dimensions should be int[]");
@@ -157,11 +162,11 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("StructuredData has dataType field")
 		void testStructuredDataHasDataType() {
-			StructuredData data = new StructuredData("json-ld", "{\"@context\": \"https://schema.org\"}",
-					"Organization");
+			StructuredData data = new StructuredData(StructuredDataType.JSON_LD,
+					"{\"@context\": \"https://schema.org\"}", "Organization");
 
 			assertNotNull(data.dataType(), "dataType should not be null");
-			assertEquals("json-ld", data.dataType(), "dataType should be 'json-ld'");
+			assertEquals(StructuredDataType.JSON_LD, data.dataType(), "dataType should be JSON_LD");
 			assertEquals("Organization", data.schemaType(), "schemaType should be 'Organization'");
 		}
 	}
@@ -175,8 +180,9 @@ class MetadataTypesTest {
 		void testHtmlMetadataJsonSerialization() throws IOException {
 			HtmlMetadata original = new HtmlMetadata("Test Page", "Page about testing",
 					List.of("test", "java", "junit"), "Test Author", "https://example.com/page", "https://example.com",
-					"en", "ltr", Map.of("og:title", "OG Test Page"), Map.of("twitter:card", "summary"),
-					Map.of("charset", "utf-8"), List.of(), List.of(), List.of(), List.of());
+					"en", TextDirection.LEFT_TO_RIGHT, Map.of("og:title", "OG Test Page"),
+					Map.of("twitter:card", "summary"), Map.of("charset", "utf-8"), List.of(), List.of(), List.of(),
+					List.of());
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).isNotNull().isNotEmpty();
@@ -210,8 +216,9 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("LinkMetadata serialization with rel list")
 		void testLinkMetadataJsonSerialization() throws IOException {
-			LinkMetadata original = new LinkMetadata("https://example.com/page", "Example", "Example Page", "external",
-					List.of("nofollow", "external", "noopener"), Map.of("target", "_blank", "data-index", "1"));
+			LinkMetadata original = new LinkMetadata("https://example.com/page", "Example", "Example Page",
+					LinkType.EXTERNAL, List.of("nofollow", "external", "noopener"),
+					Map.of("target", "_blank", "data-index", "1"));
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).contains("\"rel\"");
@@ -228,7 +235,7 @@ class MetadataTypesTest {
 		void testImageMetadataJsonSerialization() throws IOException {
 			int[] dimensions = {800, 600};
 			ImageMetadata original = new ImageMetadata("https://example.com/logo.png", "Company Logo", "Logo",
-					dimensions, "image/png", Map.of("loading", "lazy", "decoding", "async"));
+					dimensions, ImageType.EXTERNAL, Map.of("loading", "lazy", "decoding", "async"));
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).contains("\"dimensions\"");
@@ -244,7 +251,7 @@ class MetadataTypesTest {
 		@DisplayName("StructuredData serialization with dataType")
 		void testStructuredDataJsonSerialization() throws IOException {
 			String jsonLd = "{\"@context\": \"https://schema.org\", \"@type\": \"Organization\", \"name\": \"Example Corp\"}";
-			StructuredData original = new StructuredData("json-ld", jsonLd, "Organization");
+			StructuredData original = new StructuredData(StructuredDataType.JSON_LD, jsonLd, "Organization");
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).contains("\"data_type\"");
@@ -337,7 +344,8 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("LinkMetadata nullable fields")
 		void testLinkMetadataNullableFields() {
-			LinkMetadata link = new LinkMetadata("https://example.com", "Link", null, "hyperlink", List.of(), Map.of());
+			LinkMetadata link = new LinkMetadata("https://example.com", "Link", null, LinkType.EXTERNAL, List.of(),
+					Map.of());
 
 			assertNull(link.title(), "title should be nullable");
 			assertNotNull(link.href(), "href should not be nullable");
@@ -348,7 +356,7 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("ImageMetadata nullable fields")
 		void testImageMetadataNullableFields() {
-			ImageMetadata image = new ImageMetadata("https://example.com/img.jpg", null, null, null, "image/jpeg",
+			ImageMetadata image = new ImageMetadata("https://example.com/img.jpg", null, null, null, ImageType.EXTERNAL,
 					Map.of());
 
 			assertNull(image.alt(), "alt should be nullable");
@@ -361,7 +369,7 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("StructuredData nullable fields")
 		void testStructuredDataNullableFields() {
-			StructuredData data = new StructuredData("json-ld", "{}", null);
+			StructuredData data = new StructuredData(StructuredDataType.JSON_LD, "{}", null);
 
 			assertNull(data.schemaType(), "schemaType should be nullable");
 			assertNotNull(data.dataType(), "dataType should not be nullable");
@@ -377,12 +385,14 @@ class MetadataTypesTest {
 		@DisplayName("Records with same values are equal")
 		void testRecordEquality() {
 			HtmlMetadata metadata1 = new HtmlMetadata("Title", "Desc", List.of("k1", "k2"), "Author",
-					"http://example.com", "http://base.com", "en", "ltr", Map.of("og:title", "OG"),
-					Map.of("tw:card", "summary"), Map.of(), List.of(), List.of(), List.of(), List.of());
+					"http://example.com", "http://base.com", "en", TextDirection.LEFT_TO_RIGHT,
+					Map.of("og:title", "OG"), Map.of("tw:card", "summary"), Map.of(), List.of(), List.of(), List.of(),
+					List.of());
 
 			HtmlMetadata metadata2 = new HtmlMetadata("Title", "Desc", List.of("k1", "k2"), "Author",
-					"http://example.com", "http://base.com", "en", "ltr", Map.of("og:title", "OG"),
-					Map.of("tw:card", "summary"), Map.of(), List.of(), List.of(), List.of(), List.of());
+					"http://example.com", "http://base.com", "en", TextDirection.LEFT_TO_RIGHT,
+					Map.of("og:title", "OG"), Map.of("tw:card", "summary"), Map.of(), List.of(), List.of(), List.of(),
+					List.of());
 
 			assertEquals(metadata1, metadata2, "Records with same values should be equal");
 			assertEquals(metadata1.hashCode(), metadata2.hashCode(), "Equal records should have same hash");
@@ -430,13 +440,13 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("Components accessed correctly")
 		void testRecordComponentAccess() {
-			LinkMetadata link = new LinkMetadata("https://example.com", "Example", "Title", "hyperlink",
+			LinkMetadata link = new LinkMetadata("https://example.com", "Example", "Title", LinkType.EXTERNAL,
 					List.of("external"), Map.of("rel", "nofollow"));
 
 			assertEquals("https://example.com", link.href());
 			assertEquals("Example", link.text());
 			assertEquals("Title", link.title());
-			assertEquals("hyperlink", link.linkType());
+			assertEquals(LinkType.EXTERNAL, link.linkType());
 			assertEquals(1, link.rel().size());
 			assertEquals(1, link.attributes().size());
 		}
@@ -454,18 +464,19 @@ class MetadataTypesTest {
 					new HeaderMetadata(2, "Another Subtitle", "sub2", 1, 100));
 
 			List<LinkMetadata> links = List.of(
-					new LinkMetadata("https://example.com", "Link1", null, "hyperlink", List.of("external"), Map.of()),
-					new LinkMetadata("https://example.com/page", "Link2", "Link to page", "hyperlink", List.of(),
+					new LinkMetadata("https://example.com", "Link1", null, LinkType.EXTERNAL, List.of("external"),
+							Map.of()),
+					new LinkMetadata("https://example.com/page", "Link2", "Link to page", LinkType.EXTERNAL, List.of(),
 							Map.of()));
 
 			List<ImageMetadata> images = List.of(
 					new ImageMetadata("https://example.com/img1.jpg", "Image 1", "Img1", new int[]{800, 600},
-							"image/jpeg", Map.of()),
-					new ImageMetadata("https://example.com/img2.png", "Image 2", null, null, "image/png",
+							ImageType.EXTERNAL, Map.of()),
+					new ImageMetadata("https://example.com/img2.png", "Image 2", null, null, ImageType.EXTERNAL,
 							Map.of("loading", "lazy")));
 
 			HtmlMetadata metadata = new HtmlMetadata("Test Page", "A test page", List.of("test", "example"),
-					"Author Name", "https://example.com/page", "https://example.com", "en", "ltr",
+					"Author Name", "https://example.com/page", "https://example.com", "en", TextDirection.LEFT_TO_RIGHT,
 					Map.of("og:title", "Test", "og:type", "website"), Map.of("twitter:card", "summary"),
 					Map.of("viewport", "width=device-width"), headers, links, images, List.of());
 
@@ -485,13 +496,13 @@ class MetadataTypesTest {
 		@DisplayName("Full HtmlMetadata with structured data")
 		void testFullMetadataWithStructuredData() throws IOException {
 			List<StructuredData> structuredData = List.of(
-					new StructuredData("json-ld", "{\"@context\": \"https://schema.org\", \"@type\": \"Organization\"}",
-							"Organization"),
-					new StructuredData("json-ld", "{\"@context\": \"https://schema.org\", \"@type\": \"Article\"}",
-							"Article"));
+					new StructuredData(StructuredDataType.JSON_LD,
+							"{\"@context\": \"https://schema.org\", \"@type\": \"Organization\"}", "Organization"),
+					new StructuredData(StructuredDataType.JSON_LD,
+							"{\"@context\": \"https://schema.org\", \"@type\": \"Article\"}", "Article"));
 
 			HtmlMetadata metadata = new HtmlMetadata("Article Title", "Article description", List.of("tech", "news"),
-					"Jane Doe", "https://example.com/article", "https://example.com", "en", "ltr",
+					"Jane Doe", "https://example.com/article", "https://example.com", "en", TextDirection.LEFT_TO_RIGHT,
 					Map.of("og:title", "Article Title", "og:type", "article", "og:url", "https://example.com/article"),
 					Map.of("twitter:card", "summary_large_image", "twitter:creator", "@janedoe"),
 					Map.of("viewport", "width=device-width, initial-scale=1.0", "charset", "utf-8"), List.of(),
@@ -509,7 +520,7 @@ class MetadataTypesTest {
 		@DisplayName("Edge case: null dimensions in ImageMetadata")
 		void testImageMetadataWithNullDimensions() throws IOException {
 			ImageMetadata image = new ImageMetadata("https://example.com/no-dimensions.svg", "SVG Image", "SVG", null,
-					"image/svg+xml", Map.of());
+					ImageType.INLINE_SVG, Map.of());
 
 			String json = objectMapper.writeValueAsString(image);
 			assertThat(json).contains("\"dimensions\":null");
@@ -593,10 +604,10 @@ class MetadataTypesTest {
 		@DisplayName("URL encoding in href and src")
 		void testUrlEncoding() throws IOException {
 			LinkMetadata link = new LinkMetadata("https://example.com/path?param=value&other=123#anchor",
-					"Complex Link", null, "hyperlink", List.of(), Map.of());
+					"Complex Link", null, LinkType.EXTERNAL, List.of(), Map.of());
 
 			ImageMetadata image = new ImageMetadata("https://example.com/image%20with%20spaces.jpg", "Image", null,
-					null, "image/jpeg", Map.of());
+					null, ImageType.EXTERNAL, Map.of());
 
 			String linkJson = objectMapper.writeValueAsString(link);
 			String imageJson = objectMapper.writeValueAsString(image);
@@ -611,7 +622,7 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("Special characters in JSON string values")
 		void testSpecialCharactersInJson() throws IOException {
-			StructuredData data = new StructuredData("json-ld",
+			StructuredData data = new StructuredData(StructuredDataType.JSON_LD,
 					"{\"description\": \"A description with \\\"quotes\\\" and \\n newlines\"}", null);
 
 			String json = objectMapper.writeValueAsString(data);
@@ -639,12 +650,14 @@ class MetadataTypesTest {
 		@Test
 		@DisplayName("Numeric values in dimension arrays")
 		void testDimensionArrayEdgeCases() throws IOException {
-			ImageMetadata zeroDim = new ImageMetadata("img.jpg", null, null, new int[]{0, 0}, "image/jpeg", Map.of());
-
-			ImageMetadata largeDim = new ImageMetadata("img.jpg", null, null, new int[]{8192, 4096}, "image/jpeg",
+			ImageMetadata zeroDim = new ImageMetadata("img.jpg", null, null, new int[]{0, 0}, ImageType.EXTERNAL,
 					Map.of());
 
-			ImageMetadata singleDim = new ImageMetadata("img.jpg", null, null, new int[]{512}, "image/jpeg", Map.of());
+			ImageMetadata largeDim = new ImageMetadata("img.jpg", null, null, new int[]{8192, 4096}, ImageType.EXTERNAL,
+					Map.of());
+
+			ImageMetadata singleDim = new ImageMetadata("img.jpg", null, null, new int[]{512}, ImageType.EXTERNAL,
+					Map.of());
 
 			String zeroJson = objectMapper.writeValueAsString(zeroDim);
 			String largeJson = objectMapper.writeValueAsString(largeDim);
@@ -697,15 +710,15 @@ class MetadataTypesTest {
 					null);
 
 			assertNotNull(result, "Extraction result should not be null");
-			assertTrue(result.isSuccess(), "Extraction should succeed");
+			assertNotNull(result.getContent(), "Extraction should succeed");
 			assertNotNull(result.getMimeType(), "MIME type should be present");
 			assertEquals("text/html", result.getMimeType(), "MIME type should be text/html");
 
 			assertNotNull(result.getContent(), "Extracted content should not be null");
 			assertThat(result.getContent()).isNotEmpty();
 
-			Map<String, Object> metadata = result.getMetadata();
-			assertNotNull(metadata, "Metadata map should not be null");
+			Metadata metadata = result.getMetadata();
+			assertNotNull(metadata, "Metadata should not be null");
 		}
 
 		@Test
@@ -722,13 +735,13 @@ class MetadataTypesTest {
 					null);
 
 			assertNotNull(result, "Result should not be null");
-			assertTrue(result.isSuccess(), "Extraction should succeed");
+			assertNotNull(result.getContent(), "Extraction should succeed");
 
 			String content = result.getContent();
 			assertNotNull(content, "Content should be extracted");
 			assertThat(content).isNotEmpty();
 
-			Map<String, Object> metadata = result.getMetadata();
+			Metadata metadata = result.getMetadata();
 			assertNotNull(metadata, "Metadata should be extracted");
 
 			assertNotNull(result.getMimeType(), "MIME type should be present");
@@ -801,7 +814,7 @@ class MetadataTypesTest {
 			long duration = endTime - startTime;
 
 			assertNotNull(result, "Result should not be null");
-			assertTrue(result.isSuccess(), "Extraction should succeed");
+			assertNotNull(result.getContent(), "Extraction should succeed");
 
 			String content = result.getContent();
 			assertNotNull(content, "Content should be extracted");
@@ -831,7 +844,7 @@ class MetadataTypesTest {
 					Future<ExtractionResult> future = executorService.submit(() -> {
 						try {
 							ExtractionResult result = Kreuzberg.extractBytes(testHtml, "text/html", null);
-							if (result.isSuccess()) {
+							if (result != null && result.getContent() != null) {
 								successCount.incrementAndGet();
 							}
 							return result;
@@ -853,7 +866,7 @@ class MetadataTypesTest {
 						try {
 							ExtractionResult result = future.get();
 							assertNotNull(result, "Result should not be null");
-							assertTrue(result.isSuccess(), "Each extraction should succeed");
+							assertNotNull(result.getContent(), "Each extraction should succeed");
 							assertNotNull(result.getContent(), "Content should be extracted");
 						} catch (Exception e) {
 							assertTrue(true, "Concurrent execution handled exception gracefully");
@@ -886,9 +899,9 @@ class MetadataTypesTest {
 			ExtractionResult result = Kreuzberg.extractBytes(testHtml, "text/html", null);
 
 			assertNotNull(result, "Result should not be null");
-			assertTrue(result.isSuccess(), "Extraction should succeed");
+			assertNotNull(result.getContent(), "Extraction should succeed");
 
-			Map<String, Object> metadata = result.getMetadata();
+			Metadata metadata = result.getMetadata();
 			assertNotNull(metadata, "Metadata should not be null");
 			assertThat(metadata).isNotNull();
 
@@ -906,7 +919,7 @@ class MetadataTypesTest {
 			ExtractionResult result = Kreuzberg.extractBytes(htmlBytes, "text/html", null);
 
 			assertNotNull(result, "Result should not be null");
-			assertTrue(result.isSuccess(), "Should extract successfully");
+			assertNotNull(result.getContent(), "Should extract successfully");
 			assertEquals("text/html", result.getMimeType(), "MIME type should match");
 			assertNotNull(result.getContent(), "Content should be extracted");
 			assertThat(result.getContent()).isNotEmpty();

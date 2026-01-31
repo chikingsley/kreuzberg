@@ -349,7 +349,7 @@ public final class KreuzbergFFI {
 					FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
 
 			KREUZBERG_CONFIG_MERGE = linkFunction("kreuzberg_config_merge",
-					FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+					FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
 
 			KREUZBERG_RESULT_GET_PAGE_COUNT = linkFunction("kreuzberg_result_get_page_count",
 					FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS));

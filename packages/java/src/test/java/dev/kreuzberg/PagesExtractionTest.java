@@ -79,7 +79,7 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_HasPageNumber() {
-		PageInfo page = new PageInfo(1L, "Page 1", 612.0, 792.0, null);
+		PageInfo page = new PageInfo(1L, "Page 1", new double[]{612.0, 792.0}, null, null, false);
 
 		assertEquals(1L, page.getNumber(), "Page number should be 1");
 		assertTrue(page.getNumber() > 0, "Page number should be positive");
@@ -87,7 +87,7 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_WithTitle() {
-		PageInfo page = new PageInfo(1L, "Introduction", 612.0, 792.0, null);
+		PageInfo page = new PageInfo(1L, "Introduction", new double[]{612.0, 792.0}, null, null, false);
 
 		var title = page.getTitle();
 		assertTrue(title.isPresent(), "Page should have title");
@@ -96,7 +96,7 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_WithDimensions() {
-		PageInfo page = new PageInfo(1L, null, 612.0, 792.0, null);
+		PageInfo page = new PageInfo(1L, null, new double[]{612.0, 792.0}, null, null, false);
 
 		var width = page.getWidth();
 		var height = page.getHeight();
@@ -109,11 +109,11 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_Visibility() {
-		PageInfo visiblePage = new PageInfo(1L, null, null, null, null);
-		PageInfo hiddenPage = new PageInfo(2L, null, null, null, null);
+		PageInfo visiblePage = new PageInfo(1L, null, null, null, null, false);
+		PageInfo hiddenPage = new PageInfo(2L, null, null, null, null, true);
 
-		var visibility1 = visiblePage.getVisible();
-		var visibility2 = hiddenPage.getVisible();
+		var visibility1 = visiblePage.isVisible();
+		var visibility2 = hiddenPage.isVisible();
 
 		assertTrue(visibility1.isPresent(), "Visible page should have visibility set");
 		assertTrue(visibility1.get(), "Page should be visible");
@@ -123,31 +123,31 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_WithoutOptionalFields() {
-		PageInfo page = new PageInfo(5L, null, null, null, null);
+		PageInfo page = new PageInfo(5L, null, null, null, null, null);
 
 		assertEquals(5L, page.getNumber());
 		assertTrue(page.getTitle().isEmpty(), "Title should be empty");
 		assertTrue(page.getWidth().isEmpty(), "Width should be empty");
 		assertTrue(page.getHeight().isEmpty(), "Height should be empty");
-		assertTrue(page.getVisible().isEmpty(), "Visibility should be empty");
+		assertTrue(page.isHidden().isEmpty(), "Hidden status should be empty");
 	}
 
 	@Test
 	void testPageInfo_InvalidPageNumber_ThrowsException() {
 		assertThrows(IllegalArgumentException.class, () -> {
-			new PageInfo(0L, null, null, null, null);
+			new PageInfo(0L, null, null, null, null, null);
 		}, "Page number must be positive");
 
 		assertThrows(IllegalArgumentException.class, () -> {
-			new PageInfo(-1L, null, null, null, null);
+			new PageInfo(-1L, null, null, null, null, null);
 		}, "Page number must be positive");
 	}
 
 	@Test
 	void testPageInfo_Equality() {
-		PageInfo page1 = new PageInfo(1L, "Title", 612.0, 792.0, null);
-		PageInfo page2 = new PageInfo(1L, "Title", 612.0, 792.0, null);
-		PageInfo page3 = new PageInfo(2L, "Title", 612.0, 792.0, null);
+		PageInfo page1 = new PageInfo(1L, "Title", new double[]{612.0, 792.0}, null, null, false);
+		PageInfo page2 = new PageInfo(1L, "Title", new double[]{612.0, 792.0}, null, null, false);
+		PageInfo page3 = new PageInfo(2L, "Title", new double[]{612.0, 792.0}, null, null, false);
 
 		assertEquals(page1, page2, "Pages with same values should be equal");
 		assertNotEquals(page1, page3, "Pages with different numbers should not be equal");
@@ -155,8 +155,8 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageInfo_HashCode() {
-		PageInfo page1 = new PageInfo(1L, "Title", 612.0, 792.0, null);
-		PageInfo page2 = new PageInfo(1L, "Title", 612.0, 792.0, null);
+		PageInfo page1 = new PageInfo(1L, "Title", new double[]{612.0, 792.0}, null, null, false);
+		PageInfo page2 = new PageInfo(1L, "Title", new double[]{612.0, 792.0}, null, null, false);
 
 		assertEquals(page1.hashCode(), page2.hashCode(), "Equal pages should have equal hash codes");
 	}
@@ -165,8 +165,8 @@ class PagesExtractionTest {
 
 	@Test
 	void testPageStructure_WithPages() {
-		List<PageInfo> pages = List.of(new PageInfo(1L, "Page 1", 612.0, 792.0, null),
-				new PageInfo(2L, "Page 2", 612.0, 792.0, null));
+		List<PageInfo> pages = List.of(new PageInfo(1L, "Page 1", new double[]{612.0, 792.0}, null, null, false),
+				new PageInfo(2L, "Page 2", new double[]{612.0, 792.0}, null, null, false));
 
 		PageStructure structure = new PageStructure(2L, PageUnitType.PAGE, null, pages);
 

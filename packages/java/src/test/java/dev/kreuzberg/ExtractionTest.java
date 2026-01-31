@@ -31,7 +31,6 @@ class ExtractionTest {
 		assertNotNull(result, "Extraction result should not be null");
 		assertNotNull(result.getContent(), "Extracted content should not be null");
 		assertTrue(result.getContent().contains("Hello"), "Extracted content should contain original text");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
 	}
 
 	@Test
@@ -44,7 +43,6 @@ class ExtractionTest {
 
 		assertNotNull(result.getContent(), "Content should not be null");
 		assertTrue(result.getContent().length() > 0, "Content should have extracted text");
-		assertTrue(result.isSuccess(), "Extraction should succeed for multiline text");
 	}
 
 	@Test
@@ -72,7 +70,6 @@ class ExtractionTest {
 
 		assertNotNull(result.getContent(), "Content should be extracted from large file");
 		assertTrue(result.getContent().length() > 0, "Large file content should be extracted");
-		assertTrue(result.isSuccess(), "Large file extraction should succeed");
 	}
 
 	@Test
@@ -141,7 +138,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "UTF-8 content should be extracted");
-		assertTrue(result.isSuccess(), "UTF-8 extraction should succeed");
 	}
 
 	@Test
@@ -153,7 +149,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "ASCII content should be extracted");
-		assertTrue(result.isSuccess(), "ASCII extraction should succeed");
 	}
 
 	@Test
@@ -164,7 +159,6 @@ class ExtractionTest {
 
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 		assertNotNull(result.getContent(), "CSV content should be extracted");
-		assertTrue(result.isSuccess(), "CSV extraction should succeed");
 	}
 
 	@Test
@@ -176,7 +170,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "JSON content should be extracted");
-		assertTrue(result.isSuccess(), "JSON extraction should succeed");
 	}
 
 	@Test
@@ -188,7 +181,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "XML content should be extracted");
-		assertTrue(result.isSuccess(), "XML extraction should succeed");
 	}
 
 	@Test
@@ -200,7 +192,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "HTML content should be extracted");
-		assertTrue(result.isSuccess(), "HTML extraction should succeed");
 	}
 
 	@Test
@@ -211,7 +202,7 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getMetadata(), "Metadata should not be null");
-		assertTrue(result.getMetadata().isEmpty() || result.getMetadata().size() >= 0,
+		assertTrue(result.getMetadata().isEmpty() || result.getMetadata().getAdditional().size() >= 0,
 				"Metadata should be retrievable");
 	}
 
@@ -223,7 +214,7 @@ class ExtractionTest {
 
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
-		assertTrue(result.getLanguage().isEmpty() || result.getLanguage().isPresent(), "Language should be optional");
+		assertNotNull(result.getDetectedLanguages(), "Detected languages list should not be null");
 	}
 
 	@Test
@@ -330,7 +321,6 @@ class ExtractionTest {
 
 		assertNotNull(result, "Result should not be null");
 		assertNotNull(result.getContent(), "Content should be extracted");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
 	}
 
 	@Test
@@ -350,7 +340,7 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractBytes(data, "application/json", null);
 
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess() || !result.isSuccess(), "Result should indicate success or failure");
+		assertNotNull(result.getContent(), "Content should be extracted");
 	}
 
 	@Test
@@ -392,7 +382,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "Special characters should be extracted");
-		assertTrue(result.isSuccess(), "Extraction with special characters should succeed");
 	}
 
 	@Test
@@ -404,7 +393,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "Content with whitespace should be extracted");
-		assertTrue(result.isSuccess(), "Whitespace preservation extraction should succeed");
 	}
 
 	@Test
@@ -432,7 +420,7 @@ class ExtractionTest {
 
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
-		assertTrue(result.isSuccess(), "Success flag should be true for valid extraction");
+		assertNotNull(result.getContent(), "Content should be extracted successfully");
 	}
 
 	@Test
@@ -440,17 +428,17 @@ class ExtractionTest {
 		Path txtFile = tempDir.resolve("test1.txt");
 		Files.writeString(txtFile, "Test content");
 		ExtractionResult txtResult = Kreuzberg.extractFile(txtFile);
-		assertTrue(txtResult.isSuccess(), "Success flag should be true for test1.txt");
+		assertNotNull(txtResult.getContent(), "Content should be extracted for test1.txt");
 
 		Path jsonFile = tempDir.resolve("test3.json");
 		Files.writeString(jsonFile, "{\"message\": \"Test content\"}");
 		ExtractionResult jsonResult = Kreuzberg.extractFile(jsonFile);
-		assertTrue(jsonResult.isSuccess(), "Success flag should be true for test3.json");
+		assertNotNull(jsonResult.getContent(), "Content should be extracted for test3.json");
 
 		Path htmlFile = tempDir.resolve("test4.html");
 		Files.writeString(htmlFile, "<html><body><p>Test content</p></body></html>");
 		ExtractionResult htmlResult = Kreuzberg.extractFile(htmlFile);
-		assertTrue(htmlResult.isSuccess(), "Success flag should be true for test4.html");
+		assertNotNull(htmlResult.getContent(), "Content should be extracted for test4.html");
 	}
 
 	@Test
@@ -477,8 +465,8 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertThrows(UnsupportedOperationException.class, () -> {
-			result.getMetadata().put("key", "value");
-		}, "Metadata should be immutable");
+			result.getMetadata().getAdditional().put("key", "value");
+		}, "Metadata additional map should be immutable");
 
 		assertThrows(UnsupportedOperationException.class, () -> {
 			result.getTables().add(null);
@@ -509,7 +497,6 @@ class ExtractionTest {
 		ExtractionResult result = Kreuzberg.extractFile(testFile);
 
 		assertNotNull(result.getContent(), "Content with numbers should be extracted");
-		assertTrue(result.isSuccess(), "Number extraction should succeed");
 	}
 
 	@Test

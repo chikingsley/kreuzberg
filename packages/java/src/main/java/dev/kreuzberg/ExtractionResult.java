@@ -2,6 +2,7 @@ package dev.kreuzberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +18,7 @@ import java.util.Optional;
 public final class ExtractionResult {
 	private final String content;
 	private final String mimeType;
-	private final Map<String, Object> metadata;
+	private final Metadata metadata;
 	private final List<Table> tables;
 	private final List<String> detectedLanguages;
 	private final List<Chunk> chunks;
@@ -28,12 +29,12 @@ public final class ExtractionResult {
 	@JsonProperty("djot_content")
 	private final DjotContent djotContent;
 
-	ExtractionResult(String content, String mimeType, Map<String, Object> metadata, List<Table> tables,
+	ExtractionResult(String content, String mimeType, Metadata metadata, List<Table> tables,
 			List<String> detectedLanguages, List<Chunk> chunks, List<ExtractedImage> images, List<PageContent> pages,
 			PageStructure pageStructure, List<Element> elements, DjotContent djotContent) {
 		this.content = Objects.requireNonNull(content, "content must not be null");
 		this.mimeType = Objects.requireNonNull(mimeType, "mimeType must not be null");
-		this.metadata = Collections.unmodifiableMap(metadata != null ? metadata : Collections.emptyMap());
+		this.metadata = metadata != null ? metadata : Metadata.empty();
 		this.tables = Collections.unmodifiableList(tables != null ? tables : Collections.emptyList());
 		if (detectedLanguages != null) {
 			this.detectedLanguages = Collections.unmodifiableList(detectedLanguages);
@@ -56,8 +57,34 @@ public final class ExtractionResult {
 		return mimeType;
 	}
 
-	public Map<String, Object> getMetadata() {
+	public Metadata getMetadata() {
 		return metadata;
+	}
+
+	/**
+	 * Get metadata as a Map for backward compatibility.
+	 *
+	 * @return metadata converted to a Map representation
+	 * @deprecated Use {@link #getMetadata()} instead for typed access
+	 */
+	@Deprecated(since = "0.8.0", forRemoval = true)
+	public Map<String, Object> getMetadataMap() {
+		Map<String, Object> map = new HashMap<>();
+		metadata.getTitle().ifPresent(v -> map.put("title", v));
+		metadata.getSubject().ifPresent(v -> map.put("subject", v));
+		metadata.getAuthors().ifPresent(v -> map.put("authors", v));
+		metadata.getKeywords().ifPresent(v -> map.put("keywords", v));
+		metadata.getLanguage().ifPresent(v -> map.put("language", v));
+		metadata.getCreatedAt().ifPresent(v -> map.put("created", v));
+		metadata.getModifiedAt().ifPresent(v -> map.put("modified", v));
+		metadata.getCreatedBy().ifPresent(v -> map.put("created_by", v));
+		metadata.getModifiedBy().ifPresent(v -> map.put("modified_by", v));
+		metadata.getPages().ifPresent(v -> map.put("pages", v));
+		metadata.getImagePreprocessing().ifPresent(v -> map.put("image_preprocessing", v));
+		metadata.getJsonSchema().ifPresent(v -> map.put("json_schema", v));
+		metadata.getError().ifPresent(v -> map.put("error", v));
+		map.putAll(metadata.getAdditional());
+		return Collections.unmodifiableMap(map);
 	}
 
 	public List<Table> getTables() {
@@ -148,10 +175,7 @@ public final class ExtractionResult {
 	 */
 	@Deprecated(since = "0.8.0", forRemoval = true)
 	public Optional<String> getLanguage() {
-		if (this.metadata != null) {
-			return Optional.ofNullable((String) this.metadata.get("language"));
-		}
-		return Optional.empty();
+		return metadata.getLanguage();
 	}
 
 	/**
@@ -163,10 +187,7 @@ public final class ExtractionResult {
 	 */
 	@Deprecated(since = "0.8.0", forRemoval = true)
 	public Optional<String> getDate() {
-		if (this.metadata != null) {
-			return Optional.ofNullable((String) this.metadata.get("date"));
-		}
-		return Optional.empty();
+		return metadata.getModifiedAt();
 	}
 
 	/**
@@ -177,10 +198,7 @@ public final class ExtractionResult {
 	 */
 	@Deprecated(since = "0.8.0", forRemoval = true)
 	public Optional<String> getSubject() {
-		if (this.metadata != null) {
-			return Optional.ofNullable((String) this.metadata.get("subject"));
-		}
-		return Optional.empty();
+		return metadata.getSubject();
 	}
 
 	/**
@@ -193,8 +211,9 @@ public final class ExtractionResult {
 	 * @since 4.0.0
 	 */
 	public int getPageCount() {
-		if (this.metadata != null) {
-			Object pages = this.metadata.get("pages");
+		Map<String, Object> additional = metadata.getAdditional();
+		if (additional != null && !additional.isEmpty()) {
+			Object pages = additional.get("pages");
 			if (pages instanceof Map) {
 				Object count = ((Map<?, ?>) pages).get("totalCount");
 				if (count instanceof Number) {
@@ -232,13 +251,13 @@ public final class ExtractionResult {
 	 * @since 4.0.0
 	 */
 	public Optional<String> getDetectedLanguage() {
-		if (this.metadata != null) {
-			Object langObj = this.metadata.get("language");
-			if (langObj instanceof String lang && !lang.isEmpty()) {
-				return Optional.of(lang);
-			}
+		// First check metadata.language
+		Optional<String> langFromMetadata = metadata.getLanguage();
+		if (langFromMetadata.isPresent() && !langFromMetadata.get().isEmpty()) {
+			return langFromMetadata;
 		}
 
+		// Fall back to first item in detectedLanguages list
 		if (this.detectedLanguages != null && !this.detectedLanguages.isEmpty()) {
 			return Optional.of(this.detectedLanguages.get(0));
 		}
@@ -264,38 +283,24 @@ public final class ExtractionResult {
 			throw new IllegalArgumentException("fieldName cannot be null or empty");
 		}
 
-		if ("title".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("title"));
-		}
-		if ("author".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("author"));
-		}
-		if ("subject".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("subject"));
-		}
-		if ("keywords".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("keywords"));
-		}
-		if ("language".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("language"));
-		}
-		if ("created".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("created"));
-		}
-		if ("modified".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("modified"));
-		}
-		if ("creators".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("creators"));
-		}
-		if ("format".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("format"));
-		}
-		if ("pages".equals(fieldName)) {
-			return Optional.ofNullable(this.metadata.get("pages"));
-		}
-
-		return Optional.empty();
+		return switch (fieldName) {
+			case "title" -> Optional.ofNullable(metadata.getTitle().orElse(null));
+			case "author", "creator" -> Optional.ofNullable(metadata.getCreatedBy().orElse(null));
+			case "subject" -> Optional.ofNullable(metadata.getSubject().orElse(null));
+			case "keywords" -> Optional.ofNullable(metadata.getKeywords().map(v -> (Object) v).orElse(null));
+			case "language" -> Optional.ofNullable(metadata.getLanguage().orElse(null));
+			case "created" -> Optional.ofNullable(metadata.getCreatedAt().orElse(null));
+			case "modified" -> Optional.ofNullable(metadata.getModifiedAt().orElse(null));
+			case "creators" -> Optional.ofNullable(metadata.getAuthors().map(v -> (Object) v).orElse(null));
+			case "format", "pages" -> {
+				Map<String, Object> additional = metadata.getAdditional();
+				if (!additional.isEmpty()) {
+					yield Optional.ofNullable(additional.get(fieldName));
+				}
+				yield Optional.empty();
+			}
+			default -> Optional.empty();
+		};
 	}
 
 	@Override

@@ -1,9 +1,11 @@
 package dev.kreuzberg;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,7 +16,9 @@ import java.util.Optional;
  *
  * <p>
  * Contains common fields applicable to all formats (title, subject, authors,
- * keywords, language, timestamps, creators) extracted from document properties.
+ * keywords, language, timestamps, creators) extracted from document properties,
+ * plus format-specific metadata and additional custom fields from
+ * postprocessors.
  *
  * @since 0.8.0
  */
@@ -26,16 +30,26 @@ public final class Metadata {
 	private final Optional<String> language;
 	private final Optional<String> createdAt;
 	private final Optional<String> modifiedAt;
-	private final Optional<String> creator;
-	private final Optional<Map<String, Object>> additional;
+	private final Optional<String> createdBy;
+	private final Optional<String> modifiedBy;
+	private final Optional<PageStructure> pages;
+	private final Optional<Map<String, Object>> imagePreprocessing;
+	private final Optional<Map<String, Object>> jsonSchema;
+	private final Optional<Map<String, Object>> error;
+	private final Map<String, Object> additional;
 
 	@JsonCreator
 	public Metadata(@JsonProperty("title") Optional<String> title, @JsonProperty("subject") Optional<String> subject,
 			@JsonProperty("authors") Optional<List<String>> authors,
 			@JsonProperty("keywords") Optional<List<String>> keywords,
 			@JsonProperty("language") Optional<String> language, @JsonProperty("created_at") Optional<String> createdAt,
-			@JsonProperty("modified_at") Optional<String> modifiedAt, @JsonProperty("creator") Optional<String> creator,
-			@JsonProperty("additional") Optional<Map<String, Object>> additional) {
+			@JsonProperty("modified_at") Optional<String> modifiedAt,
+			@JsonProperty("created_by") Optional<String> createdBy,
+			@JsonProperty("modified_by") Optional<String> modifiedBy,
+			@JsonProperty("pages") Optional<PageStructure> pages,
+			@JsonProperty("image_preprocessing") Optional<Map<String, Object>> imagePreprocessing,
+			@JsonProperty("json_schema") Optional<Map<String, Object>> jsonSchema,
+			@JsonProperty("error") Optional<Map<String, Object>> error) {
 		this.title = title != null ? title : Optional.empty();
 		this.subject = subject != null ? subject : Optional.empty();
 		this.authors = authors != null && authors.isPresent()
@@ -47,8 +61,13 @@ public final class Metadata {
 		this.language = language != null ? language : Optional.empty();
 		this.createdAt = createdAt != null ? createdAt : Optional.empty();
 		this.modifiedAt = modifiedAt != null ? modifiedAt : Optional.empty();
-		this.creator = creator != null ? creator : Optional.empty();
-		this.additional = additional != null ? additional : Optional.empty();
+		this.createdBy = createdBy != null ? createdBy : Optional.empty();
+		this.modifiedBy = modifiedBy != null ? modifiedBy : Optional.empty();
+		this.pages = pages != null ? pages : Optional.empty();
+		this.imagePreprocessing = imagePreprocessing != null ? imagePreprocessing : Optional.empty();
+		this.jsonSchema = jsonSchema != null ? jsonSchema : Optional.empty();
+		this.error = error != null ? error : Optional.empty();
+		this.additional = new HashMap<>();
 	}
 
 	/**
@@ -58,7 +77,22 @@ public final class Metadata {
 	 */
 	public static Metadata empty() {
 		return new Metadata(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+				Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+				Optional.empty(), Optional.empty(), Optional.empty());
+	}
+
+	/**
+	 * Used by Jackson to handle additional flattened fields from format metadata
+	 * and custom postprocessor fields.
+	 *
+	 * @param name
+	 *            the field name
+	 * @param value
+	 *            the field value
+	 */
+	@JsonAnySetter
+	public void setAdditionalProperty(String name, Object value) {
+		additional.put(name, value);
 	}
 
 	/**
@@ -125,21 +159,67 @@ public final class Metadata {
 	}
 
 	/**
-	 * Get the document creator.
+	 * Get the user who created the document.
 	 *
-	 * @return optional creator name
+	 * @return optional creator username
 	 */
-	public Optional<String> getCreator() {
-		return creator;
+	public Optional<String> getCreatedBy() {
+		return createdBy;
 	}
 
 	/**
-	 * Get additional format-specific metadata.
+	 * Get the user who last modified the document.
 	 *
-	 * @return optional metadata map with additional fields
+	 * @return optional modifier username
 	 */
-	public Optional<Map<String, Object>> getAdditional() {
-		return additional;
+	public Optional<String> getModifiedBy() {
+		return modifiedBy;
+	}
+
+	/**
+	 * Get the page/slide/sheet structure with boundaries.
+	 *
+	 * @return optional page structure information
+	 */
+	public Optional<PageStructure> getPages() {
+		return pages;
+	}
+
+	/**
+	 * Get image preprocessing metadata (when OCR preprocessing was applied).
+	 *
+	 * @return optional image preprocessing metadata
+	 */
+	public Optional<Map<String, Object>> getImagePreprocessing() {
+		return imagePreprocessing;
+	}
+
+	/**
+	 * Get JSON schema (for structured data extraction).
+	 *
+	 * @return optional JSON schema
+	 */
+	public Optional<Map<String, Object>> getJsonSchema() {
+		return jsonSchema;
+	}
+
+	/**
+	 * Get error metadata (for batch operations).
+	 *
+	 * @return optional error metadata
+	 */
+	public Optional<Map<String, Object>> getError() {
+		return error;
+	}
+
+	/**
+	 * Get additional custom fields from postprocessors and flattened format
+	 * metadata.
+	 *
+	 * @return metadata map with additional fields (never null, may be empty)
+	 */
+	public Map<String, Object> getAdditional() {
+		return Collections.unmodifiableMap(additional);
 	}
 
 	/**
@@ -149,8 +229,9 @@ public final class Metadata {
 	 */
 	public boolean isEmpty() {
 		return !title.isPresent() && !subject.isPresent() && !authors.isPresent() && !keywords.isPresent()
-				&& !language.isPresent() && !createdAt.isPresent() && !modifiedAt.isPresent() && !creator.isPresent()
-				&& !additional.isPresent();
+				&& !language.isPresent() && !createdAt.isPresent() && !modifiedAt.isPresent() && !createdBy.isPresent()
+				&& !modifiedBy.isPresent() && !pages.isPresent() && !imagePreprocessing.isPresent()
+				&& !jsonSchema.isPresent() && !error.isPresent() && additional.isEmpty();
 	}
 
 	@Override
@@ -165,19 +246,25 @@ public final class Metadata {
 		return Objects.equals(title, other.title) && Objects.equals(subject, other.subject)
 				&& Objects.equals(authors, other.authors) && Objects.equals(keywords, other.keywords)
 				&& Objects.equals(language, other.language) && Objects.equals(createdAt, other.createdAt)
-				&& Objects.equals(modifiedAt, other.modifiedAt) && Objects.equals(creator, other.creator)
+				&& Objects.equals(modifiedAt, other.modifiedAt) && Objects.equals(createdBy, other.createdBy)
+				&& Objects.equals(modifiedBy, other.modifiedBy) && Objects.equals(pages, other.pages)
+				&& Objects.equals(imagePreprocessing, other.imagePreprocessing)
+				&& Objects.equals(jsonSchema, other.jsonSchema) && Objects.equals(error, other.error)
 				&& Objects.equals(additional, other.additional);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(title, subject, authors, keywords, language, createdAt, modifiedAt, creator, additional);
+		return Objects.hash(title, subject, authors, keywords, language, createdAt, modifiedAt, createdBy, modifiedBy,
+				pages, imagePreprocessing, jsonSchema, error, additional);
 	}
 
 	@Override
 	public String toString() {
 		return "Metadata{" + "title=" + title + ", subject=" + subject + ", authors=" + authors + ", keywords="
 				+ keywords + ", language=" + language + ", createdAt=" + createdAt + ", modifiedAt=" + modifiedAt
-				+ ", creator=" + creator + ", additional=" + additional + '}';
+				+ ", createdBy=" + createdBy + ", modifiedBy=" + modifiedBy + ", pages=" + pages
+				+ ", imagePreprocessing=" + imagePreprocessing + ", jsonSchema=" + jsonSchema + ", error=" + error
+				+ ", additional=" + additional + '}';
 	}
 }

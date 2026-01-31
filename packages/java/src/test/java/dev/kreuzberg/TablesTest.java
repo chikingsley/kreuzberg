@@ -42,7 +42,7 @@ class TablesTest {
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
 		assertNotNull(result, "Extraction result should not be null");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		assertNotNull(result.getTables(), "Tables list should not be null");
 
 		// Verify table structure when tables are present
@@ -81,7 +81,7 @@ class TablesTest {
 				+ "<tr><td>C1</td><td>C2</td><td>C3</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -118,7 +118,7 @@ class TablesTest {
 				+ "<tr><td></td><td>789</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -156,7 +156,7 @@ class TablesTest {
 				+ "<tr><td>Orange</td><td>$0.75</td><td>15</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -198,7 +198,7 @@ class TablesTest {
 				htmlFormatConfig);
 
 		assertNotNull(htmlFormatResult, "HTML result should not be null");
-		assertTrue(htmlFormatResult.isSuccess(), "HTML extraction should succeed");
+		assertNotNull(htmlFormatResult.getContent(), "HTML extraction should succeed");
 		assertNotNull(htmlFormatResult.getTables(), "HTML should have tables list");
 
 		// Test plain text (no tables expected)
@@ -208,7 +208,7 @@ class TablesTest {
 		ExtractionResult textResult = Kreuzberg.extractBytes(textContent.getBytes(), "text/html", textConfig);
 
 		assertNotNull(textResult, "Text result should not be null");
-		assertTrue(textResult.isSuccess(), "Text extraction should succeed");
+		assertNotNull(textResult.getContent(), "Text extraction should succeed");
 		assertNotNull(textResult.getTables(), "Text should have tables list");
 	}
 
@@ -226,7 +226,7 @@ class TablesTest {
 				+ "<table><tr><th>Table2</th></tr><tr><td>Data</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		List<Table> tables = result.getTables();
 		assertNotNull(tables, "Tables list should not be null");
 
@@ -265,7 +265,7 @@ class TablesTest {
 		String testContent = largeTableHtml.toString();
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -307,7 +307,7 @@ class TablesTest {
 				+ "<tr><td>Jane</td><td>Smith</td><td>28</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -342,7 +342,7 @@ class TablesTest {
 		String testContent = "<table><tr><th>Page1</th></tr><tr><td>Data1</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 		List<Table> tables = result.getTables();
 
 		if (!tables.isEmpty()) {
@@ -380,7 +380,7 @@ class TablesTest {
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		// Verify both content and tables are present
 		assertNotNull(result.getContent(), "Content should be extracted");
@@ -416,14 +416,14 @@ class TablesTest {
 		ExtractionResult fileResult = Kreuzberg.extractFile(htmlPath, config);
 
 		assertNotNull(fileResult, "File extraction result should not be null");
-		assertTrue(fileResult.isSuccess(), "File extraction should succeed");
+		assertNotNull(fileResult.getContent(), "File extraction should succeed");
 		assertNotNull(fileResult.getTables(), "Tables should be extracted from file");
 
 		// Extract from bytes
 		ExtractionResult bytesResult = Kreuzberg.extractBytes(htmlBytes, "text/html", config);
 
 		assertNotNull(bytesResult, "Bytes extraction result should not be null");
-		assertTrue(bytesResult.isSuccess(), "Bytes extraction should succeed");
+		assertNotNull(bytesResult.getContent(), "Bytes extraction should succeed");
 		assertNotNull(bytesResult.getTables(), "Tables should be extracted from bytes");
 
 		// Both should have same number of tables
@@ -447,7 +447,7 @@ class TablesTest {
 				+ "<tr><td>30</td><td>40</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);
@@ -497,7 +497,7 @@ class TablesTest {
 		// Verify all extractions succeeded
 		for (int i = 0; i < results.length; i++) {
 			assertNotNull(results[i], "Result " + i + " should not be null");
-			assertTrue(results[i].isSuccess(), "Extraction " + i + " should succeed");
+			assertNotNull(results[i].getContent(), "Extraction " + i + " should succeed");
 			assertNotNull(results[i].getTables(), "Tables list " + i + " should not be null");
 		}
 
@@ -529,7 +529,7 @@ class TablesTest {
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
 		assertNotNull(result, "Result should not be null");
-		assertTrue(result.isSuccess(), "Extraction with config should succeed");
+		assertNotNull(result.getContent(), "Extraction with config should succeed");
 		assertNotNull(result.getTables(), "Tables should be extracted with config");
 	}
 
@@ -546,7 +546,7 @@ class TablesTest {
 				+ "<tr><td>2</td><td>Active</td></tr></table>";
 		ExtractionResult result = Kreuzberg.extractBytes(testContent.getBytes(), "text/html", config);
 
-		assertTrue(result.isSuccess(), "Extraction should succeed");
+		assertNotNull(result.getContent(), "Extraction should succeed");
 
 		if (!result.getTables().isEmpty()) {
 			Table table = result.getTables().get(0);

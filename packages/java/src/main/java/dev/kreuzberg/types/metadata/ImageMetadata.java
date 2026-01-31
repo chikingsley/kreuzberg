@@ -7,5 +7,5 @@ import org.jspecify.annotations.Nullable;
 /** HTML image metadata. */
 public record ImageMetadata(@JsonProperty("src") String src, @JsonProperty("alt") @Nullable String alt,
 		@JsonProperty("title") @Nullable String title, @JsonProperty("dimensions") @Nullable int[] dimensions,
-		@JsonProperty("image_type") String imageType, @JsonProperty("attributes") Map<String, String> attributes) {
+		@JsonProperty("image_type") ImageType imageType, @JsonProperty("attributes") Map<String, String> attributes) {
 }

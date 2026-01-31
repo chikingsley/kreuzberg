@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 final class ResultParser {
 	private static final ObjectMapper MAPPER = new ObjectMapper()
@@ -41,6 +42,14 @@ final class ResultParser {
 	static ExtractionResult parse(String content, String mimeType, String tablesJson, String detectedLanguagesJson,
 			String metadataJson, String chunksJson, String imagesJson, String pagesJson, String pageStructureJson,
 			String elementsJson, String djotContentJson) throws KreuzbergException {
+		return parse(content, mimeType, tablesJson, detectedLanguagesJson, metadataJson, chunksJson, imagesJson,
+				pagesJson, pageStructureJson, elementsJson, djotContentJson, null, null, null);
+	}
+
+	static ExtractionResult parse(String content, String mimeType, String tablesJson, String detectedLanguagesJson,
+			String metadataJson, String chunksJson, String imagesJson, String pagesJson, String pageStructureJson,
+			String elementsJson, String djotContentJson, String language, String date, String subject)
+			throws KreuzbergException {
 		try {
 			Map<String, Object> metadata = decode(metadataJson, METADATA_MAP, Collections.emptyMap());
 			List<Table> tables = decode(tablesJson, TABLE_LIST, List.of());
@@ -52,11 +61,58 @@ final class ResultParser {
 			List<Element> elements = decode(elementsJson, ELEMENT_LIST, List.of());
 			DjotContent djotContent = decode(djotContentJson, DJOT_CONTENT, null);
 
-			return new ExtractionResult(content != null ? content : "", mimeType != null ? mimeType : "", metadata,
+			// Build Metadata with FFI-provided language, date, and subject if available
+			Metadata metadataObj = buildMetadata(metadata, language, date, subject);
+
+			return new ExtractionResult(content != null ? content : "", mimeType != null ? mimeType : "", metadataObj,
 					tables, detectedLanguages, chunks, images, pages, pageStructure, elements, djotContent);
 		} catch (Exception e) {
 			throw new KreuzbergException("Failed to parse extraction result", e);
 		}
+	}
+
+	private static Metadata buildMetadata(Map<String, Object> metadataMap, String language, String date,
+			String subject) {
+		// Extract metadata fields, preferring FFI values over map values
+		String title = getStringFromMap(metadataMap, "title");
+		String actualSubject = subject != null ? subject : getStringFromMap(metadataMap, "subject");
+		String actualLanguage = language != null ? language : getStringFromMap(metadataMap, "language");
+		String createdAt = getStringFromMap(metadataMap, "created");
+		String modifiedAt = date != null ? date : getStringFromMap(metadataMap, "modified");
+		String createdBy = getStringFromMap(metadataMap, "created_by");
+		String modifiedBy = getStringFromMap(metadataMap, "modified_by");
+
+		@SuppressWarnings("unchecked")
+		List<String> authors = (List<String>) metadataMap.get("authors");
+		@SuppressWarnings("unchecked")
+		List<String> keywords = (List<String>) metadataMap.get("keywords");
+		@SuppressWarnings("unchecked")
+		PageStructure pages = (PageStructure) metadataMap.get("pages");
+		@SuppressWarnings("unchecked")
+		Map<String, Object> imagePreprocessing = (Map<String, Object>) metadataMap.get("image_preprocessing");
+		@SuppressWarnings("unchecked")
+		Map<String, Object> jsonSchema = (Map<String, Object>) metadataMap.get("json_schema");
+		@SuppressWarnings("unchecked")
+		Map<String, Object> error = (Map<String, Object>) metadataMap.get("error");
+
+		return new Metadata(title != null ? Optional.of(title) : Optional.empty(),
+				actualSubject != null ? Optional.of(actualSubject) : Optional.empty(),
+				authors != null ? Optional.of(authors) : Optional.empty(),
+				keywords != null ? Optional.of(keywords) : Optional.empty(),
+				actualLanguage != null ? Optional.of(actualLanguage) : Optional.empty(),
+				createdAt != null ? Optional.of(createdAt) : Optional.empty(),
+				modifiedAt != null ? Optional.of(modifiedAt) : Optional.empty(),
+				createdBy != null ? Optional.of(createdBy) : Optional.empty(),
+				modifiedBy != null ? Optional.of(modifiedBy) : Optional.empty(),
+				pages != null ? Optional.of(pages) : Optional.empty(),
+				imagePreprocessing != null ? Optional.of(imagePreprocessing) : Optional.empty(),
+				jsonSchema != null ? Optional.of(jsonSchema) : Optional.empty(),
+				error != null ? Optional.of(error) : Optional.empty());
+	}
+
+	private static String getStringFromMap(Map<String, Object> map, String key) {
+		Object value = map.get(key);
+		return value instanceof String ? (String) value : null;
 	}
 
 	private static <T> T decode(String json, TypeReference<T> type, T fallback) throws Exception {
@@ -85,7 +141,7 @@ final class ResultParser {
 			WireExtractionResult wire = MAPPER.readValue(json, WireExtractionResult.class);
 			return new ExtractionResult(wire.content != null ? wire.content : "",
 					wire.mimeType != null ? wire.mimeType : "",
-					wire.metadata != null ? wire.metadata : Collections.emptyMap(),
+					wire.metadata != null ? wire.metadata : Metadata.empty(),
 					wire.tables != null ? wire.tables : List.of(),
 					wire.detectedLanguages != null ? wire.detectedLanguages : List.of(),
 					wire.chunks != null ? wire.chunks : List.of(), wire.images != null ? wire.images : List.of(),
@@ -115,7 +171,7 @@ final class ResultParser {
 	private static final class WireExtractionResult {
 		private final String content;
 		private final String mimeType;
-		private final Map<String, Object> metadata;
+		private final Metadata metadata;
 		private final List<Table> tables;
 		private final List<String> detectedLanguages;
 		private final List<Chunk> chunks;
@@ -126,7 +182,7 @@ final class ResultParser {
 		private final DjotContent djotContent;
 
 		WireExtractionResult(@JsonProperty("content") String content, @JsonProperty("mime_type") String mimeType,
-				@JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("tables") List<Table> tables,
+				@JsonProperty("metadata") Metadata metadata, @JsonProperty("tables") List<Table> tables,
 				@JsonProperty("detected_languages") List<String> detectedLanguages,
 				@JsonProperty("chunks") List<Chunk> chunks, @JsonProperty("images") List<ExtractedImage> images,
 				@JsonProperty("pages") List<PageContent> pages,
