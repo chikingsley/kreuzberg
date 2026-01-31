@@ -137,7 +137,7 @@ class MetadataTypesTest {
 		@DisplayName("LinkMetadata has rel as List<String>")
 		void testLinkMetadataRelIsList() {
 			LinkMetadata link = new LinkMetadata("https://example.com", "Example Link", "Link Title", LinkType.ANCHOR,
-					List.of("nofollow", "external"), Map.of("data-custom", "value"));
+					List.of("nofollow", "external"), List.of(List.of("data-custom", "value")));
 
 			assertNotNull(link.rel(), "rel should not be null");
 			assertInstanceOf(List.class, link.rel(), "rel should be a List");
@@ -150,7 +150,7 @@ class MetadataTypesTest {
 		void testImageMetadataDimensionsIsArray() {
 			int[] dimensions = {1920, 1080};
 			ImageMetadata image = new ImageMetadata("https://example.com/image.jpg", "Alt text", "Image Title",
-					dimensions, ImageType.EXTERNAL, Map.of());
+					dimensions, ImageType.EXTERNAL, List.of());
 
 			assertNotNull(image.dimensions(), "dimensions should not be null");
 			assertInstanceOf(int[].class, image.dimensions(), "dimensions should be int[]");
@@ -218,7 +218,7 @@ class MetadataTypesTest {
 		void testLinkMetadataJsonSerialization() throws IOException {
 			LinkMetadata original = new LinkMetadata("https://example.com/page", "Example", "Example Page",
 					LinkType.EXTERNAL, List.of("nofollow", "external", "noopener"),
-					Map.of("target", "_blank", "data-index", "1"));
+					List.of(List.of("target", "_blank"), List.of("data-index", "1")));
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).contains("\"rel\"");
@@ -227,7 +227,7 @@ class MetadataTypesTest {
 
 			LinkMetadata deserialized = objectMapper.readValue(json, LinkMetadata.class);
 			assertEquals(original.rel(), deserialized.rel(), "rel list should match");
-			assertEquals(original.attributes(), deserialized.attributes(), "attributes map should match");
+			assertEquals(original.attributes(), deserialized.attributes(), "attributes list should match");
 		}
 
 		@Test
@@ -235,7 +235,7 @@ class MetadataTypesTest {
 		void testImageMetadataJsonSerialization() throws IOException {
 			int[] dimensions = {800, 600};
 			ImageMetadata original = new ImageMetadata("https://example.com/logo.png", "Company Logo", "Logo",
-					dimensions, ImageType.EXTERNAL, Map.of("loading", "lazy", "decoding", "async"));
+					dimensions, ImageType.EXTERNAL, List.of(List.of("loading", "lazy"), List.of("decoding", "async")));
 
 			String json = objectMapper.writeValueAsString(original);
 			assertThat(json).contains("\"dimensions\"");
@@ -345,7 +345,7 @@ class MetadataTypesTest {
 		@DisplayName("LinkMetadata nullable fields")
 		void testLinkMetadataNullableFields() {
 			LinkMetadata link = new LinkMetadata("https://example.com", "Link", null, LinkType.EXTERNAL, List.of(),
-					Map.of());
+					List.of());
 
 			assertNull(link.title(), "title should be nullable");
 			assertNotNull(link.href(), "href should not be nullable");
@@ -357,7 +357,7 @@ class MetadataTypesTest {
 		@DisplayName("ImageMetadata nullable fields")
 		void testImageMetadataNullableFields() {
 			ImageMetadata image = new ImageMetadata("https://example.com/img.jpg", null, null, null, ImageType.EXTERNAL,
-					Map.of());
+					List.of());
 
 			assertNull(image.alt(), "alt should be nullable");
 			assertNull(image.title(), "title should be nullable");
@@ -441,7 +441,7 @@ class MetadataTypesTest {
 		@DisplayName("Components accessed correctly")
 		void testRecordComponentAccess() {
 			LinkMetadata link = new LinkMetadata("https://example.com", "Example", "Title", LinkType.EXTERNAL,
-					List.of("external"), Map.of("rel", "nofollow"));
+					List.of("external"), List.of(List.of("rel", "nofollow")));
 
 			assertEquals("https://example.com", link.href());
 			assertEquals("Example", link.text());
@@ -465,15 +465,15 @@ class MetadataTypesTest {
 
 			List<LinkMetadata> links = List.of(
 					new LinkMetadata("https://example.com", "Link1", null, LinkType.EXTERNAL, List.of("external"),
-							Map.of()),
+							List.of()),
 					new LinkMetadata("https://example.com/page", "Link2", "Link to page", LinkType.EXTERNAL, List.of(),
-							Map.of()));
+							List.of()));
 
 			List<ImageMetadata> images = List.of(
 					new ImageMetadata("https://example.com/img1.jpg", "Image 1", "Img1", new int[]{800, 600},
-							ImageType.EXTERNAL, Map.of()),
+							ImageType.EXTERNAL, List.of()),
 					new ImageMetadata("https://example.com/img2.png", "Image 2", null, null, ImageType.EXTERNAL,
-							Map.of("loading", "lazy")));
+							List.of(List.of("loading", "lazy"))));
 
 			HtmlMetadata metadata = new HtmlMetadata("Test Page", "A test page", List.of("test", "example"),
 					"Author Name", "https://example.com/page", "https://example.com", "en", TextDirection.LEFT_TO_RIGHT,
@@ -520,7 +520,7 @@ class MetadataTypesTest {
 		@DisplayName("Edge case: null dimensions in ImageMetadata")
 		void testImageMetadataWithNullDimensions() throws IOException {
 			ImageMetadata image = new ImageMetadata("https://example.com/no-dimensions.svg", "SVG Image", "SVG", null,
-					ImageType.INLINE_SVG, Map.of());
+					ImageType.INLINE_SVG, List.of());
 
 			String json = objectMapper.writeValueAsString(image);
 			assertThat(json).contains("\"dimensions\":null");
@@ -604,10 +604,10 @@ class MetadataTypesTest {
 		@DisplayName("URL encoding in href and src")
 		void testUrlEncoding() throws IOException {
 			LinkMetadata link = new LinkMetadata("https://example.com/path?param=value&other=123#anchor",
-					"Complex Link", null, LinkType.EXTERNAL, List.of(), Map.of());
+					"Complex Link", null, LinkType.EXTERNAL, List.of(), List.of());
 
 			ImageMetadata image = new ImageMetadata("https://example.com/image%20with%20spaces.jpg", "Image", null,
-					null, ImageType.EXTERNAL, Map.of());
+					null, ImageType.EXTERNAL, List.of());
 
 			String linkJson = objectMapper.writeValueAsString(link);
 			String imageJson = objectMapper.writeValueAsString(image);
@@ -651,13 +651,13 @@ class MetadataTypesTest {
 		@DisplayName("Numeric values in dimension arrays")
 		void testDimensionArrayEdgeCases() throws IOException {
 			ImageMetadata zeroDim = new ImageMetadata("img.jpg", null, null, new int[]{0, 0}, ImageType.EXTERNAL,
-					Map.of());
+					List.of());
 
 			ImageMetadata largeDim = new ImageMetadata("img.jpg", null, null, new int[]{8192, 4096}, ImageType.EXTERNAL,
-					Map.of());
+					List.of());
 
 			ImageMetadata singleDim = new ImageMetadata("img.jpg", null, null, new int[]{512}, ImageType.EXTERNAL,
-					Map.of());
+					List.of());
 
 			String zeroJson = objectMapper.writeValueAsString(zeroDim);
 			String largeJson = objectMapper.writeValueAsString(largeDim);
