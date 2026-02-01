@@ -47,7 +47,6 @@ from kreuzberg._internal_bindings import (
     EmbeddingConfig,
     EmbeddingModelType,
     EmbeddingPreset,
-    ExtractedImage,
     ExtractedTable,
     ExtractionConfig,
     ExtractionResult,
@@ -57,14 +56,11 @@ from kreuzberg._internal_bindings import (
     KeywordAlgorithm,
     KeywordConfig,
     LanguageDetectionConfig,
-    Metadata,
     OcrConfig,
-    OutputFormat,
     PageConfig,
     PdfConfig,
     PostProcessorConfig,
     RakeParams,
-    ResultFormat,
     TesseractConfig,
     TokenReductionConfig,
     YakeParams,
@@ -175,6 +171,45 @@ if TYPE_CHECKING:
     from kreuzberg.ocr.paddleocr import PaddleOCRBackend  # noqa: F401
 
 __version__ = version("kreuzberg")
+
+# These types are defined in the .pyi stub for static type checking but are not
+# exported from the compiled Rust bindings at runtime. We define Python-level
+# versions here so they can be imported and used at runtime.
+if not TYPE_CHECKING:
+    from enum import Enum
+    from typing import TypedDict
+
+    class OutputFormat(str, Enum):
+        """Output format for extraction results."""
+
+        PLAIN = "plain"
+        MARKDOWN = "markdown"
+        DJOT = "djot"
+        HTML = "html"
+
+    class ResultFormat(str, Enum):
+        """Result format controlling extraction output structure."""
+
+        UNIFIED = "unified"
+        ELEMENT_BASED = "element_based"
+
+    class Metadata(TypedDict, total=False):
+        """Document metadata extracted during processing."""
+
+    class ExtractedImage(TypedDict, total=False):
+        """Image extracted from a document during processing."""
+
+        data: bytes
+        format: str
+        image_index: int
+        page_number: int
+        width: int
+        height: int
+        colorspace: str
+        bits_per_component: int
+        is_mask: bool
+        description: str
+
 
 __all__ = [
     "CacheError",

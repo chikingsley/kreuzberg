@@ -34,6 +34,7 @@ PARKING_LOT_VERSION=$(extract_version "parking_lot")
 TRACING_VERSION=$(extract_version "tracing")
 AHASH_VERSION=$(extract_version "ahash")
 BASE64_VERSION=$(extract_version "base64")
+BYTES_VERSION=$(extract_version "bytes")
 HEX_VERSION=$(extract_version "hex")
 TOML_VERSION=$(extract_version "toml")
 NUM_CPUS_VERSION=$(extract_version "num_cpus")
@@ -188,6 +189,7 @@ tracing = "${TRACING_VERSION}"
 # Utilities
 ahash = "${AHASH_VERSION}"
 base64 = "${BASE64_VERSION}"
+bytes = { version = "${BYTES_VERSION}", features = ["serde"] }
 hex = "${HEX_VERSION}"
 toml = "${TOML_VERSION}"
 num_cpus = "${NUM_CPUS_VERSION}"

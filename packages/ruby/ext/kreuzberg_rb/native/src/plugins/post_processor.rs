@@ -95,7 +95,7 @@ pub fn register_post_processor(args: &[Value]) -> Result<(), Error> {
                         message: format!("Failed to convert mime_type: {}", e),
                         plugin_name: processor_name.clone(),
                     })?;
-                    updated_result.mime_type = new_mime;
+                    updated_result.mime_type = std::borrow::Cow::Owned(new_mime);
                 }
 
                 Ok::<kreuzberg::ExtractionResult, kreuzberg::KreuzbergError>(updated_result)

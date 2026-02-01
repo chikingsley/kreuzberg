@@ -90,7 +90,7 @@ impl OcrBackend for RubyOcrBackend {
 
             Ok(ExtractionResult {
                 content,
-                mime_type: "text/plain".to_string(),
+                mime_type: std::borrow::Cow::Borrowed("text/plain"),
                 metadata: Metadata::default(),
                 tables: vec![],
                 detected_languages: None,

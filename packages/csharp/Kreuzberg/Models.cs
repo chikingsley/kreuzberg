@@ -1279,8 +1279,10 @@ public sealed class LinkMetadata
 
     /// <summary>
     /// Additional HTML attributes on the link element.
+    /// Handles both array-of-arrays format [["k","v"]] from Rust and object format {"k":"v"} from C#.
     /// </summary>
     [JsonPropertyName("attributes")]
+    [JsonConverter(typeof(Kreuzberg.AttributesDictionaryConverter))]
     public Dictionary<string, string> Attributes { get; set; } = new();
 }
 
@@ -1321,8 +1323,10 @@ public sealed class HtmlImageMetadata
 
     /// <summary>
     /// Additional HTML attributes on the image element.
+    /// Handles both array-of-arrays format [["k","v"]] from Rust and object format {"k":"v"} from C#.
     /// </summary>
     [JsonPropertyName("attributes")]
+    [JsonConverter(typeof(Kreuzberg.AttributesDictionaryConverter))]
     public Dictionary<string, string> Attributes { get; set; } = new();
 }
 

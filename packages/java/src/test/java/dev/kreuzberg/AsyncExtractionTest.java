@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -36,6 +37,7 @@ final class AsyncExtractionTest {
 	 * respected
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should complete extraction with get() within timeout")
 	void testAsyncExtractionGetWithTimeout(@TempDir Path tempDir)
 			throws IOException, ExecutionException, TimeoutException, InterruptedException {
@@ -64,6 +66,7 @@ final class AsyncExtractionTest {
 	 * blocks until complete - Result is correctly returned - No timeout exception
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should complete extraction with join()")
 	void testAsyncExtractionJoin(@TempDir Path tempDir) throws IOException {
 		Path testFile = tempDir.resolve("join_test.txt");
@@ -90,6 +93,7 @@ final class AsyncExtractionTest {
 	 * caught in exceptionally() - Error recovery works - Fallback value is used
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle exceptions in async extraction with exceptionally()")
 	void testAsyncExceptionHandling() {
 		String invalidPath = "/nonexistent/path/to/file.txt";
@@ -116,6 +120,7 @@ final class AsyncExtractionTest {
 	 * - Results are independent - No race conditions - Ordering is maintained
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle multiple concurrent futures")
 	void testMultipleConcurrentFutures(@TempDir Path tempDir)
 			throws IOException, InterruptedException, ExecutionException, TimeoutException {
@@ -159,6 +164,7 @@ final class AsyncExtractionTest {
 	 * be transformed - Chaining works correctly - Transformation preserves data
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should transform async extraction result with thenApply()")
 	void testAsyncResultTransformation(@TempDir Path tempDir)
 			throws IOException, ExecutionException, InterruptedException {
@@ -189,6 +195,7 @@ final class AsyncExtractionTest {
 	 * composed - Sequential async operations work - Dependencies are respected
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should compose async operations with thenCompose()")
 	void testAsyncComposition(@TempDir Path tempDir) throws IOException, ExecutionException, InterruptedException {
 		Path file1 = tempDir.resolve("compose_file1.txt");
@@ -227,6 +234,7 @@ final class AsyncExtractionTest {
 	 * thrown - Timeout value is respected - Future is still cancellable
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle timeout in async extraction")
 	void testAsyncExtractionTimeout(@TempDir Path tempDir) throws IOException {
 		Path testFile = tempDir.resolve("timeout_test.txt");
@@ -258,6 +266,7 @@ final class AsyncExtractionTest {
 	 * detectable - isDone() works correctly - Future state transitions
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should report async extraction completion status")
 	void testAsyncCompletionStatus(@TempDir Path tempDir) throws IOException {
 		Path testFile = tempDir.resolve("completion_test.txt");
@@ -288,6 +297,7 @@ final class AsyncExtractionTest {
 	 * Cancellation is detected - Subsequent operations handle cancellation
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle async extraction cancellation")
 	void testAsyncCancellation(@TempDir Path tempDir) throws IOException, InterruptedException {
 		Path testFile = tempDir.resolve("cancel_test.txt");
@@ -320,6 +330,7 @@ final class AsyncExtractionTest {
 	 * accumulated
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should chain multiple async extraction operations")
 	void testChainedAsyncOperations(@TempDir Path tempDir)
 			throws IOException, ExecutionException, InterruptedException {
@@ -363,6 +374,7 @@ final class AsyncExtractionTest {
 	 * properly communicated
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle results and exceptions with handle()")
 	void testAsyncHandleMethod(@TempDir Path tempDir) throws IOException, ExecutionException, InterruptedException {
 		Path testFile = tempDir.resolve("handle_test.txt");
@@ -394,6 +406,7 @@ final class AsyncExtractionTest {
 	 * extractBytes() - Byte array handling is thread-safe - Results are consistent
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should handle async bytes extraction")
 	void testAsyncBytesExtraction() throws ExecutionException, InterruptedException {
 		String testContent = "Async bytes extraction test content";
@@ -419,6 +432,7 @@ final class AsyncExtractionTest {
 	 * behavior is consistent
 	 */
 	@Test
+	@Timeout(60)
 	@DisplayName("should apply configuration in async extraction")
 	void testAsyncExtractionWithConfig(@TempDir Path tempDir)
 			throws IOException, ExecutionException, InterruptedException {

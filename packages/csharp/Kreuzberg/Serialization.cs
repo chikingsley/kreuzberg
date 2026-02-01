@@ -822,6 +822,105 @@ internal class ByteArrayConverter : JsonConverter<byte[]>
     }
 }
 
+/// <summary>
+/// Custom JSON converter for attributes that handles array-of-arrays format from Rust serde.
+/// Rust serializes Vec<(String, String)> as [["k","v"],["k2","v2"]]
+/// but C# Dictionary expects {"k":"v","k2":"v2"} format.
+/// This converter bridges the gap by converting between the two formats.
+/// </summary>
+public class AttributesDictionaryConverter : JsonConverter<Dictionary<string, string>>
+{
+    /// <summary>
+    /// Reads a Dictionary from JSON, handling both array-of-arrays and object formats.
+    /// </summary>
+    /// <param name="reader">The JSON reader.</param>
+    /// <param name="typeToConvert">The type being converted to.</param>
+    /// <param name="options">JSON serializer options.</param>
+    /// <returns>A Dictionary with string keys and values, or null.</returns>
+    public override Dictionary<string, string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var result = new Dictionary<string, string>();
+
+        if (reader.TokenType == JsonTokenType.StartArray)
+        {
+            // Array of arrays format: [["k1","v1"],["k2","v2"]]
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndArray)
+                {
+                    break;
+                }
+
+                if (reader.TokenType == JsonTokenType.StartArray)
+                {
+                    // Read key
+                    reader.Read();
+                    if (reader.TokenType != JsonTokenType.String)
+                    {
+                        throw new JsonException("Expected string key in attribute pair");
+                    }
+                    var key = reader.GetString() ?? string.Empty;
+
+                    // Read value
+                    reader.Read();
+                    if (reader.TokenType != JsonTokenType.String)
+                    {
+                        throw new JsonException("Expected string value in attribute pair");
+                    }
+                    var value = reader.GetString() ?? string.Empty;
+
+                    result[key] = value;
+
+                    // Read end of inner array
+                    reader.Read();
+                    if (reader.TokenType != JsonTokenType.EndArray)
+                    {
+                        throw new JsonException("Expected end of attribute pair array");
+                    }
+                }
+            }
+        }
+        else if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            // Object format (fallback): {"k1":"v1","k2":"v2"}
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndObject)
+                {
+                    break;
+                }
+
+                if (reader.TokenType == JsonTokenType.PropertyName)
+                {
+                    var key = reader.GetString() ?? string.Empty;
+                    reader.Read();
+                    var value = reader.TokenType == JsonTokenType.Null ? string.Empty : reader.GetString() ?? string.Empty;
+                    result[key] = value;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Writes a Dictionary to JSON in standard object format {"k":"v"}.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="value">The dictionary to write.</param>
+    /// <param name="options">JSON serializer options.</param>
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, string> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        foreach (var kvp in value)
+        {
+            writer.WritePropertyName(kvp.Key);
+            writer.WriteStringValue(kvp.Value);
+        }
+        writer.WriteEndObject();
+    }
+}
+
 internal class MetadataConverter : JsonConverter<Metadata>
 {
     public override Metadata? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

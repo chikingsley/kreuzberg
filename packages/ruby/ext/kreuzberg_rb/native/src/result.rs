@@ -27,7 +27,7 @@ pub fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> R
     let content_value = ruby.str_new(result.content.as_str()).into_value_with(ruby);
     set_hash_entry(ruby, &hash, "content", content_value)?;
 
-    let mime_value = ruby.str_new(result.mime_type.as_str()).into_value_with(ruby);
+    let mime_value = ruby.str_new(result.mime_type.as_ref()).into_value_with(ruby);
     set_hash_entry(ruby, &hash, "mime_type", mime_value)?;
 
     // Set metadata both as JSON string and parsed hash
@@ -117,7 +117,8 @@ pub fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> R
             let image_hash = ruby.hash_new();
             let data_value = ruby.str_from_slice(&image.data).into_value_with(ruby);
             image_hash.aset("data", data_value)?;
-            image_hash.aset("format", image.format)?;
+            let format_value = ruby.str_new(image.format.as_ref()).into_value_with(ruby);
+            image_hash.aset("format", format_value)?;
             image_hash.aset("image_index", image.image_index as i64)?;
             if let Some(page) = image.page_number {
                 image_hash.aset("page_number", page as i64)?;
@@ -200,7 +201,8 @@ pub fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> R
                 let image_hash = ruby.hash_new();
                 let data_value = ruby.str_from_slice(&image.data).into_value_with(ruby);
                 image_hash.aset("data", data_value)?;
-                image_hash.aset("format", image.format.clone())?;
+                let format_value = ruby.str_new(image.format.as_ref()).into_value_with(ruby);
+                image_hash.aset("format", format_value)?;
                 image_hash.aset("image_index", image.image_index as i64)?;
                 if let Some(page) = image.page_number {
                     image_hash.aset("page_number", page as i64)?;

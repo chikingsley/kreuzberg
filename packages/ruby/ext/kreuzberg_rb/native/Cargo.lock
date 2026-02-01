@@ -716,9 +716,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.54"
+version = "1.2.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6354c81bbfd62d9cfa9cb3c773c2b7b2a3a482d569de977fd0e961f6e7c00583"
+checksum = "47b26a0954ae34af09b50f0de26458fa95369a0d478d8236d3f93082b219bd29"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -1631,9 +1631,9 @@ dependencies = [
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8591b0bcc8a98a64310a2fae1bb3e9b8564dd10e381e6e28010fde8e8e8568db"
+checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "flate2"
@@ -2027,9 +2027,9 @@ dependencies = [
 
 [[package]]
 name = "html-to-markdown-rs"
-version = "2.23.4"
+version = "2.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffbf49450676163bdf69fac2acf72674fcf2d2aaf690aa247368c567cc9afb2a"
+checksum = "51e190e3bcf14728f08547b10ba3afdae24c84299045e0831bb9ee1e199d54ad"
 dependencies = [
  "astral-tl",
  "base64 0.22.1",
@@ -2627,7 +2627,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg"
-version = "4.2.0"
+version = "4.2.6"
 dependencies = [
  "ahash",
  "async-trait",
@@ -2636,6 +2636,7 @@ dependencies = [
  "base64-simd",
  "biblatex",
  "bitvec",
+ "bytes",
  "calamine",
  "chardetng",
  "dashmap",
@@ -2703,6 +2704,7 @@ dependencies = [
  "typst-syntax",
  "unicode-normalization",
  "ureq 3.1.4",
+ "utoipa",
  "uuid",
  "whatlang",
  "yake-rust",
@@ -2711,8 +2713,9 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-ffi"
-version = "4.2.0"
+version = "4.2.6"
 dependencies = [
+ "ahash",
  "async-trait",
  "cbindgen",
  "html-to-markdown-rs",
@@ -2768,7 +2771,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-tesseract"
-version = "4.2.0"
+version = "4.2.6"
 dependencies = [
  "cc",
  "cmake",
@@ -6703,6 +6706,30 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "utoipa"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fcc29c80c21c31608227e0912b2d7fddba57ad76b606890627ba8ee7964e993"
+dependencies = [
+ "indexmap",
+ "serde",
+ "serde_json",
+ "utoipa-gen",
+]
+
+[[package]]
+name = "utoipa-gen"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d79d08d92ab8af4c5e8a6da20c47ae3f61a0f1dabc1997cdf2d082b757ca08b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
+]
 
 [[package]]
 name = "uuid"
