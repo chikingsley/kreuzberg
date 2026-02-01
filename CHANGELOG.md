@@ -9,10 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.2.7] - 2026-02-01
+
 ### Added
 
 #### OCR
 - **`KREUZBERG_OCR_LANGUAGE="all"` support**: Setting the language to `"all"` or `"*"` automatically detects and uses all installed Tesseract languages from the tessdata directory, eliminating manual enumeration (#344)
+
+### Fixed
+
+#### Ruby Bindings
+- **Cow<'static, str> type conversions**: Fixed Magnus bindings to properly convert `Cow<'static, str>` fields (`mime_type`, `format`, `colorspace`) using `.as_ref()` instead of passing directly to FFI methods
+- **Vendor workspace `bytes` dependency**: Added `bytes` to the Ruby vendor workspace Cargo.toml via the vendoring script, fixing workspace dependency resolution failures
+- **Tempfile GC in batch test**: Kept `Tempfile` references alive in `batch_operations_spec.rb` to prevent garbage collection before `batch_extract_files_sync` reads them
+
+#### Python Bindings
+- **Runtime `ExtractedImage` import**: Defined `ExtractedImage`, `Metadata`, `OutputFormat`, and `ResultFormat` as Python-level runtime types instead of importing from compiled Rust bindings (these are stub-only types, not `#[pyclass]` exports)
+
+#### C# Bindings
+- **Attributes deserialization on ARM64**: Added `AttributesDictionaryConverter` to handle both array-of-arrays (`[["k","v"]]`) and object (`{"k":"v"}`) JSON formats for `LinkMetadata.Attributes` and `HtmlImageMetadata.Attributes`
+
+#### Java Bindings
+- **Test timeout prevention**: Added `@Timeout(60)` to all concurrency and async test methods in `ConcurrencyTest` and `AsyncExtractionTest` to prevent CI hangs
+- **Surefire timeout reduction**: Reduced `forkedProcessTimeoutInSeconds` from 3600s to 600s for faster failure detection
 
 ### Performance
 

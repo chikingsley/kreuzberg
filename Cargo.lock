@@ -506,7 +506,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "benchmark-harness"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "async-trait",
@@ -1668,7 +1668,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "e2e-rust"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "async-trait",
  "hex",
@@ -2437,10 +2437,11 @@ dependencies = [
 
 [[package]]
 name = "html-to-markdown-rs"
-version = "2.24.3"
+version = "2.24.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51e190e3bcf14728f08547b10ba3afdae24c84299045e0831bb9ee1e199d54ad"
+checksum = "4c31524fe00816ec55538e9049c5015691b6d8451dd99fadcee81b49dca0550a"
 dependencies = [
+ "ahash",
  "astral-tl",
  "base64 0.22.1",
  "html-escape",
@@ -3084,7 +3085,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "anyhow",
@@ -3179,7 +3180,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-cli"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3195,7 +3196,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-e2e-generator"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3213,7 +3214,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-ffi"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3231,7 +3232,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-node"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3282,7 +3283,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-php"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3297,7 +3298,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-py"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3314,7 +3315,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-tesseract"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "cc",
  "cmake",
@@ -3327,7 +3328,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-wasm"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3351,7 +3352,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg_rustler"
-version = "4.2.6"
+version = "4.2.7"
 dependencies = [
  "kreuzberg",
  "rustler",

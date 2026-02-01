@@ -839,7 +839,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/5e/73/e01e4c5e11ad0494f
 
 [[package]]
 name = "kreuzberg"
-version = "4.2.6"
+version = "4.2.7"
 source = { editable = "packages/python" }
 
 [package.optional-dependencies]
@@ -897,7 +897,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "kreuzberg-examples-python"
-version = "4.2.6"
+version = "4.2.7"
 source = { editable = "examples/python" }
 dependencies = [
     { name = "kreuzberg" },
