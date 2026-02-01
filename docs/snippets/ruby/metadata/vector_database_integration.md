@@ -3,8 +3,8 @@ require 'kreuzberg'
 
 config = Kreuzberg::Config::Extraction.new(
   chunking: Kreuzberg::Config::Chunking.new(
-    max_chars: 512,
-    max_overlap: 50,
+    max_characters: 512,
+    overlap: 50,
     embedding: Kreuzberg::Config::Embedding.new(
       model: Kreuzberg::EmbeddingModelType.new(
         type: 'preset',

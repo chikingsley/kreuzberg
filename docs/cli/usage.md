@@ -82,19 +82,19 @@ Control the formatting of extracted text content:
 
 ```bash title="Terminal"
 # Extract as plain text (default)
-kreuzberg extract document.pdf --content-format plain
+kreuzberg extract document.pdf --output-format plain
 
 # Extract as Markdown
-kreuzberg extract document.pdf --content-format markdown
+kreuzberg extract document.pdf --output-format markdown
 
 # Extract as Djot markup
-kreuzberg extract document.pdf --content-format djot
+kreuzberg extract document.pdf --output-format djot
 
 # Extract as HTML
-kreuzberg extract document.pdf --content-format html
+kreuzberg extract document.pdf --output-format html
 ```
 
-The `--content-format` flag controls how the extracted text is formatted. This is different from `--format` which controls the output structure (text vs JSON).
+The `--output-format` flag controls how the extracted text is formatted. This is different from `--format` which controls the output structure (text vs JSON).
 
 ## OCR Extraction
 
@@ -132,11 +132,10 @@ Configure OCR backend, language, and Tesseract options in your config file (see 
 
 ### Using Config Files
 
-Kreuzberg automatically discovers configuration files in this order:
+Kreuzberg automatically discovers configuration files by searching the current directory and parent directories for:
 
-1. Current directory: `./kreuzberg.{toml,yaml,yml,json}`
-2. User config: `~/.config/kreuzberg/config.{toml,yaml,yml,json}`
-3. System config: `/etc/kreuzberg/config.{toml,yaml,yml,json}`
+1. `./kreuzberg.{toml,yaml,yml,json}` in the current directory
+2. `../kreuzberg.{toml,yaml,yml,json}` in the parent directory (and so on, up the directory tree)
 
 ```bash title="Terminal"
 # Extract using discovered configuration
@@ -165,7 +164,7 @@ language = "eng"
 psm = 3
 
 [chunking]
-max_chunk_size = 1000
+max_characters = 1000
 overlap = 100
 ```
 
@@ -182,7 +181,7 @@ ocr:
     psm: 3
 
 chunking:
-  max_chunk_size: 1000
+  max_characters: 1000
   overlap: 100
 ```
 
@@ -200,7 +199,7 @@ chunking:
     }
   },
   "chunking": {
-    "max_chunk_size": 1000,
+    "max_characters": 1000,
     "overlap": 100
   }
 }
@@ -248,13 +247,13 @@ kreuzberg batch documents/*.pdf --quality true
 
 ```bash title="Terminal"
 # Batch extract with djot formatting
-kreuzberg batch documents/*.pdf --content-format djot --format json
+kreuzberg batch documents/*.pdf --output-format djot --format json
 
 # Batch extract as Markdown
-kreuzberg batch documents/*.pdf --content-format markdown --format json
+kreuzberg batch documents/*.pdf --output-format markdown --format json
 
 # Batch extract as HTML
-kreuzberg batch documents/*.pdf --content-format html --format json
+kreuzberg batch documents/*.pdf --output-format html --format json
 ```
 
 ## Advanced Features
@@ -621,7 +620,12 @@ kreuzberg cache --help
 ```bash title="Terminal"
 # Display version number
 kreuzberg --version
+
+# Show version with JSON output
+kreuzberg version --format json
 ```
+
+The `version` command displays the Kreuzberg version. Use `--format json` for machine-readable output.
 
 ## Next Steps
 

@@ -12,8 +12,8 @@ fn main() -> kreuzberg::Result<()> {
         }),
 
         chunking: Some(ChunkingConfig {
-            max_chars: 1000,
-            max_overlap: 100,
+            max_characters: 1000,
+            overlap: 100,
             ..Default::default()
         }),
 

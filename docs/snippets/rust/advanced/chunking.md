@@ -4,8 +4,8 @@ use kreuzberg::{ChunkingConfig, EmbeddingConfig, EmbeddingModelType, ExtractionC
 fn main() {
     let config = ExtractionConfig {
         chunking: Some(ChunkingConfig {
-            max_chars: 1500,
-            max_overlap: 200,
+            max_characters: 1500,
+            overlap: 200,
             embedding: Some(EmbeddingConfig {
                 model: EmbeddingModelType::Preset {
                     name: "text-embedding-all-minilm-l6-v2".to_string(),

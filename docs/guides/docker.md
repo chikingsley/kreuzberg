@@ -36,7 +36,7 @@ Kreuzberg offers two Docker image variants optimized for different use cases:
 
 **Included Features:**
 - All Core image features
-- LibreOffice 25.8.2 for legacy format conversion
+- LibreOffice 25.8.4 for legacy format conversion
 
 **Additional Formats:**
 - Legacy Word (.doc)
@@ -315,7 +315,7 @@ spec:
         - name: RUST_LOG
           value: "info"
         - name: TESSDATA_PREFIX
-          value: "/usr/share/tesseract-ocr/4.00/tessdata"
+          value: "/usr/share/tesseract-ocr/5/tessdata"
         args: ["serve", "--host", "0.0.0.0", "--port", "8000"]
         livenessProbe:
           httpGet:
@@ -363,7 +363,7 @@ kubectl apply -f kreuzberg-deployment.yaml
 ```
 
 !!! important "Kubernetes-Specific Configuration"
-    This quick example includes the critical `TESSDATA_PREFIX` environment variable needed for OCR. For production deployments with custom configurations, permissions handling, and health checks, refer to the [comprehensive Kubernetes guide](kubernetes.md).
+    This quick example includes the critical `TESSDATA_PREFIX` environment variable needed for OCR. The path `/usr/share/tesseract-ocr/5/tessdata` is for Tesseract 5.x (shipped with Debian Trixie). If using a different base image, verify your Tesseract version with `tesseract --version` and adjust the path accordingly. For production deployments with custom configurations, permissions handling, and health checks, refer to the [comprehensive Kubernetes guide](kubernetes.md).
 
 ### Environment Variables
 
@@ -440,7 +440,7 @@ docker run -v $(pwd)/documents:/data:ro \
 | **Tesseract OCR** | ✅ 12 languages | ✅ 12 languages | - |
 | **pdfium** | ✅ | ✅ | - |
 | **Modern Office** | ✅ DOCX, PPTX, XLSX | ✅ DOCX, PPTX, XLSX | - |
-| **Legacy Office** | ❌ | ✅ DOC, PPT, XLS | LibreOffice 25.8.2 |
+| **Legacy Office** | ❌ | ✅ DOC, PPT, XLS | LibreOffice 25.8.4 |
 | **Pull Time** | ~30s | ~45s | ~15s slower |
 | **Startup Time** | ~1s | ~1s | Negligible |
 

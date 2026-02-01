@@ -69,6 +69,7 @@ Extract text from uploaded files via multipart form data.
 - **Fields:**
     - `files` (required, repeatable): Files to extract
     - `config` (optional): JSON configuration overrides
+    - `output_format` (optional): Output format for extracted text - `plain`, `markdown`, `djot`, or `html` (default: `plain`)
 
 **Response:** JSON array of extraction results
 
@@ -85,6 +86,11 @@ curl -F "files=@doc1.pdf" -F "files=@doc2.docx" \
 # Extract with custom OCR configuration override
 curl -F "files=@scanned.pdf" \
      -F 'config={"ocr":{"language":"eng"},"force_ocr":true}' \
+  http://localhost:8000/extract
+
+# Extract with markdown output format
+curl -F "files=@document.pdf" \
+     -F "output_format=markdown" \
   http://localhost:8000/extract
 ```
 
@@ -356,9 +362,33 @@ curl http://localhost:8000/health
 ```json title="Response"
 {
   "status": "healthy",
-  "version": "4.0.0-rc.1"
+  "version": "4.2.7"
 }
 ```
+
+**Extended Response (with plugins):**
+
+The response may optionally include a `plugins` object containing information about loaded plugins and backends:
+
+```json title="Response with Plugins"
+{
+  "status": "healthy",
+  "version": "4.2.7",
+  "plugins": {
+    "ocr_backends_count": 2,
+    "ocr_backends": ["tesseract"],
+    "extractors_count": 15,
+    "post_processors_count": 3
+  }
+}
+```
+
+**Plugin Object Fields:**
+
+- `ocr_backends_count`: Number of available OCR backends
+- `ocr_backends`: List of loaded OCR backend names
+- `extractors_count`: Number of available document extractors
+- `post_processors_count`: Number of active post-processors
 
 #### GET /info
 
@@ -375,10 +405,22 @@ curl http://localhost:8000/info
 
 ```json title="Response"
 {
-  "version": "4.0.0-rc.1",
+  "version": "4.2.7",
   "rust_backend": true
 }
 ```
+
+#### GET /openapi.json
+
+Returns the OpenAPI 3.0 schema for the API server.
+
+**Example:**
+
+```bash title="Terminal"
+curl http://localhost:8000/openapi.json
+```
+
+The response is a complete OpenAPI 3.0 specification document describing all available endpoints, request/response formats, and schemas.
 
 #### GET /cache/stats
 

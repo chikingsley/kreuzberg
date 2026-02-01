@@ -11,12 +11,14 @@ Primary extraction result containing document content, metadata, and structured 
 ```rust title="extraction_result.rs"
 pub struct ExtractionResult {
     pub content: String,
-    pub mime_type: String,
+    pub mime_type: Cow<'static, str>,  // Serializes as String
     pub metadata: Metadata,
     pub tables: Vec<Table>,
     pub detected_languages: Option<Vec<String>>,
     pub chunks: Option<Vec<Chunk>>,
     pub images: Option<Vec<ExtractedImage>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub djot_content: Option<DjotContent>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pages: Option<Vec<PageContent>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -36,6 +38,7 @@ class ExtractionResult(TypedDict):
     detected_languages: list[str] | None
     chunks: list[Chunk] | None
     images: list[ExtractedImage] | None
+    djot_content: DjotContent | None
     pages: list[PageContent] | None
     elements: list[Element] | None
 ```
@@ -51,6 +54,7 @@ export interface ExtractionResult {
     detectedLanguages: string[] | null;
     chunks: Chunk[] | null;
     images: ExtractedImage[] | null;
+    djotContent?: DjotContent;
     pages?: PageContent[];
     elements?: Element[];
 }
@@ -61,7 +65,7 @@ export interface ExtractionResult {
 ```ruby title="extraction_result.rb"
 class Kreuzberg::Result
     attr_reader :content, :mime_type, :metadata, :tables
-    attr_reader :detected_languages, :chunks, :images, :pages, :elements
+    attr_reader :detected_languages, :chunks, :images, :djot_content, :pages, :elements
 end
 ```
 
@@ -76,6 +80,7 @@ public record ExtractionResult(
     List<String> detectedLanguages,
     List<Chunk> chunks,
     List<ExtractedImage> images,
+    DjotContent djotContent,
     List<PageContent> pages,
     List<Element> elements
 ) {}
@@ -92,6 +97,7 @@ type ExtractionResult struct {
     DetectedLanguages []string         `json:"detected_languages,omitempty"`
     Chunks            []Chunk          `json:"chunks,omitempty"`
     Images            []ExtractedImage `json:"images,omitempty"`
+    DjotContent       *DjotContent     `json:"djot_content,omitempty"`
     Pages             []PageContent    `json:"pages,omitempty"`
     Elements          []Element        `json:"elements,omitempty"`
 }
@@ -1948,11 +1954,13 @@ pub struct Chunk {
 }
 
 pub struct ChunkMetadata {
-    pub char_start: usize,
-    pub char_end: usize,
+    pub byte_start: usize,
+    pub byte_end: usize,
     pub token_count: Option<usize>,
     pub chunk_index: usize,
     pub total_chunks: usize,
+    pub first_page: Option<usize>,
+    pub last_page: Option<usize>,
 }
 ```
 
@@ -1960,11 +1968,13 @@ pub struct ChunkMetadata {
 
 ```python title="chunk.py"
 class ChunkMetadata(TypedDict):
-    char_start: int
-    char_end: int
+    byte_start: int
+    byte_end: int
     token_count: int | None
     chunk_index: int
     total_chunks: int
+    first_page: int | None
+    last_page: int | None
 
 class Chunk(TypedDict, total=False):
     content: str
@@ -1976,11 +1986,13 @@ class Chunk(TypedDict, total=False):
 
 ```typescript title="chunk.ts"
 export interface ChunkMetadata {
-    charStart: number;
-    charEnd: number;
+    byteStart: number;
+    byteEnd: number;
     tokenCount?: number | null;
     chunkIndex: number;
     totalChunks: number;
+    firstPage?: number | null;
+    lastPage?: number | null;
 }
 
 export interface Chunk {
@@ -1994,8 +2006,8 @@ export interface Chunk {
 
 ```ruby title="chunk.rb"
 Kreuzberg::Result::Chunk = Struct.new(
-    :content, :char_start, :char_end, :token_count,
-    :chunk_index, :total_chunks, :embedding,
+    :content, :byte_start, :byte_end, :token_count,
+    :chunk_index, :total_chunks, :first_page, :last_page, :embedding,
     keyword_init: true
 )
 ```
@@ -2004,11 +2016,13 @@ Kreuzberg::Result::Chunk = Struct.new(
 
 ```java title="Chunk.java"
 public record ChunkMetadata(
-    int charStart,
-    int charEnd,
+    int byteStart,
+    int byteEnd,
     Optional<Integer> tokenCount,
     int chunkIndex,
-    int totalChunks
+    int totalChunks,
+    Optional<Integer> firstPage,
+    Optional<Integer> lastPage
 ) {}
 
 public record Chunk(
@@ -2022,11 +2036,13 @@ public record Chunk(
 
 ```go title="chunk.go"
 type ChunkMetadata struct {
-    CharStart   int  `json:"char_start"`
-    CharEnd     int  `json:"char_end"`
+    ByteStart   int  `json:"byte_start"`
+    ByteEnd     int  `json:"byte_end"`
     TokenCount  *int `json:"token_count,omitempty"`
     ChunkIndex  int  `json:"chunk_index"`
     TotalChunks int  `json:"total_chunks"`
+    FirstPage   *int `json:"first_page,omitempty"`
+    LastPage    *int `json:"last_page,omitempty"`
 }
 
 type Chunk struct {
@@ -2043,9 +2059,12 @@ Binary image data extracted from documents with format metadata, dimensions, col
 ### Rust
 
 ```rust title="extracted_image.rs"
+use bytes::Bytes;
+use std::borrow::Cow;
+
 pub struct ExtractedImage {
-    pub data: Vec<u8>,
-    pub format: String,
+    pub data: Bytes,
+    pub format: Cow<'static, str>,
     pub image_index: usize,
     pub page_number: Option<usize>,
     pub width: Option<u32>,
@@ -2057,6 +2076,11 @@ pub struct ExtractedImage {
     pub ocr_result: Option<Box<ExtractionResult>>,
 }
 ```
+
+**Field notes:**
+- `data`: Uses `Bytes` for cheap cloning of large image buffers
+- `format`: Uses `Cow<'static, str>` to avoid allocation for static format literals (e.g., "jpeg", "png"). In serialized JSON, appears as a regular string.
+- All other fields serialize as expected for their types
 
 ### Python
 
@@ -2334,8 +2358,10 @@ Text chunking configuration for RAG pipelines with character limits, overlap con
 
 ```rust title="chunking_config.rs"
 pub struct ChunkingConfig {
-    pub max_chars: usize,
-    pub max_overlap: usize,
+    pub max_characters: usize,     // default: 1000, serde alias: "max_chars"
+    pub overlap: usize,              // default: 200, serde alias: "max_overlap"
+    pub trim: bool,                  // default: true
+    pub chunker_type: ChunkerType,   // default: ChunkerType::Text
     pub embedding: Option<EmbeddingConfig>,
     pub preset: Option<String>,
 }
@@ -2346,8 +2372,10 @@ pub struct ChunkingConfig {
 ```python title="chunking_config.py"
 @dataclass
 class ChunkingConfig:
-    max_chars: int = 1000
-    max_overlap: int = 200
+    max_characters: int = 1000
+    overlap: int = 200
+    trim: bool = True
+    chunker_type: ChunkerType = ChunkerType.TEXT
     embedding: EmbeddingConfig | None = None
     preset: str | None = None
 ```
@@ -2356,8 +2384,10 @@ class ChunkingConfig:
 
 ```typescript title="chunking_config.ts"
 export interface ChunkingConfig {
-    maxChars?: number;
-    maxOverlap?: number;
+    maxCharacters?: number;
+    overlap?: number;
+    trim?: boolean;
+    chunkerType?: ChunkerType;
     embedding?: EmbeddingConfig;
     preset?: string;
 }
@@ -2367,8 +2397,10 @@ export interface ChunkingConfig {
 
 ```java title="ChunkingConfig.java"
 public record ChunkingConfig(
-    int maxChars,
-    int maxOverlap,
+    int maxCharacters,
+    int overlap,
+    boolean trim,
+    ChunkerType chunkerType,
     Optional<EmbeddingConfig> embedding,
     Optional<String> preset
 ) {}
@@ -2378,11 +2410,74 @@ public record ChunkingConfig(
 
 ```go title="chunking_config.go"
 type ChunkingConfig struct {
-    MaxChars   int
-    MaxOverlap int
-    Embedding  *EmbeddingConfig
-    Preset     *string
+    MaxCharacters int              `json:"max_characters"`
+    Overlap       int              `json:"overlap"`
+    Trim          bool             `json:"trim"`
+    ChunkerType   ChunkerType      `json:"chunker_type"`
+    Embedding     *EmbeddingConfig `json:"embedding,omitempty"`
+    Preset        *string          `json:"preset,omitempty"`
 }
+```
+
+### ChunkerType
+
+Chunking strategy type for text processing.
+
+#### Rust
+
+```rust title="chunker_type.rs"
+#[derive(Default)]
+pub enum ChunkerType {
+    #[default]
+    Text,
+    Markdown,
+}
+```
+
+#### Python
+
+```python title="chunker_type.py"
+from enum import Enum
+
+class ChunkerType(str, Enum):
+    TEXT = "text"
+    MARKDOWN = "markdown"
+```
+
+#### TypeScript
+
+```typescript title="chunker_type.ts"
+export type ChunkerType = "text" | "markdown";
+```
+
+#### Java
+
+```java title="ChunkerType.java"
+public enum ChunkerType {
+    TEXT("text"),
+    MARKDOWN("markdown");
+
+    private final String value;
+
+    ChunkerType(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
+```
+
+#### Go
+
+```go title="chunker_type.go"
+type ChunkerType string
+
+const (
+    ChunkerTypeText     ChunkerType = "text"
+    ChunkerTypeMarkdown ChunkerType = "markdown"
+)
 ```
 
 ### EmbeddingConfig
@@ -4010,6 +4105,62 @@ export interface Element {
 }
 ```
 
+## ElementId
+
+Unique identifier for semantic elements. A newtype wrapper around a string that provides deterministic, content-based identification for elements.
+
+### Rust
+
+```rust title="element_id.rs"
+pub struct ElementId(String);
+```
+
+In Rust, ElementId is a newtype wrapper providing type safety. It is serialized/deserialized as a plain string in JSON.
+
+### Python
+
+```python title="element_id.py"
+# ElementId is represented as a plain string in Python
+element_id: str
+```
+
+### TypeScript
+
+```typescript title="element_id.ts"
+// ElementId is represented as a plain string in TypeScript
+type ElementId = string;
+```
+
+### Ruby
+
+```ruby title="element_id.rb"
+# ElementId is represented as a plain string in Ruby
+element_id # => String
+```
+
+### Java
+
+```java title="ElementId.java"
+// ElementId is represented as a String in Java
+String elementId;
+```
+
+### Go
+
+```go title="element_id.go"
+// ElementId is represented as a string in Go
+type ElementID string
+```
+
+### C#
+
+```csharp title="ElementId.cs"
+// ElementId is represented as a string in C#
+string ElementId { get; }
+```
+
+ElementId values are deterministically generated from element type, content, and page number, ensuring stable identifiers across extraction runs.
+
 ## ElementType
 
 Enumeration of semantic element types extracted from documents.
@@ -4222,8 +4373,8 @@ pub struct ElementMetadata {
     pub page_number: Option<usize>,
     pub filename: Option<String>,
     pub coordinates: Option<BoundingBox>,
-    pub element_index: usize,
-    pub additional: HashMap<String, serde_json::Value>,
+    pub element_index: Option<usize>,
+    pub additional: HashMap<String, String>,
 }
 ```
 
@@ -4235,19 +4386,19 @@ class ElementMetadata(TypedDict, total=False):
     page_number: int | None
     filename: str | None
     coordinates: BoundingBox | None
-    element_index: int
-    additional: dict[str, Any]
+    element_index: int | None
+    additional: dict[str, str]
 ```
 
 ### TypeScript
 
 ```typescript title="element_metadata.ts"
 export interface ElementMetadata {
-    pageNumber?: number;
-    filename?: string;
-    coordinates?: BoundingBox;
-    elementIndex: number;
-    additional?: Record<string, any>;
+    pageNumber?: number | null;
+    filename?: string | null;
+    coordinates?: BoundingBox | null;
+    elementIndex?: number | null;
+    additional?: Record<string, string>;
 }
 ```
 
@@ -4267,8 +4418,8 @@ public record ElementMetadata(
     Integer pageNumber,
     String filename,
     BoundingBox coordinates,
-    int elementIndex,
-    Map<String, Object> additional
+    Integer elementIndex,
+    Map<String, String> additional
 ) {}
 ```
 
@@ -4276,11 +4427,11 @@ public record ElementMetadata(
 
 ```go title="element_metadata.go"
 type ElementMetadata struct {
-    PageNumber   *int                   `json:"page_number,omitempty"`
-    Filename     *string                `json:"filename,omitempty"`
-    Coordinates  *BoundingBox           `json:"coordinates,omitempty"`
-    ElementIndex int                    `json:"element_index"`
-    Additional   map[string]interface{} `json:"additional,omitempty"`
+    PageNumber   *int               `json:"page_number,omitempty"`
+    Filename     *string            `json:"filename,omitempty"`
+    Coordinates  *BoundingBox       `json:"coordinates,omitempty"`
+    ElementIndex *int               `json:"element_index,omitempty"`
+    Additional   map[string]string  `json:"additional,omitempty"`
 }
 ```
 
@@ -4291,8 +4442,8 @@ public record ElementMetadata(
     int? PageNumber,
     string? Filename,
     BoundingBox? Coordinates,
-    int ElementIndex,
-    Dictionary<string, object>? Additional
+    int? ElementIndex,
+    Dictionary<string, string>? Additional
 );
 ```
 
@@ -4303,8 +4454,8 @@ class ElementMetadata {
     public ?int $pageNumber;
     public ?string $filename;
     public ?BoundingBox $coordinates;
-    public int $elementIndex;
-    public array $additional;
+    public ?int $elementIndex;
+    public array $additional; // array<string, string>
 }
 ```
 
@@ -4316,8 +4467,8 @@ defmodule Kreuzberg.ElementMetadata do
     page_number: integer() | nil,
     filename: String.t() | nil,
     coordinates: Kreuzberg.BoundingBox.t() | nil,
-    element_index: integer(),
-    additional: map()
+    element_index: integer() | nil,
+    additional: %{optional(String.t()) => String.t()}
   }
 
   defstruct [:page_number, :filename, :coordinates, :element_index, :additional]
@@ -4328,11 +4479,11 @@ end
 
 ```typescript title="element_metadata.ts"
 export interface ElementMetadata {
-    pageNumber?: number;
-    filename?: string;
-    coordinates?: BoundingBox;
-    elementIndex: number;
-    additional?: Record<string, any>;
+    pageNumber?: number | null;
+    filename?: string | null;
+    coordinates?: BoundingBox | null;
+    elementIndex?: number | null;
+    additional?: Record<string, string>;
 }
 ```
 
@@ -4344,10 +4495,10 @@ Rectangular bounding box coordinates for element positioning. Coordinates are in
 
 ```rust title="bounding_box.rs"
 pub struct BoundingBox {
-    pub left: f32,
-    pub top: f32,
-    pub right: f32,
-    pub bottom: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub x1: f64,
+    pub y1: f64,
 }
 ```
 
@@ -4356,20 +4507,20 @@ pub struct BoundingBox {
 ```python title="bounding_box.py"
 class BoundingBox(TypedDict):
     """Rectangular bounding box coordinates."""
-    left: float
-    top: float
-    right: float
-    bottom: float
+    x0: float
+    y0: float
+    x1: float
+    y1: float
 ```
 
 ### TypeScript
 
 ```typescript title="bounding_box.ts"
 export interface BoundingBox {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
 }
 ```
 
@@ -4377,7 +4528,7 @@ export interface BoundingBox {
 
 ```ruby title="bounding_box.rb"
 class Kreuzberg::BoundingBox
-    attr_reader :left, :top, :right, :bottom
+    attr_reader :x0, :y0, :x1, :y1
 end
 ```
 
@@ -4385,10 +4536,10 @@ end
 
 ```java title="BoundingBox.java"
 public record BoundingBox(
-    float left,
-    float top,
-    float right,
-    float bottom
+    double x0,
+    double y0,
+    double x1,
+    double y1
 ) {}
 ```
 
@@ -4396,10 +4547,10 @@ public record BoundingBox(
 
 ```go title="bounding_box.go"
 type BoundingBox struct {
-    Left   float32 `json:"left"`
-    Top    float32 `json:"top"`
-    Right  float32 `json:"right"`
-    Bottom float32 `json:"bottom"`
+    X0 float64 `json:"x0"`
+    Y0 float64 `json:"y0"`
+    X1 float64 `json:"x1"`
+    Y1 float64 `json:"y1"`
 }
 ```
 
@@ -4407,10 +4558,10 @@ type BoundingBox struct {
 
 ```csharp title="BoundingBox.cs"
 public record BoundingBox(
-    float Left,
-    float Top,
-    float Right,
-    float Bottom
+    double X0,
+    double Y0,
+    double X1,
+    double Y1
 );
 ```
 
@@ -4418,10 +4569,10 @@ public record BoundingBox(
 
 ```php title="BoundingBox.php"
 class BoundingBox {
-    public float $left;
-    public float $top;
-    public float $right;
-    public float $bottom;
+    public float $x0;
+    public float $y0;
+    public float $x1;
+    public float $y1;
 }
 ```
 
@@ -4430,13 +4581,13 @@ class BoundingBox {
 ```elixir title="bounding_box.ex"
 defmodule Kreuzberg.BoundingBox do
   @type t :: %__MODULE__{
-    left: float(),
-    top: float(),
-    right: float(),
-    bottom: float()
+    x0: float(),
+    y0: float(),
+    x1: float(),
+    y1: float()
   }
 
-  defstruct [:left, :top, :right, :bottom]
+  defstruct [:x0, :y0, :x1, :y1]
 end
 ```
 
@@ -4444,16 +4595,18 @@ end
 
 ```typescript title="bounding_box.ts"
 export interface BoundingBox {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
 }
 ```
 
-## OutputFormat
+## OutputFormat (Result Structure)
 
 Output format selection for extraction results. Controls whether results are returned in unified format (default) or element-based format (Unstructured.io compatible).
+
+**Note:** This is used by the `result_format` configuration field. For content format options (Plain/Markdown/Djot/Html), see [ContentFormat](#contentformat-output-format).
 
 ### Rust
 
@@ -4563,3 +4716,92 @@ export type OutputFormat = "unified" | "element_based" | "elements";
 - `unified` (default): Returns complete document text in `content` field with metadata, tables, images, and optional pages
 - `element_based` or `elements`: Returns array of semantic elements in `elements` field (Unstructured.io compatible)
 - Both formats can coexist: enabling `element_based` populates `elements` while maintaining `content`, `tables`, etc.
+
+## ContentFormat (Output Format)
+
+Content format selection for extracted text. Controls whether extracted content is returned as plain text, Markdown, Djot, or HTML.
+
+**Note:** This is used by the `output_format` configuration field. For result structure options (Unified/ElementBased), see [OutputFormat (Result Structure)](#outputformat-result-structure).
+
+### Rust
+
+```rust title="content_format.rs"
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutputFormat {
+    #[default]
+    Plain,
+    Markdown,
+    Djot,
+    Html,
+}
+```
+
+### Python
+
+```python title="content_format.py"
+from typing import Literal
+
+ContentFormat = Literal["plain", "markdown", "djot", "html"]
+```
+
+### TypeScript
+
+```typescript title="content_format.ts"
+export type ContentFormat = "plain" | "markdown" | "djot" | "html";
+```
+
+### Java
+
+```java title="ContentFormat.java"
+public enum ContentFormat {
+    PLAIN("plain"),
+    MARKDOWN("markdown"),
+    DJOT("djot"),
+    HTML("html");
+
+    private final String value;
+
+    ContentFormat(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
+```
+
+### Go
+
+```go title="content_format.go"
+type ContentFormat string
+
+const (
+    ContentFormatPlain    ContentFormat = "plain"
+    ContentFormatMarkdown ContentFormat = "markdown"
+    ContentFormatDjot     ContentFormat = "djot"
+    ContentFormatHtml     ContentFormat = "html"
+)
+```
+
+### Ruby
+
+```ruby title="content_format.rb"
+module Kreuzberg
+    module ContentFormat
+        PLAIN = 'plain'
+        MARKDOWN = 'markdown'
+        DJOT = 'djot'
+        HTML = 'html'
+    end
+end
+```
+
+**Usage Notes:**
+
+- `plain` (default): Returns plain text content
+- `markdown`: Returns content formatted as Markdown
+- `djot`: Returns content formatted as Djot (lightweight markup format)
+- `html`: Returns content as HTML
+- When `djot` is selected and the document is in Djot format, the `djot_content` field on `ExtractionResult` will be populated with structured Djot AST data

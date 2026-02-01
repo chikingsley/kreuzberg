@@ -11,8 +11,8 @@ config = %ExtractionConfig{
     "preprocessing" => true
   },
   chunking: %{
-    "max_chars" => 2000,
-    "max_overlap" => 200
+    "max_characters" => 2000,
+    "overlap" => 200
   },
   use_cache: true,
   force_ocr: false

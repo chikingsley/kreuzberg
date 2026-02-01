@@ -21,8 +21,8 @@ let config = ExtractionConfig {
     }),
 
     chunking: Some(ChunkingConfig {
-        max_chars: 512,
-        max_overlap: 50,
+        max_characters: 512,
+        overlap: 50,
         embedding: Some(EmbeddingConfig {
             model: kreuzberg::EmbeddingModelType::Preset { name: "balanced".to_string() },
             normalize: true,

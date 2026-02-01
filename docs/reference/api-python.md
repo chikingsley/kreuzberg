@@ -487,9 +487,10 @@ Text chunking configuration for splitting long documents.
 
 **Fields:**
 
-- `chunk_size` (int): Maximum chunk size in tokens. Default: 512
-- `chunk_overlap` (int): Overlap between chunks in tokens. Default: 50
-- `chunking_strategy` (str): Chunking strategy. Options: "fixed", "semantic". Default: "fixed"
+- `max_chars` (int): Maximum characters per chunk. Default: 1000
+- `max_overlap` (int): Overlap between chunks in characters. Default: 200
+- `embedding` (EmbeddingConfig | None): Embedding configuration for generating embeddings. Default: None
+- `preset` (str | None): Chunking preset to use. Default: None
 
 **Example:**
 
@@ -497,9 +498,8 @@ Text chunking configuration for splitting long documents.
 from kreuzberg import ChunkingConfig
 
 chunking_config = ChunkingConfig(
-    chunk_size=1024,
-    chunk_overlap=100,
-    chunking_strategy="semantic"
+    max_chars=1000,
+    max_overlap=200
 )
 ```
 
@@ -800,7 +800,7 @@ class ChunkMetadata(TypedDict, total=False):
 from kreuzberg import extract_file_sync, ExtractionConfig, ChunkingConfig, PageConfig
 
 config = ExtractionConfig(
-    chunking=ChunkingConfig(chunk_size=500, overlap=50),
+    chunking=ChunkingConfig(max_chars=500, max_overlap=50),
     pages=PageConfig(extract_pages=True)
 )
 

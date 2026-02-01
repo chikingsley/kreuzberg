@@ -1,6 +1,6 @@
 # Format Support
 
-Kreuzberg supports 57 file formats across major categories, providing comprehensive document intelligence capabilities through native Rust extractors and LibreOffice conversion.
+Kreuzberg supports 50+ file formats across major categories, providing comprehensive document intelligence capabilities through native Rust extractors and LibreOffice conversion.
 
 ## Overview
 

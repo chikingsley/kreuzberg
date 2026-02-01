@@ -15,7 +15,7 @@ end
 
 IO.puts("Configuration Source: #{if File.exists?(config_path), do: "#{config_path} (file)", else: "defaults"}")
 IO.puts("OCR Enabled: #{inspect(config.ocr["enabled"])}")
-IO.puts("Chunking Max Chars: #{inspect(config.chunking["max_chars"])}")
+IO.puts("Chunking Max Characters: #{inspect(config.chunking["max_characters"])}")
 IO.puts("Use Cache: #{inspect(config.use_cache)}")
 
 {:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)

@@ -67,7 +67,7 @@ Document titles and headings with optional hierarchy metadata.
     "element_index": 0,
     "additional": {
       "level": "h1",
-      "font_size": "24.0"
+      "font_size": "24"
     }
   }
 }
@@ -124,7 +124,7 @@ Individual list items (bullets, numbered, lettered, or indented).
     "additional": {
       "list_type": "bullet",
       "list_marker": "•",
-      "indent_level": 0
+      "indent_level": "0"
     }
   }
 }
@@ -155,8 +155,8 @@ Tabular data extracted from documents.
     "page_number": 3,
     "element_index": 7,
     "additional": {
-      "row_count": 3,
-      "column_count": 3,
+      "row_count": "3",
+      "column_count": "3",
       "format": "markdown"
     }
   }
@@ -191,8 +191,8 @@ Images and visual content with metadata.
     "element_index": 9,
     "additional": {
       "format": "png",
-      "width": 800,
-      "height": 600,
+      "width": "800",
+      "height": "600",
       "alt_text": "Neural network architecture diagram"
     }
   }
@@ -219,7 +219,7 @@ Page boundary markers in multi-page documents.
     "page_number": 1,
     "element_index": 15,
     "additional": {
-      "next_page": 2
+      "next_page": "2"
     }
   }
 }
@@ -276,7 +276,7 @@ Code snippets and programming language blocks.
     "element_index": 22,
     "additional": {
       "language": "python",
-      "line_count": 4
+      "line_count": "4"
     }
   }
 }
@@ -369,7 +369,7 @@ Every element includes a `metadata` object with the following fields:
 | `filename` | `Option<String>` | Original filename or document title | All formats |
 | `coordinates` | `Option<BoundingBox>` | Bounding box coordinates | PDF (native), OCR results |
 | `element_index` | `usize` | Zero-indexed position in element array | Always present |
-| `additional` | `Map<String, Value>` | Element-type-specific metadata | Varies by type |
+| `additional` | `Map<String, String>` | Element-type-specific metadata | Varies by type |
 
 ### BoundingBox Structure
 
@@ -378,10 +378,10 @@ When available (primarily for PDFs and OCR), coordinates are provided as:
 ```json
 {
   "coordinates": {
-    "left": 72.0,
-    "top": 100.0,
-    "right": 540.0,
-    "bottom": 130.0
+    "x0": 72.0,
+    "y0": 100.0,
+    "x1": 540.0,
+    "y1": 130.0
   }
 }
 ```
@@ -389,8 +389,8 @@ When available (primarily for PDFs and OCR), coordinates are provided as:
 **Coordinate System** (PDF coordinates):
 - Origin: Bottom-left corner of page
 - Units: Points (1/72 inch)
-- `left`, `right`: Horizontal position (left → right)
-- `top`, `bottom`: Vertical position (bottom → top)
+- `x0`, `x1`: Horizontal position (left → right)
+- `y0`, `y1`: Vertical position (bottom → top)
 
 **Note**: Some output formats may use top-left origin (e.g., HTML). Kreuzberg preserves source coordinates without transformation.
 
@@ -730,7 +730,7 @@ result = extract_file_sync("document.pdf", config=config)
 for element in result.elements:
     if element.metadata.coordinates:
         coords = element.metadata.coordinates
-        print(f"Element at ({coords.left}, {coords.top}) - ({coords.right}, {coords.bottom})")
+        print(f"Element at ({coords.x0}, {coords.y0}) - ({coords.x1}, {coords.y1})")
         print(f"  Type: {element.element_type}")
         print(f"  Text: {element.text[:30]}...")
 

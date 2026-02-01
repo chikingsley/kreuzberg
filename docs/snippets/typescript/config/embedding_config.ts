@@ -1,4 +1,4 @@
-import type { ChunkingConfig, EmbeddingConfig, ExtractionConfig } from "kreuzberg";
+import type { ChunkingConfig, EmbeddingConfig, ExtractionConfig } from "@kreuzberg/node";
 
 // Example 1: Preset model (recommended)
 // Fast, balanced, or quality preset configurations optimized for common use cases.

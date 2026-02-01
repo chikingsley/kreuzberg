@@ -21,13 +21,13 @@ flowchart TD
     TextBoundaries --> CreateChunks
 
     CreateChunks --> Config[Apply ChunkingConfig]
-    Config --> MaxChars[max_chars: Max size]
-    Config --> Overlap[max_overlap: Overlap]
+    Config --> MaxChars[max_characters: Max size]
+    Config --> Overlap[overlap: Overlap]
 
     MaxChars --> FinalChunks[Final Chunks]
     Overlap --> FinalChunks
 
-    FinalChunks --> Metadata[Add Metadata:<br/>- char_start/end<br/>- chunk_index<br/>- total_chunks<br/>- token_count]
+    FinalChunks --> Metadata[Add Metadata:<br/>- byte_start/end<br/>- chunk_index<br/>- total_chunks<br/>- token_count]
 
     Metadata --> Embeddings{Generate<br/>Embeddings?}
     Embeddings -->|Yes| AddEmbeddings[Add Embedding Vectors]
@@ -90,8 +90,8 @@ Each chunk includes:
 
 - `content`: The chunk text
 - `metadata`:
-  - `char_start`: Start position in original text
-  - `char_end`: End position in original text
+  - `byte_start`: Start position in original text
+  - `byte_end`: End position in original text
   - `chunk_index`: Zero-based chunk number
   - `total_chunks`: Total number of chunks
   - `token_count`: Token count (if embeddings enabled)
@@ -308,8 +308,8 @@ Generate embeddings for vector databases, semantic search, and RAG systems using
 | **quality** | BGELargeENV15 | 1024 | 2000 | Maximum accuracy, complex docs |
 | **multilingual** | MultilingualE5Base | 768 | 1024 | 100+ languages, international |
 
-!!! note "Max Tokens vs. max_chars"
-    The "Max Tokens" values shown are the model's maximum token limits. These don't directly correspond to the `max_chars` setting in `ChunkingConfig`, which controls character-based chunking. The embedding model will process chunks up to its token limit.
+!!! note "Max Tokens vs. max_characters"
+    The "Max Tokens" values shown are the model's maximum token limits. These don't directly correspond to the `max_characters` setting in `ChunkingConfig`, which controls character-based chunking. The embedding model will process chunks up to its token limit.
 
 ### Configuration
 

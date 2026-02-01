@@ -551,17 +551,19 @@ Text chunking configuration for splitting long documents.
 
 ```typescript title="TypeScript"
 interface ChunkingConfig {
-  chunkSize?: number;
-  chunkOverlap?: number;
-  chunkingStrategy?: string;
+  maxChars?: number;
+  maxOverlap?: number;
+  embedding?: EmbeddingConfig | null;
+  preset?: string | null;
 }
 ```
 
 **Fields:**
 
-- `chunkSize` (number): Maximum chunk size in tokens. Default: 512
-- `chunkOverlap` (number): Overlap between chunks in tokens. Default: 50
-- `chunkingStrategy` (string): Chunking strategy. Options: "fixed", "semantic". Default: "fixed"
+- `maxChars` (number): Maximum characters per chunk. Default: 1000
+- `maxOverlap` (number): Overlap between chunks in characters. Default: 200
+- `embedding` (EmbeddingConfig | null): Embedding configuration for generating embeddings. Default: null
+- `preset` (string | null): Chunking preset to use. Default: null
 
 ---
 

@@ -10,8 +10,8 @@ config = %ExtractionConfig{
     "flatten_forms" => true
   },
   chunking: %{
-    "max_chars" => 1500,
-    "max_overlap" => 150
+    "max_characters" => 1500,
+    "overlap" => 150
   },
   use_cache: true
 }

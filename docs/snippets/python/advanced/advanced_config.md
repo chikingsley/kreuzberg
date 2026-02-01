@@ -10,7 +10,7 @@ from kreuzberg import (
 
 config = ExtractionConfig(
     ocr=OcrConfig(backend="tesseract", language="eng+deu"),
-    chunking=ChunkingConfig(max_chars=1000, max_overlap=100),
+    chunking=ChunkingConfig(max_characters=1000, overlap=100),
     token_reduction=TokenReductionConfig(enabled=True),
     language_detection=LanguageDetectionConfig(
         enabled=True, detect_multiple=True

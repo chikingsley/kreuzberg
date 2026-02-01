@@ -54,8 +54,8 @@ embedding_config = EmbeddingConfig(
 # Integration with ChunkingConfig
 # Add embeddings to your chunking configuration:
 chunking_with_embeddings = ChunkingConfig(
-    max_chars=1024,
-    max_overlap=100,
+    max_characters=1024,
+    overlap=100,
     preset="balanced",
     embedding=EmbeddingConfig(),  # Uses balanced preset
 )

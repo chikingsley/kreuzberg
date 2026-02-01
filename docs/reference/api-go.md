@@ -586,15 +586,16 @@ Configure text chunking for RAG and retrieval workloads.
 
 ```go title="Go"
 type ChunkingConfig struct {
-	MaxChars     *int             // Maximum characters per chunk
-	MaxOverlap   *int             // Overlap between chunks
-	ChunkSize    *int             // Alias for MaxChars
-	ChunkOverlap *int             // Alias for MaxOverlap
-	Preset       *string          // Preset: "semantic", "sliding", "recursive"
-	Embedding    *EmbeddingConfig // Embedding generation
-	Enabled      *bool            // Enable chunking
+	MaxChars     *int    // Maximum characters per chunk
+	MaxOverlap   *int    // Overlap between chunks in characters
+	ChunkSize    *int    // Deprecated: use MaxChars instead
+	ChunkOverlap *int    // Deprecated: use MaxOverlap instead
+	Preset       *string // Chunking preset name
+	Enabled      *bool   // Enable chunking (default: true)
 }
 ```
+
+**Note:** The Go binding maintains both `MaxChars`/`MaxOverlap` (recommended) and `ChunkSize`/`ChunkOverlap` (deprecated) for backward compatibility. New code should use `MaxChars` and `MaxOverlap`.
 
 ---
 

@@ -56,8 +56,8 @@ embedding_config = Kreuzberg::EmbeddingConfig.new(
 # Integration with ChunkingConfig
 # Add embeddings to your chunking configuration:
 chunking_config = Kreuzberg::ChunkingConfig.new(
-  max_chars: 1024,
-  max_overlap: 100,
+  max_characters: 1024,
+  overlap: 100,
   preset: "balanced",
   embedding: Kreuzberg::EmbeddingConfig.new(
     model: { type: :preset, name: "balanced" },

@@ -309,7 +309,7 @@ Customize extraction behavior:
     language = "eng"
 
     [chunking]
-    max_chunk_size = 1000
+    max_characters = 1000
     overlap = 100
 
     [language_detection]
@@ -328,7 +328,7 @@ Customize extraction behavior:
       language: eng
 
     chunking:
-      max_chunk_size: 1000
+      max_characters: 1000
       overlap: 100
 
     language_detection:

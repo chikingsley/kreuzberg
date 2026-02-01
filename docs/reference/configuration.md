@@ -19,7 +19,7 @@ This reference page is the comprehensive source for:
 
 ## ServerConfig
 
-**NEW in v4.0.0**: The ServerConfig controls API server and network settings.
+**NEW in v4.2.7**: The ServerConfig controls API server and network settings.
 
 API server configuration for the Kreuzberg HTTP server, including host/port settings, CORS configuration, and upload size limits. All settings can be overridden via environment variables.
 
@@ -246,9 +246,36 @@ Main extraction configuration controlling all aspects of document processing.
 | `postprocessor` | `PostProcessorConfig?` | `None` | Post-processing pipeline configuration |
 | `pages` | `PageConfig?` | `None` | Page extraction and tracking configuration |
 | `max_concurrent_extractions` | `int?` | `None` | Maximum concurrent batch extractions (defaults to num_cpus * 2) |
+| `result_format` | `OutputFormat` | `Unified` | Result structure format: `Unified` (content in single field) or `ElementBased` (semantic elements array) |
 | `output_format` | `OutputFormat` | `Plain` | Output format for extracted text content (Plain, Markdown, Djot, Html) |
+| `html_options` | `ConversionOptions` | `None` | HTML to Markdown conversion options (heading styles, list formatting, code block styles). Only available with `html` feature. |
 
-### OutputFormat
+### Result Format vs Output Format
+
+**Important distinction:** These two fields control different aspects of extraction results:
+
+- **`result_format`** - Controls the **structure** of the result:
+  - `Unified` (default): All content returned in the `content` field as a single string
+  - `ElementBased`: Content returned as semantic elements in the `elements` array (Unstructured-compatible format)
+
+- **`output_format`** - Controls the **text format** within the content:
+  - `Plain` (default): Raw extracted text
+  - `Markdown`: Markdown formatted output
+  - `Djot`: Djot markup format
+  - `Html`: HTML formatted output
+
+### OutputFormat (result_format field)
+
+Controls the structure of extraction results:
+
+| Value | Description |
+|-------|-------------|
+| `unified` | All content in single `content` field (default) |
+| `element_based` | Semantic elements with type classification, IDs, and metadata |
+
+When `result_format` is set to `ElementBased`, the `elements` field contains an array of semantic elements with unique identifiers, element types (title, heading, narrative_text, etc.), and metadata for Unstructured-compatible processing.
+
+### OutputFormat (output_format field)
 
 Output format for extraction content. Controls how extracted text is formatted in the result.
 
@@ -437,10 +464,14 @@ Configuration for splitting extracted text into overlapping chunks, useful for v
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `max_chars` | `int` | `1000` | Maximum characters per chunk |
-| `max_overlap` | `int` | `200` | Overlap between consecutive chunks in characters |
+| `max_characters` | `int` | `1000` | Maximum characters per chunk |
+| `overlap` | `int` | `200` | Overlap between consecutive chunks in characters |
 | `embedding` | `EmbeddingConfig?` | `None` | Optional embedding generation for each chunk |
 | `preset` | `str?` | `None` | Chunking preset: `"small"` (500/100), `"medium"` (1000/200), `"large"` (2000/400) |
+| `trim` | `bool` | `true` | Whether to trim whitespace from chunk boundaries |
+| `chunker_type` | `ChunkerType` | `Text` | Type of chunker: `Text` or `Markdown` |
+
+**Note:** `max_chars` and `max_overlap` are accepted as aliases for `max_characters` and `overlap` respectively for backwards compatibility.
 
 ### Example
 
@@ -588,8 +619,8 @@ cache_dir = "/custom/cache/path"
     // Basic embedding with default balanced preset
     let config = ExtractionConfig {
         chunking: Some(ChunkingConfig {
-            max_chars: 1000,
-            max_overlap: 200,
+            max_characters: 1000,
+            overlap: 200,
             embedding: Some(EmbeddingConfig::default()),
             preset: None,
         }),
@@ -669,8 +700,8 @@ cache_dir = "/custom/cache/path"
 
 ```toml title="kreuzberg.toml"
 [chunking]
-max_chars = 1000
-max_overlap = 200
+max_characters = 1000
+overlap = 200
 
 # Use balanced preset (default)
 [chunking.embedding]
@@ -694,8 +725,8 @@ normalize = true
 
 ```yaml title="kreuzberg.yaml"
 chunking:
-  max_chars: 1000
-  max_overlap: 200
+  max_characters: 1000
+  overlap: 200
   embedding:
     model:
       type: preset
@@ -709,8 +740,8 @@ chunking:
 ```json title="kreuzberg.json"
 {
   "chunking": {
-    "max_chars": 1000,
-    "max_overlap": 200,
+    "max_characters": 1000,
+    "overlap": 200,
     "embedding": {
       "model": {
         "type": "preset",
@@ -2093,8 +2124,8 @@ target_dpi = 200
 max_image_dimension = 4096
 
 [chunking]
-max_chars = 1000
-max_overlap = 200
+max_characters = 1000
+overlap = 200
 
 [language_detection]
 enabled = true
@@ -2145,8 +2176,8 @@ images:
   max_image_dimension: 4096
 
 chunking:
-  max_chars: 1000
-  max_overlap: 200
+  max_characters: 1000
+  overlap: 200
 
 language_detection:
   enabled: true
@@ -2196,8 +2227,8 @@ postprocessor:
     "max_image_dimension": 4096
   },
   "chunking": {
-    "max_chars": 1000,
-    "max_overlap": 200
+    "max_characters": 1000,
+    "overlap": 200
   },
   "language_detection": {
     "enabled": true,

@@ -234,7 +234,7 @@ end
 
 # Example usage
 config = %Kreuzberg.ExtractionConfig{
-  chunking: %{"enabled" => true, "max_chars" => 1000}
+  chunking: %{"enabled" => true, "max_characters" => 1000}
 }
 
 {:ok, result} = Kreuzberg.extract_file("multipage_doc.pdf", nil, config)

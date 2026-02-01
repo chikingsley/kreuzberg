@@ -12,8 +12,8 @@ config = %ExtractionConfig{
     "language" => "eng+fra+deu"
   },
   chunking: %{
-    "max_chars" => 2000,
-    "max_overlap" => 200
+    "max_characters" => 2000,
+    "overlap" => 200
   },
   language_detection: %{"enabled" => true},
   use_cache: true,

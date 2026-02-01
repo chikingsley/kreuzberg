@@ -41,8 +41,8 @@ async fn main() -> kreuzberg::Result<()> {
             ..Default::default()
         }),
         chunking: Some(ChunkingConfig {
-            max_chars: 1000,
-            max_overlap: 200,
+            max_characters: 1000,
+            overlap: 200,
             ..Default::default()
         }),
         token_reduction: Some(TokenReductionConfig {

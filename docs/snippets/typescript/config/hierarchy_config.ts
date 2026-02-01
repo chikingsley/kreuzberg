@@ -1,4 +1,4 @@
-import { type ExtractionConfig, extractFileSync, type HierarchyConfig, type PdfConfig } from "kreuzberg";
+import { type ExtractionConfig, extractFileSync, type HierarchyConfig, type PdfConfig } from "@kreuzberg/node";
 
 // Example 1: Basic hierarchy extraction
 // Enabled with default kClusters=6 for standard H1-H6 heading hierarchy.

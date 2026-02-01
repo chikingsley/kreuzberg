@@ -46,8 +46,8 @@ defmodule ConfiguredDocumentClient do
   def extract_with_chunking(path, opts \\ []) do
     config = %ExtractionConfig{
       chunking: %{
-        "max_chars" => Keyword.get(opts, :chunk_size, 1000),
-        "max_overlap" => Keyword.get(opts, :chunk_overlap, 100)
+        "max_characters" => Keyword.get(opts, :chunk_size, 1000),
+        "overlap" => Keyword.get(opts, :chunk_overlap, 100)
       }
     }
 
@@ -117,8 +117,8 @@ defmodule ConfiguredDocumentClient do
       },
       # Chunking for embeddings
       chunking: %{
-        "max_chars" => Keyword.get(opts, :chunk_size, 1000),
-        "max_overlap" => Keyword.get(opts, :chunk_overlap, 100)
+        "max_characters" => Keyword.get(opts, :chunk_size, 1000),
+        "overlap" => Keyword.get(opts, :chunk_overlap, 100)
       },
       # Language detection
       language_detection: %{"enabled" => Keyword.get(opts, :detect_language, true)},

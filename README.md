@@ -48,21 +48,19 @@
 
 <img width="3384" height="573" alt="Linkedin- Banner" src="https://github.com/user-attachments/assets/1b6c6ad7-3b6d-4171-b1c9-f2026cc9deb8" />
 
-
-
 <div align="center" style="margin-top: 20px;">
   <a href="https://discord.gg/xt9WY3GnKR">
       <img height="22" src="https://img.shields.io/badge/Discord-Join%20our%20community-7289da?logo=discord&logoColor=white" alt="Discord">
   </a>
 </div>
 
-Extract text and metadata from a wide range of file formats (57+), generate embeddings and post-process at native speeds without needing a GPU.
+Extract text and metadata from a wide range of file formats (50+), generate embeddings and post-process at native speeds without needing a GPU.
 
 ## Key Features
 
 - **Extensible architecture** – Plugin system for custom OCR backends, validators, post-processors, and document extractors
 - **Polyglot** – Native bindings for Rust, Python, TypeScript/Node.js, Ruby, Go, Java, C#, PHP, and Elixir
-- **57 file formats** – PDF, Office documents, images, HTML, XML, emails, archives, academic formats across 8 categories
+- **50+ file formats** – PDF, Office documents, images, HTML, XML, emails, archives, academic formats across 8 categories
 - **OCR support** – Tesseract (all languages via native binding), EasyOCR/PaddleOCR (Python), Guten (Node.js), extensible via plugin API
 - **High performance** – Rust core with native PDFium, SIMD optimizations and full parallelism
 - **Flexible deployment** – Use as library, CLI tool, REST API server, or MCP server
@@ -135,7 +133,7 @@ To use embeddings functionality:
 
 ## Supported Formats
 
-57 file formats across 8 major categories with intelligent format detection and comprehensive metadata extraction.
+50+ file formats across 8 major categories with intelligent format detection and comprehensive metadata extraction.
 
 ### Office Documents
 

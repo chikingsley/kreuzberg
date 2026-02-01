@@ -731,6 +731,35 @@ def main():
             r'(image: goldziher/kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(-core)?',
             rf'\g<1>{version}\g<2>',
         ),
+        # Docs: Installation guide Java Maven/Gradle versions
+        (
+            repo_root / "docs/getting-started/installation.md",
+            r'(<version>)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(</version>)',
+            rf'\g<1>{version}\g<2>',
+        ),
+        (
+            repo_root / "docs/getting-started/installation.md",
+            r"(implementation 'dev\.kreuzberg:kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(')",
+            rf"\g<1>{version}\g<2>",
+        ),
+        # Docs: Elixir API reference Hex dependency version
+        (
+            repo_root / "docs/reference/api-elixir.md",
+            r'(\{:kreuzberg, "~> )\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?("\})',
+            rf'\g<1>{version}\g<2>',
+        ),
+        # Docs: Environment variables reference header version
+        (
+            repo_root / "docs/reference/environment-variables.md",
+            r'(This document covers all KREUZBERG_\* environment variables for version )\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(\.)$',
+            rf'\g<1>{version}\g<2>',
+        ),
+        # Docs: API server guide health check response version
+        (
+            repo_root / "docs/guides/api-server.md",
+            r'("version": ")\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(")',
+            rf'\g<1>{version}\g<2>',
+        ),
         # Test app source code version references
         (
             repo_root / "tests/test_apps/rust/src/main.rs",

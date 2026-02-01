@@ -3,7 +3,7 @@ alias Kreuzberg.ExtractionConfig
 
 config = %ExtractionConfig{
   ocr: %{"enabled" => true, "backend" => "tesseract"},
-  chunking: %{"max_chars" => 1000, "max_overlap" => 100},
+  chunking: %{"max_characters" => 1000, "overlap" => 100},
   language_detection: %{"enabled" => true},
   use_cache: true,
   force_ocr: false

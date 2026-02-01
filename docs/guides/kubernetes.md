@@ -37,7 +37,7 @@ spec:
         - name: RUST_LOG
           value: "info"
         - name: TESSDATA_PREFIX
-          value: "/usr/share/tesseract-ocr/4.00/tessdata"
+          value: "/usr/share/tesseract-ocr/5/tessdata"
         resources:
           requests:
             memory: "512Mi"
@@ -96,12 +96,12 @@ Falling back to non-OCR extraction
 
 ### Built-In Tessdata (Recommended)
 
-Official images include tessdata at `/usr/share/tesseract-ocr/4.00/tessdata/`:
+Official images include tessdata at `/usr/share/tesseract-ocr/5/tessdata/`:
 
 ```yaml
 env:
 - name: TESSDATA_PREFIX
-  value: "/usr/share/tesseract-ocr/4.00/tessdata"
+  value: "/usr/share/tesseract-ocr/5/tessdata"
 - name: KREUZBERG_OCR_LANGUAGE
   value: "eng"
 - name: KREUZBERG_CACHE_DIR
@@ -109,6 +109,9 @@ env:
 - name: HF_HOME
   value: "/app/.kreuzberg/huggingface"
 ```
+
+!!! note "Tesseract Version Path"
+    The path varies by Tesseract version. Debian Trixie ships Tesseract 5.x, so use `/usr/share/tesseract-ocr/5/tessdata`. If using a different base image, verify your Tesseract version with `tesseract --version` and adjust the path accordingly.
 
 **Pre-installed languages:** `eng`, `spa`, `fra`, `deu`, `ita`, `por`, `chi_sim`, `chi_tra`, `jpn`, `ara`, `rus`, `hin`
 
@@ -499,7 +502,7 @@ spec:
         - name: RUST_LOG
           value: "info"
         - name: TESSDATA_PREFIX
-          value: "/usr/share/tesseract-ocr/4.00/tessdata"
+          value: "/usr/share/tesseract-ocr/5/tessdata"
         - name: KREUZBERG_CACHE_DIR
           value: "/app/.kreuzberg"
         - name: HF_HOME
@@ -655,7 +658,7 @@ spec:
         - name: RUST_LOG
           value: "info"
         - name: TESSDATA_PREFIX
-          value: "/usr/share/tesseract-ocr/4.00/tessdata"
+          value: "/usr/share/tesseract-ocr/5/tessdata"
         - name: KREUZBERG_CACHE_DIR
           value: "/app/.kreuzberg"
         - name: HF_HOME

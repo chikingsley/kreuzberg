@@ -117,7 +117,7 @@ end
 
 # Example usage with error handling
 config = %Kreuzberg.ExtractionConfig{
-  chunking: %{"enabled" => true, "max_chars" => 1000}
+  chunking: %{"enabled" => true, "max_characters" => 1000}
 }
 
 IO.puts("=== Extract with Retry ===")

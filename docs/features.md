@@ -1,12 +1,12 @@
 # Features
 
-Kreuzberg is a comprehensive document intelligence library supporting 57 file formats with advanced extraction, OCR, and processing capabilities. This page documents all features and their availability across language bindings.
+Kreuzberg is a comprehensive document intelligence library supporting 50+ file formats with advanced extraction, OCR, and processing capabilities. This page documents all features and their availability across language bindings.
 
 ## Core Extraction Features
 
 ### File Format Support
 
-Kreuzberg extracts text, tables, and metadata from 57 file formats:
+Kreuzberg extracts text, tables, and metadata from 50+ file formats:
 
 **Documents**
 - PDF (`.pdf`) - Native text extraction with optional OCR fallback

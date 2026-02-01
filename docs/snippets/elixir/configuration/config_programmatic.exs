@@ -7,7 +7,7 @@ alias Kreuzberg.ExtractionConfig
 defmodule ConfigBuilder do
   def build_config(file_type, enable_ocr?) do
     base_config = %ExtractionConfig{
-      chunking: %{"max_chars" => 1000, "max_overlap" => 100},
+      chunking: %{"max_characters" => 1000, "overlap" => 100},
       use_cache: true
     }
 

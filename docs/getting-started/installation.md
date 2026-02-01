@@ -6,20 +6,20 @@ Kreuzberg is available in multiple formats optimized for different runtimes: nat
 
 | Runtime/Environment | Package | Performance | Best For |
 |-------------------|---------|-------------|----------|
-| **Node.js** | `@kreuzberg/node` | ⚡ Fastest (native) | Server-side Node applications, native performance |
-| **Bun** | `@kreuzberg/node` | ⚡ Fastest (native) | Bun runtime, native performance |
-| **Browser** | `@kreuzberg/wasm` | ✓ Good (WASM) | Client-side apps, no native dependencies |
-| **Deno** | `@kreuzberg/wasm` | ✓ Good (WASM) | Deno runtime, pure WASM execution |
-| **Cloudflare Workers** | `@kreuzberg/wasm` | ✓ Good (WASM) | Serverless functions, edge computing |
-| **Python** | `kreuzberg` | ⚡ Fastest (native) | Server-side Python, native performance |
-| **Ruby** | `kreuzberg` | ⚡ Fastest (native) | Ruby applications, native performance |
-| **Elixir** | `kreuzberg` | ⚡ Fastest (native) | Elixir/Phoenix apps, BEAM runtime |
-| **Java** | `dev.kreuzberg:kreuzberg` | ⚡ Fastest (native) | Server-side Java apps, FFM API |
-| **Go** | `github.com/.../go/v4` | ⚡ Fastest (native) | Server-side Go, cgo bindings |
-| **PHP** | `kreuzberg/kreuzberg` | ⚡ Fastest (native) | PHP applications, ext-ffi |
-| **C#/.NET** | `Kreuzberg` (NuGet) | ⚡ Fastest (native) | .NET applications, P/Invoke |
-| **Rust** | `kreuzberg` crate | ⚡ Fastest (native) | Rust projects, full control |
-| **CLI/Docker** | `kreuzberg-cli` | ⚡ Fastest (native) | Command-line usage, batch processing |
+| **Node.js** | `@kreuzberg/node` | Fastest (native) | Server-side Node applications, native performance |
+| **Bun** | `@kreuzberg/node` | Fastest (native) | Bun runtime, native performance |
+| **Browser** | `@kreuzberg/wasm` | Good (WASM) | Client-side apps, no native dependencies |
+| **Deno** | `@kreuzberg/wasm` | Good (WASM) | Deno runtime, pure WASM execution |
+| **Cloudflare Workers** | `@kreuzberg/wasm` | Good (WASM) | Serverless functions, edge computing |
+| **Python** | `kreuzberg` | Fastest (native) | Server-side Python, native performance |
+| **Ruby** | `kreuzberg` | Fastest (native) | Ruby applications, native performance |
+| **Elixir** | `kreuzberg` | Fastest (native) | Elixir/Phoenix apps, BEAM runtime |
+| **Java** | `dev.kreuzberg:kreuzberg` | Fastest (native) | Server-side Java apps, FFM API |
+| **Go** | `github.com/.../go/v4` | Fastest (native) | Server-side Go, cgo bindings |
+| **PHP** | `kreuzberg/kreuzberg` | Fastest (native) | PHP applications, ext-ffi |
+| **C#/.NET** | `Kreuzberg` (NuGet) | Fastest (native) | .NET applications, P/Invoke |
+| **Rust** | `kreuzberg` crate | Fastest (native) | Rust projects, full control |
+| **CLI/Docker** | `kreuzberg-cli` | Fastest (native) | Command-line usage, batch processing |
 
 ### Performance Notes
 
@@ -300,14 +300,14 @@ Add to Maven `pom.xml`:
 <dependency>
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
-    <version>4.0.0</version>
+    <version>4.2.7</version>
 </dependency>
 ```
 
 Or Gradle:
 
 ```gradle title="build.gradle"
-implementation 'dev.kreuzberg:kreuzberg:4.0.0'
+implementation 'dev.kreuzberg:kreuzberg:4.2.7'
 ```
 
 **Requirements:** Java 25+ (FFM/Panama API)

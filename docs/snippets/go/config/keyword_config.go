@@ -20,7 +20,7 @@ func basicYake() error {
 		},
 	}
 
-	result, err := kreuzberg.ExtractFile("document.pdf", "", config)
+	result, err := kreuzberg.ExtractFileSync("document.pdf", config)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func advancedYake() error {
 		},
 	}
 
-	result, err := kreuzberg.ExtractFile("document.pdf", "", config)
+	result, err := kreuzberg.ExtractFileSync("document.pdf", config)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func rakeConfig() error {
 		},
 	}
 
-	result, err := kreuzberg.ExtractFile("document.pdf", "", config)
+	result, err := kreuzberg.ExtractFileSync("document.pdf", config)
 	if err != nil {
 		return err
 	}

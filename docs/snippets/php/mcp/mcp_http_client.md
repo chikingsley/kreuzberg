@@ -41,7 +41,7 @@ final readonly class KreuzbergMcpClient
                 'capabilities' => [],
                 'clientInfo' => [
                     'name' => 'kreuzberg-php-client',
-                    'version' => '4.0.0',
+                    'version' => '4.2.7',
                 ],
             ],
         ]);

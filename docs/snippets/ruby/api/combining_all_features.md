@@ -9,8 +9,8 @@ config = Kreuzberg::Config::Extraction.new(
   ),
   token_reduction: Kreuzberg::Config::TokenReduction.new(mode: 'moderate'),
   chunking: Kreuzberg::Config::Chunking.new(
-    max_chars: 512,
-    max_overlap: 50,
+    max_characters: 512,
+    overlap: 50,
     embedding: { normalize: true }
   ),
   keywords: Kreuzberg::Config::Keywords.new(

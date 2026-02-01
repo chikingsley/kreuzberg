@@ -2,8 +2,8 @@
 config = %Kreuzberg.ExtractionConfig{
   chunking: %{
     "enabled" => true,
-    "max_chars" => 512,
-    "max_overlap" => 50,
+    "max_characters" => 512,
+    "overlap" => 50,
     "respect_boundaries" => true
   }
 }

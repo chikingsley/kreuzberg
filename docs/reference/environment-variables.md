@@ -6,7 +6,7 @@ Configuration precedence in Kreuzberg follows this order (highest to lowest):
 2. **Configuration Files** - TOML, YAML, or JSON config files
 3. **Defaults** - Built-in sensible defaults
 
-This document covers all KREUZBERG_* environment variables for version 4.0.0.
+This document covers all KREUZBERG_* environment variables for version 4.2.7.
 
 ## When to Use Environment Variables
 
@@ -286,6 +286,44 @@ export KREUZBERG_CACHE_ENABLED=false
 # Case insensitive
 export KREUZBERG_CACHE_ENABLED=TRUE
 export KREUZBERG_CACHE_ENABLED=False
+```
+
+### KREUZBERG_OUTPUT_FORMAT
+
+**Type**: `String`
+**Default**: `plain`
+**Valid Values**: `plain`, `markdown`, `djot`, `html`
+
+Controls the text content format of extraction results. Determines how extracted text is formatted in the result output.
+
+```bash title="Output Format Options"
+# Plain text content only (default)
+export KREUZBERG_OUTPUT_FORMAT=plain
+
+# Markdown formatted output
+export KREUZBERG_OUTPUT_FORMAT=markdown
+
+# Djot markup format
+export KREUZBERG_OUTPUT_FORMAT=djot
+
+# HTML formatted output
+export KREUZBERG_OUTPUT_FORMAT=html
+```
+
+**Use Cases**:
+
+| Format | Use Case |
+|--------|----------|
+| `plain` | Raw extracted text without formatting |
+| `markdown` | Structured text with headings, lists, emphasis (RAG, LLM input) |
+| `djot` | Lightweight markup, alternative to Markdown |
+| `html` | Rich formatted output for web display |
+
+**Example:**
+
+```bash title="Extract with markdown formatting"
+export KREUZBERG_OUTPUT_FORMAT=markdown
+kreuzberg
 ```
 
 ### KREUZBERG_TOKEN_REDUCTION_MODE

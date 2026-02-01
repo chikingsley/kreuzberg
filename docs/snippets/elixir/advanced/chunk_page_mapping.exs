@@ -1,6 +1,6 @@
 # Extract with chunking and track page boundaries
 config = %Kreuzberg.ExtractionConfig{
-  chunking: %{"enabled" => true, "max_chars" => 500},
+  chunking: %{"enabled" => true, "max_characters" => 500},
   track_page_boundaries: true
 }
 

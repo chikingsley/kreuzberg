@@ -1,6 +1,6 @@
 # Extract and prepare for embeddings
 config = %Kreuzberg.ExtractionConfig{
-  chunking: %{"enabled" => true, "max_chars" => 512},
+  chunking: %{"enabled" => true, "max_characters" => 512},
   embeddings: %{"enabled" => true}
 }
 

@@ -1,7 +1,7 @@
 # Use all major features together
 config = %Kreuzberg.ExtractionConfig{
   ocr: %{"enabled" => true},
-  chunking: %{"enabled" => true, "max_chars" => 1000},
+  chunking: %{"enabled" => true, "max_characters" => 1000},
   images: %{"extract" => true},
   language_detection: %{"enabled" => true},
   keyword_extraction: %{"enabled" => true}

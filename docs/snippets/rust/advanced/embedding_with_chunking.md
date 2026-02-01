@@ -3,8 +3,8 @@ use kreuzberg::{ExtractionConfig, ChunkingConfig, EmbeddingConfig};
 
 let config = ExtractionConfig {
     chunking: Some(ChunkingConfig {
-        max_chars: 1024,
-        max_overlap: 100,
+        max_characters: 1024,
+        overlap: 100,
         embedding: Some(EmbeddingConfig {
             model: "balanced".to_string(),
             normalize: true,

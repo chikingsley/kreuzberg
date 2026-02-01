@@ -19,8 +19,8 @@ config = Kreuzberg::Config::Extraction.new(
     max_image_dimension: 4096
   ),
   chunking: Kreuzberg::Config::Chunking.new(
-    max_chars: 1000,
-    max_overlap: 200
+    max_characters: 1000,
+    overlap: 200
   ),
   token_reduction: Kreuzberg::Config::TokenReduction.new(mode: 'moderate'),
   language_detection: Kreuzberg::Config::LanguageDetection.new(

@@ -185,7 +185,7 @@ defmodule KreuzbergCLI do
         ),
       chunking:
         if(Map.get(opts, :enable_chunks),
-          do: %{"enabled" => true, "max_chars" => 1000, "max_overlap" => 100},
+          do: %{"enabled" => true, "max_characters" => 1000, "overlap" => 100},
           else: nil
         ),
       use_cache: true

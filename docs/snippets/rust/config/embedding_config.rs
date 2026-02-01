@@ -53,8 +53,8 @@ let embedding_config = EmbeddingConfig {
 use kreuzberg::{ChunkingConfig, ExtractionConfig};
 
 let chunking_with_embeddings = ChunkingConfig {
-    max_chars: 1024,
-    max_overlap: 100,
+    max_characters: 1024,
+    overlap: 100,
     preset: Some("balanced".to_string()),
     embedding: Some(EmbeddingConfig::default()),  // Uses balanced preset
 };

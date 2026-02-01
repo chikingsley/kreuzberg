@@ -390,8 +390,8 @@ config = ExtractionConfig(
     ),
     force_ocr=False,
     chunking=ChunkingConfig(
-        max_chars=1000,
-        max_overlap=100,
+        max_characters=1000,
+        overlap=100,
     ),
     images=ImageExtractionConfig(
         extract_images=True,
@@ -583,8 +583,8 @@ from kreuzberg import ChunkingConfig
 
 config = ExtractionConfig(
     chunking=ChunkingConfig(
-        max_chars=1000,
-        max_overlap=100,
+        max_characters=1000,
+        overlap=100,
     ),
 )
 
@@ -1807,7 +1807,7 @@ config = ExtractionConfig(
     pdf_options=PdfConfig(
         hierarchy_detection=HierarchyDetectionConfig(enabled=True)
     ),
-    chunking=ChunkingConfig(max_chars=1000)
+    chunking=ChunkingConfig(max_characters=1000)
 )
 
 result = extract_file("document.pdf", config=config)

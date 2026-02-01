@@ -7,8 +7,8 @@ config = Kreuzberg::Config::Extraction.new(
     language: 'eng+deu'
   ),
   chunking: Kreuzberg::Config::Chunking.new(
-    max_chars: 1000,
-    max_overlap: 100
+    max_characters: 1000,
+    overlap: 100
   ),
   language_detection: Kreuzberg::Config::LanguageDetection.new,
   use_cache: true,

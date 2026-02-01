@@ -338,20 +338,7 @@ pub fn supported_mime_types(&self) -> Vec<&str> {
 
 ## Benchmarks
 
-
-Detailed performance benchmarks comparing Kreuzberg against alternative libraries are coming soon. The benchmark suite will include:
-
-<!-- Coming soon:
-- [Benchmark Overview](../benchmarks/index.md) - Introduction to benchmark suite
-- [Latest Results](../benchmarks/latest.md) - Interactive charts and data visualization
--->
-
-Interactive charts show:
-
-- Duration (p95, p50 latency)
-- Throughput (MB/s)
-- Memory usage (peak, percentiles)
-- Success rates across file types
+Detailed performance benchmarks are available via `task bench` or `cargo bench` in the repository. See the `tools/benchmark-harness/` directory for the benchmark implementation. The benchmark suite measures duration, throughput, memory usage, and success rates across different file types.
 
 ## Related Documentation
 

@@ -16,21 +16,15 @@ func main() {
 	config := &kreuzberg.ExtractionConfig{
 		UseCache: true,
 		CacheConfig: &kreuzberg.CacheConfig{
-			CachePath:       cacheDir,
-			MaxCacheSize:    500 * 1024 * 1024,
-			CacheTTLSeconds: 7 * 86400,
+			CachePath:         cacheDir,
+			MaxCacheSize:      500 * 1024 * 1024,
+			CacheTTLSeconds:   7 * 86400,
 			EnableCompression: true,
 		},
 	}
 
-	client, err := kreuzberg.New(config)
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
-
 	fmt.Println("First extraction (will be cached)...")
-	result1, err := client.ExtractFile("document.pdf")
+	result1, err := kreuzberg.ExtractFileSync("document.pdf", config)
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +32,7 @@ func main() {
 	fmt.Printf("  - Cached: %v\n", result1.Metadata["was_cached"])
 
 	fmt.Println("\nSecond extraction (from cache)...")
-	result2, err := client.ExtractFile("document.pdf")
+	result2, err := kreuzberg.ExtractFileSync("document.pdf", config)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +41,7 @@ func main() {
 
 	fmt.Printf("\nResults are identical: %v\n", result1.Content == result2.Content)
 
-	stats, err := client.GetCacheStats()
+	stats, err := kreuzberg.GetCacheStats()
 	if err != nil {
 		panic(err)
 	}

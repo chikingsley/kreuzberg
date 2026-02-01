@@ -70,7 +70,7 @@ if (extension_loaded('kreuzberg')) {
 echo "\n\nPIE Commands Reference:\n";
 echo "=======================\n";
 echo "Install extension:        pie install kreuzberg/kreuzberg-ext\n";
-echo "Install specific version: pie install kreuzberg/kreuzberg-ext:4.0.0\n";
+echo "Install specific version: pie install kreuzberg/kreuzberg-ext:4.2.7\n";
 echo "List installed:           pie list\n";
 echo "Update extension:         pie update kreuzberg/kreuzberg-ext\n";
 echo "Uninstall:                pie uninstall kreuzberg/kreuzberg-ext\n";

@@ -429,8 +429,8 @@ defmodule KreuzbergAdvancedCLI do
             enabled: false
           chunking:
             enabled: true
-            max_chars: 1000
-            max_overlap: 100
+            max_characters: 1000
+            overlap: 100
 
         ocr_intensive:
           name: "OCR + Language Detection"

@@ -8,8 +8,8 @@ alias Kreuzberg.ExtractionConfig
 config = %ExtractionConfig{
   chunking: %{
     "enabled" => true,
-    "max_chars" => 1000,
-    "max_overlap" => 200,
+    "max_characters" => 1000,
+    "overlap" => 200,
     "min_size" => 100,
     "respect_boundaries" => true,
     "split_on" => ["sentence", "paragraph"]

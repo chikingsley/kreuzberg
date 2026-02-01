@@ -23,7 +23,7 @@ pnpm add @kreuzberg/wasm
 ### Deno
 
 ```typescript title="TypeScript"
-import { extractBytes, initWasm } from "npm:@kreuzberg/wasm@^4.0.0";
+import { extractBytes, initWasm } from "npm:@kreuzberg/wasm@^4.2.7";
 ```
 
 ## Module Initialization
@@ -1309,9 +1309,10 @@ Configuration for text chunking.
 
 **Fields:**
 
-- `maxChars` (number): Maximum characters per chunk
-- `maxTokens` (number): Maximum tokens per chunk
-- `chunkOverlap` (number): Overlap between chunks in characters/tokens
+- `maxChars` (number): Maximum characters per chunk (default: 1000)
+- `maxOverlap` (number): Overlap between chunks in characters (default: 200)
+- `embedding` (EmbeddingConfig | undefined): Optional embedding configuration
+- `preset` (string | undefined): Chunking preset name
 
 ---
 
@@ -1381,11 +1382,13 @@ Text chunk from chunking operation.
 
 **ChunkMetadata:**
 
-- `charStart` (number): Starting character position
-- `charEnd` (number): Ending character position
-- `chunkIndex` (number): Index of this chunk
-- `totalChunks` (number): Total number of chunks
-- `tokenCount` (number | null): Token count if available
+- `byte_start` (number): Starting byte offset (UTF-8 boundary)
+- `byte_end` (number): Ending byte offset (UTF-8 boundary)
+- `chunk_index` (number): Index of this chunk
+- `total_chunks` (number): Total number of chunks
+- `token_count` (number | null): Token count if available
+- `first_page` (number | null): First page this chunk appears on
+- `last_page` (number | null): Last page this chunk appears on
 
 ---
 
@@ -1489,7 +1492,7 @@ main().catch(console.error);
 **Import:**
 
 ```typescript title="deno_import.ts"
-import { extractFile, initWasm } from "npm:@kreuzberg/wasm@^4.0.0";
+import { extractFile, initWasm } from "npm:@kreuzberg/wasm@^4.2.7";
 
 // Must run with: deno run --allow-read --allow-net script.ts
 ```
@@ -1497,7 +1500,7 @@ import { extractFile, initWasm } from "npm:@kreuzberg/wasm@^4.0.0";
 **Example:**
 
 ```typescript title="deno_example.ts"
-import { extractFile, initWasm } from "npm:@kreuzberg/wasm@^4.0.0";
+import { extractFile, initWasm } from "npm:@kreuzberg/wasm@^4.2.7";
 
 async function main() {
   await initWasm();
