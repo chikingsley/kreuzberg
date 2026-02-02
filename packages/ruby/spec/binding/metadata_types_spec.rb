@@ -1174,6 +1174,7 @@ RSpec.describe 'Kreuzberg Metadata Types' do
   end
 
   def create_concurrent_test_files
+    @concurrent_tempfiles = []
     test_files = []
     5.times do |i|
       html_content = <<~HTML
@@ -1191,7 +1192,11 @@ RSpec.describe 'Kreuzberg Metadata Types' do
         </body>
         </html>
       HTML
-      test_files << create_test_html_file(html_content)
+      file = Tempfile.new(['test', '.html'])
+      file.write(html_content)
+      file.close
+      @concurrent_tempfiles << file
+      test_files << file.path
     end
     test_files
   end
