@@ -195,10 +195,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.extensions = ['ext/kreuzberg_rb/extconf.rb']
 
+  spec.add_dependency 'rb_sys', '~> 0.9.119'
+
   spec.add_development_dependency 'bundler', '~> 4.0'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rake-compiler', '~> 1.2'
-  spec.add_development_dependency 'rb_sys', '0.9.119'
   spec.add_development_dependency 'rspec', '~> 3.12'
   spec.add_development_dependency 'sorbet-runtime', '~> 0.5'
   unless Gem.win_platform?
