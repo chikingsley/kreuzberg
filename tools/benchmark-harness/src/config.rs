@@ -76,6 +76,31 @@ impl Default for ProfilingConfig {
 }
 
 impl ProfilingConfig {
+    /// Create a new profiling configuration with validation
+    ///
+    /// # Arguments
+    ///
+    /// * `sampling_frequency` - CPU sampling frequency in Hz (100-10000)
+    /// * `batch_size` - Number of documents per profiling batch (must be > 0)
+    /// * `sample_count_threshold` - Minimum samples for valid profile (must be > 0)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Config`] if any configuration value is invalid
+    pub fn new(sampling_frequency: i32, batch_size: usize, sample_count_threshold: usize) -> crate::Result<Self> {
+        let config = Self {
+            enabled: false,
+            sampling_frequency,
+            task_duration_ms: 500,
+            batch_size,
+            memory_sampling_interval_ms: 10,
+            flamegraph_enabled: true,
+            sample_count_threshold,
+        };
+        config.validate()?;
+        Ok(config)
+    }
+
     /// Validate the profiling configuration
     ///
     /// # Errors
@@ -206,6 +231,44 @@ impl Default for BenchmarkConfig {
 }
 
 impl BenchmarkConfig {
+    /// Create a new benchmark configuration with validation
+    ///
+    /// # Arguments
+    ///
+    /// * `output_dir` - Directory for results
+    /// * `max_concurrent` - Maximum concurrent extractions (must be > 0)
+    /// * `benchmark_iterations` - Number of iterations (must be > 0)
+    /// * `timeout` - Timeout per extraction
+    /// * `benchmark_mode` - SingleFile or Batch mode
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Config`] if any configuration value is invalid
+    pub fn new(
+        output_dir: PathBuf,
+        max_concurrent: usize,
+        benchmark_iterations: usize,
+        timeout: Duration,
+        benchmark_mode: BenchmarkMode,
+    ) -> crate::Result<Self> {
+        let config = Self {
+            max_file_size: None,
+            file_types: None,
+            timeout,
+            max_concurrent,
+            output_dir,
+            measure_quality: false,
+            sample_interval_ms: 10,
+            benchmark_mode,
+            warmup_iterations: 1,
+            benchmark_iterations,
+            profiling: ProfilingConfig::default(),
+            ocr_enabled: false,
+        };
+        config.validate()?;
+        Ok(config)
+    }
+
     /// Validate the configuration
     ///
     /// # Errors

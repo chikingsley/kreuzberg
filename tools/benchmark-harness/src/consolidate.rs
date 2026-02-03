@@ -232,7 +232,9 @@ fn aggregate_by_framework_with_runs(runs: &[Vec<BenchmarkResult>]) -> Result<Has
                 while runs_vec.len() <= run_index {
                     runs_vec.push(Vec::new());
                 }
-                runs_vec[run_index].push(result);
+                if let Some(run_vec) = runs_vec.get_mut(run_index) {
+                    run_vec.push(result);
+                }
             }
         }
     }
@@ -706,7 +708,7 @@ fn calculate_variance(values: &[f64]) -> (f64, f64, f64) {
         .filter(|v| !v.is_nan() && v.is_finite())
         .collect();
     if filtered.len() <= 1 {
-        return (if filtered.is_empty() { 0.0 } else { filtered[0] }, 0.0, 0.0);
+        return (filtered.first().copied().unwrap_or(0.0), 0.0, 0.0);
     }
     let mean = filtered.iter().sum::<f64>() / filtered.len() as f64;
     let variance = filtered.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / (filtered.len() - 1) as f64;

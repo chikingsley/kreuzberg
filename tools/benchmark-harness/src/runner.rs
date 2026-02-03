@@ -74,7 +74,14 @@ fn calculate_statistics(iterations: &[IterationResult]) -> DurationStatistics {
 
     let mut durations_ms: Vec<f64> = durations.iter().map(|d| d.as_secs_f64() * 1000.0).collect();
     durations_ms.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let median = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.50) / 1000.0);
+
+    // Validate percentile is finite before creating Duration
+    let p50 = percentile_r7(&durations_ms, 0.50);
+    let median = if p50.is_finite() {
+        Duration::from_secs_f64(p50 / 1000.0)
+    } else {
+        Duration::from_secs(0)
+    };
 
     let variance: f64 = if durations.len() > 1 {
         durations
@@ -91,8 +98,21 @@ fn calculate_statistics(iterations: &[IterationResult]) -> DurationStatistics {
 
     let std_dev_ms = variance.sqrt();
 
-    let p95 = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.95) / 1000.0);
-    let p99 = Duration::from_secs_f64(percentile_r7(&durations_ms, 0.99) / 1000.0);
+    // Validate p95 is finite before creating Duration
+    let p95_ms = percentile_r7(&durations_ms, 0.95);
+    let p95 = if p95_ms.is_finite() {
+        Duration::from_secs_f64(p95_ms / 1000.0)
+    } else {
+        Duration::from_secs(0)
+    };
+
+    // Validate p99 is finite before creating Duration
+    let p99_ms = percentile_r7(&durations_ms, 0.99);
+    let p99 = if p99_ms.is_finite() {
+        Duration::from_secs_f64(p99_ms / 1000.0)
+    } else {
+        Duration::from_secs(0)
+    };
 
     DurationStatistics {
         mean,
@@ -297,7 +317,14 @@ impl BenchmarkRunner {
                 BenchmarkMode::SingleFile => "single-file",
                 BenchmarkMode::Batch => "batch",
             };
-            let fixture_stem = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
+            // Extract and sanitize filename for use in paths, with fallback for bad filenames
+            let fixture_stem = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or_else(|| {
+                eprintln!(
+                    "Warning: Failed to extract valid UTF-8 filename from {:?}, using sanitized fallback",
+                    file_path
+                );
+                "unknown_file"
+            });
 
             let flamegraph_path = format!("flamegraphs/{}/{}/{}.svg", framework_name, mode_name, fixture_stem);
             let report_path = format!(
@@ -347,7 +374,10 @@ impl BenchmarkRunner {
         }
 
         if config.benchmark_iterations == 1 && !all_results.is_empty() {
-            let mut result = all_results.into_iter().next().unwrap();
+            let mut result = all_results
+                .into_iter()
+                .next()
+                .ok_or_else(|| Error::Benchmark("Failed to retrieve single iteration result".to_string()))?;
             result.cold_start_duration = cold_start_duration;
             return Ok(result);
         }
@@ -441,7 +471,10 @@ impl BenchmarkRunner {
         }
 
         if config.benchmark_iterations == 1 && !all_batch_results.is_empty() {
-            let mut result = all_batch_results.into_iter().next().unwrap();
+            let mut result = all_batch_results
+                .into_iter()
+                .next()
+                .ok_or_else(|| Error::Benchmark("Failed to retrieve single batch iteration result".to_string()))?;
             for r in &mut result {
                 r.cold_start_duration = cold_start_duration;
             }

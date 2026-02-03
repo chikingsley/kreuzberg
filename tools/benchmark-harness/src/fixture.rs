@@ -75,6 +75,14 @@ impl Fixture {
     }
 
     /// Validate the fixture
+    ///
+    /// Performs comprehensive validation including:
+    /// - Path validation (relative paths only)
+    /// - File type validation (non-empty)
+    /// - Ground truth validation:
+    ///   - Relative path requirement
+    ///   - Valid source type
+    ///   - File existence check (relative to fixture directory)
     fn validate(&self, fixture_path: &Path) -> Result<()> {
         if self.document.is_absolute() {
             return Err(Error::InvalidFixture {
@@ -114,6 +122,22 @@ impl Fixture {
                     path: fixture_path.to_path_buf(),
                     reason: format!("invalid ground_truth.source: {}", gt.source),
                 });
+            }
+
+            // Validate that ground truth file exists at load time
+            // Use fixture directory as the base for relative paths
+            if let Some(fixture_dir) = fixture_path.parent() {
+                let ground_truth_path = fixture_dir.join(&gt.text_file);
+                if !ground_truth_path.exists() {
+                    return Err(Error::InvalidFixture {
+                        path: fixture_path.to_path_buf(),
+                        reason: format!(
+                            "ground truth file not found: {} (resolved to {})",
+                            gt.text_file.display(),
+                            ground_truth_path.display()
+                        ),
+                    });
+                }
             }
         }
 
@@ -227,6 +251,7 @@ impl FixtureManager {
         }
 
         let total_fixtures = all_fixtures.len();
+        let mut failed_fixtures: Vec<(PathBuf, String)> = Vec::new();
 
         if apply_filter {
             if let Some(profiling_set) = Self::get_profiling_fixtures() {
@@ -236,10 +261,16 @@ impl FixtureManager {
                 for fixture_path in &all_fixtures {
                     if let Some(stem) = fixture_path.file_stem().and_then(|s| s.to_str())
                         && profiling_set.contains(stem)
-                        && self.load_fixture(fixture_path).is_ok()
                     {
-                        loaded_count += 1;
-                        fixture_names.push(stem.to_string());
+                        match self.load_fixture(fixture_path) {
+                            Ok(()) => {
+                                loaded_count += 1;
+                                fixture_names.push(stem.to_string());
+                            }
+                            Err(e) => {
+                                failed_fixtures.push((fixture_path.clone(), e.to_string()));
+                            }
+                        }
                     }
                 }
 
@@ -258,17 +289,50 @@ impl FixtureManager {
                         total_fixtures
                     );
                     for fixture_path in all_fixtures {
-                        let _ = self.load_fixture(&fixture_path);
+                        match self.load_fixture(&fixture_path) {
+                            Ok(()) => {
+                                // Successfully loaded
+                            }
+                            Err(e) => {
+                                failed_fixtures.push((fixture_path.clone(), e.to_string()));
+                            }
+                        }
                     }
                 }
             } else {
                 for fixture_path in all_fixtures {
-                    let _ = self.load_fixture(&fixture_path);
+                    match self.load_fixture(&fixture_path) {
+                        Ok(()) => {
+                            // Successfully loaded
+                        }
+                        Err(e) => {
+                            failed_fixtures.push((fixture_path.clone(), e.to_string()));
+                        }
+                    }
                 }
             }
         } else {
             for fixture_path in all_fixtures {
-                let _ = self.load_fixture(&fixture_path);
+                match self.load_fixture(&fixture_path) {
+                    Ok(()) => {
+                        // Successfully loaded
+                    }
+                    Err(e) => {
+                        failed_fixtures.push((fixture_path.clone(), e.to_string()));
+                    }
+                }
+            }
+        }
+
+        // Report failed fixtures if any occurred
+        if !failed_fixtures.is_empty() {
+            eprintln!(
+                "Warning: {} of {} fixtures failed to load:",
+                failed_fixtures.len(),
+                total_fixtures
+            );
+            for (path, error) in failed_fixtures {
+                eprintln!("  - {}: {}", path.display(), error);
             }
         }
 
@@ -607,5 +671,108 @@ mod tests {
         };
 
         assert!(fixture.requires_ocr());
+    }
+
+    #[test]
+    fn test_ground_truth_file_existence_validation() {
+        let temp_dir = TempDir::new().unwrap();
+        let fixture_path = temp_dir.path().join("test.json");
+
+        let fixture = Fixture {
+            document: PathBuf::from("test.pdf"),
+            file_type: "pdf".to_string(),
+            file_size: 1024,
+            expected_frameworks: vec![],
+            metadata: HashMap::new(),
+            ground_truth: Some(GroundTruth {
+                text_file: PathBuf::from("nonexistent_ground_truth.txt"),
+                source: "manual".to_string(),
+            }),
+        };
+
+        std::fs::write(&fixture_path, serde_json::to_string(&fixture).unwrap()).unwrap();
+
+        // Should fail because ground truth file doesn't exist
+        let result = Fixture::from_file(&fixture_path);
+        assert!(result.is_err());
+        match result {
+            Err(Error::InvalidFixture { reason, .. }) => {
+                assert!(reason.contains("ground truth file not found"));
+            }
+            _ => panic!("Expected InvalidFixture error with 'ground truth file not found'"),
+        }
+    }
+
+    #[test]
+    fn test_ground_truth_file_existence_validation_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let fixture_path = temp_dir.path().join("test.json");
+        let ground_truth_path = temp_dir.path().join("ground_truth.txt");
+
+        // Create the ground truth file
+        std::fs::write(&ground_truth_path, "Sample ground truth text").unwrap();
+
+        let fixture = Fixture {
+            document: PathBuf::from("test.pdf"),
+            file_type: "pdf".to_string(),
+            file_size: 1024,
+            expected_frameworks: vec![],
+            metadata: HashMap::new(),
+            ground_truth: Some(GroundTruth {
+                text_file: PathBuf::from("ground_truth.txt"),
+                source: "manual".to_string(),
+            }),
+        };
+
+        std::fs::write(&fixture_path, serde_json::to_string(&fixture).unwrap()).unwrap();
+
+        // Should succeed because ground truth file exists
+        let result = Fixture::from_file(&fixture_path);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_fixture_load_with_mixed_success_and_failure() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create valid fixture
+        let valid_fixture_path = temp_dir.path().join("valid.json");
+        let valid_fixture = Fixture {
+            document: PathBuf::from("test.pdf"),
+            file_type: "pdf".to_string(),
+            file_size: 1024,
+            expected_frameworks: vec![],
+            metadata: HashMap::new(),
+            ground_truth: None,
+        };
+        std::fs::write(&valid_fixture_path, serde_json::to_string(&valid_fixture).unwrap()).unwrap();
+
+        // Create invalid fixture (missing ground truth file)
+        let invalid_fixture_path = temp_dir.path().join("invalid.json");
+        let invalid_fixture = Fixture {
+            document: PathBuf::from("test.pdf"),
+            file_type: "pdf".to_string(),
+            file_size: 1024,
+            expected_frameworks: vec![],
+            metadata: HashMap::new(),
+            ground_truth: Some(GroundTruth {
+                text_file: PathBuf::from("nonexistent.txt"),
+                source: "manual".to_string(),
+            }),
+        };
+        std::fs::write(&invalid_fixture_path, serde_json::to_string(&invalid_fixture).unwrap()).unwrap();
+
+        unsafe {
+            std::env::remove_var("PROFILING_FIXTURES");
+        }
+
+        let mut manager = FixtureManager::new();
+        // Should succeed overall (returns Ok), but report failed fixtures
+        let result = manager.load_fixtures_from_dir(temp_dir.path());
+        assert!(result.is_ok());
+
+        // Should have loaded only the valid fixture
+        assert_eq!(manager.len(), 1);
     }
 }
