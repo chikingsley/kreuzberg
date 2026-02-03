@@ -1,0 +1,10 @@
+{
+	"document": "../../../test_documents/doc/unit_test_lists.doc",
+	"file_type": "doc",
+	"file_size": 16384,
+	"expected_frameworks": ["kreuzberg"],
+	"metadata": {
+		"description": "Legacy DOC format - Office 97-2003 document with list content",
+		"category": "legacy"
+	}
+}

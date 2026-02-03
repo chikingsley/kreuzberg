@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/docbook/docbook-chapter.docbook",
+  "file_type": "docbook",
+  "file_size": 1088,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "DocBook chapter with structured content",
+    "category": "documentation"
+  }
+}

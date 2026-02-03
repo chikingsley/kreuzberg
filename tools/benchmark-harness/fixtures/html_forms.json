@@ -1,0 +1,15 @@
+{
+  "document": "../../../test_documents/html/sinthgunt.html",
+  "file_type": "html",
+  "file_size": 125362,
+  "expected_frameworks": [
+    "kreuzberg",
+    "markitdown",
+    "unstructured"
+  ],
+  "metadata": {
+    "description": "Medium-sized HTML document with form elements and structured content",
+    "category": "web",
+    "size_class": "medium"
+  }
+}

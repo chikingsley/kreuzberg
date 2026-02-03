@@ -30,7 +30,7 @@ async fn test_ppsx_slideshow_extraction() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/presentations/sample.ppsx");
+    let test_file = workspace_root.join("test_documents/pptx/sample.ppsx");
 
     if !test_file.exists() {
         println!("Skipping test: PPSX test file not found at {:?}", test_file);
@@ -74,7 +74,7 @@ async fn test_ppsx_with_explicit_mime_type() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/presentations/sample.ppsx");
+    let test_file = workspace_root.join("test_documents/pptx/sample.ppsx");
 
     if !test_file.exists() {
         println!("Skipping test: PPSX test file not found at {:?}", test_file);
@@ -744,7 +744,7 @@ async fn test_pptx_image_page_numbers_issue329_user_file() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/presentations/pptx_reversed_slide_order_issue329.pptx");
+    let test_file = workspace_root.join("test_documents/pptx/pptx_reversed_slide_order_issue329.pptx");
 
     if !test_file.exists() {
         println!("Skipping test: User file not found at {:?}", test_file);

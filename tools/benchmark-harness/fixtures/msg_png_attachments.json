@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/email/msg_with_png_attachment.msg",
+  "file_type": "msg",
+  "file_size": 272384,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "MSG format email with PNG image attachments",
+    "category": "attachments"
+  }
+}

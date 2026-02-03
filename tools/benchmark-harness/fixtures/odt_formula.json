@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/odt/formula.odt",
+  "file_type": "odt",
+  "file_size": 14252,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "ODT document containing mathematical formulas and expressions",
+    "category": "formula"
+  }
+}

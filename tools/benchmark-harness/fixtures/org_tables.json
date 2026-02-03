@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/org/pandoc-tables.org",
+  "file_type": "org",
+  "file_size": 2028,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Org-mode document with structured tables and complex formatting",
+    "category": "structured-data"
+  }
+}

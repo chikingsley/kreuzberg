@@ -597,7 +597,7 @@ async fn test_rtf_mime_type_preservation() {
 async fn test_rtf_word_sample_matches_docx_metadata_and_content() {
     let root = workspace_root();
     let rtf_path = root.join("test_documents/rtf/word_sample.rtf");
-    let docx_path = root.join("test_documents/documents/word_sample.docx");
+    let docx_path = root.join("test_documents/docx/word_sample.docx");
 
     if !rtf_path.exists() || !docx_path.exists() {
         println!("Skipping word_sample parity test: fixtures missing");
@@ -687,8 +687,8 @@ async fn test_rtf_lorem_ipsum_metadata_alignment() {
 async fn test_rtf_comprehensive_extraction_alignment() {
     let root = workspace_root();
     let rtf_path = root.join("test_documents/rtf/extraction_test.rtf");
-    let docx_path = root.join("test_documents/extraction_test.docx");
-    let odt_path = root.join("test_documents/extraction_test.odt");
+    let docx_path = root.join("test_documents/docx/extraction_test.docx");
+    let odt_path = root.join("test_documents/odt/extraction_test.odt");
 
     if !rtf_path.exists() {
         println!("⚠️  Test document not found at {:?}, skipping", rtf_path);

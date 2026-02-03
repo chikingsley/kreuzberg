@@ -1,0 +1,13 @@
+{
+  "document": "../../../test_documents/rst/readme.rst",
+  "file_type": "rst",
+  "file_size": 903,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Simple reStructuredText with basic formatting and code blocks - 0.9KB documentation",
+    "category": "rst-simple",
+    "size_class": "tiny"
+  }
+}

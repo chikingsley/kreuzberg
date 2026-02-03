@@ -13,7 +13,7 @@ async fn test_docx_kreuzberg_vs_pandoc_comparison() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed")
-        .join("test_documents/documents/word_sample.docx");
+        .join("test_documents/docx/word_sample.docx");
 
     if !docx_path.exists() {
         println!("Skipping test: Test file not found at {:?}", docx_path);
@@ -322,7 +322,7 @@ async fn test_docx_lorem_ipsum_comparison() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed")
-        .join("test_documents/documents/lorem_ipsum.docx");
+        .join("test_documents/docx/lorem_ipsum.docx");
 
     if !docx_path.exists() {
         println!("Skipping test: Test file not found at {:?}", docx_path);

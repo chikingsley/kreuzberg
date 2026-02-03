@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/org/readme.org",
+  "file_type": "org",
+  "file_size": 889,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Simple Org-mode README with basic structure and headings",
+    "category": "documentation"
+  }
+}

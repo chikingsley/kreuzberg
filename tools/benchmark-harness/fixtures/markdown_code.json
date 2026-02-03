@@ -1,0 +1,15 @@
+{
+  "document": "../../../test_documents/markdown/writer.pandoc.md",
+  "file_type": "md",
+  "file_size": 15271,
+  "expected_frameworks": [
+    "kreuzberg",
+    "markitdown"
+  ],
+  "metadata": {
+    "description": "Pandoc test suite - nested divs, headers, inline formatting, code blocks",
+    "category": "markdown-code",
+    "size_class": "small",
+    "features": ["divs", "nesting", "headers", "inline-code", "code-blocks", "emphasis"]
+  }
+}

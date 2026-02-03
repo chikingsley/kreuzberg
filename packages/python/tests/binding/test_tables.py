@@ -55,7 +55,7 @@ def get_tiny_pdf_result(test_documents: Path) -> ExtractionResult | None:
     else:
         get_cached_pdf_extraction = conftest.get_cached_pdf_extraction
 
-    pdf_path = str(test_documents / "pdfs_with_tables" / "tiny.pdf")
+    pdf_path = str(test_documents / "pdf" / "tiny.pdf")
     if not Path(pdf_path).exists():
         return None
 
@@ -408,7 +408,7 @@ class TestFormatSpecificTableHandling:
         """
         config = ExtractionConfig()
 
-        docx_path = test_documents / "documents" / "extraction_test.docx"
+        docx_path = test_documents / "docx" / "extraction_test.docx"
         if not docx_path.exists():
             pytest.skip(f"Test DOCX not found: {docx_path}")
 
@@ -454,7 +454,7 @@ class TestFormatSpecificTableHandling:
         """
         config = ExtractionConfig()
 
-        html_path = test_documents / "web" / "complex_table.html"
+        html_path = test_documents / "html" / "complex_table.html"
         if not html_path.exists():
             pytest.skip(f"Test HTML not found: {html_path}")
 

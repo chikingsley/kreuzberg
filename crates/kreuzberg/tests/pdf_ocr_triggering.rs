@@ -22,7 +22,7 @@ use std::path::Path;
 
 /// Helper function to get test PDF path
 fn get_test_pdf_path() -> String {
-    "test_documents/pdfs_with_tables/tiny.pdf".to_string()
+    "test_documents/pdf/tiny.pdf".to_string()
 }
 
 /// Helper function to skip test if PDF is unavailable

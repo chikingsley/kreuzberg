@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/csv/stanley_cups.csv",
+  "file_type": "csv",
+  "file_size": 91,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Simple CSV with Stanley Cups data",
+    "category": "tables"
+  }
+}

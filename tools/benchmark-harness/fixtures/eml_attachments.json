@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/email/mailgun_pdf_attachment.eml",
+  "file_type": "eml",
+  "file_size": 1514,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "Email with PDF attachment from Mailgun",
+    "category": "attachments"
+  }
+}

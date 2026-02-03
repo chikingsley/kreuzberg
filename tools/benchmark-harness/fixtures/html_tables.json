@@ -1,0 +1,15 @@
+{
+  "document": "../../../test_documents/html/html.html",
+  "file_type": "html",
+  "file_size": 1397,
+  "expected_frameworks": [
+    "kreuzberg",
+    "markitdown",
+    "unstructured"
+  ],
+  "metadata": {
+    "description": "Minimal HTML document with basic structure",
+    "category": "web",
+    "size_class": "tiny"
+  }
+}

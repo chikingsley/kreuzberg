@@ -545,7 +545,7 @@ mod tests {
         };
 
         let pdf_path =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdfs/google_doc_document.pdf");
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdf/google_doc_document.pdf");
         if let Ok(content) = std::fs::read(pdf_path) {
             let result = extractor.extract_bytes(&content, "application/pdf", &config).await;
             assert!(
@@ -569,7 +569,7 @@ mod tests {
         let config = ExtractionConfig::default();
 
         let pdf_path =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdfs/google_doc_document.pdf");
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdf/google_doc_document.pdf");
         if let Ok(content) = std::fs::read(pdf_path) {
             let result = extractor.extract_bytes(&content, "application/pdf", &config).await;
             assert!(
@@ -602,8 +602,7 @@ mod tests {
             ..Default::default()
         };
 
-        let pdf_path =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdfs/multi_page.pdf");
+        let pdf_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/pdf/multi_page.pdf");
         if let Ok(content) = std::fs::read(pdf_path) {
             let result = extractor.extract_bytes(&content, "application/pdf", &config).await;
             assert!(

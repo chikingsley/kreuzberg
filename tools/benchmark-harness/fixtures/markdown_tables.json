@@ -1,0 +1,15 @@
+{
+  "document": "../../../test_documents/markdown/tables.pandoc.md",
+  "file_type": "md",
+  "file_size": 2556,
+  "expected_frameworks": [
+    "kreuzberg",
+    "markitdown"
+  ],
+  "metadata": {
+    "description": "Pandoc table syntax - simple tables, multiline tables with captions",
+    "category": "markdown-tables",
+    "size_class": "tiny",
+    "features": ["tables", "captions", "multiline-tables", "grid-tables"]
+  }
+}

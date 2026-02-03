@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/odt/unorderedList.odt",
+  "file_type": "odt",
+  "file_size": 9505,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "ODT document with unordered and ordered lists",
+    "category": "lists"
+  }
+}

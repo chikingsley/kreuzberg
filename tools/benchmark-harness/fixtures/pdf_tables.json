@@ -1,10 +1,15 @@
 {
-	"document": "../../../test_documents/pdfs_with_tables/tiny.pdf",
-	"file_type": "pdf",
-	"file_size": 23572,
-	"expected_frameworks": ["kreuzberg", "docling", "markitdown", "unstructured"],
-	"metadata": {
-		"description": "PDF with tables - tiny document",
-		"category": "structured"
-	}
+  "document": "../../../test_documents/pdf/tiny.pdf",
+  "file_type": "pdf",
+  "file_size": 23572,
+  "expected_frameworks": [
+    "kreuzberg",
+    "docling",
+    "markitdown",
+    "unstructured"
+  ],
+  "metadata": {
+    "description": "PDF with tables - tiny document",
+    "category": "structured"
+  }
 }

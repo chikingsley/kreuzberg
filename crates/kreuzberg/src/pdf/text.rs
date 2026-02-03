@@ -498,7 +498,7 @@ mod cache_regression_tests {
     /// 2. The singleton pattern provides consistent extraction behavior
     #[test]
     fn test_no_global_cache_between_documents() {
-        let pdf_bytes = std::fs::read("../../test_documents/pdfs/fake_memo.pdf").expect("Failed to read PDF");
+        let pdf_bytes = std::fs::read("../../test_documents/pdf/fake_memo.pdf").expect("Failed to read PDF");
 
         let extractor = PdfTextExtractor::new().expect("Failed to create extractor");
 

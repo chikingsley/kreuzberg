@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/epub/img.epub",
+  "file_type": "epub",
+  "file_size": 20478,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "EPUB document with embedded images and illustrations, testing image extraction capabilities",
+    "category": "complex"
+  }
+}

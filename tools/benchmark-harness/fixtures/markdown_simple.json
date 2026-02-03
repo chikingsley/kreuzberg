@@ -1,10 +1,13 @@
 {
-	"document": "../../../test_documents/pandoc/simple_metadata.md",
-	"file_type": "md",
-	"file_size": 1200,
-	"expected_frameworks": ["kreuzberg", "markitdown"],
-	"metadata": {
-		"description": "Simple Markdown with metadata",
-		"category": "text"
-	}
+  "document": "../../../test_documents/markdown/simple_metadata.md",
+  "file_type": "md",
+  "file_size": 1200,
+  "expected_frameworks": [
+    "kreuzberg",
+    "markitdown"
+  ],
+  "metadata": {
+    "description": "Simple Markdown with metadata",
+    "category": "text"
+  }
 }

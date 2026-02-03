@@ -12,7 +12,7 @@ async fn main() {
 
     println!("Test 1: fake_memo.pdf");
     let start = Instant::now();
-    match extract_file("test_documents/pdfs/fake_memo.pdf", None, &config).await {
+    match extract_file("test_documents/pdf/fake_memo.pdf", None, &config).await {
         Ok(result) => {
             let duration = start.elapsed();
             println!("  ✓ Success! Duration: {:?}", duration);
@@ -26,7 +26,7 @@ async fn main() {
 
     println!("\nTest 2: Warm iteration");
     let start = Instant::now();
-    match extract_file("test_documents/pdfs/fake_memo.pdf", None, &config).await {
+    match extract_file("test_documents/pdf/fake_memo.pdf", None, &config).await {
         Ok(result) => {
             let duration = start.elapsed();
             println!("  ✓ Success! Duration: {:?}", duration);
@@ -41,7 +41,7 @@ async fn main() {
     println!("\nTest 3: Academic Paper (18 fonts)");
     let start = Instant::now();
     match extract_file(
-        "test_documents/pdfs/a_comprehensive_study_of_convergent_and_commutative_replicated_data_types.pdf",
+        "test_documents/pdf/a_comprehensive_study_of_convergent_and_commutative_replicated_data_types.pdf",
         None,
         &config,
     )

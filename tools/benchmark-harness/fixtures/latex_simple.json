@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/latex/minimal.tex",
+  "file_type": "tex",
+  "file_size": 80,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "Minimal LaTeX document with basic Hello World content",
+    "category": "minimal"
+  }
+}

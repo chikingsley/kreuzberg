@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/latex/latex_document.tex",
+  "file_type": "tex",
+  "file_size": 1475,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "Full LaTeX document with sections, lists, tables, equations, and metadata",
+    "category": "structured"
+  }
+}

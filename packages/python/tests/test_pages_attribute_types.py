@@ -54,7 +54,7 @@ def test_pages_attribute_with_page_extraction_enabled(tmp_path: Path) -> None:
 
 def test_pages_with_pdf_single_page(test_documents: Path) -> None:
     """Extract pages from a single-page PDF."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -79,7 +79,7 @@ def test_pages_with_pdf_single_page(test_documents: Path) -> None:
 
 def test_pages_with_pdf_multipage(test_documents: Path) -> None:
     """Extract pages from a multi-page PDF and verify structure."""
-    pdf_path = test_documents / "pdfs" / "multi_page.pdf"
+    pdf_path = test_documents / "pdf" / "multi_page.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -101,7 +101,7 @@ def test_pages_with_pdf_multipage(test_documents: Path) -> None:
 
 def test_pages_none_without_config(test_documents: Path) -> None:
     """Without PageConfig, pages should be None."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -113,7 +113,7 @@ def test_pages_none_without_config(test_documents: Path) -> None:
 
 def test_pages_empty_config(test_documents: Path) -> None:
     """With extract_pages=False (default), pages should be None."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -138,7 +138,7 @@ def test_pages_iteration_safe_when_none(tmp_path: Path) -> None:
 
 def test_pages_iteration_safe_when_populated(test_documents: Path) -> None:
     """Iterating over populated pages should work without errors."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -155,7 +155,7 @@ def test_pages_iteration_safe_when_populated(test_documents: Path) -> None:
 
 def test_page_content_structure(test_documents: Path) -> None:
     """Verify all PageContent fields are accessible and have correct types."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -175,7 +175,7 @@ def test_page_content_structure(test_documents: Path) -> None:
 
 def test_pages_with_sync_extraction(test_documents: Path) -> None:
     """Verify pages work correctly with sync extraction."""
-    pdf_path = test_documents / "pdfs" / "multi_page.pdf"
+    pdf_path = test_documents / "pdf" / "multi_page.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -190,7 +190,7 @@ def test_pages_with_sync_extraction(test_documents: Path) -> None:
 @pytest.mark.asyncio
 async def test_pages_with_async_extraction(test_documents: Path) -> None:
     """Verify pages work correctly with async extraction."""
-    pdf_path = test_documents / "pdfs" / "multi_page.pdf"
+    pdf_path = test_documents / "pdf" / "multi_page.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -204,7 +204,7 @@ async def test_pages_with_async_extraction(test_documents: Path) -> None:
 
 def test_pages_type_hint_with_mypy(test_documents: Path) -> None:
     """Verify type hints are properly recognized (pseudo-test for mypy)."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 
@@ -240,7 +240,7 @@ def test_pages_edge_case_empty_pages(tmp_path: Path) -> None:
 
 def test_pages_accessible_after_extraction(test_documents: Path) -> None:
     """Verify pages attribute is accessible after extraction completes."""
-    pdf_path = test_documents / "pdfs" / "fake_memo.pdf"
+    pdf_path = test_documents / "pdf" / "fake_memo.pdf"
     if not pdf_path.exists():
         pytest.skip(f"Test file not found: {pdf_path}")
 

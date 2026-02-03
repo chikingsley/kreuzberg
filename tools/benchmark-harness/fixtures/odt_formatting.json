@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/odt/bold.odt",
+  "file_type": "odt",
+  "file_size": 10377,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "ODT document with various text formatting styles (bold, italic, underline)",
+    "category": "formatting"
+  }
+}

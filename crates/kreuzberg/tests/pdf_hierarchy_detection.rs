@@ -22,7 +22,7 @@ use std::path::Path;
 async fn test_full_hierarchy_extraction() {
     // Use the embedded_images_tables.pdf which has clear text structure
     // Path is relative to workspace root, not crate root
-    let pdf_path = "../../test_documents/pdfs/embedded_images_tables.pdf";
+    let pdf_path = "../../test_documents/pdf/embedded_images_tables.pdf";
 
     if !Path::new(pdf_path).exists() {
         eprintln!("Test PDF not found at: {}", pdf_path);
@@ -135,7 +135,7 @@ async fn test_full_hierarchy_extraction() {
 #[tokio::test]
 #[ignore]
 async fn test_hierarchy_disabled() {
-    let pdf_path = "../../test_documents/pdfs/embedded_images_tables.pdf";
+    let pdf_path = "../../test_documents/pdf/embedded_images_tables.pdf";
 
     if !Path::new(pdf_path).exists() {
         eprintln!("Test PDF not found at: {}", pdf_path);
@@ -190,7 +190,7 @@ async fn test_hierarchy_disabled() {
 #[tokio::test]
 #[ignore]
 async fn test_hierarchy_with_explicit_disabled() {
-    let pdf_path = "../../test_documents/pdfs/embedded_images_tables.pdf";
+    let pdf_path = "../../test_documents/pdf/embedded_images_tables.pdf";
 
     if !Path::new(pdf_path).exists() {
         eprintln!("Test PDF not found at: {}", pdf_path);
@@ -245,7 +245,7 @@ async fn test_hierarchy_with_explicit_disabled() {
 #[tokio::test]
 #[ignore]
 async fn test_hierarchy_different_k_clusters() {
-    let pdf_path = "../../test_documents/pdfs/embedded_images_tables.pdf";
+    let pdf_path = "../../test_documents/pdf/embedded_images_tables.pdf";
 
     if !Path::new(pdf_path).exists() {
         eprintln!("Test PDF not found at: {}", pdf_path);

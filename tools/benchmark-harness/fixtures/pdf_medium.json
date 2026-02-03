@@ -1,10 +1,15 @@
 {
-	"document": "../../../test_documents/pdfs/a_brief_introduction_to_the_standard_annotation_language_sal_2006.pdf",
-	"file_type": "pdf",
-	"file_size": 358400,
-	"expected_frameworks": ["kreuzberg", "docling", "markitdown", "unstructured"],
-	"metadata": {
-		"description": "Medium PDF - Research paper",
-		"category": "academic"
-	}
+  "document": "../../../test_documents/pdf/a_brief_introduction_to_the_standard_annotation_language_sal_2006.pdf",
+  "file_type": "pdf",
+  "file_size": 358400,
+  "expected_frameworks": [
+    "kreuzberg",
+    "docling",
+    "markitdown",
+    "unstructured"
+  ],
+  "metadata": {
+    "description": "Medium PDF - Research paper",
+    "category": "academic"
+  }
 }

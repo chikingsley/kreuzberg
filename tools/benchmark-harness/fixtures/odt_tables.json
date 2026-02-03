@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/odt/table.odt",
+  "file_type": "odt",
+  "file_size": 10763,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "ODT document with table structures for layout extraction",
+    "category": "tables"
+  }
+}

@@ -10,7 +10,7 @@ fn test_xlsx_full_metadata_extraction() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/office/excel.xlsx");
+    let test_file = workspace_root.join("test_documents/xlsx/excel_tiny_excel.xlsx");
 
     if !test_file.exists() {
         println!("Skipping test: Test file not found at {:?}", test_file);
@@ -38,7 +38,7 @@ fn test_xlsx_multi_sheet_metadata() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/spreadsheets/excel_multi_sheet.xlsx");
+    let test_file = workspace_root.join("test_documents/xlsx/excel_multi_sheet.xlsx");
 
     if !test_file.exists() {
         println!("Skipping test: Test file not found at {:?}", test_file);
@@ -70,7 +70,7 @@ fn test_xlsx_minimal_metadata_extraction() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/spreadsheets/test_01.xlsx");
+    let test_file = workspace_root.join("test_documents/xlsx/tables_small_test01.xlsx");
 
     if !test_file.exists() {
         println!("Skipping test: Test file not found at {:?}", test_file);

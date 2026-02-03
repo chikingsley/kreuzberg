@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/xml/simple_note.xml",
+  "file_type": "xml",
+  "file_size": 165,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Minimal XML note structure with basic text content",
+    "category": "structured"
+  }
+}

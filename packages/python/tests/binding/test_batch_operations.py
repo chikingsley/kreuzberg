@@ -103,8 +103,8 @@ class TestBatchFileExtraction:
         config = ExtractionConfig()
 
         files = [
-            test_documents / "documents" / "lorem_ipsum.docx",
-            test_documents / "documents" / "extraction_test.docx",
+            test_documents / "docx" / "lorem_ipsum.docx",
+            test_documents / "docx" / "extraction_test.docx",
         ]
 
         results = []
@@ -122,7 +122,7 @@ class TestBatchFileExtraction:
         """Extract same file multiple times."""
         config = ExtractionConfig()
 
-        docx_path = test_documents / "documents" / "lorem_ipsum.docx"
+        docx_path = test_documents / "docx" / "lorem_ipsum.docx"
         if not docx_path.exists():
             pytest.skip(f"DOCX not found: {docx_path}")
 
@@ -137,7 +137,7 @@ class TestBatchFileExtraction:
         """Verify batch results are consistent across runs."""
         config = ExtractionConfig()
 
-        docx_path = test_documents / "documents" / "lorem_ipsum.docx"
+        docx_path = test_documents / "docx" / "lorem_ipsum.docx"
         if not docx_path.exists():
             pytest.skip(f"DOCX not found: {docx_path}")
 
@@ -169,7 +169,7 @@ class TestBatchErrorHandling:
         config = ExtractionConfig()
 
         # Valid file
-        valid_path = test_documents / "documents" / "lorem_ipsum.docx"
+        valid_path = test_documents / "docx" / "lorem_ipsum.docx"
         if valid_path.exists():
             result = extract_file_sync(str(valid_path), config=config)
             assert result is not None

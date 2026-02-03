@@ -5,14 +5,11 @@ use std::time::Instant;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let test_pdfs = [
         (
-            "a_comprehensive_study_of_convergent_and_commutative_replicated_data_types.pdf",
+            "a_comprehensive_stud_large_acomprehensives.pdf",
             "Academic Paper (18 fonts)",
         ),
-        (
-            "5_level_paging_and_5_level_ept_intel_revision_1_1_may_2017.pdf",
-            "Intel PDF (5 fonts)",
-        ),
-        ("fake_memo.pdf", "Tiny Memo (3-5 fonts)"),
+        ("5_level_paging_and_5_medium_5levelpagingand.pdf", "Intel PDF (5 fonts)"),
+        ("simple_small_fakememo.pdf", "Tiny Memo (3-5 fonts)"),
     ];
 
     let config = ExtractionConfig {
@@ -24,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Testing warm execution fix and font overhead fix\n");
 
     for (file, description) in &test_pdfs {
-        let path = PathBuf::from(format!("test_documents/pdfs/{}", file));
+        let path = PathBuf::from(format!("test_documents/pdf/{}", file));
         println!("=== {} ===", description);
         println!("File: {}\n", file);
 

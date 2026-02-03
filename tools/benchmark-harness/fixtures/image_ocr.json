@@ -1,10 +1,12 @@
 {
-	"document": "../../../test_documents/images/ocr_image.jpg",
-	"file_type": "jpg",
-	"file_size": 73717,
-	"expected_frameworks": ["kreuzberg"],
-	"metadata": {
-		"description": "Image requiring OCR - Hello World test image",
-		"category": "ocr"
-	}
+  "document": "../../../test_documents/images/ocr_image.jpg",
+  "file_type": "jpg",
+  "file_size": 73717,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "Image requiring OCR - Hello World test image",
+    "category": "ocr"
+  }
 }

@@ -53,7 +53,7 @@ def get_pdf_image_result(test_documents: Path) -> ExtractionResult | None:
 
     # Use tiny.pdf instead of code_and_formula.pdf to match other tests
     # This ensures all tests use the same PDF after PDFium is initialized
-    pdf_path = test_documents / "pdfs_with_tables" / "tiny.pdf"
+    pdf_path = test_documents / "pdf" / "tiny.pdf"
     if not pdf_path.exists():
         return None
 
@@ -93,7 +93,7 @@ class TestDocxImageExtraction:
         """
         config = ExtractionConfig(images=ImageExtractionConfig(extract_images=True))
 
-        docx_path = test_documents / "documents" / "lorem_ipsum.docx"
+        docx_path = test_documents / "docx" / "lorem_ipsum.docx"
         if not docx_path.exists():
             pytest.skip(f"Test DOCX not found: {docx_path}")
 
@@ -110,7 +110,7 @@ class TestDocxImageExtraction:
         """
         config = ExtractionConfig(images=ImageExtractionConfig(extract_images=False))
 
-        docx_path = test_documents / "documents" / "lorem_ipsum.docx"
+        docx_path = test_documents / "docx" / "lorem_ipsum.docx"
         if not docx_path.exists():
             pytest.skip(f"Test DOCX not found: {docx_path}")
 
@@ -131,7 +131,7 @@ class TestPptxImageExtraction:
         """
         config = ExtractionConfig(images=ImageExtractionConfig(extract_images=True))
 
-        pptx_path = test_documents / "presentations" / "powerpoint_with_image.pptx"
+        pptx_path = test_documents / "pptx" / "powerpoint_with_image.pptx"
         if not pptx_path.exists():
             pytest.skip(f"Test PPTX not found: {pptx_path}")
 
@@ -147,7 +147,7 @@ class TestPptxImageExtraction:
         """
         config = ExtractionConfig(images=ImageExtractionConfig(extract_images=True))
 
-        pptx_path = test_documents / "presentations" / "pitch_deck_presentation.pptx"
+        pptx_path = test_documents / "pptx" / "pitch_deck_presentation.pptx"
         if not pptx_path.exists():
             pytest.skip(f"Test PPTX not found: {pptx_path}")
 
@@ -384,8 +384,8 @@ class TestBatchImageExtraction:
         # Use different file types to test format handling
         documents = [
             test_documents / "images" / "sample.png",
-            test_documents / "documents" / "lorem_ipsum.docx",
-            test_documents / "presentations" / "powerpoint_with_image.pptx",
+            test_documents / "docx" / "lorem_ipsum.docx",
+            test_documents / "pptx" / "powerpoint_with_image.pptx",
         ]
 
         results = []

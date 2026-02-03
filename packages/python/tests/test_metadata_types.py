@@ -450,7 +450,7 @@ class TestHtmlExtractionIntegration:
     @pytest.fixture
     def html_file(self, test_documents: Path) -> Path:
         """Get path to test HTML file."""
-        html_path = test_documents / "web" / "html.html"
+        html_path = test_documents / "html" / "html.html"
         if not html_path.exists():
             pytest.skip(f"Test file not found: {html_path}")
         return html_path

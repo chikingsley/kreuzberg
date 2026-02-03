@@ -1,0 +1,10 @@
+{
+  "document": "../../../test_documents/epub/epub2_no_cover.epub",
+  "file_type": "epub",
+  "file_size": 3584,
+  "expected_frameworks": ["kreuzberg"],
+  "metadata": {
+    "description": "Minimal EPUB 2 document without cover image for basic parsing validation",
+    "category": "simple"
+  }
+}

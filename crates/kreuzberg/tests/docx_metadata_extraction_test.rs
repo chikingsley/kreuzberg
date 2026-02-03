@@ -11,7 +11,7 @@ async fn test_docx_full_metadata_extraction() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/documents/word_sample.docx");
+    let test_file = workspace_root.join("test_documents/docx/word_sample.docx");
 
     if !test_file.exists() {
         println!("Skipping test: Test file not found at {:?}", test_file);
@@ -94,7 +94,7 @@ async fn test_docx_minimal_metadata_extraction() {
         .expect("Operation failed")
         .parent()
         .expect("Operation failed");
-    let test_file = workspace_root.join("test_documents/documents/lorem_ipsum.docx");
+    let test_file = workspace_root.join("test_documents/docx/lorem_ipsum.docx");
 
     if !test_file.exists() {
         println!("Skipping test: Test file not found at {:?}", test_file);

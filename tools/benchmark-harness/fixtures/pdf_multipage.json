@@ -1,11 +1,16 @@
 {
-	"document": "../../../test_documents/pdfs/multi_page.pdf",
-	"file_type": "pdf",
-	"file_size": 128000,
-	"expected_frameworks": ["kreuzberg", "docling", "markitdown", "unstructured"],
-	"metadata": {
-		"description": "Multi-page PDF - 125KB document with multiple pages",
-		"category": "pdf-multi-page",
-		"size_class": "small"
-	}
+  "document": "../../../test_documents/pdf/multi_page.pdf",
+  "file_type": "pdf",
+  "file_size": 128000,
+  "expected_frameworks": [
+    "kreuzberg",
+    "docling",
+    "markitdown",
+    "unstructured"
+  ],
+  "metadata": {
+    "description": "Multi-page PDF - 125KB document with multiple pages",
+    "category": "pdf-multi-page",
+    "size_class": "small"
+  }
 }

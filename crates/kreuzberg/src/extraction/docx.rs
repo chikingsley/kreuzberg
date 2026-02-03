@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn test_extract_text_with_page_breaks_no_breaks() {
         let docx_path =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/documents/lorem_ipsum.docx");
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test_documents/docx/lorem_ipsum.docx");
         if let Ok(bytes) = std::fs::read(docx_path) {
             let result = extract_text_with_page_breaks(&bytes);
             if let Ok((text, boundaries)) = result {
