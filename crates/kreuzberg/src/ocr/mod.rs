@@ -49,6 +49,9 @@ pub mod types;
 pub mod utils;
 pub mod validation;
 
+#[cfg(feature = "paddle-ocr")]
+pub mod paddle;
+
 pub use cache::{OcrCache, OcrCacheStats};
 pub use error::OcrError;
 pub use hocr::convert_hocr_to_markdown;
@@ -59,3 +62,6 @@ pub use tesseract_backend::TesseractBackend;
 pub use types::{BatchItemResult, ExtractionResult, PSMMode, Table, TesseractConfig};
 pub use utils::compute_hash;
 pub use validation::{validate_language_code, validate_tesseract_version};
+
+#[cfg(feature = "paddle-ocr")]
+pub use paddle::{CacheStats, ModelManager, ModelPaths, PaddleLanguage, PaddleOcrBackend, PaddleOcrConfig};

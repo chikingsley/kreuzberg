@@ -98,6 +98,9 @@ pub use core::server_config::ServerConfig;
 #[cfg(feature = "pdf")]
 pub use core::config::{HierarchyConfig, PdfConfig};
 
+#[cfg(all(feature = "ocr", feature = "paddle-ocr"))]
+pub use ocr::{CacheStats, ModelManager, ModelPaths, PaddleLanguage, PaddleOcrBackend, PaddleOcrConfig};
+
 pub use core::mime::{
     DOCX_MIME_TYPE, EXCEL_MIME_TYPE, HTML_MIME_TYPE, JSON_MIME_TYPE, MARKDOWN_MIME_TYPE, PDF_MIME_TYPE,
     PLAIN_TEXT_MIME_TYPE, POWER_POINT_MIME_TYPE, XML_MIME_TYPE, detect_mime_type, detect_mime_type_from_bytes,

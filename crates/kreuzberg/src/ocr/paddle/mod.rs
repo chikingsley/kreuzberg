@@ -41,26 +41,27 @@ mod config;
 mod model_manager;
 
 pub use backend::PaddleOcrBackend;
-pub use config::PaddleOcrConfig;
+pub use config::{PaddleLanguage, PaddleOcrConfig};
+pub use model_manager::{CacheStats, ModelManager, ModelPaths};
 
 /// Supported languages for PaddleOCR.
 ///
 /// PaddleOCR supports 14 optimized language models.
 pub const SUPPORTED_LANGUAGES: &[&str] = &[
-    "ch",           // Chinese (Simplified)
-    "en",           // English
-    "french",       // French
-    "german",       // German
-    "korean",       // Korean
-    "japan",        // Japanese
-    "chinese_cht",  // Chinese (Traditional)
-    "ta",           // Tamil
-    "te",           // Telugu
-    "ka",           // Kannada
-    "latin",        // Latin script languages
-    "arabic",       // Arabic
-    "cyrillic",     // Cyrillic script languages
-    "devanagari",   // Devanagari script languages
+    "ch",          // Chinese (Simplified)
+    "en",          // English
+    "french",      // French
+    "german",      // German
+    "korean",      // Korean
+    "japan",       // Japanese
+    "chinese_cht", // Chinese (Traditional)
+    "ta",          // Tamil
+    "te",          // Telugu
+    "ka",          // Kannada
+    "latin",       // Latin script languages
+    "arabic",      // Arabic
+    "cyrillic",    // Cyrillic script languages
+    "devanagari",  // Devanagari script languages
 ];
 
 /// Check if a language code is supported by PaddleOCR.
@@ -86,11 +87,8 @@ pub fn map_language_code(kreuzberg_code: &str) -> Option<&'static str> {
         "ru" | "rus" | "russian" => Some("cyrillic"),
         "hi" | "hin" | "hindi" => Some("devanagari"),
         // Latin script fallback for European languages
-        "es" | "spa" | "spanish" |
-        "it" | "ita" | "italian" |
-        "pt" | "por" | "portuguese" |
-        "nl" | "nld" | "dutch" |
-        "pl" | "pol" | "polish" => Some("latin"),
+        "es" | "spa" | "spanish" | "it" | "ita" | "italian" | "pt" | "por" | "portuguese" | "nl" | "nld" | "dutch"
+        | "pl" | "pol" | "polish" => Some("latin"),
         _ => None,
     }
 }

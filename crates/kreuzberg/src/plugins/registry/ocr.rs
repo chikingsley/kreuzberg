@@ -71,6 +71,30 @@ impl OcrBackendRegistry {
             }
         }
 
+        #[cfg(feature = "paddle-ocr")]
+        {
+            use crate::ocr::paddle::PaddleOcrBackend;
+            match PaddleOcrBackend::new() {
+                Ok(backend) => {
+                    if let Err(e) = registry.register(Arc::new(backend)) {
+                        tracing::error!(
+                            "Failed to register PaddleOCR backend: {}. \
+                             PaddleOCR functionality will be unavailable.",
+                            e
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "PaddleOCR backend initialization failed: {}. \
+                         PaddleOCR functionality will be unavailable. \
+                         Common causes: ONNX Runtime not installed, model files missing.",
+                        e
+                    );
+                }
+            }
+        }
+
         registry
     }
 
