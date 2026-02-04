@@ -1,0 +1,8 @@
+{
+  "source": "docling_export",
+  "source_file": "vendored/docling/groundtruth/docling_v2/lorem_ipsum.docx.md",
+  "document_name": "lorem_ipsum",
+  "original_md_filename": "lorem_ipsum.docx",
+  "file_type": "docx",
+  "original_source_doc": "vendored/docling/docx/lorem_ipsum.docx"
+}

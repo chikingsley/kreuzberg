@@ -1,0 +1,8 @@
+{
+  "source": "docling_export",
+  "source_file": "vendored/docling/groundtruth/docling_v2/test_emf_docx.docx.md",
+  "document_name": "test_emf_docx",
+  "original_md_filename": "test_emf_docx.docx",
+  "file_type": "docx",
+  "original_source_doc": "vendored/docling/docx/test_emf_docx.docx"
+}

@@ -1,0 +1,8 @@
+{
+  "source": "docling_export",
+  "source_file": "vendored/docling/groundtruth/docling_v2/csv-inconsistent-header.csv.md",
+  "document_name": "csv-inconsistent-header",
+  "original_md_filename": "csv-inconsistent-header.csv",
+  "file_type": "csv",
+  "original_source_doc": "vendored/docling/csv/csv-inconsistent-header.csv"
+}
