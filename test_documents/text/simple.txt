@@ -1,1 +1,1 @@
-utf8_content.txt
+contract_test.txt
