@@ -10,14 +10,17 @@
 //! ```rust,ignore
 //! use kreuzberg::ocr::conversion::{text_block_to_element, element_to_hocr_word};
 //!
-//! // Convert PaddleOCR result to unified element
-//! let element = text_block_to_element(&text_block);
+//! // Convert PaddleOCR result to unified element (with error handling)
+//! let element = text_block_to_element(&text_block)?;
 //!
 //! // Convert back to HocrWord for table detection
 //! let hocr_word = element_to_hocr_word(&element);
 //! ```
 
 use crate::types::{OcrBoundingGeometry, OcrConfidence, OcrElement, OcrElementLevel, OcrRotation};
+
+#[cfg(feature = "paddle-ocr")]
+use crate::error::{KreuzbergError, Result};
 
 #[cfg(feature = "paddle-ocr")]
 use kreuzberg_paddle_ocr::TextBlock;
@@ -39,21 +42,30 @@ use super::table::HocrWord;
 /// # Returns
 ///
 /// A fully populated `OcrElement` with all available metadata.
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - `box_points` has fewer than 4 points (malformed detection)
+/// - `angle_index` is outside the valid range (0-3)
 #[cfg(feature = "paddle-ocr")]
-pub fn text_block_to_element(block: &TextBlock, page_number: usize) -> OcrElement {
+pub fn text_block_to_element(block: &TextBlock, page_number: usize) -> Result<OcrElement> {
+    // Validate box_points - PaddleOCR must provide exactly 4 points
+    if block.box_points.len() < 4 {
+        return Err(KreuzbergError::ocr(format!(
+            "PaddleOCR TextBlock has {} box_points, expected at least 4. This indicates malformed OCR output.",
+            block.box_points.len()
+        )));
+    }
+
     // Convert box_points to quadrilateral format
     // PaddleOCR provides points in clockwise order starting from top-left
-    let points: [(u32, u32); 4] = if block.box_points.len() >= 4 {
-        [
-            (block.box_points[0].x, block.box_points[0].y),
-            (block.box_points[1].x, block.box_points[1].y),
-            (block.box_points[2].x, block.box_points[2].y),
-            (block.box_points[3].x, block.box_points[3].y),
-        ]
-    } else {
-        // Fallback to zero points if insufficient data
-        [(0, 0), (0, 0), (0, 0), (0, 0)]
-    };
+    let points: [(u32, u32); 4] = [
+        (block.box_points[0].x, block.box_points[0].y),
+        (block.box_points[1].x, block.box_points[1].y),
+        (block.box_points[2].x, block.box_points[2].y),
+        (block.box_points[3].x, block.box_points[3].y),
+    ];
 
     let geometry = OcrBoundingGeometry::Quadrilateral { points };
 
@@ -61,16 +73,19 @@ pub fn text_block_to_element(block: &TextBlock, page_number: usize) -> OcrElemen
 
     // Only include rotation if angle classification was performed
     let rotation = if block.angle_index >= 0 {
-        Some(OcrRotation::from_paddle(block.angle_index, block.angle_score))
+        match OcrRotation::from_paddle(block.angle_index, block.angle_score) {
+            Ok(rot) => Some(rot),
+            Err(msg) => return Err(KreuzbergError::ocr(msg)),
+        }
     } else {
         None
     };
 
-    OcrElement::new(block.text.clone(), geometry, confidence)
+    Ok(OcrElement::new(block.text.clone(), geometry, confidence)
         .with_level(OcrElementLevel::Line) // PaddleOCR detects lines
         .with_page_number(page_number)
         .with_rotation_opt(rotation)
-        .with_metadata("backend", serde_json::json!("paddle-ocr"))
+        .with_metadata("backend", serde_json::json!("paddle-ocr")))
 }
 
 /// Tesseract TSV row data for conversion.
@@ -210,6 +225,7 @@ pub fn elements_to_hocr_words(elements: &[OcrElement], min_confidence: f64) -> V
 }
 
 /// Extension trait to add optional rotation to OcrElement builder.
+#[allow(dead_code)]
 trait OcrElementExt {
     fn with_rotation_opt(self, rotation: Option<OcrRotation>) -> Self;
 }
@@ -366,7 +382,7 @@ mod tests {
             text_score: 0.88,
         };
 
-        let element = text_block_to_element(&block, 1);
+        let element = text_block_to_element(&block, 1).expect("Valid TextBlock");
 
         assert_eq!(element.text, "Test text");
         assert_eq!(element.level, OcrElementLevel::Line);
@@ -392,5 +408,58 @@ mod tests {
         let rot = element.rotation.as_ref().unwrap();
         assert_eq!(rot.angle_degrees, 0.0);
         assert!((rot.confidence.unwrap() - 0.99).abs() < 0.001);
+    }
+
+    #[cfg(feature = "paddle-ocr")]
+    #[test]
+    fn test_text_block_to_element_malformed_box_points() {
+        use kreuzberg_paddle_ocr::Point;
+
+        // Test with insufficient box_points
+        let block = TextBlock {
+            box_points: vec![
+                Point { x: 10, y: 20 },
+                Point { x: 100, y: 22 },
+                // Missing 2 points
+            ],
+            box_score: 0.95,
+            angle_index: 0,
+            angle_score: 0.99,
+            text: "Test text".to_string(),
+            text_score: 0.88,
+        };
+
+        let result = text_block_to_element(&block, 1);
+        assert!(result.is_err(), "Should reject TextBlock with < 4 box_points");
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("box_points"), "Error should mention box_points");
+        assert!(error_msg.contains("4"), "Error should mention required count");
+    }
+
+    #[cfg(feature = "paddle-ocr")]
+    #[test]
+    fn test_text_block_to_element_invalid_angle_index() {
+        use kreuzberg_paddle_ocr::Point;
+
+        let block = TextBlock {
+            box_points: vec![
+                Point { x: 10, y: 20 },
+                Point { x: 100, y: 22 },
+                Point { x: 98, y: 70 },
+                Point { x: 8, y: 68 },
+            ],
+            box_score: 0.95,
+            angle_index: 5, // Invalid: must be 0-3
+            angle_score: 0.99,
+            text: "Test text".to_string(),
+            text_score: 0.88,
+        };
+
+        let result = text_block_to_element(&block, 1);
+        assert!(result.is_err(), "Should reject TextBlock with invalid angle_index");
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("angle_index"), "Error should mention angle_index");
     }
 }

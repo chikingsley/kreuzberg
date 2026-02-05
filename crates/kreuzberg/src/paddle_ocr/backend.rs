@@ -21,6 +21,8 @@ use super::config::PaddleOcrConfig;
 use super::model_manager::{ModelManager, ModelPaths};
 use super::{is_language_supported, map_language_code};
 
+use kreuzberg_paddle_ocr::OcrLite;
+
 /// PaddleOCR backend using ONNX Runtime.
 ///
 /// This backend provides high-quality OCR using PaddlePaddle's PP-OCR models
@@ -43,6 +45,8 @@ use super::{is_language_supported, map_language_code};
 pub struct PaddleOcrBackend {
     config: PaddleOcrConfig,
     model_paths: Arc<Mutex<Option<ModelPaths>>>,
+    /// Lazily initialized OcrLite engine (Mutex for interior mutability as detect() takes &mut self)
+    ocr_engine: Arc<Mutex<Option<OcrLite>>>,
 }
 
 impl PaddleOcrBackend {
@@ -56,6 +60,7 @@ impl PaddleOcrBackend {
         Ok(Self {
             config,
             model_paths: Arc::new(Mutex::new(None)),
+            ocr_engine: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -78,6 +83,105 @@ impl PaddleOcrBackend {
         Ok(paths)
     }
 
+    /// Get or initialize the OCR engine with loaded models.
+    ///
+    /// Returns a guard to the initialized OcrLite engine.
+    fn get_or_init_engine(&self) -> Result<MutexGuard<'_, Option<OcrLite>>> {
+        // First ensure models are available
+        let model_paths = {
+            let paths_guard = self.get_or_init_models()?;
+            paths_guard.clone().ok_or_else(|| crate::KreuzbergError::Ocr {
+                message: "Model paths not initialized".to_string(),
+                source: None,
+            })?
+        };
+
+        let mut engine_guard = self.ocr_engine.lock().map_err(|e| crate::KreuzbergError::Plugin {
+            message: format!("Failed to acquire OCR engine lock: {}", e),
+            plugin_name: "paddle-ocr".to_string(),
+        })?;
+
+        if engine_guard.is_none() {
+            tracing::info!("Initializing PaddleOCR engine with models");
+
+            let mut ocr_lite = OcrLite::new();
+
+            // Get ONNX model file paths from the model directories
+            let det_model_path = Self::find_onnx_model(&model_paths.det_model)?;
+            let cls_model_path = Self::find_onnx_model(&model_paths.cls_model)?;
+            let rec_model_path = Self::find_onnx_model(&model_paths.rec_model)?;
+
+            // Initialize models with default number of threads (uses all available cores)
+            let num_threads = num_cpus::get().min(4); // Cap at 4 threads for OCR
+
+            ocr_lite
+                .init_models(
+                    det_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                        message: "Invalid detection model path".to_string(),
+                        source: None,
+                    })?,
+                    cls_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                        message: "Invalid classification model path".to_string(),
+                        source: None,
+                    })?,
+                    rec_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                        message: "Invalid recognition model path".to_string(),
+                        source: None,
+                    })?,
+                    num_threads,
+                )
+                .map_err(|e| crate::KreuzbergError::Ocr {
+                    message: format!("Failed to initialize PaddleOCR models: {}", e),
+                    source: None,
+                })?;
+
+            tracing::info!("PaddleOCR engine initialized successfully");
+            *engine_guard = Some(ocr_lite);
+        }
+
+        Ok(engine_guard)
+    }
+
+    /// Find the ONNX model file within a model directory.
+    ///
+    /// First checks for model.onnx (standard name), then searches for any .onnx file.
+    fn find_onnx_model(model_dir: &std::path::Path) -> Result<std::path::PathBuf> {
+        if !model_dir.exists() {
+            return Err(crate::KreuzbergError::Ocr {
+                message: format!("Model directory does not exist: {:?}", model_dir),
+                source: None,
+            });
+        }
+
+        // First check for standard model.onnx file
+        let standard_path = model_dir.join("model.onnx");
+        if standard_path.exists() {
+            return Ok(standard_path);
+        }
+
+        // Fall back to searching for any .onnx file
+        let entries = std::fs::read_dir(model_dir).map_err(|e| crate::KreuzbergError::Ocr {
+            message: format!("Failed to read model directory {:?}: {}", model_dir, e),
+            source: None,
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| crate::KreuzbergError::Ocr {
+                message: format!("Failed to read directory entry: {}", e),
+                source: None,
+            })?;
+            let path = entry.path();
+            if path.extension().is_some_and(|ext| ext == "onnx") {
+                return Ok(path);
+            }
+        }
+
+        Err(crate::KreuzbergError::Ocr {
+            message: format!("No ONNX model file found in directory: {:?}", model_dir),
+            source: None,
+        })
+    }
+
     /// Perform OCR on image bytes.
     ///
     /// Uses `tokio::task::spawn_blocking` to run the CPU-intensive OCR operation
@@ -86,27 +190,30 @@ impl PaddleOcrBackend {
     /// Returns a tuple of (text_content, ocr_elements) where elements preserve
     /// full spatial and confidence information from PaddleOCR.
     async fn do_ocr(&self, image_bytes: &[u8], _language: &str) -> Result<(String, Vec<OcrElement>)> {
-        // Ensure models are loaded - drop the guard before await
+        // Ensure OCR engine is initialized (this also initializes models)
         {
-            let models = self.get_or_init_models()?;
-            if models.is_none() {
+            let engine = self.get_or_init_engine()?;
+            if engine.is_none() {
                 return Err(crate::KreuzbergError::Ocr {
-                    message: "Failed to initialize PaddleOCR models".to_string(),
+                    message: "Failed to initialize PaddleOCR engine".to_string(),
                     source: None,
                 });
             }
         } // MutexGuard dropped here
 
         let image_bytes_owned = image_bytes.to_vec();
+        let ocr_engine = Arc::clone(&self.ocr_engine);
+        let config = self.config.clone();
 
         // Run OCR in blocking task to avoid blocking the async runtime
         let text_blocks = tokio::task::spawn_blocking(move || {
             // Use catch_unwind to handle potential panics from ONNX Runtime
-            catch_unwind(std::panic::AssertUnwindSafe(|| Self::perform_ocr(&image_bytes_owned))).map_err(|_| {
-                crate::KreuzbergError::Plugin {
-                    message: "PaddleOCR inference panicked (ONNX Runtime error)".to_string(),
-                    plugin_name: "paddle-ocr".to_string(),
-                }
+            catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::perform_ocr(&image_bytes_owned, &ocr_engine, &config)
+            }))
+            .map_err(|_| crate::KreuzbergError::Plugin {
+                message: "PaddleOCR inference panicked (ONNX Runtime error)".to_string(),
+                plugin_name: "paddle-ocr".to_string(),
             })?
         })
         .await
@@ -116,10 +223,13 @@ impl PaddleOcrBackend {
         })??;
 
         // Convert TextBlocks to unified OcrElements, preserving all spatial data
-        let ocr_elements: Vec<OcrElement> = text_blocks
+        // Note: text_block_to_element returns Result, so we need to collect and handle errors
+        let ocr_elements: Result<Vec<OcrElement>> = text_blocks
             .iter()
             .map(|block| text_block_to_element(block, 1)) // page_number = 1 for single images
             .collect();
+
+        let ocr_elements = ocr_elements?;
 
         // Collect text from all blocks
         let text = text_blocks
@@ -133,31 +243,81 @@ impl PaddleOcrBackend {
 
     /// Perform actual OCR inference (runs in blocking context).
     ///
-    /// This function is intentionally not implemented to complete the assessment.
-    /// When paddle-ocr-rs becomes available, this would:
-    /// 1. Decode image bytes to RGB8 using the `image` crate
-    /// 2. Call the OcrLite engine to perform text detection and recognition
-    /// 3. Return TextBlocks with full spatial and confidence information
-    fn perform_ocr(_image_bytes: &[u8]) -> Result<Vec<kreuzberg_paddle_ocr::TextBlock>> {
-        // TODO: Implement when paddle-ocr-rs is available
-        // 1. Decode image:
-        //    let img = image::load_from_memory(image_bytes)
-        //        .map_err(|e| KreuzbergError::Ocr { ... })?
-        //        .to_rgb8();
-        //
-        // 2. Run OCR:
-        //    let results = OCR_ENGINE.ocr(&img, ...)
-        //        .map_err(|e| KreuzbergError::Ocr { ... })?;
-        //
-        // 3. Return text blocks with full metadata:
-        //    Ok(results)
+    /// This function decodes image bytes, runs OCR detection and recognition,
+    /// and returns TextBlocks with full spatial and confidence information.
+    ///
+    /// # Arguments
+    ///
+    /// * `image_bytes` - Raw image bytes (PNG, JPEG, BMP, etc.)
+    /// * `ocr_engine` - Mutex-protected OcrLite engine
+    /// * `config` - PaddleOCR configuration with detection parameters
+    ///
+    /// # Returns
+    ///
+    /// Vector of TextBlocks containing recognized text with bounding boxes and confidence scores.
+    fn perform_ocr(
+        image_bytes: &[u8],
+        ocr_engine: &Arc<Mutex<Option<OcrLite>>>,
+        config: &PaddleOcrConfig,
+    ) -> Result<Vec<kreuzberg_paddle_ocr::TextBlock>> {
+        // 1. Decode image bytes to RGB8
+        let img = image::load_from_memory(image_bytes)
+            .map_err(|e| crate::KreuzbergError::Ocr {
+                message: format!("Failed to decode image: {}", e),
+                source: None,
+            })?
+            .to_rgb8();
 
-        Err(crate::KreuzbergError::Ocr {
-            message: "PaddleOCR inference not yet implemented. \
-                      Awaiting paddle-ocr-rs crate stabilization."
-                .to_string(),
+        // 2. Acquire lock on OCR engine
+        let mut engine_guard = ocr_engine.lock().map_err(|e| crate::KreuzbergError::Plugin {
+            message: format!("Failed to acquire OCR engine lock: {}", e),
+            plugin_name: "paddle-ocr".to_string(),
+        })?;
+
+        let ocr_lite = engine_guard.as_mut().ok_or_else(|| crate::KreuzbergError::Ocr {
+            message: "OCR engine not initialized".to_string(),
             source: None,
-        })
+        })?;
+
+        // 3. Run OCR detection and recognition
+        // Map config parameters to OcrLite.detect() arguments:
+        // - padding: 50 (default, improves edge detection)
+        // - max_side_len: config.det_limit_side_len
+        // - box_score_thresh: config.det_db_thresh
+        // - box_thresh: config.det_db_box_thresh
+        // - un_clip_ratio: config.det_db_unclip_ratio
+        // - do_angle: config.use_angle_cls
+        // - most_angle: false (use individual angle per region)
+        let padding = 50u32;
+        let max_side_len = config.det_limit_side_len;
+        let box_score_thresh = config.det_db_thresh;
+        let box_thresh = config.det_db_box_thresh;
+        let un_clip_ratio = config.det_db_unclip_ratio;
+        let do_angle = config.use_angle_cls;
+        let most_angle = false;
+
+        let result = ocr_lite
+            .detect(
+                &img,
+                padding,
+                max_side_len,
+                box_score_thresh,
+                box_thresh,
+                un_clip_ratio,
+                do_angle,
+                most_angle,
+            )
+            .map_err(|e| crate::KreuzbergError::Ocr {
+                message: format!("PaddleOCR detection failed: {}", e),
+                source: None,
+            })?;
+
+        tracing::debug!(
+            text_block_count = result.text_blocks.len(),
+            "PaddleOCR detection completed"
+        );
+
+        Ok(result.text_blocks)
     }
 }
 

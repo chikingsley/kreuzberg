@@ -122,11 +122,13 @@ impl OcrConfidence {
 
     /// Create confidence from PaddleOCR scores.
     ///
-    /// Both scores are already in 0.0-1.0 range.
+    /// Both scores should be in 0.0-1.0 range, but PaddleOCR may occasionally return
+    /// values slightly above 1.0 due to model calibration. This method clamps both
+    /// values to ensure they stay within the valid 0.0-1.0 range.
     pub fn from_paddle(box_score: f32, text_score: f32) -> Self {
         Self {
-            detection: Some(box_score as f64),
-            recognition: text_score as f64,
+            detection: Some((box_score as f64).clamp(0.0, 1.0)),
+            recognition: (text_score as f64).clamp(0.0, 1.0),
         }
     }
 }
@@ -147,11 +149,27 @@ impl OcrRotation {
     /// Create rotation from PaddleOCR angle classification.
     ///
     /// PaddleOCR uses angle_index (0-3) representing 0, 90, 180, 270 degrees.
-    pub fn from_paddle(angle_index: i32, angle_score: f32) -> Self {
-        Self {
-            angle_degrees: (angle_index * 90) as f64,
-            confidence: Some(angle_score as f64),
+    ///
+    /// # Arguments
+    ///
+    /// * `angle_index` - Must be in range 0..=3; invalid values return an error
+    /// * `angle_score` - Confidence score for rotation detection
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `angle_index` is not in the valid range (0-3).
+    pub fn from_paddle(angle_index: i32, angle_score: f32) -> std::result::Result<Self, String> {
+        if !(0..=3).contains(&angle_index) {
+            return Err(format!(
+                "Invalid angle_index: {}. Must be 0-3 (representing 0°, 90°, 180°, 270°)",
+                angle_index
+            ));
         }
+
+        Ok(Self {
+            angle_degrees: (angle_index * 90) as f64,
+            confidence: Some((angle_score as f64).clamp(0.0, 1.0)),
+        })
     }
 }
 
@@ -357,11 +375,25 @@ mod tests {
 
     #[test]
     fn test_rotation_from_paddle() {
-        let rot = OcrRotation::from_paddle(1, 0.92);
+        let rot = OcrRotation::from_paddle(1, 0.92).expect("Valid angle_index");
         assert_eq!(rot.angle_degrees, 90.0);
         // Use approximate comparison due to f32 -> f64 precision
         assert!(rot.confidence.is_some());
         assert!((rot.confidence.unwrap() - 0.92).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_rotation_from_paddle_invalid_angle_index() {
+        // Test that invalid angle indices are rejected
+        assert!(OcrRotation::from_paddle(-1, 0.92).is_err());
+        assert!(OcrRotation::from_paddle(4, 0.92).is_err());
+        assert!(OcrRotation::from_paddle(100, 0.92).is_err());
+
+        // Valid indices should succeed
+        assert!(OcrRotation::from_paddle(0, 0.92).is_ok());
+        assert!(OcrRotation::from_paddle(1, 0.92).is_ok());
+        assert!(OcrRotation::from_paddle(2, 0.92).is_ok());
+        assert!(OcrRotation::from_paddle(3, 0.92).is_ok());
     }
 
     #[test]
@@ -436,7 +468,7 @@ mod tests {
             points: [(10, 20), (100, 22), (98, 70), (8, 68)],
         };
         let conf = OcrConfidence::from_paddle(0.95, 0.88);
-        let rot = OcrRotation::from_paddle(0, 0.99);
+        let rot = OcrRotation::from_paddle(0, 0.99).expect("Valid angle_index");
 
         let element = OcrElement::new("Test text", geom, conf)
             .with_rotation(rot)
