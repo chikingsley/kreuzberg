@@ -8,9 +8,35 @@ use crate::monitoring::ResourceMonitor;
 use crate::types::{BenchmarkResult, FrameworkCapabilities, OcrStatus, PerformanceMetrics};
 use crate::{Error, Result};
 use async_trait::async_trait;
-use kreuzberg::{ExtractionConfig, batch_extract_file, extract_file};
+use kreuzberg::{ExtractionConfig, ExtractionResult, FormatMetadata, batch_extract_file, extract_file};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+
+/// Determine OCR status by inspecting the actual extraction result metadata.
+///
+/// The kreuzberg crate sets `FormatMetadata::Ocr` for raw tesseract results, but the
+/// image extractor overwrites format to `FormatMetadata::Image` even when OCR was used.
+/// So we also check: if the format is `Image` and OCR was enabled in config, OCR was used.
+///
+/// Returns:
+/// - `OcrStatus::Used` if OCR metadata is present, or if this is an image with OCR enabled
+/// - `OcrStatus::NotUsed` if format metadata is present and OCR was not involved
+/// - `OcrStatus::Unknown` if no format metadata is available
+fn determine_ocr_status(result: &ExtractionResult, config: &ExtractionConfig) -> OcrStatus {
+    match &result.metadata.format {
+        Some(FormatMetadata::Ocr(_)) => OcrStatus::Used,
+        Some(FormatMetadata::Image(_)) => {
+            // Image extractor overwrites Ocr -> Image format, so check config
+            if config.ocr.is_some() || config.force_ocr {
+                OcrStatus::Used
+            } else {
+                OcrStatus::NotUsed
+            }
+        }
+        Some(_) => OcrStatus::NotUsed,
+        None => OcrStatus::Unknown,
+    }
+}
 
 /// Native Rust adapter using kreuzberg crate directly
 pub struct NativeAdapter {
@@ -53,19 +79,6 @@ impl NativeAdapter {
     /// Create a new native adapter with custom configuration
     pub fn with_config(config: ExtractionConfig) -> Self {
         Self { config }
-    }
-
-    /// Determine OCR status based on extraction configuration
-    ///
-    /// Returns:
-    /// - `OcrStatus::Used` if OCR is enabled in config (ocr.is_some() or force_ocr is true)
-    /// - `OcrStatus::NotUsed` if OCR is explicitly disabled (ocr.is_none() and force_ocr is false)
-    fn get_ocr_status(&self) -> OcrStatus {
-        if self.config.ocr.is_some() || self.config.force_ocr {
-            OcrStatus::Used
-        } else {
-            OcrStatus::NotUsed
-        }
     }
 }
 
@@ -125,10 +138,14 @@ impl FrameworkAdapter for NativeAdapter {
         let extraction_duration = extraction_start.elapsed();
         let duration = start.elapsed();
 
-        // Capture extracted text for quality assessment
-        let extracted_text = extraction_result.as_ref().ok().map(|r| r.content.clone());
-
-        let samples = monitor.stop().await;
+        // Take a post-extraction snapshot before stopping the monitor.
+        // This provides a fallback memory measurement for sub-millisecond extractions
+        // where the background sampler may not have collected any samples.
+        let post_sample = monitor.snapshot_current_memory();
+        let mut samples = monitor.stop().await;
+        if samples.is_empty() {
+            samples.push(post_sample);
+        }
         let snapshots = monitor.get_snapshots().await;
         let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
 
@@ -167,10 +184,13 @@ impl FrameworkAdapter for NativeAdapter {
                     .to_lowercase(),
                 framework_capabilities: FrameworkCapabilities::default(),
                 pdf_metadata: None,
-                ocr_status: self.get_ocr_status(),
+                ocr_status: OcrStatus::Unknown,
                 extracted_text: None,
             });
         }
+
+        let extraction_result = extraction_result.unwrap();
+        let ocr_status = determine_ocr_status(&extraction_result, &self.config);
 
         let metrics = PerformanceMetrics {
             peak_memory_bytes: resource_stats.peak_memory_bytes,
@@ -202,8 +222,8 @@ impl FrameworkAdapter for NativeAdapter {
                 .to_lowercase(),
             framework_capabilities: FrameworkCapabilities::default(),
             pdf_metadata: None,
-            ocr_status: self.get_ocr_status(),
-            extracted_text,
+            ocr_status,
+            extracted_text: Some(extraction_result.content),
         })
     }
 
@@ -278,7 +298,7 @@ impl FrameworkAdapter for NativeAdapter {
                         file_extension,
                         framework_capabilities: FrameworkCapabilities::default(),
                         pdf_metadata: None,
-                        ocr_status: self.get_ocr_status(),
+                        ocr_status: OcrStatus::Unknown,
                         extracted_text: None,
                     }
                 })
@@ -326,6 +346,13 @@ impl FrameworkAdapter for NativeAdapter {
                     (true, None)
                 };
 
+                // Amortize batch memory proportionally by file size
+                let file_fraction = if total_file_size > 0 {
+                    file_size as f64 / total_file_size as f64
+                } else {
+                    1.0 / file_paths.len() as f64
+                };
+
                 BenchmarkResult {
                     framework: self.name().to_string(),
                     file_path: file_path.to_path_buf(),
@@ -336,12 +363,12 @@ impl FrameworkAdapter for NativeAdapter {
                     extraction_duration: Some(extraction_duration),
                     subprocess_overhead: Some(Duration::ZERO), // No subprocess for native Rust
                     metrics: PerformanceMetrics {
-                        peak_memory_bytes: resource_stats.peak_memory_bytes,
+                        peak_memory_bytes: (resource_stats.peak_memory_bytes as f64 * file_fraction) as u64,
                         avg_cpu_percent: resource_stats.avg_cpu_percent,
                         throughput_bytes_per_sec: file_throughput,
-                        p50_memory_bytes: resource_stats.p50_memory_bytes,
-                        p95_memory_bytes: resource_stats.p95_memory_bytes,
-                        p99_memory_bytes: resource_stats.p99_memory_bytes,
+                        p50_memory_bytes: (resource_stats.p50_memory_bytes as f64 * file_fraction) as u64,
+                        p95_memory_bytes: (resource_stats.p95_memory_bytes as f64 * file_fraction) as u64,
+                        p99_memory_bytes: (resource_stats.p99_memory_bytes as f64 * file_fraction) as u64,
                     },
                     quality: None,
                     iterations: vec![],
@@ -350,7 +377,7 @@ impl FrameworkAdapter for NativeAdapter {
                     file_extension,
                     framework_capabilities: FrameworkCapabilities::default(),
                     pdf_metadata: None,
-                    ocr_status: self.get_ocr_status(),
+                    ocr_status: determine_ocr_status(extraction_result, &self.config),
                     extracted_text: Some(extraction_result.content.clone()),
                 }
             })

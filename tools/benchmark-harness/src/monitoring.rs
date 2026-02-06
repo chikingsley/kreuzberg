@@ -289,6 +289,27 @@ impl ResourceMonitor {
         });
     }
 
+    /// Take a single synchronous memory measurement of the current process tree.
+    ///
+    /// Useful as a fallback when the background sampler collects zero samples
+    /// (e.g., sub-millisecond extractions that complete before the first sample).
+    pub fn snapshot_current_memory(&self) -> ResourceSample {
+        let mut system = System::new();
+        let refresh_kind = ProcessRefreshKind::nothing().with_memory().with_cpu();
+        system.refresh_processes_specifics(ProcessesToUpdate::All, false, refresh_kind);
+
+        let tree_memory = collect_process_tree_memory(self.pid, &system);
+        let tree_vm = collect_process_tree_vm(self.pid, &system);
+
+        ResourceSample {
+            memory_bytes: tree_memory,
+            vm_size_bytes: tree_vm,
+            page_faults: 0,
+            cpu_percent: 0.0,
+            timestamp_ms: 0,
+        }
+    }
+
     /// Stop monitoring and return collected samples
     pub async fn stop(&self) -> Vec<ResourceSample> {
         self.running.store(false, Ordering::SeqCst);
@@ -370,6 +391,21 @@ impl ResourceMonitor {
     /// growth rates, and memory leak detection.
     pub fn calculate_stats(samples: &[ResourceSample], snapshots: &[MemorySnapshot]) -> ResourceStats {
         if samples.is_empty() {
+            // If no background samples but snapshots are available, use snapshot RSS as fallback
+            if !snapshots.is_empty() {
+                let peak_rss = snapshots.iter().map(|s| s.rss_bytes).max().unwrap_or(0);
+                let peak_vm = snapshots.iter().map(|s| s.vm_bytes).max().unwrap_or(0);
+                return ResourceStats {
+                    peak_memory_bytes: peak_rss,
+                    peak_vm_bytes: peak_vm,
+                    p50_memory_bytes: peak_rss,
+                    p95_memory_bytes: peak_rss,
+                    p99_memory_bytes: peak_rss,
+                    sample_count: snapshots.len(),
+                    snapshots: snapshots.to_vec(),
+                    ..Default::default()
+                };
+            }
             return ResourceStats::default();
         }
 

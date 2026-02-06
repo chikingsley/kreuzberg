@@ -307,17 +307,17 @@ fn build_library_env() -> Result<Vec<(String, String)>> {
     Ok(envs)
 }
 
-/// Create Python adapter (extract_file_async)
+/// Create Python adapter (persistent server mode)
 pub fn create_python_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract.py")?;
     let (command, mut args) = find_python()?;
 
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("async".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-python",
         command,
         args,
@@ -345,17 +345,17 @@ pub fn create_python_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapte
     ))
 }
 
-/// Create Node adapter (extractFile)
+/// Create Node adapter (persistent server mode)
 pub fn create_node_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract.ts")?;
     let (command, mut args) = find_node()?;
 
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("async".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-node",
         command,
         args,
@@ -383,17 +383,17 @@ pub fn create_node_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     ))
 }
 
-/// Create WASM adapter (extractFile via @kreuzberg/wasm)
+/// Create WASM adapter (persistent server mode)
 pub fn create_wasm_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract_wasm.ts")?;
     let (command, mut args) = find_node()?;
 
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("async".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-wasm",
         command,
         args,
@@ -421,7 +421,7 @@ pub fn create_wasm_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     ))
 }
 
-/// Create Ruby adapter (extract_file)
+/// Create Ruby adapter (persistent server mode)
 pub fn create_ruby_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract.rb")?;
     let (command, mut args) = find_ruby()?;
@@ -433,11 +433,11 @@ pub fn create_ruby_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
 
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let env = build_library_env()?;
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-ruby",
         command,
         args,
@@ -471,7 +471,7 @@ pub fn create_ruby_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     ))
 }
 
-/// Create Go adapter
+/// Create Go adapter (persistent server mode)
 pub fn create_go_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract_go.go")?;
     let scripts_dir = script_path
@@ -483,14 +483,14 @@ pub fn create_go_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
         "run".to_string(),
         "kreuzberg_extract_go.go".to_string(),
         ocr_flag(ocr_enabled),
-        "sync".to_string(),
+        "server".to_string(),
     ];
     let mut env = build_library_env()?;
     if env::var("KREUZBERG_BENCHMARK_DEBUG").is_ok() {
         env.push(("KREUZBERG_BENCHMARK_DEBUG".to_string(), "true".to_string()));
     }
     let supported_formats = get_kreuzberg_supported_formats();
-    let mut adapter = SubprocessAdapter::new("kreuzberg-go", command, args, env, supported_formats);
+    let mut adapter = SubprocessAdapter::with_persistent_mode("kreuzberg-go", command, args, env, supported_formats);
     adapter.set_working_dir(scripts_dir);
     Ok(adapter)
 }
@@ -520,7 +520,9 @@ pub fn create_go_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     Ok(adapter)
 }
 
-/// Create Java adapter with warmup phase
+/// Create Java adapter (persistent server mode)
+///
+/// Uses persistent mode to keep the JVM alive, avoiding per-file JVM startup overhead.
 pub fn create_java_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let _script_path = get_script_path("KreuzbergExtractJava.java")?;
     let command = find_java()?;
@@ -542,10 +544,10 @@ pub fn create_java_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
         classpath.to_string_lossy().to_string(),
         "KreuzbergExtractJava".to_string(),
         ocr_flag(ocr_enabled),
-        "sync".to_string(),
+        "server".to_string(),
     ];
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-java",
         command,
         args,
@@ -588,8 +590,8 @@ pub fn create_java_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     ))
 }
 
-/// Create C# adapter
-pub fn create_csharp_adapter() -> Result<SubprocessAdapter> {
+/// Create C# adapter (persistent server mode)
+pub fn create_csharp_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let command = find_dotnet()?;
     let project = workspace_root()?.join("packages/csharp/Benchmark/Benchmark.csproj");
     if !project.exists() {
@@ -603,13 +605,14 @@ pub fn create_csharp_adapter() -> Result<SubprocessAdapter> {
         "--project".to_string(),
         project.to_string_lossy().to_string(),
         "--".to_string(),
-        "--file".to_string(),
+        ocr_flag(ocr_enabled),
+        "server".to_string(),
     ];
     let lib_dir = native_library_dir()?;
     let mut env = build_library_env()?;
     env.push(("KREUZBERG_FFI_DIR".to_string(), lib_dir.to_string_lossy().to_string()));
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-csharp",
         command,
         args,
@@ -619,7 +622,7 @@ pub fn create_csharp_adapter() -> Result<SubprocessAdapter> {
 }
 
 /// Create C# batch adapter
-pub fn create_csharp_batch_adapter() -> Result<SubprocessAdapter> {
+pub fn create_csharp_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let command = find_dotnet()?;
     let project = workspace_root()?.join("packages/csharp/Benchmark/Benchmark.csproj");
     if !project.exists() {
@@ -633,7 +636,8 @@ pub fn create_csharp_batch_adapter() -> Result<SubprocessAdapter> {
         "--project".to_string(),
         project.to_string_lossy().to_string(),
         "--".to_string(),
-        "--batch".to_string(),
+        ocr_flag(ocr_enabled),
+        "server".to_string(),
     ];
     let lib_dir = native_library_dir()?;
     let mut env = build_library_env()?;
@@ -648,18 +652,18 @@ pub fn create_csharp_batch_adapter() -> Result<SubprocessAdapter> {
     ))
 }
 
-/// Create PHP adapter (extract_file)
+/// Create PHP adapter (persistent server mode)
 pub fn create_php_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract.php")?;
     let (command, mut args) = find_php()?;
 
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let env = build_library_env()?;
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-php",
         command,
         args,
@@ -688,7 +692,7 @@ pub fn create_php_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> 
     ))
 }
 
-/// Create Elixir adapter (extract_file)
+/// Create Elixir adapter (persistent server mode)
 pub fn create_elixir_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("kreuzberg_extract.exs")?;
     let command = find_elixir()?;
@@ -696,7 +700,7 @@ pub fn create_elixir_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let args = vec![
         script_path.to_string_lossy().to_string(),
         ocr_flag(ocr_enabled),
-        "sync".to_string(),
+        "server".to_string(),
     ];
 
     let mut env = build_library_env()?;
@@ -724,7 +728,7 @@ pub fn create_elixir_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     }
 
     let supported_formats = get_kreuzberg_supported_formats();
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "kreuzberg-elixir",
         command,
         args,

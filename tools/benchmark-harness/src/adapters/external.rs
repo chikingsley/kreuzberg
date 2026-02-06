@@ -131,16 +131,19 @@ fn get_supported_formats(framework_name: &str) -> Vec<String> {
     }
 }
 
-/// Creates a subprocess adapter for Docling (open source extraction framework, single-file mode)
+/// Creates a subprocess adapter for Docling (persistent server mode)
+///
+/// Uses persistent mode to avoid repeated Python startup and heavy ML model
+/// loading on every file.
 pub fn create_docling_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("docling_extract.py")?;
     let (command, mut args) = find_python_with_framework("docling")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("docling");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "docling",
         command,
         args,
@@ -149,16 +152,19 @@ pub fn create_docling_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     ))
 }
 
-/// Creates a subprocess adapter for Unstructured (open source extraction framework)
+/// Creates a subprocess adapter for Unstructured (persistent server mode)
+///
+/// Uses persistent mode to keep the Python process alive, avoiding repeated
+/// import overhead for the heavy unstructured ML library on each file.
 pub fn create_unstructured_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("unstructured_extract.py")?;
     let (command, mut args) = find_python_with_framework("unstructured")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("unstructured");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "unstructured",
         command,
         args,
@@ -167,15 +173,16 @@ pub fn create_unstructured_adapter(ocr_enabled: bool) -> Result<SubprocessAdapte
     ))
 }
 
-/// Creates a subprocess adapter for MarkItDown (open source extraction framework)
+/// Creates a subprocess adapter for MarkItDown (persistent server mode)
 pub fn create_markitdown_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("markitdown_extract.py")?;
     let (command, mut args) = find_python_with_framework("markitdown")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("markitdown");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "markitdown",
         command,
         args,
@@ -306,7 +313,10 @@ fn get_tika_jar_path() -> Result<PathBuf> {
     ))
 }
 
-/// Creates a subprocess adapter for Apache Tika (single-file mode)
+/// Creates a subprocess adapter for Apache Tika (persistent server mode)
+///
+/// Uses Tika's built-in server mode which keeps the JVM alive and accepts
+/// file paths via stdin, eliminating per-file JVM startup overhead.
 pub fn create_tika_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let jar_path = get_tika_jar_path()?;
     let script_path = get_script_path("TikaExtract.java")?;
@@ -317,22 +327,29 @@ pub fn create_tika_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
         jar_path.to_string_lossy().to_string(),
         script_path.to_string_lossy().to_string(),
         ocr_flag(ocr_enabled),
-        "sync".to_string(),
+        "server".to_string(),
     ];
 
     let supported_formats = get_supported_formats("tika");
-    Ok(SubprocessAdapter::new("tika", command, args, vec![], supported_formats))
+    Ok(SubprocessAdapter::with_persistent_mode(
+        "tika",
+        command,
+        args,
+        vec![],
+        supported_formats,
+    ))
 }
 
-/// Creates a subprocess adapter for PyMuPDF4LLM (open source extraction framework)
+/// Creates a subprocess adapter for PyMuPDF4LLM (persistent server mode)
 pub fn create_pymupdf4llm_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("pymupdf4llm_extract.py")?;
     let (command, mut args) = find_python_with_framework("pymupdf4llm")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("pymupdf4llm");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "pymupdf4llm",
         command,
         args,
@@ -341,16 +358,16 @@ pub fn create_pymupdf4llm_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter
     ))
 }
 
-/// Creates a subprocess adapter for pdfplumber (open source extraction framework, single-file mode)
+/// Creates a subprocess adapter for pdfplumber (persistent server mode)
 pub fn create_pdfplumber_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("pdfplumber_extract.py")?;
     let (command, mut args) = find_python_with_framework("pdfplumber")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("pdfplumber");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "pdfplumber",
         command,
         args,
@@ -359,16 +376,19 @@ pub fn create_pdfplumber_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     ))
 }
 
-/// Creates a subprocess adapter for MinerU (open source extraction framework, single-file mode)
+/// Creates a subprocess adapter for MinerU (persistent server mode)
+///
+/// Uses persistent mode to avoid repeated Python startup and heavy ML model
+/// loading on every file.
 pub fn create_mineru_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
     let script_path = get_script_path("mineru_extract.py")?;
     let (command, mut args) = find_python_with_framework("mineru")?;
     args.push(script_path.to_string_lossy().to_string());
     args.push(ocr_flag(ocr_enabled));
-    args.push("sync".to_string());
+    args.push("server".to_string());
 
     let supported_formats = get_supported_formats("mineru");
-    Ok(SubprocessAdapter::new(
+    Ok(SubprocessAdapter::with_persistent_mode(
         "mineru",
         command,
         args,

@@ -284,7 +284,7 @@ async fn main() -> Result<()> {
             try_register!("kreuzberg-wasm", || create_wasm_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-ruby", || create_ruby_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-java", || create_java_adapter(ocr), kreuzberg_count);
-            try_register!("kreuzberg-csharp", create_csharp_adapter, kreuzberg_count);
+            try_register!("kreuzberg-csharp", || create_csharp_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-php", || create_php_adapter(ocr), kreuzberg_count);
             try_register!("kreuzberg-elixir", || create_elixir_adapter(ocr), kreuzberg_count);
 

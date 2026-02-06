@@ -11,7 +11,9 @@ use crate::{Error, Result};
 use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::process::Command;
 
 /// Minimum duration in seconds for a valid throughput calculation.
@@ -19,11 +21,22 @@ use tokio::process::Command;
 /// and will result in throughput being set to 0.0 (filtered in aggregation).
 const MIN_VALID_DURATION_SECS: f64 = 0.001; // 1 millisecond
 
+/// State for a persistent subprocess that stays alive across multiple extractions
+struct PersistentProcess {
+    stdin: BufWriter<tokio::process::ChildStdin>,
+    stdout: BufReader<tokio::process::ChildStdout>,
+    child: tokio::process::Child,
+}
+
 /// Base adapter for subprocess-based extraction
 ///
 /// This adapter spawns a subprocess to perform extraction and monitors
 /// its resource usage. Subclasses implement the specific command construction
 /// for each language binding.
+///
+/// When `persistent` is enabled, the subprocess is spawned once in `setup()`
+/// and reused for all extractions via stdin/stdout communication, eliminating
+/// per-file process startup overhead (e.g., JVM startup for Tika).
 pub struct SubprocessAdapter {
     name: String,
     command: PathBuf,
@@ -32,6 +45,8 @@ pub struct SubprocessAdapter {
     supports_batch: bool,
     working_dir: Option<PathBuf>,
     supported_formats: Vec<String>,
+    persistent: bool,
+    process: Arc<tokio::sync::Mutex<Option<PersistentProcess>>>,
 }
 
 impl SubprocessAdapter {
@@ -105,6 +120,8 @@ impl SubprocessAdapter {
             supports_batch: false,
             working_dir: None,
             supported_formats,
+            persistent: false,
+            process: Arc::new(tokio::sync::Mutex::new(None)),
         }
     }
 
@@ -134,6 +151,40 @@ impl SubprocessAdapter {
             supports_batch: true,
             working_dir: None,
             supported_formats,
+            persistent: false,
+            process: Arc::new(tokio::sync::Mutex::new(None)),
+        }
+    }
+
+    /// Create a new subprocess adapter with persistent mode
+    ///
+    /// In persistent mode, the subprocess is spawned once in `setup()` and kept
+    /// alive across all extractions. File paths are sent via stdin and JSON results
+    /// are read from stdout, eliminating per-file process startup overhead.
+    ///
+    /// # Arguments
+    /// * `name` - Framework name (e.g., "tika")
+    /// * `command` - Path to executable (e.g., "java")
+    /// * `args` - Base arguments (e.g., ["-cp", "tika.jar", "TikaExtract.java", "--ocr", "server"])
+    /// * `env` - Environment variables
+    /// * `supported_formats` - List of file extensions this framework can process
+    pub fn with_persistent_mode(
+        name: impl Into<String>,
+        command: impl Into<PathBuf>,
+        args: Vec<String>,
+        env: Vec<(String, String)>,
+        supported_formats: Vec<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            command: command.into(),
+            args,
+            env,
+            supports_batch: false,
+            working_dir: None,
+            supported_formats,
+            persistent: true,
+            process: Arc::new(tokio::sync::Mutex::new(None)),
         }
     }
 
@@ -270,6 +321,45 @@ impl SubprocessAdapter {
         Ok((stdout, stderr, duration))
     }
 
+    /// Execute extraction via persistent subprocess (stdin/stdout protocol)
+    async fn execute_persistent(&self, file_path: &Path, timeout: Duration) -> Result<(String, Duration)> {
+        let absolute_path = if file_path.is_absolute() {
+            file_path.to_path_buf()
+        } else {
+            std::env::current_dir().map_err(Error::Io)?.join(file_path)
+        };
+
+        let start = Instant::now();
+        let mut guard = self.process.lock().await;
+        let proc = guard
+            .as_mut()
+            .ok_or_else(|| Error::Benchmark("Persistent process not started".into()))?;
+
+        // Send file path
+        proc.stdin
+            .write_all(absolute_path.to_string_lossy().as_bytes())
+            .await
+            .map_err(|e| Error::Benchmark(format!("Failed to write to persistent process: {}", e)))?;
+        proc.stdin
+            .write_all(b"\n")
+            .await
+            .map_err(|e| Error::Benchmark(format!("Failed to write newline: {}", e)))?;
+        proc.stdin
+            .flush()
+            .await
+            .map_err(|e| Error::Benchmark(format!("Failed to flush stdin: {}", e)))?;
+
+        // Read one JSON line
+        let mut line = String::new();
+        tokio::time::timeout(timeout, proc.stdout.read_line(&mut line))
+            .await
+            .map_err(|_| Error::Timeout(format!("Persistent process response exceeded {:?}", timeout)))?
+            .map_err(|e| Error::Benchmark(format!("Failed to read from persistent process: {}", e)))?;
+
+        let duration = start.elapsed();
+        Ok((line, duration))
+    }
+
     /// Parse extraction result from subprocess output
     ///
     /// Expected subprocess output format:
@@ -322,57 +412,113 @@ impl FrameworkAdapter for SubprocessAdapter {
         let sampling_ms = crate::monitoring::adaptive_sampling_interval_ms(file_size);
         monitor.start(Duration::from_millis(sampling_ms)).await;
 
-        let (stdout, _stderr, duration) = match self.execute_subprocess(file_path, timeout).await {
-            Ok(result) => result,
-            Err(e) => {
-                let samples = monitor.stop().await;
-                let snapshots = monitor.get_snapshots().await;
-                let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
-                let actual_duration = start_time.elapsed();
+        let (stdout, _stderr, duration) = if self.persistent {
+            match self.execute_persistent(file_path, timeout).await {
+                Ok((stdout, dur)) => (stdout, String::new(), dur),
+                Err(e) => {
+                    let samples = monitor.stop().await;
+                    let snapshots = monitor.get_snapshots().await;
+                    let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
+                    let actual_duration = start_time.elapsed();
 
-                let throughput = if actual_duration.as_secs_f64() > 0.0 {
-                    file_size as f64 / actual_duration.as_secs_f64()
-                } else {
-                    0.0
-                };
+                    let throughput = if actual_duration.as_secs_f64() > 0.0 {
+                        file_size as f64 / actual_duration.as_secs_f64()
+                    } else {
+                        0.0
+                    };
 
-                let framework_capabilities = FrameworkCapabilities {
-                    ocr_support: Self::framework_supports_ocr(&self.name),
-                    batch_support: self.supports_batch,
-                    ..Default::default()
-                };
+                    let framework_capabilities = FrameworkCapabilities {
+                        ocr_support: Self::framework_supports_ocr(&self.name),
+                        batch_support: self.supports_batch,
+                        ..Default::default()
+                    };
 
-                return Ok(BenchmarkResult {
-                    framework: self.name.clone(),
-                    file_path: file_path.to_path_buf(),
-                    file_size,
-                    success: false,
-                    error_message: Some(e.to_string()),
-                    duration: actual_duration,
-                    extraction_duration: None,
-                    subprocess_overhead: None,
-                    metrics: PerformanceMetrics {
-                        peak_memory_bytes: resource_stats.peak_memory_bytes,
-                        avg_cpu_percent: resource_stats.avg_cpu_percent,
-                        throughput_bytes_per_sec: throughput,
-                        p50_memory_bytes: resource_stats.p50_memory_bytes,
-                        p95_memory_bytes: resource_stats.p95_memory_bytes,
-                        p99_memory_bytes: resource_stats.p99_memory_bytes,
-                    },
-                    quality: None,
-                    iterations: vec![],
-                    statistics: None,
-                    cold_start_duration: None,
-                    file_extension: file_path
-                        .extension()
-                        .and_then(|e| e.to_str())
-                        .unwrap_or("unknown")
-                        .to_lowercase(),
-                    framework_capabilities,
-                    pdf_metadata: None,
-                    ocr_status: OcrStatus::Unknown,
-                    extracted_text: None,
-                });
+                    return Ok(BenchmarkResult {
+                        framework: self.name.clone(),
+                        file_path: file_path.to_path_buf(),
+                        file_size,
+                        success: false,
+                        error_message: Some(e.to_string()),
+                        duration: actual_duration,
+                        extraction_duration: None,
+                        subprocess_overhead: None,
+                        metrics: PerformanceMetrics {
+                            peak_memory_bytes: resource_stats.peak_memory_bytes,
+                            avg_cpu_percent: resource_stats.avg_cpu_percent,
+                            throughput_bytes_per_sec: throughput,
+                            p50_memory_bytes: resource_stats.p50_memory_bytes,
+                            p95_memory_bytes: resource_stats.p95_memory_bytes,
+                            p99_memory_bytes: resource_stats.p99_memory_bytes,
+                        },
+                        quality: None,
+                        iterations: vec![],
+                        statistics: None,
+                        cold_start_duration: None,
+                        file_extension: file_path
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .unwrap_or("unknown")
+                            .to_lowercase(),
+                        framework_capabilities,
+                        pdf_metadata: None,
+                        ocr_status: OcrStatus::Unknown,
+                        extracted_text: None,
+                    });
+                }
+            }
+        } else {
+            match self.execute_subprocess(file_path, timeout).await {
+                Ok(result) => result,
+                Err(e) => {
+                    let samples = monitor.stop().await;
+                    let snapshots = monitor.get_snapshots().await;
+                    let resource_stats = ResourceMonitor::calculate_stats(&samples, &snapshots);
+                    let actual_duration = start_time.elapsed();
+
+                    let throughput = if actual_duration.as_secs_f64() > 0.0 {
+                        file_size as f64 / actual_duration.as_secs_f64()
+                    } else {
+                        0.0
+                    };
+
+                    let framework_capabilities = FrameworkCapabilities {
+                        ocr_support: Self::framework_supports_ocr(&self.name),
+                        batch_support: self.supports_batch,
+                        ..Default::default()
+                    };
+
+                    return Ok(BenchmarkResult {
+                        framework: self.name.clone(),
+                        file_path: file_path.to_path_buf(),
+                        file_size,
+                        success: false,
+                        error_message: Some(e.to_string()),
+                        duration: actual_duration,
+                        extraction_duration: None,
+                        subprocess_overhead: None,
+                        metrics: PerformanceMetrics {
+                            peak_memory_bytes: resource_stats.peak_memory_bytes,
+                            avg_cpu_percent: resource_stats.avg_cpu_percent,
+                            throughput_bytes_per_sec: throughput,
+                            p50_memory_bytes: resource_stats.p50_memory_bytes,
+                            p95_memory_bytes: resource_stats.p95_memory_bytes,
+                            p99_memory_bytes: resource_stats.p99_memory_bytes,
+                        },
+                        quality: None,
+                        iterations: vec![],
+                        statistics: None,
+                        cold_start_duration: None,
+                        file_extension: file_path
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .unwrap_or("unknown")
+                            .to_lowercase(),
+                        framework_capabilities,
+                        pdf_metadata: None,
+                        ocr_status: OcrStatus::Unknown,
+                        extracted_text: None,
+                    });
+                }
             }
         };
 
@@ -648,6 +794,17 @@ impl FrameworkAdapter for SubprocessAdapter {
             })
             .unwrap_or_else(|| vec![None; file_paths.len()]);
 
+        // Extract per-file content from batch JSON results for quality assessment
+        let batch_contents: Vec<Option<String>> = parsed_batch
+            .as_ref()
+            .map(|results| {
+                results
+                    .iter()
+                    .map(|item| item.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![None; file_paths.len()]);
+
         // Create one result per file instead of a single aggregated result
         // Since batch processing doesn't give us per-file timing, we use average duration
         let num_files = file_paths.len() as f64;
@@ -682,6 +839,13 @@ impl FrameworkAdapter for SubprocessAdapter {
                 };
                 let subprocess_overhead = extraction_duration.map(|ext| avg_duration_per_file.saturating_sub(ext));
 
+                // Amortize batch memory proportionally by file size
+                let file_fraction = if total_file_size > 0 {
+                    file_size as f64 / total_file_size as f64
+                } else {
+                    1.0 / file_paths.len() as f64
+                };
+
                 BenchmarkResult {
                     framework: self.name.clone(),
                     file_path: file_path.to_path_buf(),
@@ -692,12 +856,12 @@ impl FrameworkAdapter for SubprocessAdapter {
                     extraction_duration,
                     subprocess_overhead,
                     metrics: PerformanceMetrics {
-                        peak_memory_bytes: resource_stats.peak_memory_bytes,
+                        peak_memory_bytes: (resource_stats.peak_memory_bytes as f64 * file_fraction) as u64,
                         avg_cpu_percent: resource_stats.avg_cpu_percent,
                         throughput_bytes_per_sec: file_throughput,
-                        p50_memory_bytes: resource_stats.p50_memory_bytes,
-                        p95_memory_bytes: resource_stats.p95_memory_bytes,
-                        p99_memory_bytes: resource_stats.p99_memory_bytes,
+                        p50_memory_bytes: (resource_stats.p50_memory_bytes as f64 * file_fraction) as u64,
+                        p95_memory_bytes: (resource_stats.p95_memory_bytes as f64 * file_fraction) as u64,
+                        p99_memory_bytes: (resource_stats.p99_memory_bytes as f64 * file_fraction) as u64,
                     },
                     quality: None,
                     iterations: vec![],
@@ -707,7 +871,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                     framework_capabilities: framework_capabilities.clone(),
                     pdf_metadata: None,
                     ocr_status,
-                    extracted_text: None,
+                    extracted_text: batch_contents.get(idx).cloned().flatten(),
                 }
             })
             .collect();
@@ -719,10 +883,38 @@ impl FrameworkAdapter for SubprocessAdapter {
         which::which(&self.command)
             .map_err(|e| Error::Benchmark(format!("Command '{}' not found: {}", self.command.display(), e)))?;
 
+        if !self.persistent {
+            return Ok(());
+        }
+
+        let mut cmd = Command::new(&self.command);
+        if let Some(dir) = &self.working_dir {
+            cmd.current_dir(dir);
+        }
+        cmd.args(&self.args);
+        for (key, value) in &self.env {
+            cmd.env(key, value);
+        }
+        cmd.stdin(Stdio::piped());
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| Error::Benchmark(format!("Failed to spawn persistent process: {}", e)))?;
+
+        let stdin = BufWriter::new(child.stdin.take().unwrap());
+        let stdout = BufReader::new(child.stdout.take().unwrap());
+
+        *self.process.lock().await = Some(PersistentProcess { stdin, stdout, child });
         Ok(())
     }
 
     async fn teardown(&self) -> Result<()> {
+        if let Some(mut proc) = self.process.lock().await.take() {
+            drop(proc.stdin); // Close stdin -> EOF -> process exits
+            let _ = proc.child.wait().await;
+        }
         Ok(())
     }
 }
@@ -754,6 +946,20 @@ mod tests {
             vec!["pdf".to_string(), "docx".to_string()],
         );
         assert_eq!(adapter.name(), "test-adapter");
+    }
+
+    #[test]
+    fn test_persistent_adapter_creation() {
+        let adapter = SubprocessAdapter::with_persistent_mode(
+            "test-persistent",
+            "echo",
+            vec!["server".to_string()],
+            vec![],
+            vec!["pdf".to_string()],
+        );
+        assert_eq!(adapter.name(), "test-persistent");
+        assert!(adapter.persistent);
+        assert!(!adapter.supports_batch);
     }
 
     #[test]

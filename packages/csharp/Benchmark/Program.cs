@@ -4,39 +4,49 @@ using Kreuzberg;
 
 var debug = Environment.GetEnvironmentVariable("KREUZBERG_BENCHMARK_DEBUG") == "true";
 var argsSpan = args.AsSpan();
-string? filePath = null;
-int iterations = 5;
+
+// Parse OCR flag and find mode
+var ocrEnabled = true;
+var modeIndex = -1;
 
 for (var i = 0; i < argsSpan.Length; i++)
 {
     switch (argsSpan[i])
     {
-        case "--file":
-            if (i + 1 < argsSpan.Length)
-            {
-                filePath = argsSpan[++i];
-            }
+        case "--ocr":
+            ocrEnabled = true;
             break;
-        case "--iterations":
-            if (i + 1 < argsSpan.Length && int.TryParse(argsSpan[++i], out var parsed))
+        case "--no-ocr":
+            ocrEnabled = false;
+            break;
+        default:
+            if (!argsSpan[i].StartsWith("--"))
             {
-                iterations = parsed;
+                modeIndex = i;
+                break;
             }
             break;
     }
+
+    if (modeIndex >= 0)
+    {
+        break;
+    }
 }
 
-if (string.IsNullOrWhiteSpace(filePath))
+if (modeIndex < 0)
 {
-    Console.Error.WriteLine("Error: --file is required");
+    Console.Error.WriteLine("Error: Mode (sync or server) is required");
     return 1;
 }
+
+var mode = argsSpan[modeIndex].ToString();
 
 if (debug)
 {
     Console.Error.WriteLine("[DEBUG] Starting C# benchmark");
-    Console.Error.WriteLine($"[DEBUG] File: {filePath}");
-    Console.Error.WriteLine($"[DEBUG] Iterations: {iterations}");
+    Console.Error.WriteLine($"[DEBUG] Mode: {mode}");
+    Console.Error.WriteLine($"[DEBUG] OCR enabled: {ocrEnabled}");
     Console.Error.WriteLine($"[DEBUG] KREUZBERG_FFI_DIR: {Environment.GetEnvironmentVariable("KREUZBERG_FFI_DIR") ?? "(not set)"}");
     Console.Error.WriteLine($"[DEBUG] LD_LIBRARY_PATH: {Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "(not set)"}");
     Console.Error.WriteLine($"[DEBUG] DYLD_LIBRARY_PATH: {Environment.GetEnvironmentVariable("DYLD_LIBRARY_PATH") ?? "(not set)"}");
@@ -44,88 +54,149 @@ if (debug)
     Console.Error.WriteLine($"[DEBUG] AppContext.BaseDirectory: {AppContext.BaseDirectory}");
 }
 
-if (!File.Exists(filePath))
-{
-    Console.Error.WriteLine($"Error: File not found: {filePath}");
-    return 1;
-}
-
-var content = await File.ReadAllBytesAsync(filePath);
-var mimeType = GuessMimeType(filePath);
-
-if (debug)
-{
-    Console.Error.WriteLine($"[DEBUG] File size: {content.Length} bytes");
-    Console.Error.WriteLine($"[DEBUG] MIME type: {mimeType}");
-}
-
 try
 {
-    if (debug)
+    if (mode == "sync")
     {
-        Console.Error.WriteLine("[DEBUG] Attempting warmup extraction...");
+        // Sync mode: extract single file and output JSON
+        if (modeIndex + 1 >= argsSpan.Length)
+        {
+            Console.Error.WriteLine("Error: File path required for sync mode");
+            return 1;
+        }
+
+        var filePath = argsSpan[modeIndex + 1].ToString();
+
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found: {filePath}");
+            return 1;
+        }
+
+        var content = await File.ReadAllBytesAsync(filePath);
+        var mimeType = GuessMimeType(filePath);
+
+        if (debug)
+        {
+            Console.Error.WriteLine($"[DEBUG] File: {filePath}");
+            Console.Error.WriteLine($"[DEBUG] File size: {content.Length} bytes");
+            Console.Error.WriteLine($"[DEBUG] MIME type: {mimeType}");
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = KreuzbergClient.ExtractBytesSync(content, mimeType);
+        sw.Stop();
+
+        var output = new
+        {
+            content = result.Content,
+            _extraction_time_ms = sw.Elapsed.TotalMilliseconds
+        };
+
+        var json = JsonSerializer.Serialize(output);
+        Console.WriteLine(json);
+
+        if (debug)
+        {
+            Console.Error.WriteLine($"[DEBUG] Extraction completed in {sw.ElapsedMilliseconds}ms");
+        }
+
+        return 0;
     }
-    var warmupResult = KreuzbergClient.ExtractBytesSync(content, mimeType);
-    if (debug)
+    else if (mode == "server")
     {
-        Console.Error.WriteLine($"[DEBUG] Warmup succeeded, extracted {warmupResult.Content.Length} chars");
+        // Server mode: read file paths from stdin, extract, output JSON lines
+        if (debug)
+        {
+            Console.Error.WriteLine("[DEBUG] Entering server mode");
+        }
+
+        string? line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            if (debug)
+            {
+                Console.Error.WriteLine($"[DEBUG] Processing: {line}");
+            }
+
+            try
+            {
+                if (!File.Exists(line))
+                {
+                    var errorOutput = new
+                    {
+                        error = $"File not found: {line}",
+                        _extraction_time_ms = 0.0
+                    };
+                    var errorJson = JsonSerializer.Serialize(errorOutput);
+                    Console.WriteLine(errorJson);
+                    Console.Out.Flush();
+                    continue;
+                }
+
+                var content = await File.ReadAllBytesAsync(line);
+                var mimeType = GuessMimeType(line);
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var result = KreuzbergClient.ExtractBytesSync(content, mimeType);
+                sw.Stop();
+
+                var output = new
+                {
+                    content = result.Content,
+                    _extraction_time_ms = sw.Elapsed.TotalMilliseconds
+                };
+
+                var json = JsonSerializer.Serialize(output);
+                Console.WriteLine(json);
+                Console.Out.Flush();
+
+                if (debug)
+                {
+                    Console.Error.WriteLine($"[DEBUG] Successfully extracted: {line}");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (debug)
+                {
+                    Console.Error.WriteLine($"[DEBUG] Exception during extraction: {ex.GetType().Name}: {ex.Message}");
+                    Console.Error.WriteLine($"[DEBUG] Full exception: {ex}");
+                }
+
+                var errorOutput = new
+                {
+                    error = $"{ex.GetType().Name}: {ex.Message}",
+                    _extraction_time_ms = 0.0
+                };
+                var errorJson = JsonSerializer.Serialize(errorOutput);
+                Console.WriteLine(errorJson);
+                Console.Out.Flush();
+            }
+        }
+
+        if (debug)
+        {
+            Console.Error.WriteLine("[DEBUG] Server mode: stdin closed, exiting");
+        }
+
+        return 0;
+    }
+    else
+    {
+        Console.Error.WriteLine($"Error: Unknown mode '{mode}'. Must be 'sync' or 'server'");
+        return 1;
     }
 }
 catch (Exception ex)
 {
-    Console.Error.WriteLine($"Error during warmup: {ex.GetType().Name}: {ex.Message}");
+    Console.Error.WriteLine($"Error: {ex.GetType().Name}: {ex.Message}");
     if (debug)
     {
         Console.Error.WriteLine($"[DEBUG] Full exception: {ex}");
     }
     return 1;
 }
-
-var sw = System.Diagnostics.Stopwatch.StartNew();
-for (var i = 0; i < iterations; i++)
-{
-    try
-    {
-        _ = KreuzbergClient.ExtractBytesSync(content, mimeType);
-    }
-    catch (Exception ex)
-    {
-        sw.Stop();
-        Console.Error.WriteLine($"Error during iteration {i}: {ex.GetType().Name}: {ex.Message}");
-        if (debug)
-        {
-            Console.Error.WriteLine($"[DEBUG] Full exception: {ex}");
-        }
-        return 1;
-    }
-}
-sw.Stop();
-
-if (debug)
-{
-    Console.Error.WriteLine($"[DEBUG] Extraction completed in {sw.ElapsedMilliseconds}ms");
-}
-
-var elapsedSeconds = sw.Elapsed.TotalSeconds;
-var bytesProcessed = content.Length * (long)iterations;
-var opsPerSec = iterations / elapsedSeconds;
-var mbPerSec = (bytesProcessed / (1024.0 * 1024.0)) / elapsedSeconds;
-
-var result = new
-{
-    language = "csharp",
-    fixture = Path.GetFileName(filePath),
-    fixture_path = filePath,
-    iterations,
-    elapsed_seconds = elapsedSeconds,
-    ops_per_sec = opsPerSec,
-    mb_per_sec = mbPerSec,
-    bytes_processed = bytesProcessed,
-};
-
-var json = JsonSerializer.Serialize(result);
-Console.WriteLine(json);
-return 0;
 
 static string GuessMimeType(string path)
 {
