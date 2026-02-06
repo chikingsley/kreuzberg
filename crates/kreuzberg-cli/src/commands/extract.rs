@@ -86,6 +86,7 @@ pub fn batch_command(paths: Vec<PathBuf>, config: ExtractionConfig, format: Outp
 pub fn apply_extraction_overrides(
     config: &mut ExtractionConfig,
     ocr: Option<bool>,
+    ocr_backend: Option<&str>,
     force_ocr: Option<bool>,
     no_cache: Option<bool>,
     chunk: Option<bool>,
@@ -98,9 +99,14 @@ pub fn apply_extraction_overrides(
 ) {
     if let Some(ocr_flag) = ocr {
         if ocr_flag {
+            let (backend, language) = match ocr_backend {
+                Some("paddle-ocr") => ("paddle-ocr", "en"),
+                Some("easyocr") => ("easyocr", "en"),
+                _ => ("tesseract", "eng"),
+            };
             config.ocr = Some(OcrConfig {
-                backend: "tesseract".to_string(),
-                language: "eng".to_string(),
+                backend: backend.to_string(),
+                language: language.to_string(),
                 tesseract_config: None,
                 output_format: None,
                 paddle_ocr_config: None,

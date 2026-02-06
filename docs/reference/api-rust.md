@@ -419,7 +419,7 @@ pub struct OcrConfig {
 
 **Fields:**
 
-- `backend` (String): OCR backend to use. Options: "tesseract". Default: "tesseract"
+- `backend` (String): OCR backend to use. Options: "tesseract", "paddle-ocr". Default: "tesseract"
 - `language` (String): Language code for OCR (ISO 639-3). Default: "eng"
 - `tesseract_config` (Option<TesseractConfig>): Tesseract-specific configuration. Default: None
 

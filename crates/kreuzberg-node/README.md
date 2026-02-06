@@ -409,7 +409,7 @@ Kreuzberg supports multiple OCR backends for extracting text from scanned docume
 
 - **Tesseract**
 
-- **Guten**
+- **Paddleocr**
 
 
 ### OCR Configuration Example

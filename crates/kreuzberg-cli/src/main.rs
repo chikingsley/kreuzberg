@@ -114,6 +114,10 @@ enum Commands {
         #[arg(long)]
         ocr: Option<bool>,
 
+        /// OCR backend to use when --ocr is enabled (tesseract, paddle-ocr, easyocr)
+        #[arg(long)]
+        ocr_backend: Option<String>,
+
         /// Force OCR even if text extraction succeeds (overrides config file)
         #[arg(long)]
         force_ocr: Option<bool>,
@@ -186,6 +190,10 @@ enum Commands {
         /// Enable OCR (overrides config file)
         #[arg(long)]
         ocr: Option<bool>,
+
+        /// OCR backend to use when --ocr is enabled (tesseract, paddle-ocr, easyocr)
+        #[arg(long)]
+        ocr_backend: Option<String>,
 
         /// Force OCR even if text extraction succeeds (overrides config file)
         #[arg(long)]
@@ -492,6 +500,7 @@ fn main() -> Result<()> {
             mime_type,
             format,
             ocr,
+            ocr_backend,
             force_ocr,
             no_cache,
             chunk,
@@ -529,6 +538,7 @@ fn main() -> Result<()> {
             apply_extraction_overrides(
                 &mut config,
                 ocr,
+                ocr_backend.as_deref(),
                 force_ocr,
                 no_cache,
                 chunk,
@@ -550,6 +560,7 @@ fn main() -> Result<()> {
             config_json_base64,
             format,
             ocr,
+            ocr_backend,
             force_ocr,
             no_cache,
             quality,
@@ -582,6 +593,7 @@ fn main() -> Result<()> {
             apply_extraction_overrides(
                 &mut config,
                 ocr,
+                ocr_backend.as_deref(),
                 force_ocr,
                 no_cache,
                 None,

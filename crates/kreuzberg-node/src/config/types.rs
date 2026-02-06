@@ -48,6 +48,8 @@ pub struct JsOcrConfig {
     pub backend: String,
     pub language: Option<String>,
     pub tesseract_config: Option<JsTesseractConfig>,
+    pub paddle_ocr_config: Option<serde_json::Value>,
+    pub element_config: Option<serde_json::Value>,
 }
 
 impl From<JsOcrConfig> for RustOcrConfig {
@@ -57,8 +59,8 @@ impl From<JsOcrConfig> for RustOcrConfig {
             language: val.language.unwrap_or_else(|| "eng".to_string()),
             tesseract_config: val.tesseract_config.map(Into::into),
             output_format: None,
-            paddle_ocr_config: None,
-            element_config: None,
+            paddle_ocr_config: val.paddle_ocr_config,
+            element_config: val.element_config.and_then(|v| serde_json::from_value(v).ok()),
         }
     }
 }
@@ -956,6 +958,8 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
                         Some(tc.tessedit_char_whitelist)
                     },
                 }),
+                paddle_ocr_config: ocr.paddle_ocr_config,
+                element_config: ocr.element_config.and_then(|v| serde_json::to_value(v).ok()),
             }),
             force_ocr: Some(val.force_ocr),
             chunking: val.chunking.map(|chunk| JsChunkingConfig {

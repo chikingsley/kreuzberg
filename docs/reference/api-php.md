@@ -638,7 +638,7 @@ readonly class OcrConfig
 
 **Fields:**
 
-- `$backend` (string): OCR backend to use. Options: "tesseract". Default: "tesseract"
+- `$backend` (string): OCR backend to use. Options: "tesseract", "paddle-ocr". Default: "tesseract"
 - `$language` (string): Language code for OCR (ISO 639-3). Default: "eng"
 - `$tesseractConfig` (TesseractConfig|null): Tesseract-specific configuration. Default: null
 

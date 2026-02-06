@@ -54,7 +54,7 @@ languages:
       config_discovery: true
     ocr_backends:
       - tesseract
-      - guten
+      - paddleocr
     system_requirements:
       libreoffice_note: |
         - Optional: [LibreOffice](https://www.libreoffice.org/download/download/) for legacy Office formats (DOC, XLS, PPT, RTF, ODT, ODS, ODP)
@@ -95,6 +95,7 @@ languages:
       embeddings: false
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - system_requirements
       - ffi_build_instructions
@@ -122,6 +123,7 @@ languages:
       embeddings: true
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - maven_gradle_setup
       - system_requirements
@@ -149,6 +151,7 @@ languages:
       embeddings: true
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - composer_installation
       - system_requirements
@@ -175,6 +178,7 @@ languages:
       embeddings: true
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - system_requirements
       - development_setup
@@ -201,6 +205,7 @@ languages:
       embeddings: true
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - dotnet_installation
       - system_requirements
@@ -227,6 +232,7 @@ languages:
       embeddings: true
     ocr_backends:
       - tesseract
+      - paddleocr
     optional_sections:
       - mix_installation
       - async_with_tasks

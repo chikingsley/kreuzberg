@@ -254,7 +254,7 @@ result = Kreuzberg.extract_file_sync("document.pdf", config: config)
 **Available Options:**
 
 - `ocr` (Hash): OCR configuration
-  - `backend` (String): OCR backend ("tesseract"). Default: "tesseract"
+  - `backend` (String): OCR backend ("tesseract", "paddle-ocr"). Default: "tesseract"
   - `language` (String): Language code (ISO 639-3). Default: "eng"
   - `tesseract_config` (Hash): Tesseract-specific options
     - `psm` (Integer): Page segmentation mode (0-13). Default: 3
