@@ -28,9 +28,11 @@ pub enum ErrorKind {
     /// The framework itself reported an extraction error (returned `{"error": "..."}`)
     /// This is NOT our fault - the framework couldn't handle this file.
     FrameworkError,
-    /// A harness-level error: timeout, process crash, invalid JSON output, etc.
+    /// A harness-level error: process crash, invalid JSON output, etc.
     /// This IS potentially our fault or an infrastructure issue.
     HarnessError,
+    /// Extraction timed out (exceeded the configured timeout duration).
+    Timeout,
     /// No error occurred
     #[default]
     None,

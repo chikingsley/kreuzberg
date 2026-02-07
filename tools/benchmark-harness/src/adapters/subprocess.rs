@@ -13,6 +13,15 @@ use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+/// Map a harness `Error` to the appropriate `ErrorKind`.
+fn error_to_error_kind(e: &Error) -> ErrorKind {
+    match e {
+        Error::Timeout(_) => ErrorKind::Timeout,
+        Error::FrameworkError(_) => ErrorKind::FrameworkError,
+        _ => ErrorKind::HarnessError,
+    }
+}
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::process::Command;
 
@@ -500,13 +509,14 @@ impl FrameworkAdapter for SubprocessAdapter {
                         ..Default::default()
                     };
 
+                    let error_kind = error_to_error_kind(&e);
                     return Ok(BenchmarkResult {
                         framework: self.name.clone(),
                         file_path: file_path.to_path_buf(),
                         file_size,
                         success: false,
                         error_message: Some(e.to_string()),
-                        error_kind: ErrorKind::HarnessError,
+                        error_kind,
                         duration: actual_duration,
                         extraction_duration: None,
                         subprocess_overhead: None,
@@ -555,13 +565,14 @@ impl FrameworkAdapter for SubprocessAdapter {
                         ..Default::default()
                     };
 
+                    let error_kind = error_to_error_kind(&e);
                     return Ok(BenchmarkResult {
                         framework: self.name.clone(),
                         file_path: file_path.to_path_buf(),
                         file_size,
                         success: false,
                         error_message: Some(e.to_string()),
-                        error_kind: ErrorKind::HarnessError,
+                        error_kind,
                         duration: actual_duration,
                         extraction_duration: None,
                         subprocess_overhead: None,
@@ -617,11 +628,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                     ..Default::default()
                 };
 
-                let error_kind = if matches!(e, Error::FrameworkError(_)) {
-                    ErrorKind::FrameworkError
-                } else {
-                    ErrorKind::HarnessError
-                };
+                let error_kind = error_to_error_kind(&e);
 
                 return Ok(BenchmarkResult {
                     framework: self.name.clone(),
@@ -802,6 +809,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                     ..Default::default()
                 };
 
+                let error_kind = error_to_error_kind(&e);
                 let failure_results: Vec<BenchmarkResult> = file_paths
                     .iter()
                     .map(|file_path| {
@@ -824,7 +832,7 @@ impl FrameworkAdapter for SubprocessAdapter {
                             file_size,
                             success: false,
                             error_message: Some(e.to_string()),
-                            error_kind: ErrorKind::HarnessError,
+                            error_kind,
                             duration: avg_duration_per_file,
                             extraction_duration: None,
                             subprocess_overhead: None,

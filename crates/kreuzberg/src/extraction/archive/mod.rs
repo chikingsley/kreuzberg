@@ -878,4 +878,126 @@ mod tests {
         let result = extract_gzip_metadata(&compressed, &limits);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_extract_gzip_compressed_tar_metadata() {
+        use flate2::Compression;
+        use flate2::write::GzEncoder;
+        use std::io::Write;
+
+        // Create a tar archive
+        let mut tar_data = Vec::new();
+        {
+            let mut tar = TarBuilder::new(&mut tar_data);
+
+            let data1 = b"Hello from tar.gz!";
+            let mut header1 = ::tar::Header::new_gnu();
+            header1.set_path("test.txt").unwrap();
+            header1.set_size(data1.len() as u64);
+            header1.set_cksum();
+            tar.append(&header1, &data1[..]).unwrap();
+
+            let data2 = b"# Markdown file";
+            let mut header2 = ::tar::Header::new_gnu();
+            header2.set_path("readme.md").unwrap();
+            header2.set_size(data2.len() as u64);
+            header2.set_cksum();
+            tar.append(&header2, &data2[..]).unwrap();
+
+            tar.finish().unwrap();
+        }
+
+        // Gzip compress the tar data
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&tar_data).unwrap();
+        let gzip_compressed = encoder.finish().unwrap();
+
+        // Extract metadata from the gzip-compressed tar
+        let metadata = extract_gzip_metadata(&gzip_compressed, &default_limits()).unwrap();
+
+        assert_eq!(metadata.format, "GZIP+TAR");
+        assert_eq!(metadata.file_count, 2);
+        assert_eq!(metadata.file_list.len(), 2);
+        assert!(metadata.total_size > 0);
+
+        // Verify file paths are preserved
+        let paths: Vec<&str> = metadata.file_list.iter().map(|e| e.path.as_str()).collect();
+        assert!(paths.contains(&"test.txt"));
+        assert!(paths.contains(&"readme.md"));
+    }
+
+    #[test]
+    fn test_extract_gzip_compressed_tar_text_content() {
+        use flate2::Compression;
+        use flate2::write::GzEncoder;
+        use std::io::Write;
+
+        // Create a tar archive
+        let mut tar_data = Vec::new();
+        {
+            let mut tar = TarBuilder::new(&mut tar_data);
+
+            let data1 = b"Hello from tar.gz!";
+            let mut header1 = ::tar::Header::new_gnu();
+            header1.set_path("test.txt").unwrap();
+            header1.set_size(data1.len() as u64);
+            header1.set_cksum();
+            tar.append(&header1, &data1[..]).unwrap();
+
+            let data2 = b"# Markdown content";
+            let mut header2 = ::tar::Header::new_gnu();
+            header2.set_path("readme.md").unwrap();
+            header2.set_size(data2.len() as u64);
+            header2.set_cksum();
+            tar.append(&header2, &data2[..]).unwrap();
+
+            tar.finish().unwrap();
+        }
+
+        // Gzip compress the tar data
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&tar_data).unwrap();
+        let gzip_compressed = encoder.finish().unwrap();
+
+        // Extract text content from the gzip-compressed tar
+        let contents = extract_gzip_text_content(&gzip_compressed, &default_limits()).unwrap();
+
+        assert_eq!(contents.len(), 2);
+        assert_eq!(contents.get("test.txt").unwrap(), "Hello from tar.gz!");
+        assert_eq!(contents.get("readme.md").unwrap(), "# Markdown content");
+    }
+
+    #[test]
+    fn test_extract_gzip_compressed_tar_both() {
+        use flate2::Compression;
+        use flate2::write::GzEncoder;
+        use std::io::Write;
+
+        // Create a tar archive
+        let mut tar_data = Vec::new();
+        {
+            let mut tar = TarBuilder::new(&mut tar_data);
+
+            let data = b"Combined test content";
+            let mut header = ::tar::Header::new_gnu();
+            header.set_path("combined.txt").unwrap();
+            header.set_size(data.len() as u64);
+            header.set_cksum();
+            tar.append(&header, &data[..]).unwrap();
+
+            tar.finish().unwrap();
+        }
+
+        // Gzip compress the tar data
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&tar_data).unwrap();
+        let gzip_compressed = encoder.finish().unwrap();
+
+        // Extract both metadata and content in one call
+        let (metadata, contents) = extract_gzip(&gzip_compressed, &default_limits()).unwrap();
+
+        assert_eq!(metadata.format, "GZIP+TAR");
+        assert_eq!(metadata.file_count, 1);
+        assert_eq!(contents.get("combined.txt").unwrap(), "Combined test content");
+    }
 }

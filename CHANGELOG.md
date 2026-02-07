@@ -69,12 +69,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### CLI
 - Fixed `.yml` config files rejected by `--config` flag; now accepts both `.yml` and `.yaml`.
 
+#### .tgz Archive Extraction
+- Fixed `.tgz` files parsed as raw TAR instead of gzip-compressed TAR. The MIME mapping now correctly routes `.tgz` to the GzipExtractor, which detects inner TAR archives via ustar magic bytes and delegates to TAR extraction.
+
+#### Excel Exotic Formats
+- Fixed `.xlam` (Excel add-in), `.xla` (legacy add-in), and `.xlsb` (binary spreadsheet) files causing extraction errors when they lack standard workbook data. These formats now gracefully return an empty workbook instead of propagating parse errors.
+
+#### PDF Error Handling
+- Fixed password-protected and malformed PDFs causing extraction errors. The PDF extractor now gracefully returns an empty `ExtractionResult` instead of propagating `PdfError::PasswordRequired` and `PdfError::InvalidPdf`.
+
 #### Benchmark Harness
 - Fixed framework initialization check running before external adapters (Tika, pdfplumber, etc.) were registered, causing false "failed to initialize" errors.
 - Fixed missing `composer install` step in PHP benchmark CI job.
 - Fixed C# benchmark wrapper using wrong MIME type casing for macro-enabled Office formats and incorrect djot MIME type.
 - Fixed WASM benchmark wrapper missing MIME mappings for several supported formats.
 - Added error counts (`framework_errors`, `harness_errors`) and error detail breakdown to benchmark aggregation output.
+- Added distinct `ErrorKind::Timeout` tracking in benchmark results, propagated through aggregation and per-extension stats.
+- Removed 12 malformed/password-protected/broken fixture files from benchmark corpus.
 
 ---
 
