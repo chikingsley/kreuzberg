@@ -4,7 +4,7 @@
 	"tags": ["smoke", "pdf", "basic"],
 	"description": "Smoke test: PDF with simple text extraction",
 	"document": {
-		"path": "pdfs/fake_memo.pdf",
+		"path": "pdf/fake_memo.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

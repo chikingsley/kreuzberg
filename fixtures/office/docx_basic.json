@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "DOCX document extraction baseline.",
 	"document": {
-		"path": "office/document.docx",
+		"path": "docx/sample_document.docx",
 		"media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	},
 	"extraction": {

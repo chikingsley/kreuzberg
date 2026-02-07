@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "Pitch deck PPTX used to validate large slide extraction.",
 	"document": {
-		"path": "presentations/pitch_deck_presentation.pptx",
+		"path": "pptx/pitch_deck_presentation.pptx",
 		"media_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 	},
 	"extraction": {

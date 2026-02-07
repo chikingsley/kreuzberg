@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "Simple DOCX document to verify baseline extraction.",
 	"document": {
-		"path": "documents/fake.docx",
+		"path": "docx/fake.docx",
 		"media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	},
 	"extraction": {

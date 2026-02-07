@@ -3,7 +3,7 @@
 	"category": "ocr",
 	"description": "Rotated page PDF requiring OCR to verify orientation handling.",
 	"document": {
-		"path": "pdfs/ocr_test_rotated_90.pdf",
+		"path": "pdf/ocr_test_rotated_90.pdf",
 		"media_type": "application/pdf",
 		"requires_external_tool": ["tesseract"]
 	},

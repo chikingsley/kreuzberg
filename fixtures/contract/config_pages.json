@@ -3,7 +3,7 @@
 	"description": "Tests page configuration with page assertions",
 	"tags": ["contract", "config"],
 	"document": {
-		"path": "pdfs/multi_page.pdf"
+		"path": "pdf/multi_page.pdf"
 	},
 	"extraction": {
 		"method": "sync",

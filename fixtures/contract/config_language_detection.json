@@ -3,7 +3,7 @@
 	"description": "Tests language detection configuration",
 	"tags": ["contract", "config"],
 	"document": {
-		"path": "pdfs/fake_memo.pdf"
+		"path": "pdf/fake_memo.pdf"
 	},
 	"extraction": {
 		"method": "sync",

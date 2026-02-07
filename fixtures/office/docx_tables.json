@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "DOCX document containing tables for table-aware extraction.",
 	"document": {
-		"path": "documents/docx_tables.docx",
+		"path": "docx/docx_tables.docx",
 		"media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 	},
 	"extraction": {

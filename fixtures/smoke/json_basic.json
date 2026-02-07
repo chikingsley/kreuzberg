@@ -4,7 +4,7 @@
 	"tags": ["smoke", "structured", "json"],
 	"description": "Smoke test: JSON file extraction",
 	"document": {
-		"path": "data_formats/simple.json",
+		"path": "json/simple.json",
 		"media_type": "application/json"
 	},
 	"extraction": {

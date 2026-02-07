@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "PPTX presentation containing images to ensure metadata extraction.",
 	"document": {
-		"path": "presentations/powerpoint_with_image.pptx",
+		"path": "pptx/powerpoint_with_image.pptx",
 		"media_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 	},
 	"extraction": {

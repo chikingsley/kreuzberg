@@ -3,7 +3,7 @@
 	"description": "Tests Djot output format",
 	"tags": ["contract", "output_format"],
 	"document": {
-		"path": "pdfs/fake_memo.pdf"
+		"path": "pdf/fake_memo.pdf"
 	},
 	"extraction": {
 		"method": "sync",

@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Google Docs exported PDF to verify conversion fidelity.",
 	"document": {
-		"path": "pdfs/google_doc_document.pdf",
+		"path": "pdf/google_doc_document.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

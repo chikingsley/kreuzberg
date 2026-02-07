@@ -3,7 +3,7 @@
 	"description": "Tests force_ocr configuration option",
 	"tags": ["contract", "config", "ocr"],
 	"document": {
-		"path": "pdfs/fake_memo.pdf"
+		"path": "pdf/fake_memo.pdf"
 	},
 	"extraction": {
 		"method": "sync",

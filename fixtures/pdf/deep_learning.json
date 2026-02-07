@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Deep learning textbook PDF to ensure long-form extraction quality.",
 	"document": {
-		"path": "pdfs/fundamentals_of_deep_learning_2014.pdf",
+		"path": "pdf/fundamentals_of_deep_learning_2014.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

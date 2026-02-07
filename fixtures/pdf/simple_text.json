@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Simple text-heavy PDF should extract content without OCR or tables.",
 	"document": {
-		"path": "pdfs/fake_memo.pdf",
+		"path": "pdf/fake_memo.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

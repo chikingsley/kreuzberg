@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "XLSX spreadsheet should produce metadata and table content.",
 	"document": {
-		"path": "spreadsheets/stanley_cups.xlsx",
+		"path": "xlsx/stanley_cups.xlsx",
 		"media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	},
 	"extraction": {

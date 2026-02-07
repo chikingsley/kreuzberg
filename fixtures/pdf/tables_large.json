@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Large PDF with extensive tables to stress table extraction.",
 	"document": {
-		"path": "pdfs_with_tables/large.pdf",
+		"path": "pdf/large.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

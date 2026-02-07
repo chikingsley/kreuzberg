@@ -595,7 +595,7 @@ fn test_invalid_config_values() {
     fs::write(
         &config_path,
         r#"
-max_pages = -1
+use_cache = "not_a_bool"
 "#,
     )
     .unwrap();

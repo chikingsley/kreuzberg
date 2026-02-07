@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Right-to-left language PDF to verify RTL extraction.",
 	"document": {
-		"path": "pdfs/right_to_left_01.pdf",
+		"path": "pdf/right_to_left_01.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

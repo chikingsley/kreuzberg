@@ -4,7 +4,7 @@
 	"tags": ["smoke", "html", "markdown"],
 	"description": "Smoke test: HTML converted to Markdown",
 	"document": {
-		"path": "web/simple_table.html",
+		"path": "html/simple_table.html",
 		"media_type": "text/html"
 	},
 	"extraction": {

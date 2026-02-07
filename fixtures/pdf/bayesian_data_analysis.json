@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Bayesian data analysis textbook PDF with large content volume.",
 	"document": {
-		"path": "pdfs/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
+		"path": "pdf/bayesian_data_analysis_third_edition_13th_feb_2020.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

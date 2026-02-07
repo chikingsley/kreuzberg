@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Small PDF containing tables to validate table extraction.",
 	"document": {
-		"path": "pdfs_with_tables/tiny.pdf",
+		"path": "pdf/tiny.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

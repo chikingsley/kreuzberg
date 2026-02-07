@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Technical statistical learning PDF requiring substantial extraction.",
 	"document": {
-		"path": "pdfs/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
+		"path": "pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Medium-sized PDF with multiple tables.",
 	"document": {
-		"path": "pdfs_with_tables/medium.pdf",
+		"path": "pdf/medium.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

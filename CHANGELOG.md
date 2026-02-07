@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+#### CLI
+- **`.yml` config files rejected by `--config` flag**: The CLI only accepted `.yaml` for YAML config files, rejecting the common `.yml` extension with a "must have .toml, .yaml, or .json extension" error. The config loader now accepts both `.yml` and `.yaml` (case-insensitive).
+
+#### CI
+- **Fixture document paths broken after test_documents reorganization**: All 63 fixture JSON files under `fixtures/` still referenced old directory names (`pdfs/`, `pdfs_with_tables/`, `web/`, `documents/`, `legacy_office/`, `presentations/`, `spreadsheets/`, `data_formats/`, `office/`) after the test_documents directory was restructured into per-format directories (`pdf/`, `html/`, `docx/`, `doc/`, `ppt/`, `pptx/`, `xlsx/`, `xls/`, `json/`, `yaml/`). This caused all Deno E2E tests and PDFium system tests to fail with "No such file or directory" errors.
+
+---
+
 ## [4.2.12] - 2026-02-06
 
 ### Fixed

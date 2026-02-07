@@ -3,7 +3,7 @@
 	"description": "Tests image extraction configuration with image assertions",
 	"tags": ["contract", "config"],
 	"document": {
-		"path": "pdfs/embedded_images_tables.pdf"
+		"path": "pdf/embedded_images_tables.pdf"
 	},
 	"extraction": {
 		"method": "sync",

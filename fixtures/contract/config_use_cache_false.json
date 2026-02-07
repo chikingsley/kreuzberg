@@ -3,7 +3,7 @@
 	"description": "Tests use_cache=false configuration option",
 	"tags": ["contract", "config"],
 	"document": {
-		"path": "pdfs/fake_memo.pdf"
+		"path": "pdf/fake_memo.pdf"
 	},
 	"extraction": {
 		"method": "sync",

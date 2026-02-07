@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Large machine learning textbook PDF to stress extraction length.",
 	"document": {
-		"path": "pdfs/a_course_in_machine_learning_ciml_v0_9_all.pdf",
+		"path": "pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

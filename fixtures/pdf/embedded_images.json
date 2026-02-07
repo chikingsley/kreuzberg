@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "PDF with embedded images should extract text and tables when present.",
 	"document": {
-		"path": "pdfs/embedded_images_tables.pdf",
+		"path": "pdf/embedded_images_tables.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

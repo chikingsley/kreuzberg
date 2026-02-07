@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "Simple XLSX spreadsheet shipped alongside office integration tests.",
 	"document": {
-		"path": "office/excel.xlsx",
+		"path": "xlsx/test_01.xlsx",
 		"media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	},
 	"extraction": {

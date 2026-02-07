@@ -3,7 +3,7 @@
 	"category": "pdf",
 	"description": "Assembly language technical manual with large body of text.",
 	"document": {
-		"path": "pdfs/assembly_language_for_beginners_al4_b_en.pdf",
+		"path": "pdf/assembly_language_for_beginners_al4_b_en.pdf",
 		"media_type": "application/pdf"
 	},
 	"extraction": {

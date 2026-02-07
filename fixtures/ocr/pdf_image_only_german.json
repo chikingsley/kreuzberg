@@ -3,7 +3,7 @@
 	"category": "ocr",
 	"description": "Image-only German PDF requiring OCR to extract text.",
 	"document": {
-		"path": "pdfs/image_only_german_pdf.pdf",
+		"path": "pdf/image_only_german_pdf.pdf",
 		"media_type": "application/pdf",
 		"requires_external_tool": ["tesseract"]
 	},

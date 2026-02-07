@@ -3,7 +3,7 @@
 	"category": "structured",
 	"description": "Simple YAML document to validate structured extraction.",
 	"document": {
-		"path": "data_formats/simple.yaml",
+		"path": "yaml/simple.yaml",
 		"media_type": "application/x-yaml"
 	},
 	"extraction": {

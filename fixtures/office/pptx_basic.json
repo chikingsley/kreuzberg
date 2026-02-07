@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "PPTX deck should extract slides content.",
 	"document": {
-		"path": "presentations/simple.pptx",
+		"path": "pptx/simple.pptx",
 		"media_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 	},
 	"extraction": {

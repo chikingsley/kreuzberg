@@ -3,7 +3,7 @@
 	"category": "office",
 	"description": "XLSX workbook with multiple sheets.",
 	"document": {
-		"path": "spreadsheets/excel_multi_sheet.xlsx",
+		"path": "xlsx/excel_multi_sheet.xlsx",
 		"media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	},
 	"extraction": {

@@ -3,7 +3,7 @@
 	"description": "Tests async batch bytes extraction API (batch_extract_bytes)",
 	"tags": ["contract", "api", "batch"],
 	"document": {
-		"path": "pdfs/fake_memo.pdf"
+		"path": "pdf/fake_memo.pdf"
 	},
 	"extraction": {
 		"method": "batch_async",

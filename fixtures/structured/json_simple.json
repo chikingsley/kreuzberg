@@ -3,7 +3,7 @@
 	"category": "structured",
 	"description": "Simple JSON document to verify structured extraction.",
 	"document": {
-		"path": "data_formats/simple.json",
+		"path": "json/simple.json",
 		"media_type": "application/json"
 	},
 	"extraction": {
