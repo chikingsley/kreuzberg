@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/unit_test_lists.docx.md",
   "file_type": "md",
-  "file_size": 559,
+  "file_size": 560,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

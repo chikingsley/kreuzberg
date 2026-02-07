@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/lorem_ipsum.docx.json",
   "file_type": "json",
-  "file_size": 10925,
+  "file_size": 10926,
   "expected_frameworks": [
     "unstructured"
   ],

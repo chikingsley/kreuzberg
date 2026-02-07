@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/xlsx_05_table_with_title.xlsx.md",
   "file_type": "md",
-  "file_size": 340,
+  "file_size": 341,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

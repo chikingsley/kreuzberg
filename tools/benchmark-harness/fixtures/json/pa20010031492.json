@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/pa20010031492.json",
   "file_type": "json",
-  "file_size": 99910,
+  "file_size": 99911,
   "expected_frameworks": [
     "unstructured"
   ],

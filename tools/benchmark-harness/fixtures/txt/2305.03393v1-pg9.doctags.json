@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/txt/2305.03393v1-pg9.doctags.txt",
   "file_type": "txt",
-  "file_size": 3209,
+  "file_size": 3210,
   "expected_frameworks": [
     "kreuzberg",
     "unstructured"

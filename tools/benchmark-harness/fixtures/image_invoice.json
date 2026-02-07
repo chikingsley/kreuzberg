@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/images/invoice_image.png",
   "file_type": "png",
-  "file_size": 10240,
+  "file_size": 10411,
   "expected_frameworks": [
     "kreuzberg"
   ],

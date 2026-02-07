@@ -254,14 +254,17 @@ pub(crate) fn bind_pdfium(
 mod tests {
     use super::*;
     use crate::pdf::error::PdfError;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn test_bind_pdfium_lazy_initialization() {
         let result = bind_pdfium(PdfError::TextExtractionFailed, "test context");
         assert!(result.is_ok(), "First bind_pdfium call should succeed");
     }
 
     #[test]
+    #[serial]
     fn test_bind_pdfium_multiple_calls() {
         // First call - acquire lock, test success, then drop handle to release lock
         {
@@ -277,6 +280,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_bind_pdfium_returns_same_instance() {
         // Get pointer from first handle, then drop it to release lock
         let ptr1 = {
@@ -295,6 +299,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_bind_pdfium_error_mapping() {
         let map_err = |msg: String| PdfError::TextExtractionFailed(msg);
 
@@ -308,6 +313,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_pdfium_handle_deref() {
         let handle = bind_pdfium(PdfError::TextExtractionFailed, "test").unwrap();
 

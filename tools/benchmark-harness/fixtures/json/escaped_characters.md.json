@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/escaped_characters.md.json",
   "file_type": "json",
-  "file_size": 19471,
+  "file_size": 19472,
   "expected_frameworks": [
     "unstructured"
   ],

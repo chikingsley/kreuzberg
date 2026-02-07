@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/pdf/medium.pdf",
   "file_type": "pdf",
-  "file_size": 245760,
+  "file_size": 245260,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/picture_classification.json",
   "file_type": "json",
-  "file_size": 14218,
+  "file_size": 14219,
   "expected_frameworks": [
     "unstructured"
   ],

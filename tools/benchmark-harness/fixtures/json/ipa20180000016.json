@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/ipa20180000016.json",
   "file_type": "json",
-  "file_size": 291122,
+  "file_size": 291123,
   "expected_frameworks": [
     "unstructured"
   ],

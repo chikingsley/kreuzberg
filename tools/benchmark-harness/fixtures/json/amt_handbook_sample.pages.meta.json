@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/amt_handbook_sample.pages.meta.json",
   "file_type": "json",
-  "file_size": 32,
+  "file_size": 33,
   "expected_frameworks": [
     "unstructured"
   ],

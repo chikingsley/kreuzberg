@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/unstructured/xml/factbook-utf-16.xml",
   "file_type": "xml",
-  "file_size": 1340,
+  "file_size": 1341,
   "expected_frameworks": [
     "unstructured"
   ],

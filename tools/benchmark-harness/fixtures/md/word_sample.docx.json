@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/word_sample.docx.md",
   "file_type": "md",
-  "file_size": 1002,
+  "file_size": 1003,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

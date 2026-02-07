@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/pdf/an_introduction_to_statistical_learning_with_applications_in_r_islr_sixth_printing.pdf",
   "file_type": "pdf",
-  "file_size": 9437184,
+  "file_size": 9433354,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

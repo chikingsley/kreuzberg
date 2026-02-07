@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/tablecell.docx.json",
   "file_type": "json",
-  "file_size": 11512,
+  "file_size": 11513,
   "expected_frameworks": [
     "unstructured"
   ],

@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/equations.docx.json",
   "file_type": "json",
-  "file_size": 20635,
+  "file_size": 20636,
   "expected_frameworks": [
     "unstructured"
   ],

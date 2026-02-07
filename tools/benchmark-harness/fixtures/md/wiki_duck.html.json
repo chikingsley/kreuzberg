@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/wiki_duck.html.md",
   "file_type": "md",
-  "file_size": 59878,
+  "file_size": 59879,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

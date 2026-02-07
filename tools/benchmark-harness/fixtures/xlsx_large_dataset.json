@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/xlsx/test_01.xlsx",
   "file_type": "xlsx",
-  "file_size": 169984,
+  "file_size": 170052,
   "expected_frameworks": [
     "kreuzberg"
   ],

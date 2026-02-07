@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/markdown/hip_13044_b.md",
   "file_type": "md",
-  "file_size": 33792,
+  "file_size": 33901,
   "expected_frameworks": [
     "kreuzberg",
     "markitdown"

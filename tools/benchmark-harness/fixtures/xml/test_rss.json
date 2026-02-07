@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/markitdown/xml/test_rss.xml",
   "file_type": "xml",
-  "file_size": 280581,
+  "file_size": 280582,
   "expected_frameworks": [
     "unstructured"
   ],

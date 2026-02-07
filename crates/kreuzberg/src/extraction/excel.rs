@@ -93,6 +93,38 @@ pub fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
         }
     }
 
+    // For .xla (legacy add-in), try XLS parsing but gracefully return empty workbook on failure
+    if lower_path.ends_with(".xla") {
+        let file = std::fs::File::open(file_path)?;
+        match calamine::Xls::new(std::io::BufReader::new(file)) {
+            Ok(workbook) => {
+                return process_workbook(workbook, office_metadata);
+            }
+            Err(_) => {
+                return Ok(ExcelWorkbook {
+                    sheets: vec![],
+                    metadata: office_metadata.unwrap_or_default(),
+                });
+            }
+        }
+    }
+
+    // For .xlsb (binary spreadsheet), try XLSB parsing but gracefully return empty workbook on failure
+    if lower_path.ends_with(".xlsb") {
+        let file = std::fs::File::open(file_path)?;
+        match calamine::Xlsb::new(std::io::BufReader::new(file)) {
+            Ok(workbook) => {
+                return process_workbook(workbook, office_metadata);
+            }
+            Err(_) => {
+                return Ok(ExcelWorkbook {
+                    sheets: vec![],
+                    metadata: office_metadata.unwrap_or_default(),
+                });
+            }
+        }
+    }
+
     // For other formats, use open_workbook_auto
     let workbook = match open_workbook_auto(Path::new(file_path)) {
         Ok(wb) => wb,

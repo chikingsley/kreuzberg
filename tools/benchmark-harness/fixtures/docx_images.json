@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/docx/word_image_anchors.docx",
   "file_type": "docx",
-  "file_size": 18432,
+  "file_size": 18560,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/html/table_02.html",
   "file_type": "html",
-  "file_size": 593,
+  "file_size": 594,
   "expected_frameworks": [
     "kreuzberg",
     "markitdown",

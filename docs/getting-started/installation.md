@@ -300,14 +300,14 @@ Add to Maven `pom.xml`:
 <dependency>
     <groupId>dev.kreuzberg</groupId>
     <artifactId>kreuzberg</artifactId>
-    <version>4.2.13</version>
+    <version>4.2.14</version>
 </dependency>
 ```
 
 Or Gradle:
 
 ```gradle title="build.gradle"
-implementation 'dev.kreuzberg:kreuzberg:4.2.13'
+implementation 'dev.kreuzberg:kreuzberg:4.2.14'
 ```
 
 **Requirements:** Java 25+ (FFM/Panama API)

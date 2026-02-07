@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/txt/right_to_left_03.doctags.txt",
   "file_type": "txt",
-  "file_size": 3198,
+  "file_size": 3199,
   "expected_frameworks": [
     "kreuzberg",
     "unstructured"

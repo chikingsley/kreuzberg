@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/pdf/multi_page.pdf",
   "file_type": "pdf",
-  "file_size": 128000,
+  "file_size": 128322,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

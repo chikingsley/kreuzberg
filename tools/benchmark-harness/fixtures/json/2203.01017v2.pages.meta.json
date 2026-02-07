@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/2203.01017v2.pages.meta.json",
   "file_type": "json",
-  "file_size": 476,
+  "file_size": 477,
   "expected_frameworks": [
     "unstructured"
   ],

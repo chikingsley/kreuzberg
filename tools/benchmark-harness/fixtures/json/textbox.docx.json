@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/textbox.docx.json",
   "file_type": "json",
-  "file_size": 31500,
+  "file_size": 31501,
   "expected_frameworks": [
     "unstructured"
   ],

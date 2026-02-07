@@ -108,7 +108,7 @@ def validate_benchmark_fixtures(repo_root: Path) -> list[str]:
         print(f"Note: Benchmark fixtures directory not found at {fixtures_dir}")
         return errors
 
-    json_files = list(fixtures_dir.glob("*.json"))
+    json_files = list(fixtures_dir.rglob("*.json"))
     missing_count = 0
 
     for json_file in json_files:

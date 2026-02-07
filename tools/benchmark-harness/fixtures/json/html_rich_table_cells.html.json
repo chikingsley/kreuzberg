@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/html_rich_table_cells.html.json",
   "file_type": "json",
-  "file_size": 63347,
+  "file_size": 63348,
   "expected_frameworks": [
     "unstructured"
   ],

@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/word_tables.docx.json",
   "file_type": "json",
-  "file_size": 76176,
+  "file_size": 76177,
   "expected_frameworks": [
     "unstructured"
   ],

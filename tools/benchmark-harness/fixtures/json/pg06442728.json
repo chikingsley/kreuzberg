@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/pg06442728.json",
   "file_type": "json",
-  "file_size": 93077,
+  "file_size": 93078,
   "expected_frameworks": [
     "unstructured"
   ],

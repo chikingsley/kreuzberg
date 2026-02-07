@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/deepseek_simple.md.md",
   "file_type": "md",
-  "file_size": 1341,
+  "file_size": 1342,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

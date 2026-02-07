@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/code_and_formula.md",
   "file_type": "md",
-  "file_size": 5537,
+  "file_size": 5538,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

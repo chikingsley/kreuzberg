@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/csv-comma.csv.json",
   "file_type": "json",
-  "file_size": 60860,
+  "file_size": 60861,
   "expected_frameworks": [
     "unstructured"
   ],

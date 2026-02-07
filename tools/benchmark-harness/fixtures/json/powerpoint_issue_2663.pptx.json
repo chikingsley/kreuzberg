@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/powerpoint_issue_2663.pptx.json",
   "file_type": "json",
-  "file_size": 8988,
+  "file_size": 8989,
   "expected_frameworks": [
     "unstructured"
   ],

@@ -1,0 +1,12 @@
+{
+  "document": "../../../test_documents/opml/opml-reader.opml",
+  "file_type": "opml",
+  "file_size": 2904,
+  "expected_frameworks": [
+    "kreuzberg"
+  ],
+  "metadata": {
+    "description": "OPML reader document with nested outlines",
+    "category": "structured_data"
+  }
+}

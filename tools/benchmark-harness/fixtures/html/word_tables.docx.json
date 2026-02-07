@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/html/word_tables.docx.html",
   "file_type": "html",
-  "file_size": 4747,
+  "file_size": 4748,
   "expected_frameworks": [
     "kreuzberg",
     "markitdown",

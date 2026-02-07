@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/csv-too-few-columns.csv.md",
   "file_type": "md",
-  "file_size": 155,
+  "file_size": 156,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

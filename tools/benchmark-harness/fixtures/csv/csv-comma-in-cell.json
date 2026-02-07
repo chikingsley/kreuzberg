@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/csv/csv-comma-in-cell.csv",
   "file_type": "csv",
-  "file_size": 45,
+  "file_size": 46,
   "expected_frameworks": [
     "kreuzberg",
     "unstructured"

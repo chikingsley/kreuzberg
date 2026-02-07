@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/drawingml.docx.json",
   "file_type": "json",
-  "file_size": 88805,
+  "file_size": 88806,
   "expected_frameworks": [
     "unstructured"
   ],

@@ -169,14 +169,17 @@ fn calculate_optimal_dpi(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn test_renderer_creation() {
         let result = PdfRenderer::new();
         assert!(result.is_ok());
     }
 
     #[test]
+    #[serial]
     fn test_render_invalid_pdf() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();
@@ -186,6 +189,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_page_not_found() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();
@@ -242,6 +246,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_all_pages_empty_pdf() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();
@@ -250,6 +255,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_page_with_password_none() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();
@@ -258,6 +264,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_all_pages_with_password_none() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();
@@ -266,6 +273,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_page_to_image_function() {
         let options = PageRenderOptions::default();
         let result = render_page_to_image(b"not a pdf", 0, &options);
@@ -348,6 +356,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_render_empty_bytes() {
         let renderer = PdfRenderer::new().unwrap();
         let options = PageRenderOptions::default();

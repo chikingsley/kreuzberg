@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/deepseek_simple.md.json",
   "file_type": "json",
-  "file_size": 10371,
+  "file_size": 10372,
   "expected_frameworks": [
     "unstructured"
   ],

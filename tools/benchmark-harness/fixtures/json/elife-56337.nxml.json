@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/elife-56337.nxml.json",
   "file_type": "json",
-  "file_size": 352302,
+  "file_size": 352303,
   "expected_frameworks": [
     "unstructured"
   ],

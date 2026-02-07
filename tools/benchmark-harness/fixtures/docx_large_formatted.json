@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/docx/test_emf_docx.docx",
   "file_type": "docx",
-  "file_size": 425984,
+  "file_size": 426097,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

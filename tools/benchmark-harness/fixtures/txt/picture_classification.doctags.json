@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/txt/picture_classification.doctags.txt",
   "file_type": "txt",
-  "file_size": 4074,
+  "file_size": 4075,
   "expected_frameworks": [
     "kreuzberg",
     "unstructured"

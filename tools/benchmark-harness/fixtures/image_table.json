@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/images/complex_document.png",
   "file_type": "png",
-  "file_size": 28672,
+  "file_size": 28485,
   "expected_frameworks": [
     "kreuzberg"
   ],

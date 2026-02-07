@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/list_after_num_headers.docx.json",
   "file_type": "json",
-  "file_size": 3680,
+  "file_size": 3681,
   "expected_frameworks": [
     "unstructured"
   ],

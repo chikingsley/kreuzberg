@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/wiki_duck.html.json",
   "file_type": "json",
-  "file_size": 636993,
+  "file_size": 636994,
   "expected_frameworks": [
     "unstructured"
   ],

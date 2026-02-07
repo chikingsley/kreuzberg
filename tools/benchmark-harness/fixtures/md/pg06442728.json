@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/pg06442728.md",
   "file_type": "md",
-  "file_size": 29727,
+  "file_size": 29728,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

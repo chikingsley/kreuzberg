@@ -11,7 +11,6 @@ pub mod config;
 pub mod consolidate;
 pub mod error;
 pub mod fixture;
-pub mod generate;
 pub mod monitoring;
 pub mod output;
 pub mod pool_metrics;
@@ -48,8 +47,6 @@ pub use registry::AdapterRegistry;
 pub use runner::BenchmarkRunner;
 pub use types::{BenchmarkResult, DiskSizeInfo, FrameworkCapabilities, PdfMetadata};
 
-// Fixture generation and framework size measurement
-pub use generate::{GenerateConfig, GenerateStats, generate_fixtures};
 pub use sizes::{
     FrameworkSize, FrameworkSizes, load_framework_sizes as load_sizes_json, measure_framework_sizes,
     save_framework_sizes,

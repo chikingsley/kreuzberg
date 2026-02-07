@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/word_image_anchors.docx.json",
   "file_type": "json",
-  "file_size": 13524,
+  "file_size": 13525,
   "expected_frameworks": [
     "unstructured"
   ],

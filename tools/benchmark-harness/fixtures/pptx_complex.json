@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/pptx/powerpoint_sample.pptx",
   "file_type": "pptx",
-  "file_size": 46080,
+  "file_size": 45849,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

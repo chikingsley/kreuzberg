@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/html/complex_table.html",
   "file_type": "html",
-  "file_size": 2662,
+  "file_size": 2697,
   "expected_frameworks": [
     "kreuzberg",
     "markitdown",

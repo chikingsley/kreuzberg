@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/xlsx_06_edge_cases_.xlsx.json",
   "file_type": "json",
-  "file_size": 76034,
+  "file_size": 76035,
   "expected_frameworks": [
     "unstructured"
   ],

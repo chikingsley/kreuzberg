@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/csv-too-few-columns.csv.json",
   "file_type": "json",
-  "file_size": 16920,
+  "file_size": 16921,
   "expected_frameworks": [
     "unstructured"
   ],

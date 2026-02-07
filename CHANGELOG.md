@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.2.14] - 2026-02-07
+
+### Fixed
+
+#### Excel File-Path Extraction
+- Fixed `.xla` (legacy add-in) and `.xlsb` (binary spreadsheet) graceful fallback only applied to byte-based extraction; file-path-based extraction still propagated parse errors.
+
+#### PDF Test Flakiness
+- Fixed flaky PDF tests caused by concurrent pdfium access during parallel test execution. Added `#[serial]` to all pdfium-using tests to prevent global state conflicts.
+
+#### Benchmark Fixtures
+- Replaced auto-generated fixture discovery (`generate.rs`) with curated, validated fixture set.
+- Added comprehensive fixture validation test suite (8 tests: JSON parsing, document existence, file sizes, ground truth, duplicate detection, format coverage).
+- Removed 5 duplicate fixture entries pointing to the same test documents.
+- Swapped encrypted EPUB fixture (`epub2_no_cover.epub` with IDPF font encryption) for clean `features.epub`.
+- Fixed 272 stale `file_size` declarations in fixture JSON files to match actual files on disk.
+- Fixed `validate_ground_truth.py` only checking root-level fixtures; now uses `rglob` for recursive validation.
+
+### Removed
+- Removed `generate.rs` auto-generation system from benchmark harness (caused recurring breakage from malformed vendored files).
+
+---
+
 ## [4.2.13] - 2026-02-07
 
 ### Added

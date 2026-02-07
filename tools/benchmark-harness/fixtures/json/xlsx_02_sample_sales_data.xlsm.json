@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/xlsx_02_sample_sales_data.xlsm.json",
   "file_type": "json",
-  "file_size": 71228,
+  "file_size": 71229,
   "expected_frameworks": [
     "unstructured"
   ],

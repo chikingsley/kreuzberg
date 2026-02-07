@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/docx_grouped_images.docx.md",
   "file_type": "md",
-  "file_size": 334,
+  "file_size": 335,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

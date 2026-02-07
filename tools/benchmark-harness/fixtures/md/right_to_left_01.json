@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/right_to_left_01.md",
   "file_type": "md",
-  "file_size": 2513,
+  "file_size": 2514,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

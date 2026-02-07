@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/redp5110_sampled.md",
   "file_type": "md",
-  "file_size": 40111,
+  "file_size": 40112,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

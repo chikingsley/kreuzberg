@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/pntd.0008301.nxml.json",
   "file_type": "json",
-  "file_size": 311703,
+  "file_size": 311704,
   "expected_frameworks": [
     "unstructured"
   ],

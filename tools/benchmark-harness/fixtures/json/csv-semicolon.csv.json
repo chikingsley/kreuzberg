@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/csv-semicolon.csv.json",
   "file_type": "json",
-  "file_size": 60858,
+  "file_size": 60859,
   "expected_frameworks": [
     "unstructured"
   ],

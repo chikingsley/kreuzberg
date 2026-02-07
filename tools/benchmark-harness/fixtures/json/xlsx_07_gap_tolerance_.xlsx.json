@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/xlsx_07_gap_tolerance_.xlsx.json",
   "file_type": "json",
-  "file_size": 106747,
+  "file_size": 106748,
   "expected_frameworks": [
     "unstructured"
   ],

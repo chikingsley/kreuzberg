@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/word_sample.docx.json",
   "file_type": "json",
-  "file_size": 109875,
+  "file_size": 109876,
   "expected_frameworks": [
     "unstructured"
   ],

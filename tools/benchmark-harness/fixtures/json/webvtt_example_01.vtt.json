@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/webvtt_example_01.vtt.json",
   "file_type": "json",
-  "file_size": 7471,
+  "file_size": 7472,
   "expected_frameworks": [
     "unstructured"
   ],

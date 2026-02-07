@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/docx/docx_tables.docx",
   "file_type": "docx",
-  "file_size": 12288,
+  "file_size": 12725,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

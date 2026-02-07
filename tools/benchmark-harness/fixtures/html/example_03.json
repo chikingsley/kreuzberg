@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/html/example_03.html",
   "file_type": "html",
-  "file_size": 1934,
+  "file_size": 1932,
   "expected_frameworks": [
     "kreuzberg",
     "markitdown",

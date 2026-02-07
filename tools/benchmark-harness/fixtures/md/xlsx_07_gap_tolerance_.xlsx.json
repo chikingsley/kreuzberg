@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/xlsx_07_gap_tolerance_.xlsx.md",
   "file_type": "md",
-  "file_size": 3131,
+  "file_size": 3132,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

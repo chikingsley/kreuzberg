@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/docx_grouped_images.docx.json",
   "file_type": "json",
-  "file_size": 152114,
+  "file_size": 152115,
   "expected_frameworks": [
     "unstructured"
   ],

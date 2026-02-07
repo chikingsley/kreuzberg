@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/multi_page.pages.meta.json",
   "file_type": "json",
-  "file_size": 146,
+  "file_size": 147,
   "expected_frameworks": [
     "unstructured"
   ],

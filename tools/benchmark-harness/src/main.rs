@@ -120,25 +120,6 @@ enum Commands {
         baseline: String,
     },
 
-    /// Generate fixture JSON files from vendored test documents
-    GenerateFixtures {
-        /// Directory containing vendored test documents
-        #[arg(long)]
-        vendored_dir: PathBuf,
-
-        /// Output directory for generated fixture JSON files
-        #[arg(long)]
-        output_dir: PathBuf,
-
-        /// Directory containing ground truth files (optional)
-        #[arg(long)]
-        ground_truth_dir: Option<PathBuf>,
-
-        /// Overwrite existing fixtures
-        #[arg(long, default_value = "false")]
-        overwrite: bool,
-    },
-
     /// Measure framework installation sizes
     MeasureFrameworkSizes {
         /// Output JSON file for framework sizes
@@ -495,48 +476,6 @@ async fn main() -> Result<()> {
                 .map_err(|e| benchmark_harness::Error::Benchmark(format!("Failed to serialize results: {}", e)))?;
             std::fs::write(&output_file, json).map_err(benchmark_harness::Error::Io)?;
             println!("\nResults written to: {}", output_file.display());
-
-            Ok(())
-        }
-
-        Commands::GenerateFixtures {
-            vendored_dir,
-            output_dir,
-            ground_truth_dir,
-            overwrite,
-        } => {
-            use benchmark_harness::{GenerateConfig, generate_fixtures};
-
-            println!("Generating fixtures from vendored documents...");
-            println!("  Vendored directory: {}", vendored_dir.display());
-            println!("  Output directory: {}", output_dir.display());
-            if let Some(gt_dir) = &ground_truth_dir {
-                println!("  Ground truth directory: {}", gt_dir.display());
-            }
-            println!("  Overwrite existing: {}", overwrite);
-
-            let config = GenerateConfig {
-                vendored_dir,
-                output_dir,
-                ground_truth_dir,
-                overwrite,
-            };
-
-            let stats = generate_fixtures(&config)?;
-
-            println!("\nGeneration complete:");
-            println!("  Created: {} fixtures", stats.created);
-            println!("  Skipped: {} fixtures (already exist)", stats.skipped);
-            println!("  Errors: {}", stats.errors);
-
-            if !stats.by_type.is_empty() {
-                println!("\nBy file type:");
-                let mut types: Vec<_> = stats.by_type.iter().collect();
-                types.sort_by_key(|(k, _)| *k);
-                for (file_type, count) in types {
-                    println!("  {}: {}", file_type, count);
-                }
-            }
 
             Ok(())
         }

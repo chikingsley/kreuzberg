@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/pone.0234687.nxml.json",
   "file_type": "json",
-  "file_size": 559990,
+  "file_size": 559991,
   "expected_frameworks": [
     "unstructured"
   ],

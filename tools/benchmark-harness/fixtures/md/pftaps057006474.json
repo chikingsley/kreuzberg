@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/pftaps057006474.md",
   "file_type": "md",
-  "file_size": 25648,
+  "file_size": 25649,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

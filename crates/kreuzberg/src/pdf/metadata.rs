@@ -486,6 +486,7 @@ mod tests {
     }
 
     #[test]
+    #[serial_test::serial]
     fn test_extract_metadata_invalid_pdf() {
         let result = extract_metadata(b"not a pdf");
         assert!(result.is_err());

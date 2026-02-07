@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/xlsx_05_table_with_title.xlsx.json",
   "file_type": "json",
-  "file_size": 15937,
+  "file_size": 15938,
   "expected_frameworks": [
     "unstructured"
   ],

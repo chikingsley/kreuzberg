@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/csv-tab.csv.json",
   "file_type": "json",
-  "file_size": 60849,
+  "file_size": 60850,
   "expected_frameworks": [
     "unstructured"
   ],

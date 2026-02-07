@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/csv-inconsistent-header.csv.md",
   "file_type": "md",
-  "file_size": 149,
+  "file_size": 150,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

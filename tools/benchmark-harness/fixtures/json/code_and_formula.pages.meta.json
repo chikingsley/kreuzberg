@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/code_and_formula.pages.meta.json",
   "file_type": "json",
-  "file_size": 60,
+  "file_size": 61,
   "expected_frameworks": [
     "unstructured"
   ],

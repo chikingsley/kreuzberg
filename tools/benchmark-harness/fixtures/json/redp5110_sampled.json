@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/redp5110_sampled.json",
   "file_type": "json",
-  "file_size": 465655,
+  "file_size": 465656,
   "expected_frameworks": [
     "unstructured"
   ],

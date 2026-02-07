@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/example_06.html.json",
   "file_type": "json",
-  "file_size": 4813,
+  "file_size": 4814,
   "expected_frameworks": [
     "unstructured"
   ],

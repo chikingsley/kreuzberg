@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/json/hyperlink_01.html.json",
   "file_type": "json",
-  "file_size": 2130,
+  "file_size": 2131,
   "expected_frameworks": [
     "unstructured"
   ],

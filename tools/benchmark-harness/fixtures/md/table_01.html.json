@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/table_01.html.md",
   "file_type": "md",
-  "file_size": 100,
+  "file_size": 101,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

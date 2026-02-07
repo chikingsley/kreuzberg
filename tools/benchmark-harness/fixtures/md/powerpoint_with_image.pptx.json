@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/docling/md/powerpoint_with_image.pptx.md",
   "file_type": "md",
-  "file_size": 59,
+  "file_size": 60,
   "expected_frameworks": [
     "markitdown",
     "unstructured"

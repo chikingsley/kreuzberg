@@ -1,7 +1,7 @@
 {
   "document": "../../../test_documents/docx/lorem_ipsum.docx",
   "file_type": "docx",
-  "file_size": 14336,
+  "file_size": 14817,
   "expected_frameworks": [
     "kreuzberg",
     "docling",

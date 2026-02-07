@@ -441,14 +441,17 @@ fn extract_page_hierarchy(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn test_extractor_creation() {
         let result = PdfTextExtractor::new();
         assert!(result.is_ok());
     }
 
     #[test]
+    #[serial]
     fn test_extract_empty_pdf() {
         let extractor = PdfTextExtractor::new().unwrap();
         let result = extractor.extract_text(b"");
@@ -456,6 +459,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_extract_invalid_pdf() {
         let extractor = PdfTextExtractor::new().unwrap();
         let result = extractor.extract_text(b"not a pdf");
@@ -464,6 +468,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_password_required_detection() {
         let extractor = PdfTextExtractor::new().unwrap();
         let encrypted_pdf = b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
@@ -475,6 +480,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_extract_text_with_passwords_empty_list() {
         let extractor = PdfTextExtractor::new().unwrap();
         let result = extractor.extract_text_with_passwords(b"not a pdf", &[]);
@@ -485,6 +491,7 @@ mod tests {
 #[cfg(test)]
 mod cache_regression_tests {
     use super::*;
+    use serial_test::serial;
     use std::time::Instant;
 
     /// Test that multiple extractions of the same document produce consistent results.
@@ -497,6 +504,7 @@ mod cache_regression_tests {
     /// 1. Multiple extractions produce identical text content
     /// 2. The singleton pattern provides consistent extraction behavior
     #[test]
+    #[serial]
     fn test_no_global_cache_between_documents() {
         let pdf_bytes = std::fs::read("../../test_documents/pdf/fake_memo.pdf").expect("Failed to read PDF");
 
