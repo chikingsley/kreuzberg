@@ -7,7 +7,7 @@
 //!
 //! Calculates percentile-based statistics for better understanding of performance distributions.
 
-use crate::types::{BenchmarkResult, DiskSizeInfo};
+use crate::types::{BenchmarkResult, DiskSizeInfo, ErrorKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -115,6 +115,13 @@ pub struct PerformancePercentiles {
     pub successful_sample_count: usize,
     /// Total number of samples in this group (including failed)
     pub total_sample_count: usize,
+    /// Number of framework-side extraction errors (not our fault)
+    pub framework_errors: usize,
+    /// Number of harness-side errors (potentially our fault)
+    pub harness_errors: usize,
+    /// Unique error messages with occurrence counts
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub error_details: HashMap<String, usize>,
     /// Throughput percentiles (p50, p95, p99) in MB/s
     pub throughput: Percentiles,
     /// Memory percentiles (p50, p95, p99) in MB
@@ -388,6 +395,22 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         0.0
     };
 
+    let framework_errors = results
+        .iter()
+        .filter(|r| r.error_kind == ErrorKind::FrameworkError)
+        .count();
+    let harness_errors = results
+        .iter()
+        .filter(|r| r.error_kind == ErrorKind::HarnessError)
+        .count();
+
+    let mut error_details: HashMap<String, usize> = HashMap::new();
+    for result in results.iter().filter(|r| !r.success) {
+        if let Some(msg) = &result.error_message {
+            *error_details.entry(msg.clone()).or_insert(0) += 1;
+        }
+    }
+
     // Quality percentiles
     let quality = {
         let mut f1_texts: Vec<f64> = successful
@@ -422,8 +445,11 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
     };
 
     PerformancePercentiles {
-        successful_sample_count: successful.len(), // CRITICAL FIX: Count only successful results used for percentiles
+        successful_sample_count: successful.len(),
         total_sample_count: results.len(),
+        framework_errors,
+        harness_errors,
+        error_details,
         throughput,
         memory,
         duration,
