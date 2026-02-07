@@ -126,7 +126,7 @@ simdutf8 = { version = "0.1", optional = true }
 hex = { workspace = true }
 lazy_static = "1.5.0"
 libc = { workspace = true }
-memchr = "2.7.6"
+memchr = "2.8.0"
 num_cpus = { workspace = true }
 once_cell = { workspace = true }
 parking_lot = { workspace = true }
