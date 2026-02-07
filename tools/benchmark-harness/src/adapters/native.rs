@@ -110,7 +110,7 @@ impl FrameworkAdapter for NativeAdapter {
             "zip" | "tar" | "gz" | "tgz" | "7z" |
             // Images (OCR supported)
             "bmp" | "gif" | "jpg" | "jpeg" | "png" | "tiff" | "tif" | "webp" |
-            "jp2" | "jpx" | "jpm" | "mj2" | "pnm" | "pbm" | "pgm" | "ppm" |
+            "jp2" | "jpx" | "jpm" | "mj2" |
             // Academic/Publishing
             "epub" | "bib" | "ipynb" | "tex" | "latex" | "typst" | "typ" |
             // Other

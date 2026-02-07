@@ -37,7 +37,7 @@ fn get_supported_formats(framework_name: &str) -> Vec<String> {
             "pdf",  // E-books
             "epub", // Vector/text
             "svg", "txt", // Images (for OCR) - gif and webp NOT supported by PyMuPDF
-            "png", "jpg", "jpeg", "bmp", "tiff", "tif", "pnm", "pgm", "pbm", "ppm",
+            "png", "jpg", "jpeg", "bmp", "tiff", "tif",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -68,8 +68,7 @@ fn get_supported_formats(framework_name: &str) -> Vec<String> {
             "csv", "tsv", "json", "yaml", "yml", "toml", // Email
             "eml", "msg", // Scientific/technical (typst not supported - too new)
             "tex", "latex", "bib", "rst", "org", "ipynb", // Images (metadata + OCR)
-            "png", "jpg", "jpeg", "gif", "bmp", "tiff", "tif", "webp", "jp2", "pnm", "pgm", "pbm", "ppm",
-            // Archives
+            "png", "jpg", "jpeg", "gif", "bmp", "tiff", "tif", "webp", "jp2", // Archives
             "zip", "tar", "gz", "7z",
         ]
         .into_iter()

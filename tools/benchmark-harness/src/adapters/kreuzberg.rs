@@ -72,14 +72,21 @@ fn get_kreuzberg_supported_formats() -> Vec<String> {
         "tiff",
         "tif",
         "webp",
+        "jp2",
+        "jpx",
+        "jpm",
+        "mj2",
         // Academic/Publishing
         "epub",
         "bib",
         "ipynb",
         "tex",
         "latex",
+        "typst",
+        "typ",
         // Other
         "svg",
+        "djot",
     ]
     .into_iter()
     .map(|s| s.to_string())
