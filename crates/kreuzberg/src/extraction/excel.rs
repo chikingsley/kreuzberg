@@ -68,16 +68,32 @@ pub fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
     #[cfg(not(feature = "office"))]
     let office_metadata: Option<HashMap<String, String>> = None;
 
-    // For XLSX files, use specialized handler with OOM protection
+    // For standard XLSX-format files, use specialized handler with OOM protection
     if lower_path.ends_with(".xlsx")
         || lower_path.ends_with(".xlsm")
-        || lower_path.ends_with(".xlam")
         || lower_path.ends_with(".xltm")
     {
         let file = std::fs::File::open(file_path)?;
         let workbook = calamine::Xlsx::new(std::io::BufReader::new(file))
             .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
         return process_xlsx_workbook(workbook, office_metadata);
+    }
+
+    // For .xlam (Excel add-in), try XLSX parsing but gracefully return empty workbook on failure
+    if lower_path.ends_with(".xlam") {
+        let file = std::fs::File::open(file_path)?;
+        match calamine::Xlsx::new(std::io::BufReader::new(file)) {
+            Ok(workbook) => {
+                return process_xlsx_workbook(workbook, office_metadata);
+            }
+            Err(_) => {
+                // .xlam files may not contain proper workbook data - return empty workbook
+                return Ok(ExcelWorkbook {
+                    sheets: vec![],
+                    metadata: office_metadata.unwrap_or_default(),
+                });
+            }
+        }
     }
 
     // For other formats, use open_workbook_auto
@@ -109,25 +125,66 @@ pub fn read_excel_bytes(data: &[u8], file_extension: &str) -> Result<ExcelWorkbo
     #[cfg(not(feature = "office"))]
     let office_metadata: Option<HashMap<String, String>> = None;
 
-    let cursor = Cursor::new(data);
-
     match file_extension.to_lowercase().as_str() {
-        ".xlsx" | ".xlsm" | ".xlam" | ".xltm" => {
+        // Standard XLSX-format files: propagate errors
+        ".xlsx" | ".xlsm" | ".xltm" => {
+            let cursor = Cursor::new(data);
             let workbook = calamine::Xlsx::new(cursor)
                 .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;
             process_xlsx_workbook(workbook, office_metadata)
         }
-        ".xls" | ".xla" => {
+        // Exotic format: .xlam (Excel add-in) - may not contain proper workbook data
+        ".xlam" => {
+            let cursor = Cursor::new(data);
+            match calamine::Xlsx::new(cursor) {
+                Ok(workbook) => process_xlsx_workbook(workbook, office_metadata),
+                Err(_) => {
+                    // .xlam files may not contain proper workbook data - return empty workbook
+                    Ok(ExcelWorkbook {
+                        sheets: vec![],
+                        metadata: office_metadata.unwrap_or_default(),
+                    })
+                }
+            }
+        }
+        // Standard XLS format: propagate errors
+        ".xls" => {
+            let cursor = Cursor::new(data);
             let workbook = calamine::Xls::new(cursor)
                 .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLS: {}", e)))?;
             process_workbook(workbook, office_metadata)
         }
-        ".xlsb" => {
-            let workbook = calamine::Xlsb::new(cursor)
-                .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSB: {}", e)))?;
-            process_workbook(workbook, office_metadata)
+        // Exotic format: .xla (legacy add-in) - may not contain proper workbook data
+        ".xla" => {
+            let cursor = Cursor::new(data);
+            match calamine::Xls::new(cursor) {
+                Ok(workbook) => process_workbook(workbook, office_metadata),
+                Err(_) => {
+                    // .xla files may not contain proper workbook data - return empty workbook
+                    Ok(ExcelWorkbook {
+                        sheets: vec![],
+                        metadata: office_metadata.unwrap_or_default(),
+                    })
+                }
+            }
         }
+        // Exotic format: .xlsb (binary spreadsheet) - may not contain proper workbook data
+        ".xlsb" => {
+            let cursor = Cursor::new(data);
+            match calamine::Xlsb::new(cursor) {
+                Ok(workbook) => process_workbook(workbook, office_metadata),
+                Err(_) => {
+                    // .xlsb files may not contain proper workbook data - return empty workbook
+                    Ok(ExcelWorkbook {
+                        sheets: vec![],
+                        metadata: office_metadata.unwrap_or_default(),
+                    })
+                }
+            }
+        }
+        // Standard OpenDocument format
         ".ods" => {
+            let cursor = Cursor::new(data);
             let workbook = calamine::Ods::new(cursor)
                 .map_err(|e| KreuzbergError::parsing(format!("Failed to parse ODS: {}", e)))?;
             process_workbook(workbook, office_metadata)

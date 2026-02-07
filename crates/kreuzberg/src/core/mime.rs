@@ -104,7 +104,7 @@ static EXT_TO_MIME: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m.insert("zip", "application/zip");
     m.insert("tar", "application/x-tar");
     m.insert("gz", "application/gzip");
-    m.insert("tgz", "application/x-tar");
+    m.insert("tgz", "application/gzip");
     m.insert("7z", "application/x-7z-compressed");
 
     m.insert("rst", "text/x-rst");

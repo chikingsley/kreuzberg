@@ -77,6 +77,8 @@ pub struct FrameworkExtensionStats {
     pub framework_errors: usize,
     /// Number of harness-side errors (potentially our fault)
     pub harness_errors: usize,
+    /// Number of extractions that timed out
+    pub timeouts: usize,
     /// Unique framework error messages with occurrence counts
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub error_details: HashMap<String, usize>,
@@ -184,6 +186,10 @@ fn calculate_framework_stats(results: &[&BenchmarkResult]) -> FrameworkExtension
         .iter()
         .filter(|r| r.error_kind == ErrorKind::HarnessError)
         .count();
+    let timeouts = results
+        .iter()
+        .filter(|r| r.error_kind == ErrorKind::Timeout)
+        .count();
 
     let mut error_details: HashMap<String, usize> = HashMap::new();
     for result in results.iter().filter(|r| !r.success) {
@@ -273,6 +279,7 @@ fn calculate_framework_stats(results: &[&BenchmarkResult]) -> FrameworkExtension
         successful,
         framework_errors,
         harness_errors,
+        timeouts,
         error_details,
         success_rate,
         avg_duration_ms,

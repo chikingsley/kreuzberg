@@ -96,14 +96,31 @@ impl DocumentExtractor for PdfExtractor {
                         }
                     })?;
 
-                let document = pdfium.load_pdf_from_byte_slice(content, None).map_err(|e| {
-                    let err_msg = crate::pdf::error::format_pdfium_error(e);
-                    if err_msg.contains("password") || err_msg.contains("Password") {
-                        PdfError::PasswordRequired
-                    } else {
-                        PdfError::InvalidPdf(err_msg)
+                let document = match pdfium.load_pdf_from_byte_slice(content, None) {
+                    Ok(doc) => doc,
+                    Err(e) => {
+                        let err_msg = crate::pdf::error::format_pdfium_error(e);
+                        if err_msg.contains("password") || err_msg.contains("Password") {
+                            #[cfg(feature = "otel")]
+                            tracing::warn!("Password-protected PDF encountered in WASM, returning empty result");
+                        } else {
+                            #[cfg(feature = "otel")]
+                            tracing::warn!("Malformed or invalid PDF encountered in WASM: {}", err_msg);
+                        }
+                        return Ok(ExtractionResult {
+                            content: String::new(),
+                            mime_type: mime_type.to_string().into(),
+                            metadata: Metadata::default(),
+                            tables: vec![],
+                            detected_languages: None,
+                            chunks: None,
+                            images: None,
+                            pages: None,
+                            djot_content: None,
+                            elements: None,
+                        });
                     }
-                })?;
+                };
 
                 extract_all_from_document(&document, config)?
             }
@@ -113,23 +130,27 @@ impl DocumentExtractor for PdfExtractor {
                     let content_owned = content.to_vec();
                     let span = tracing::Span::current();
                     let config_owned = config.clone();
-                    tokio::task::spawn_blocking(move || {
+                    let result = tokio::task::spawn_blocking(move || {
                         let _guard = span.entered();
 
                         let pdfium =
                             crate::pdf::bindings::bind_pdfium(PdfError::MetadataExtractionFailed, "initialize Pdfium")?;
 
-                        let document = pdfium.load_pdf_from_byte_slice(&content_owned, None).map_err(|e| {
-                            let err_msg = crate::pdf::error::format_pdfium_error(e);
-                            if err_msg.contains("password") || err_msg.contains("Password") {
-                                PdfError::PasswordRequired
-                            } else {
-                                PdfError::InvalidPdf(err_msg)
+                        let document = match pdfium.load_pdf_from_byte_slice(&content_owned, None) {
+                            Ok(doc) => doc,
+                            Err(e) => {
+                                let err_msg = crate::pdf::error::format_pdfium_error(e);
+                                if err_msg.contains("password") || err_msg.contains("Password") {
+                                    return Err(PdfError::PasswordRequired);
+                                } else {
+                                    return Err(PdfError::InvalidPdf(err_msg));
+                                }
                             }
-                        })?;
+                        };
 
                         let (pdf_metadata, native_text, tables, page_contents, _boundaries) =
-                            extract_all_from_document(&document, &config_owned)?;
+                            extract_all_from_document(&document, &config_owned)
+                                .map_err(|e| PdfError::ExtractionFailed(e.to_string()))?;
 
                         if let Some(page_cfg) = config_owned.pages.as_ref()
                             && page_cfg.extract_pages
@@ -138,11 +159,10 @@ impl DocumentExtractor for PdfExtractor {
                             return Err(PdfError::ExtractionFailed(
                                 "Page extraction was configured but no page data was extracted in batch mode"
                                     .to_string(),
-                            )
-                            .into());
+                            ));
                         }
 
-                        Ok::<_, crate::error::KreuzbergError>((
+                        Ok::<_, crate::pdf::error::PdfError>((
                             pdf_metadata,
                             native_text,
                             tables,
@@ -151,19 +171,62 @@ impl DocumentExtractor for PdfExtractor {
                         ))
                     })
                     .await
-                    .map_err(|e| crate::error::KreuzbergError::Other(format!("PDF extraction task failed: {}", e)))??
+                    .map_err(|e| crate::error::KreuzbergError::Other(format!("PDF extraction task failed: {}", e)))?;
+
+                    match result {
+                        Ok(tuple) => tuple,
+                        Err(e) => {
+                            let err_msg = e.to_string();
+                            if err_msg.contains("password") || err_msg.contains("Password") || err_msg.contains("password-protected") {
+                                #[cfg(feature = "otel")]
+                                tracing::warn!("Password-protected PDF encountered in batch mode, returning empty result");
+                            } else {
+                                #[cfg(feature = "otel")]
+                                tracing::warn!("Malformed or invalid PDF encountered in batch mode: {}", err_msg);
+                            }
+                            return Ok(ExtractionResult {
+                                content: String::new(),
+                                mime_type: mime_type.to_string().into(),
+                                metadata: Metadata::default(),
+                                tables: vec![],
+                                detected_languages: None,
+                                chunks: None,
+                                images: None,
+                                pages: None,
+                                djot_content: None,
+                                elements: None,
+                            });
+                        }
+                    }
                 } else {
                     let pdfium =
                         crate::pdf::bindings::bind_pdfium(PdfError::MetadataExtractionFailed, "initialize Pdfium")?;
 
-                    let document = pdfium.load_pdf_from_byte_slice(content, None).map_err(|e| {
-                        let err_msg = crate::pdf::error::format_pdfium_error(e);
-                        if err_msg.contains("password") || err_msg.contains("Password") {
-                            PdfError::PasswordRequired
-                        } else {
-                            PdfError::InvalidPdf(err_msg)
+                    let document = match pdfium.load_pdf_from_byte_slice(content, None) {
+                        Ok(doc) => doc,
+                        Err(e) => {
+                            let err_msg = crate::pdf::error::format_pdfium_error(e);
+                            if err_msg.contains("password") || err_msg.contains("Password") {
+                                #[cfg(feature = "otel")]
+                                tracing::warn!("Password-protected PDF encountered, returning empty result");
+                            } else {
+                                #[cfg(feature = "otel")]
+                                tracing::warn!("Malformed or invalid PDF encountered: {}", err_msg);
+                            }
+                            return Ok(ExtractionResult {
+                                content: String::new(),
+                                mime_type: mime_type.to_string().into(),
+                                metadata: Metadata::default(),
+                                tables: vec![],
+                                detected_languages: None,
+                                chunks: None,
+                                images: None,
+                                pages: None,
+                                djot_content: None,
+                                elements: None,
+                            });
                         }
-                    })?;
+                    };
 
                     extract_all_from_document(&document, config)?
                 }
@@ -173,14 +236,31 @@ impl DocumentExtractor for PdfExtractor {
                 let pdfium =
                     crate::pdf::bindings::bind_pdfium(PdfError::MetadataExtractionFailed, "initialize Pdfium")?;
 
-                let document = pdfium.load_pdf_from_byte_slice(content, None).map_err(|e| {
-                    let err_msg = crate::pdf::error::format_pdfium_error(e);
-                    if err_msg.contains("password") || err_msg.contains("Password") {
-                        PdfError::PasswordRequired
-                    } else {
-                        PdfError::InvalidPdf(err_msg)
+                let document = match pdfium.load_pdf_from_byte_slice(content, None) {
+                    Ok(doc) => doc,
+                    Err(e) => {
+                        let err_msg = crate::pdf::error::format_pdfium_error(e);
+                        if err_msg.contains("password") || err_msg.contains("Password") {
+                            #[cfg(feature = "otel")]
+                            tracing::warn!("Password-protected PDF encountered, returning empty result");
+                        } else {
+                            #[cfg(feature = "otel")]
+                            tracing::warn!("Malformed or invalid PDF encountered: {}", err_msg);
+                        }
+                        return Ok(ExtractionResult {
+                            content: String::new(),
+                            mime_type: mime_type.to_string().into(),
+                            metadata: Metadata::default(),
+                            tables: vec![],
+                            detected_languages: None,
+                            chunks: None,
+                            images: None,
+                            pages: None,
+                            djot_content: None,
+                            elements: None,
+                        });
                     }
-                })?;
+                };
 
                 extract_all_from_document(&document, config)?
             }
@@ -627,5 +707,61 @@ mod tests {
     fn test_pdf_extractor_without_feature_pdf() {
         let extractor = PdfExtractor::new();
         assert_eq!(extractor.name(), "pdf-extractor");
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "pdf")]
+    async fn test_pdf_gracefully_handles_malformed_pdf() {
+        let extractor = PdfExtractor::new();
+        let config = ExtractionConfig::default();
+
+        // Create a malformed PDF: just some random bytes that start with %PDF but are incomplete
+        let malformed_pdf = b"%PDF-1.4\nmalformed content that is not a valid PDF".to_vec();
+
+        let result = extractor.extract_bytes(&malformed_pdf, "application/pdf", &config).await;
+
+        assert!(
+            result.is_ok(),
+            "Malformed PDF should be handled gracefully, not return an error"
+        );
+
+        let extraction_result = result.unwrap();
+        assert_eq!(
+            extraction_result.content, "",
+            "Malformed PDF should have empty content"
+        );
+        assert_eq!(
+            extraction_result.tables.len(),
+            0,
+            "Malformed PDF should have no tables"
+        );
+        assert_eq!(
+            extraction_result.mime_type.as_ref() as &str,
+            "application/pdf",
+            "MIME type should be preserved"
+        );
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "pdf")]
+    async fn test_pdf_gracefully_handles_invalid_bytes() {
+        let extractor = PdfExtractor::new();
+        let config = ExtractionConfig::default();
+
+        // Create completely invalid data (not a PDF at all)
+        let invalid_data = b"This is not a PDF file, just random text".to_vec();
+
+        let result = extractor.extract_bytes(&invalid_data, "application/pdf", &config).await;
+
+        assert!(
+            result.is_ok(),
+            "Invalid PDF data should be handled gracefully, not return an error"
+        );
+
+        let extraction_result = result.unwrap();
+        assert_eq!(
+            extraction_result.content, "",
+            "Invalid PDF should have empty content"
+        );
     }
 }

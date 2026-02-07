@@ -130,10 +130,12 @@ impl FrameworkAdapter for NativeAdapter {
         // Start extraction timing (same as total for native - no subprocess overhead)
         let extraction_start = Instant::now();
 
-        let extraction_result = tokio::time::timeout(timeout, extract_file(file_path, None, &self.config))
-            .await
-            .map_err(|_| Error::Timeout(format!("Extraction exceeded {:?}", timeout)))?
-            .map_err(|e| Error::Benchmark(format!("Extraction failed: {}", e)));
+        let timed_result = tokio::time::timeout(timeout, extract_file(file_path, None, &self.config)).await;
+        let timed_out = timed_result.is_err();
+        let extraction_result = match timed_result {
+            Ok(inner) => inner.map_err(|e| Error::Benchmark(format!("Extraction failed: {}", e))),
+            Err(_) => Err(Error::Timeout(format!("Extraction exceeded {:?}", timeout))),
+        };
 
         let extraction_duration = extraction_start.elapsed();
         let duration = start.elapsed();
@@ -156,13 +158,18 @@ impl FrameworkAdapter for NativeAdapter {
         };
 
         if let Err(e) = extraction_result {
+            let error_kind = if timed_out {
+                ErrorKind::Timeout
+            } else {
+                ErrorKind::HarnessError
+            };
             return Ok(BenchmarkResult {
                 framework: self.name().to_string(),
                 file_path: file_path.to_path_buf(),
                 file_size,
                 success: false,
                 error_message: Some(e.to_string()),
-                error_kind: ErrorKind::HarnessError,
+                error_kind,
                 duration,
                 extraction_duration: Some(extraction_duration),
                 subprocess_overhead: Some(Duration::ZERO), // No subprocess for native Rust
@@ -249,10 +256,12 @@ impl FrameworkAdapter for NativeAdapter {
 
         let paths: Vec<PathBuf> = file_paths.iter().map(|p| p.to_path_buf()).collect();
 
-        let batch_result = tokio::time::timeout(timeout, batch_extract_file(paths.clone(), &self.config))
-            .await
-            .map_err(|_| Error::Timeout(format!("Batch extraction exceeded {:?}", timeout)))?
-            .map_err(|e| Error::Benchmark(format!("Batch extraction failed: {}", e)));
+        let timed_result = tokio::time::timeout(timeout, batch_extract_file(paths.clone(), &self.config)).await;
+        let timed_out = timed_result.is_err();
+        let batch_result = match timed_result {
+            Ok(inner) => inner.map_err(|e| Error::Benchmark(format!("Batch extraction failed: {}", e))),
+            Err(_) => Err(Error::Timeout(format!("Batch extraction exceeded {:?}", timeout))),
+        };
 
         let total_duration = start.elapsed();
 
@@ -265,6 +274,11 @@ impl FrameworkAdapter for NativeAdapter {
             // Use the actual elapsed time divided by number of files
             let num_files = file_paths.len() as f64;
             let avg_duration_per_file = Duration::from_secs_f64(total_duration.as_secs_f64() / num_files.max(1.0));
+            let error_kind = if timed_out {
+                ErrorKind::Timeout
+            } else {
+                ErrorKind::HarnessError
+            };
 
             let failure_results: Vec<BenchmarkResult> = file_paths
                 .iter()
@@ -282,7 +296,7 @@ impl FrameworkAdapter for NativeAdapter {
                         file_size,
                         success: false,
                         error_message: Some(e.to_string()),
-                        error_kind: ErrorKind::HarnessError,
+                        error_kind,
                         duration: avg_duration_per_file,
                         extraction_duration: Some(avg_duration_per_file), // For native, extraction = total
                         subprocess_overhead: Some(Duration::ZERO),        // No subprocess for native Rust
