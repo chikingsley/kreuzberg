@@ -69,10 +69,7 @@ pub fn read_excel_file(file_path: &str) -> Result<ExcelWorkbook> {
     let office_metadata: Option<HashMap<String, String>> = None;
 
     // For standard XLSX-format files, use specialized handler with OOM protection
-    if lower_path.ends_with(".xlsx")
-        || lower_path.ends_with(".xlsm")
-        || lower_path.ends_with(".xltm")
-    {
+    if lower_path.ends_with(".xlsx") || lower_path.ends_with(".xlsm") || lower_path.ends_with(".xltm") {
         let file = std::fs::File::open(file_path)?;
         let workbook = calamine::Xlsx::new(std::io::BufReader::new(file))
             .map_err(|e| KreuzbergError::parsing(format!("Failed to parse XLSX: {}", e)))?;

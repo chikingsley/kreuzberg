@@ -179,7 +179,16 @@ fn find_elixir() -> Result<PathBuf> {
 /// Helper to find PHP interpreter
 fn find_php() -> Result<(PathBuf, Vec<String>)> {
     if which::which("php").is_ok() {
-        Ok((PathBuf::from("php"), vec![]))
+        let mut args = Vec::new();
+        // Load kreuzberg PHP extension if ini file exists
+        if let Ok(root) = workspace_root() {
+            let ini_path = root.join("php-kreuzberg.ini");
+            if ini_path.exists() {
+                args.push("-c".to_string());
+                args.push(ini_path.to_string_lossy().to_string());
+            }
+        }
+        Ok((PathBuf::from("php"), args))
     } else {
         Err(crate::Error::Config("PHP not found".to_string()))
     }
@@ -417,6 +426,16 @@ pub fn create_node_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
 /// extraction is excluded from benchmarks until browser-based benchmarking is supported.
 fn get_kreuzberg_wasm_supported_formats() -> Vec<String> {
     vec![
+        // Documents (office feature, in-memory parsers only — no libreoffice on wasm)
+        "pdf",
+        "docx",
+        "odt",
+        "pptx",
+        "ppsx",
+        "pptm",
+        "rtf",
+        "rst",
+        "org",
         // Text formats (always available, no feature gate)
         "txt",
         "md",
@@ -437,8 +456,18 @@ fn get_kreuzberg_wasm_supported_formats() -> Vec<String> {
         // Email (email feature)
         "eml",
         "msg",
-        // SVG (always available as text/xml)
+        // Academic/Publishing (office feature)
+        "epub",
+        "bib",
+        "ipynb",
+        "tex",
+        "latex",
+        "typst",
+        "typ",
+        "fb2",
+        // Other
         "svg",
+        "djot",
     ]
     .into_iter()
     .map(|s| s.to_string())

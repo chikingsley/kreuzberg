@@ -12,17 +12,6 @@ using System.Text.Json.Serialization;
 namespace Kreuzberg;
 
 /// <summary>
-/// Custom JSON converter for byte arrays that handles both base64-encoded strings and JSON arrays.
-/// This is needed because Rust serializes byte arrays as JSON arrays, while System.Text.Json expects base64 strings.
-///
-/// Optimization: Uses ArrayPool<byte> instead of List<byte> to reduce allocations for large byte arrays.
-/// Expected improvement: 50-100ms reduction for image-heavy workloads (multiple large byte arrays per operation).
-/// </summary>
-/// <summary>
-/// Custom JSON converter for KeywordConfig that ensures all fields are present even when null.
-/// This is required because the Rust FFI expects all config fields.
-/// </summary>
-/// <summary>
 /// Custom JSON converter for PageConfig that ensures all fields are present even when null.
 /// This is required because the Rust FFI expects all config fields.
 /// </summary>
@@ -1286,31 +1275,31 @@ internal class MetadataConverter : JsonConverter<Metadata>
             // Extract scalar fields
             if (node.TryGetPropertyValue("title", out var title) && title?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.Title = title?.AsValue().GetValue<string>();
+                htmlMetadata.Title = title!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("description", out var description) && description?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.Description = description?.AsValue().GetValue<string>();
+                htmlMetadata.Description = description!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("author", out var author) && author?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.Author = author?.AsValue().GetValue<string>();
+                htmlMetadata.Author = author!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("canonical_url", out var canonicalUrl) && canonicalUrl?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.CanonicalUrl = canonicalUrl?.AsValue().GetValue<string>();
+                htmlMetadata.CanonicalUrl = canonicalUrl!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("base_href", out var baseHref) && baseHref?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.BaseHref = baseHref?.AsValue().GetValue<string>();
+                htmlMetadata.BaseHref = baseHref!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("language", out var language) && language?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.Language = language?.AsValue().GetValue<string>();
+                htmlMetadata.Language = language!.AsValue().GetValue<string>();
             }
             if (node.TryGetPropertyValue("text_direction", out var textDirection) && textDirection?.GetValueKind() != JsonValueKind.Null)
             {
-                htmlMetadata.TextDirection = textDirection?.AsValue().GetValue<string>();
+                htmlMetadata.TextDirection = textDirection!.AsValue().GetValue<string>();
             }
 
             // Extract keywords list - only if they are strings (HTML meta keywords)

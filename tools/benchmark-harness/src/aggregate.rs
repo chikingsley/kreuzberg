@@ -405,10 +405,7 @@ fn calculate_percentiles(results: &[&BenchmarkResult]) -> PerformancePercentiles
         .iter()
         .filter(|r| r.error_kind == ErrorKind::HarnessError)
         .count();
-    let timeouts = results
-        .iter()
-        .filter(|r| r.error_kind == ErrorKind::Timeout)
-        .count();
+    let timeouts = results.iter().filter(|r| r.error_kind == ErrorKind::Timeout).count();
 
     let mut error_details: HashMap<String, usize> = HashMap::new();
     for result in results.iter().filter(|r| !r.success) {

@@ -12,8 +12,10 @@ echo "$sccache_output"
 
 # Parse and display metrics
 if echo "$sccache_output" | grep -q "Cache hits"; then
-  hits=$(echo "$sccache_output" | grep "Cache hits" | awk '{print $3}' | tr -d ',')
-  misses=$(echo "$sccache_output" | grep "Cache misses" | awk '{print $3}' | tr -d ',')
+  hits=$(echo "$sccache_output" | grep "Cache hits" | head -1 | awk '{print $3}' | tr -dc '0-9')
+  misses=$(echo "$sccache_output" | grep "Cache misses" | head -1 | awk '{print $3}' | tr -dc '0-9')
+  hits=${hits:-0}
+  misses=${misses:-0}
   total=$((hits + misses))
 
   if [ "$total" -gt 0 ]; then

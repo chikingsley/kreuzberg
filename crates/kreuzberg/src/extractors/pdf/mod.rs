@@ -177,9 +177,14 @@ impl DocumentExtractor for PdfExtractor {
                         Ok(tuple) => tuple,
                         Err(e) => {
                             let err_msg = e.to_string();
-                            if err_msg.contains("password") || err_msg.contains("Password") || err_msg.contains("password-protected") {
+                            if err_msg.contains("password")
+                                || err_msg.contains("Password")
+                                || err_msg.contains("password-protected")
+                            {
                                 #[cfg(feature = "otel")]
-                                tracing::warn!("Password-protected PDF encountered in batch mode, returning empty result");
+                                tracing::warn!(
+                                    "Password-protected PDF encountered in batch mode, returning empty result"
+                                );
                             } else {
                                 #[cfg(feature = "otel")]
                                 tracing::warn!("Malformed or invalid PDF encountered in batch mode: {}", err_msg);
@@ -718,7 +723,9 @@ mod tests {
         // Create a malformed PDF: just some random bytes that start with %PDF but are incomplete
         let malformed_pdf = b"%PDF-1.4\nmalformed content that is not a valid PDF".to_vec();
 
-        let result = extractor.extract_bytes(&malformed_pdf, "application/pdf", &config).await;
+        let result = extractor
+            .extract_bytes(&malformed_pdf, "application/pdf", &config)
+            .await;
 
         assert!(
             result.is_ok(),
@@ -726,15 +733,8 @@ mod tests {
         );
 
         let extraction_result = result.unwrap();
-        assert_eq!(
-            extraction_result.content, "",
-            "Malformed PDF should have empty content"
-        );
-        assert_eq!(
-            extraction_result.tables.len(),
-            0,
-            "Malformed PDF should have no tables"
-        );
+        assert_eq!(extraction_result.content, "", "Malformed PDF should have empty content");
+        assert_eq!(extraction_result.tables.len(), 0, "Malformed PDF should have no tables");
         assert_eq!(
             extraction_result.mime_type.as_ref() as &str,
             "application/pdf",
@@ -759,9 +759,6 @@ mod tests {
         );
 
         let extraction_result = result.unwrap();
-        assert_eq!(
-            extraction_result.content, "",
-            "Invalid PDF should have empty content"
-        );
+        assert_eq!(extraction_result.content, "", "Invalid PDF should have empty content");
     }
 }

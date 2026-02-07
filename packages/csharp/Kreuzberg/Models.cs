@@ -981,7 +981,7 @@ public sealed class EmailMetadata
     /// List of attachment filenames in the email.
     /// </summary>
     [JsonPropertyName("attachments")]
-    public List<string> Attachments { get; set; } = new();
+    public List<string>? Attachments { get; set; }
 }
 
 /// <summary>
