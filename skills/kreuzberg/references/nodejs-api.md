@@ -736,14 +736,14 @@ try {
 
 ```typescript
 enum ErrorCode {
-  IoError = 0,
-  ParseError = 1,
-  ValidationError = 2,
-  OcrError = 3,
-  ConfigError = 4,
-  PluginError = 5,
-  OperationError = 6,
-  Unknown = 7,
+  Success = 0,
+  GenericError = 1,
+  Panic = 2,
+  InvalidArgument = 3,
+  IoError = 4,
+  ParsingError = 5,
+  OcrError = 6,
+  MissingDependency = 7,
 }
 ```
 
@@ -1042,27 +1042,26 @@ if (validateMimeType('application/pdf')) {
 
 ## Configuration Loading
 
-### `loadExtractionConfigFromFile(filePath): ExtractionConfig`
+### `ExtractionConfig.fromFile(filePath): ExtractionConfig`
 
 Load extraction configuration from a file (JSON, YAML, or TOML).
 
 ```typescript
-import { loadExtractionConfigFromFile, extractFile } from '@kreuzberg/node';
+import { ExtractionConfig, extractFile } from '@kreuzberg/node';
 
-// kreuzberg.config.json
-const config = loadExtractionConfigFromFile('./kreuzberg.config.json');
+const config = ExtractionConfig.fromFile('./kreuzberg.toml');
 const result = await extractFile('document.pdf', null, config);
 ```
 
-### `discoverExtractionConfig(startPath?): ExtractionConfig | null`
+### `ExtractionConfig.discover(): ExtractionConfig | null`
 
-Auto-discover extraction configuration file in parent directories.
+Auto-discover extraction configuration file in current and parent directories.
 
 ```typescript
-import { discoverExtractionConfig, extractFile } from '@kreuzberg/node';
+import { ExtractionConfig, extractFile } from '@kreuzberg/node';
 
-// Searches for kreuzberg.config.* in current directory and parents
-const config = discoverExtractionConfig();
+// Searches for kreuzberg.{toml,yaml,json} in current directory and parents
+const config = ExtractionConfig.discover();
 if (config) {
   const result = await extractFile('document.pdf', null, config);
 }
@@ -1102,12 +1101,14 @@ console.log('Available presets:', presets);
 Type definition for embedding model presets.
 
 ```typescript
-type EmbeddingPreset = {
-  modelName: string;
-  dimensions: number;
-  poolingMethod?: string;
-  normalizeEmbeddings?: boolean;
-};
+interface EmbeddingPreset {
+  name: string;           // Preset name (e.g., "fast", "balanced", "quality", "multilingual")
+  chunkSize: number;      // Recommended chunk size in characters
+  overlap: number;        // Recommended overlap in characters
+  modelName: string;      // Model identifier (e.g., "AllMiniLML6V2Q", "BGEBaseENV15")
+  dimensions: number;     // Embedding vector dimensions
+  description: string;    // Human-readable description
+}
 ```
 
 ---

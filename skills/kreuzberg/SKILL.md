@@ -173,8 +173,8 @@ let config = ExtractionConfig {
         ..Default::default()
     }),
     chunking: Some(ChunkingConfig {
-        max_chars: 1000,
-        max_overlap: 200,
+        max_characters: 1000,
+        overlap: 200,
         ..Default::default()
     }),
     output_format: OutputFormat::Markdown,
@@ -237,7 +237,7 @@ use kreuzberg::{batch_extract_file, ExtractionConfig};
 
 let config = ExtractionConfig::default();
 let paths = vec!["doc1.pdf", "doc2.docx"];
-let results = batch_extract_file(&paths, None, &config).await?;
+let results = batch_extract_file(paths, &config).await?;
 ```
 
 ### CLI

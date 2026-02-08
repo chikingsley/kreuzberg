@@ -938,7 +938,6 @@ Register a Python PostProcessor with the Rust core. Once registered, the process
 **Optional Methods:**
 - `initialize() -> None`: Called when processor is registered
 - `shutdown() -> None`: Called when processor is unregistered
-- `version() -> str`: Processor version (defaults to "1.0.0")
 
 **Example:**
 
@@ -971,13 +970,11 @@ Register a Python OCR backend with the Rust core.
 **Required Methods:**
 - `name() -> str`: Return backend name (must be non-empty)
 - `supported_languages() -> list[str]`: Return list of supported language codes
-- `process_image(image_bytes: bytes, language: str) -> dict`: Process image and return result dict
-
-**Optional Methods:**
-- `process_file(path: str, language: str) -> dict`: Custom file processing
+- `process_image(image_bytes: bytes, language: str) -> OcrResult`: Process image and return OCR result
+- `process_file(path: str, language: str) -> OcrResult`: Process file and return OCR result
 - `initialize() -> None`: Called when backend is registered
 - `shutdown() -> None`: Called when backend is unregistered
-- `version() -> str`: Backend version (defaults to "1.0.0")
+- `version() -> str`: Return backend version string
 
 **Example:**
 
@@ -1016,9 +1013,6 @@ Register a Python Validator with the Rust core. Validators are called automatica
 **Optional Methods:**
 - `should_validate(result: ExtractionResult) -> bool`: Check if validator should run (defaults to True)
 - `priority() -> int`: Return priority (defaults to 50, higher runs first)
-- `initialize() -> None`: Called when validator is registered
-- `shutdown() -> None`: Called when validator is unregistered
-- `version() -> str`: Validator version (defaults to "1.0.0")
 
 **Example:**
 
@@ -1115,7 +1109,7 @@ class ResultFormat(str, Enum):
 ### Error Code Functions
 
 ```python
-def get_last_error_code() -> int | None
+def get_last_error_code() -> int
 ```
 
 Get the last error code from the FFI layer.

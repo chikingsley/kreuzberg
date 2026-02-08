@@ -168,7 +168,7 @@ Extract multiple byte arrays concurrently.
 
 ```rust
 pub async fn batch_extract_bytes(
-    items: Vec<(Vec<u8>, String)>,
+    contents: Vec<(Vec<u8>, String)>,
     config: &ExtractionConfig,
 ) -> Result<Vec<ExtractionResult>>
 ```
@@ -179,11 +179,11 @@ pub async fn batch_extract_bytes(
 #[tokio::main]
 async fn main() -> kreuzberg::Result<()> {
     let config = ExtractionConfig::default();
-    let items = vec![
+    let contents = vec![
         (b"PDF content".to_vec(), "application/pdf".to_string()),
         (b"Text content".to_vec(), "text/plain".to_string()),
     ];
-    let results = batch_extract_bytes(items, &config).await?;
+    let results = batch_extract_bytes(contents, &config).await?;
     Ok(())
 }
 ```
@@ -216,7 +216,7 @@ Synchronous wrapper for batch byte extraction.
 
 ```rust
 pub fn batch_extract_bytes_sync(
-    items: Vec<(Vec<u8>, String)>,
+    contents: Vec<(Vec<u8>, String)>,
     config: &ExtractionConfig,
 ) -> Result<Vec<ExtractionResult>>
 ```
@@ -226,11 +226,11 @@ pub fn batch_extract_bytes_sync(
 ```rust
 fn main() -> kreuzberg::Result<()> {
     let config = ExtractionConfig::default();
-    let items = vec![
+    let contents = vec![
         (b"content 1".to_vec(), "text/plain".to_string()),
         (b"content 2".to_vec(), "text/plain".to_string()),
     ];
-    let results = batch_extract_bytes_sync(items, &config)?;
+    let results = batch_extract_bytes_sync(contents, &config)?;
     Ok(())
 }
 ```
@@ -291,13 +291,15 @@ pub struct ExtractionConfig {
     pub max_concurrent_extractions: Option<usize>,
 
     /// Result structure format (default: Unified)
-    pub result_format: OutputFormat,
+    /// Uses types::OutputFormat (Unified | ElementBased)
+    pub result_format: types::OutputFormat,
 
     /// Security limits for archives (requires archives feature)
     #[cfg(feature = "archives")]
     pub security_limits: Option<SecurityLimits>,
 
     /// Content output format (default: Plain)
+    /// Uses config::OutputFormat (Plain | Markdown | Djot | Html)
     pub output_format: OutputFormat,
 }
 ```
@@ -322,7 +324,7 @@ let config = ExtractionConfig {
 // With chunking
 let config = ExtractionConfig {
     chunking: Some(ChunkingConfig {
-        chunk_size: 512,
+        max_characters: 512,
         overlap: 50,
         ..Default::default()
     }),
@@ -335,9 +337,11 @@ let config = ExtractionConfig {
 
 ## Output Formats
 
-### `OutputFormat` enum
+There are two separate enums both named `OutputFormat` in different modules:
 
-Controls the format of extracted content.
+### Content `OutputFormat` (`core::config::formats::OutputFormat`)
+
+Controls the format of the `content` field text. Used by `ExtractionConfig::output_format`.
 
 ```rust
 pub enum OutputFormat {
@@ -352,11 +356,25 @@ pub enum OutputFormat {
 }
 ```
 
+### Result `OutputFormat` (`types::extraction::OutputFormat`)
+
+Controls the result structure. Used by `ExtractionConfig::result_format`.
+
+```rust
+pub enum OutputFormat {
+    /// Unified format with all content in `content` field (default)
+    Unified,
+    /// Element-based format with semantic element extraction
+    ElementBased,
+}
+```
+
 ```rust
 use kreuzberg::{ExtractionConfig, OutputFormat};
 
 let config = ExtractionConfig {
-    output_format: OutputFormat::Markdown,
+    output_format: OutputFormat::Markdown,  // content format (Plain/Markdown/Djot/Html)
+    // result_format uses types::OutputFormat (Unified/ElementBased) — defaults to Unified
     ..Default::default()
 };
 ```
@@ -703,7 +721,7 @@ async fn main() -> kreuzberg::Result<()> {
     let config = ExtractionConfig {
         output_format: OutputFormat::Markdown,
         chunking: Some(ChunkingConfig {
-            chunk_size: 512,
+            max_characters: 512,
             overlap: 50,
             ..Default::default()
         }),

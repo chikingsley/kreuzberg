@@ -16,12 +16,10 @@ All formats support the same schema and configuration options.
 
 When no configuration file is explicitly specified, Kreuzberg searches for configuration files in the following order:
 
-1. Current working directory (`.`)
-2. Parent directories (recursively up the tree)
-3. User config directory (`~/.config/kreuzberg/`)
-4. System config directory (`/etc/kreuzberg/`)
+1. Current working directory: `kreuzberg.toml`, `kreuzberg.yaml`, `kreuzberg.json`
+2. Parent directories (recursively up the tree, same file name pattern)
 
-The first matching configuration file is loaded. This allows project-level overrides while falling back to system-wide defaults.
+The first matching configuration file is loaded.
 
 ## Programmatic Loading
 
@@ -40,13 +38,13 @@ config = ExtractionConfig.discover()
 ### Node.js / TypeScript
 
 ```typescript
-import { loadExtractionConfigFromFile, discoverExtractionConfig } from "kreuzberg";
+import { ExtractionConfig } from '@kreuzberg/node';
 
 // Load from explicit path
-const config = await loadExtractionConfigFromFile("kreuzberg.toml");
+const config = ExtractionConfig.fromFile('kreuzberg.toml');
 
 // Auto-discover configuration
-const config = await discoverExtractionConfig();
+const config = ExtractionConfig.discover();
 ```
 
 ### CLI

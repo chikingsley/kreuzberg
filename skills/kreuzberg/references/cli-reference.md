@@ -317,30 +317,25 @@ When no config file is specified, Kreuzberg searches for configuration in this o
 ### Example Configuration
 
 ```toml
-# Extract configuration
-[extraction]
-# OCR settings
-[extraction.ocr]
-backend = "tesseract"
-enabled = true
-
-# Chunking settings
-[extraction.chunking]
-enabled = true
-max_chars = 2000
-overlap = 200
-
-# Output format
+# Top-level extraction options
+use_cache = true
+enable_quality_processing = true
+force_ocr = false
 output_format = "markdown"
 
-# Quality processing
-quality_processing = true
+# OCR settings
+[ocr]
+backend = "tesseract"
+language = "eng"
+
+# Chunking settings
+[chunking]
+max_chars = 2000
+max_overlap = 200
 
 # Language detection
-detect_language = true
-
-# Caching
-disable_cache = false
+[language_detection]
+enabled = true
 
 # Server configuration (for serve command)
 [server]
