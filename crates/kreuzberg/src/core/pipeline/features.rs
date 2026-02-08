@@ -37,6 +37,7 @@ pub(super) fn execute_chunking(result: &mut ExtractionResult, config: &Extractio
                                 .insert(Cow::Borrowed("embeddings_generated"), serde_json::Value::Bool(true));
                         }
                         Err(e) => {
+                            tracing::warn!("Embedding generation failed: {e}. Check that ONNX Runtime is installed.");
                             result.metadata.additional.insert(
                                 Cow::Borrowed("embedding_error"),
                                 serde_json::Value::String(e.to_string()),
@@ -47,6 +48,9 @@ pub(super) fn execute_chunking(result: &mut ExtractionResult, config: &Extractio
 
                 #[cfg(not(feature = "embeddings"))]
                 if chunking_config.embedding.is_some() {
+                    tracing::warn!(
+                        "Embedding config provided but embeddings feature is not enabled. Recompile with --features embeddings."
+                    );
                     result.metadata.additional.insert(
                         Cow::Borrowed("embedding_error"),
                         serde_json::Value::String("Embeddings feature not enabled".to_string()),
