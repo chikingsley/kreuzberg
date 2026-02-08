@@ -110,6 +110,7 @@ impl DocumentExtractor for CitationExtractor {
                     images: None,
                     djot_content: None,
                     elements: None,
+                    ocr_elements: None,
                 });
             }
         };
@@ -268,6 +269,7 @@ impl DocumentExtractor for CitationExtractor {
             images: None,
             djot_content: None,
             elements: None,
+            ocr_elements: None,
         })
     }
 

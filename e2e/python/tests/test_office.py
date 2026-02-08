@@ -55,7 +55,6 @@ def test_office_doc_legacy() -> None:
     helpers.assert_min_content_length(result, 20)
 
 
-
 def test_office_docbook_basic() -> None:
     """DocBook XML document extraction."""
 
@@ -85,6 +84,7 @@ def test_office_docx_basic() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 10)
 
+
 def test_office_docx_equations() -> None:
     """DOCX file containing equations to validate math extraction."""
 
@@ -98,6 +98,7 @@ def test_office_docx_equations() -> None:
 
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 20)
+
 
 def test_office_docx_fake() -> None:
     """Simple DOCX document to verify baseline extraction."""
@@ -113,6 +114,7 @@ def test_office_docx_fake() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 20)
 
+
 def test_office_docx_formatting() -> None:
     """DOCX document heavy on formatting for style preservation."""
 
@@ -126,6 +128,7 @@ def test_office_docx_formatting() -> None:
 
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 20)
+
 
 def test_office_docx_headers() -> None:
     """DOCX document with complex headers."""
@@ -141,6 +144,7 @@ def test_office_docx_headers() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 20)
 
+
 def test_office_docx_lists() -> None:
     """DOCX document emphasizing list formatting."""
 
@@ -154,6 +158,7 @@ def test_office_docx_lists() -> None:
 
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
     helpers.assert_min_content_length(result, 20)
+
 
 def test_office_docx_tables() -> None:
     """DOCX document containing tables for table-aware extraction."""
@@ -170,7 +175,6 @@ def test_office_docx_tables() -> None:
     helpers.assert_min_content_length(result, 50)
     helpers.assert_content_contains_all(result, ["Simple uniform table", "Nested Table", "merged cells", "Header Col"])
     helpers.assert_table_count(result, 1, None)
-
 
 
 def test_office_epub_basic() -> None:
@@ -400,6 +404,7 @@ def test_office_ppsx_slideshow() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.presentationml.slideshow"])
     helpers.assert_min_content_length(result, 10)
 
+
 def test_office_ppt_legacy() -> None:
     """Legacy PowerPoint .ppt file requiring LibreOffice conversion."""
 
@@ -413,6 +418,7 @@ def test_office_ppt_legacy() -> None:
 
     helpers.assert_expected_mime(result, ["application/vnd.ms-powerpoint"])
     helpers.assert_min_content_length(result, 10)
+
 
 def test_office_pptx_basic() -> None:
     """PPTX deck should extract slides content."""
@@ -428,6 +434,7 @@ def test_office_pptx_basic() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.presentationml.presentation"])
     helpers.assert_min_content_length(result, 50)
 
+
 def test_office_pptx_images() -> None:
     """PPTX presentation containing images to ensure metadata extraction."""
 
@@ -442,6 +449,7 @@ def test_office_pptx_images() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.presentationml.presentation"])
     helpers.assert_min_content_length(result, 20)
 
+
 def test_office_pptx_pitch_deck() -> None:
     """Pitch deck PPTX used to validate large slide extraction."""
 
@@ -455,7 +463,6 @@ def test_office_pptx_pitch_deck() -> None:
 
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.presentationml.presentation"])
     helpers.assert_min_content_length(result, 100)
-
 
 
 def test_office_rst_basic() -> None:
@@ -517,6 +524,7 @@ def test_office_xls_legacy() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.ms-excel"])
     helpers.assert_min_content_length(result, 10)
 
+
 def test_office_xlsx_basic() -> None:
     """XLSX spreadsheet should produce metadata and table content."""
 
@@ -535,6 +543,7 @@ def test_office_xlsx_basic() -> None:
     helpers.assert_metadata_expectation(result, "sheet_count", {"gte": 2})
     helpers.assert_metadata_expectation(result, "sheet_names", {"contains": ["Stanley Cups"]})
 
+
 def test_office_xlsx_multi_sheet() -> None:
     """XLSX workbook with multiple sheets."""
 
@@ -549,6 +558,7 @@ def test_office_xlsx_multi_sheet() -> None:
     helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"])
     helpers.assert_min_content_length(result, 20)
     helpers.assert_metadata_expectation(result, "sheet_count", {"gte": 2})
+
 
 def test_office_xlsx_office_example() -> None:
     """Simple XLSX spreadsheet shipped alongside office integration tests."""

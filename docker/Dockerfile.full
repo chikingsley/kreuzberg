@@ -174,7 +174,7 @@ RUN mkdir -p /app/.kreuzberg/paddle-ocr/det \
              /app/.kreuzberg/paddle-ocr/cls \
              /app/.kreuzberg/paddle-ocr/rec && \
     curl -fL -o /app/.kreuzberg/paddle-ocr/det/model.onnx \
-      "https://huggingface.co/Kreuzberg/paddleocr-onnx-models/resolve/main/en_PP-OCRv4_det_infer.onnx" && \
+      "https://huggingface.co/Kreuzberg/paddleocr-onnx-models/resolve/main/ch_PP-OCRv4_det_infer.onnx" && \
     curl -fL -o /app/.kreuzberg/paddle-ocr/cls/model.onnx \
       "https://huggingface.co/Kreuzberg/paddleocr-onnx-models/resolve/main/ch_ppocr_mobile_v2.0_cls_infer.onnx" && \
     curl -fL -o /app/.kreuzberg/paddle-ocr/rec/model.onnx \

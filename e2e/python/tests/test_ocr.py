@@ -25,6 +25,7 @@ def test_ocr_image_hello_world() -> None:
     helpers.assert_min_content_length(result, 5)
     helpers.assert_content_contains_any(result, ["hello", "world"])
 
+
 def test_ocr_image_no_text() -> None:
     """Image with no text to ensure OCR handles empty results gracefully."""
 
@@ -39,6 +40,7 @@ def test_ocr_image_no_text() -> None:
     helpers.assert_expected_mime(result, ["image/jpeg"])
     helpers.assert_max_content_length(result, 200)
 
+
 def test_ocr_paddle_confidence_filter() -> None:
     """PaddleOCR with minimum confidence threshold filtering."""
 
@@ -46,12 +48,18 @@ def test_ocr_paddle_confidence_filter() -> None:
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_paddle_confidence_filter: missing document at {document_path}")
 
-    config = helpers.build_config({"force_ocr": True, "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"min_confidence": 80.0}}})
+    config = helpers.build_config(
+        {
+            "force_ocr": True,
+            "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"min_confidence": 80.0}},
+        }
+    )
 
     result = extract_file_sync(document_path, None, config)
 
     helpers.assert_expected_mime(result, ["image/jpeg"])
     helpers.assert_min_content_length(result, 1)
+
 
 def test_ocr_paddle_image_chinese() -> None:
     """Chinese OCR with PaddleOCR - its core strength."""
@@ -66,6 +74,7 @@ def test_ocr_paddle_image_chinese() -> None:
 
     helpers.assert_expected_mime(result, ["image/jpeg"])
     helpers.assert_min_content_length(result, 1)
+
 
 def test_ocr_paddle_image_english() -> None:
     """Simple English image OCR with PaddleOCR backend."""
@@ -82,6 +91,7 @@ def test_ocr_paddle_image_english() -> None:
     helpers.assert_min_content_length(result, 5)
     helpers.assert_content_contains_any(result, ["hello", "Hello", "world", "World"])
 
+
 def test_ocr_paddle_markdown() -> None:
     """PaddleOCR with markdown output format."""
 
@@ -89,13 +99,19 @@ def test_ocr_paddle_markdown() -> None:
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_paddle_markdown: missing document at {document_path}")
 
-    config = helpers.build_config({"force_ocr": True, "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"output_format": "markdown"}}})
+    config = helpers.build_config(
+        {
+            "force_ocr": True,
+            "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"output_format": "markdown"}},
+        }
+    )
 
     result = extract_file_sync(document_path, None, config)
 
     helpers.assert_expected_mime(result, ["image/png"])
     helpers.assert_min_content_length(result, 5)
     helpers.assert_content_contains_any(result, ["hello", "Hello", "world", "World"])
+
 
 def test_ocr_paddle_pdf_scanned() -> None:
     """Scanned PDF requires PaddleOCR to extract text."""
@@ -112,6 +128,7 @@ def test_ocr_paddle_pdf_scanned() -> None:
     helpers.assert_min_content_length(result, 20)
     helpers.assert_content_contains_any(result, ["Docling", "Markdown", "JSON"])
 
+
 def test_ocr_paddle_structured() -> None:
     """PaddleOCR with structured output preserving all metadata."""
 
@@ -119,13 +136,19 @@ def test_ocr_paddle_structured() -> None:
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_paddle_structured: missing document at {document_path}")
 
-    config = helpers.build_config({"force_ocr": True, "ocr": {"backend": "paddle-ocr", "element_config": {"include_elements": True}, "language": "en"}})
+    config = helpers.build_config(
+        {
+            "force_ocr": True,
+            "ocr": {"backend": "paddle-ocr", "element_config": {"include_elements": True}, "language": "en"},
+        }
+    )
 
     result = extract_file_sync(document_path, None, config)
 
     helpers.assert_expected_mime(result, ["image/png"])
     helpers.assert_min_content_length(result, 5)
     helpers.assert_ocr_elements(result, has_elements=True, elements_have_geometry=True, elements_have_confidence=True)
+
 
 def test_ocr_paddle_table_detection() -> None:
     """Table detection and extraction with PaddleOCR."""
@@ -134,13 +157,19 @@ def test_ocr_paddle_table_detection() -> None:
     if not document_path.exists():
         pytest.skip(f"Skipping ocr_paddle_table_detection: missing document at {document_path}")
 
-    config = helpers.build_config({"force_ocr": True, "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"enable_table_detection": True}}})
+    config = helpers.build_config(
+        {
+            "force_ocr": True,
+            "ocr": {"backend": "paddle-ocr", "language": "en", "paddle_ocr_config": {"enable_table_detection": True}},
+        }
+    )
 
     result = extract_file_sync(document_path, None, config)
 
     helpers.assert_expected_mime(result, ["image/png"])
     helpers.assert_min_content_length(result, 10)
     helpers.assert_table_count(result, 1, None)
+
 
 def test_ocr_pdf_image_only_german() -> None:
     """Image-only German PDF requiring OCR to extract text."""
@@ -157,6 +186,7 @@ def test_ocr_pdf_image_only_german() -> None:
     helpers.assert_min_content_length(result, 20)
     helpers.assert_metadata_expectation(result, "format_type", {"eq": "pdf"})
 
+
 def test_ocr_pdf_rotated_90() -> None:
     """Rotated page PDF requiring OCR to verify orientation handling."""
 
@@ -170,6 +200,7 @@ def test_ocr_pdf_rotated_90() -> None:
 
     helpers.assert_expected_mime(result, ["application/pdf"])
     helpers.assert_min_content_length(result, 10)
+
 
 def test_ocr_pdf_tesseract() -> None:
     """Scanned PDF requires OCR to extract text."""

@@ -18,7 +18,7 @@ The action downloads pre-converted ONNX format models from the `Kreuzberg/paddle
 
 | Model Type | File | Size | Purpose |
 |-----------|------|------|---------|
-| Detection (det) | `en_PP-OCRv4_det_infer.onnx` | ~4.5 MB | Text location detection |
+| Detection (det) | `ch_PP-OCRv4_det_infer.onnx` | ~4.5 MB | Text location detection |
 | Classification (cls) | `ch_ppocr_mobile_v2.0_cls_infer.onnx` | ~1.5 MB | Text orientation classification |
 | Recognition (rec) | `en_PP-OCRv4_rec_infer.onnx` | ~10 MB | Text character recognition |
 
