@@ -609,7 +609,11 @@ kreuzberg mcp
 
 ## AI Coding Assistants
 
-Kreuzberg ships with an [Agent Skill](https://agentskills.io) that teaches AI coding assistants how to use the library correctly. The skill is located at `skills/kreuzberg/SKILL.md` and is automatically discovered by supported tools.
+Kreuzberg ships with an [Agent Skill](https://agentskills.io) that teaches AI coding assistants how to use the library correctly. Install it into any project with the [Vercel Skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add kreuzberg-dev/kreuzberg
+```
 
 **Supported Tools:**
 

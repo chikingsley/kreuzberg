@@ -221,16 +221,26 @@ When you open a project that uses Kreuzberg (or a project with the skill files p
 4. Follows language-specific conventions (snake_case in Python/Rust, camelCase in Node.js)
 5. Generates correct error handling patterns for each language
 
-## Using Without the Repository
+## Installing the Skill
 
-If you're using Kreuzberg in a project that doesn't include the skill files, you can add them:
+The easiest way to add the Kreuzberg skill to any project is with the [Vercel Skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-# Copy the skill into your project
-cp -r path/to/kreuzberg/skills/kreuzberg skills/kreuzberg
+# Install into current project (recommended)
+npx skills add kreuzberg-dev/kreuzberg
+
+# Install globally (available in all projects)
+npx skills add kreuzberg-dev/kreuzberg -g
 ```
 
-Or reference the skill directly from the Kreuzberg repository if your AI coding assistant supports remote skills.
+This places the skill files in the correct agent-specific directory (e.g., `.claude/skills/kreuzberg/`) so your AI coding assistant discovers them automatically.
+
+Alternatively, you can copy the skill files manually:
+
+```bash
+# For Claude Code, Cursor, and GitHub Copilot
+cp -r path/to/kreuzberg/skills/kreuzberg .claude/skills/kreuzberg
+```
 
 ## Further Reading
 
