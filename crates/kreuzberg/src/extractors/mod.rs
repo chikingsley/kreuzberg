@@ -61,6 +61,7 @@ pub trait SyncExtractor {
     fn extract_sync(&self, content: &[u8], mime_type: &str, config: &ExtractionConfig) -> Result<ExtractionResult>;
 }
 
+pub mod csv;
 pub mod structured;
 pub mod text;
 
@@ -148,6 +149,7 @@ pub mod xml;
 #[cfg(feature = "xml")]
 pub mod docbook;
 
+pub use csv::CsvExtractor;
 pub use structured::StructuredExtractor;
 pub use text::{MarkdownExtractor, PlainTextExtractor};
 
@@ -291,6 +293,7 @@ pub fn register_default_extractors() -> Result<()> {
     registry.register(Arc::new(PlainTextExtractor::new()))?;
     registry.register(Arc::new(MarkdownExtractor::new()))?;
     registry.register(Arc::new(StructuredExtractor::new()))?;
+    registry.register(Arc::new(CsvExtractor::new()))?;
 
     #[cfg(feature = "ocr")]
     registry.register(Arc::new(ImageExtractor::new()))?;
@@ -370,11 +373,12 @@ mod tests {
         let extractor_names = reg.list();
 
         #[allow(unused_mut)]
-        let mut expected_count = 4; // plain-text, markdown, structured, djot
+        let mut expected_count = 5; // plain-text, markdown, structured, djot, csv
         assert!(extractor_names.contains(&"plain-text-extractor".to_string()));
         assert!(extractor_names.contains(&"markdown-extractor".to_string()));
         assert!(extractor_names.contains(&"structured-extractor".to_string()));
         assert!(extractor_names.contains(&"djot-extractor".to_string()));
+        assert!(extractor_names.contains(&"csv-extractor".to_string()));
 
         #[cfg(feature = "ocr")]
         {

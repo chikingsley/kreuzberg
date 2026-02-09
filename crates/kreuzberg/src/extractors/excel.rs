@@ -113,7 +113,7 @@ impl DocumentExtractor for ExcelExtractor {
             crate::extraction::excel::read_excel_bytes(content, extension)?
         };
 
-        let markdown = crate::extraction::excel::excel_to_markdown(&workbook);
+        let text_content = crate::extraction::excel::excel_to_text(&workbook);
         let tables = Self::sheets_to_tables(&workbook);
 
         let sheet_names: Vec<String> = workbook.sheets.iter().map(|s| s.name.clone()).collect();
@@ -130,7 +130,7 @@ impl DocumentExtractor for ExcelExtractor {
         }
 
         Ok(ExtractionResult {
-            content: markdown,
+            content: text_content,
             mime_type: mime_type.to_string().into(),
             metadata: Metadata {
                 format: Some(crate::types::FormatMetadata::Excel(excel_metadata)),
@@ -161,7 +161,7 @@ impl DocumentExtractor for ExcelExtractor {
             .ok_or_else(|| crate::KreuzbergError::validation("Invalid file path".to_string()))?;
 
         let workbook = crate::extraction::excel::read_excel_file(path_str)?;
-        let markdown = crate::extraction::excel::excel_to_markdown(&workbook);
+        let text_content = crate::extraction::excel::excel_to_text(&workbook);
         let tables = Self::sheets_to_tables(&workbook);
 
         let sheet_names: Vec<String> = workbook.sheets.iter().map(|s| s.name.clone()).collect();
@@ -178,7 +178,7 @@ impl DocumentExtractor for ExcelExtractor {
         }
 
         Ok(ExtractionResult {
-            content: markdown,
+            content: text_content,
             mime_type: mime_type.to_string().into(),
             metadata: Metadata {
                 format: Some(crate::types::FormatMetadata::Excel(excel_metadata)),

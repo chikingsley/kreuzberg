@@ -670,6 +670,37 @@ where
     metadata
 }
 
+/// Convert an Excel workbook to plain text (space-separated cells, one row per line).
+///
+/// Each sheet is separated by a blank line. Sheet names are included as headers.
+/// This produces text suitable for quality scoring against ground truth.
+pub fn excel_to_text(workbook: &ExcelWorkbook) -> String {
+    let mut result = String::new();
+
+    for (i, sheet) in workbook.sheets.iter().enumerate() {
+        if i > 0 {
+            result.push_str("\n\n");
+        }
+
+        if let Some(cells) = &sheet.table_cells {
+            for (row_idx, row) in cells.iter().enumerate() {
+                if row_idx > 0 {
+                    result.push('\n');
+                }
+                let line: String = row
+                    .iter()
+                    .map(|cell| cell.trim())
+                    .filter(|cell| !cell.is_empty())
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                result.push_str(&line);
+            }
+        }
+    }
+
+    result
+}
+
 pub fn excel_to_markdown(workbook: &ExcelWorkbook) -> String {
     let total_capacity: usize = workbook.sheets.iter().map(|sheet| sheet.markdown.len() + 2).sum();
 

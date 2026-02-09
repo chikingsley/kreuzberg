@@ -101,8 +101,6 @@ impl DocumentExtractor for PlainTextExtractor {
     fn supported_mime_types(&self) -> &[&str] {
         &[
             "text/plain",
-            "text/csv",
-            "text/tab-separated-values",
             "text/troff",
             "text/x-mdoc",
             "text/x-pod",
@@ -272,8 +270,6 @@ mod tests {
             extractor.supported_mime_types(),
             &[
                 "text/plain",
-                "text/csv",
-                "text/tab-separated-values",
                 "text/troff",
                 "text/x-mdoc",
                 "text/x-pod",
