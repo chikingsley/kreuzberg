@@ -255,8 +255,48 @@ export function shouldSkipFixture(
 
 	return false;
 }
+interface Assertions {
+	assertExpectedMime(result: ExtractionResult, expected: string[]): void;
+	assertMinContentLength(result: ExtractionResult, minimum: number): void;
+	assertMaxContentLength(result: ExtractionResult, maximum: number): void;
+	assertContentContainsAny(result: ExtractionResult, snippets: string[]): void;
+	assertContentContainsAll(result: ExtractionResult, snippets: string[]): void;
+	assertTableCount(result: ExtractionResult, minimum?: number | null, maximum?: number | null): void;
+	assertDetectedLanguages(result: ExtractionResult, expected: string[], minConfidence?: number | null): void;
+	assertMetadataExpectation(result: ExtractionResult, path: string, expectation: PlainRecord): void;
+	assertChunks(
+		result: ExtractionResult,
+		minCount?: number | null,
+		maxCount?: number | null,
+		eachHasContent?: boolean | null,
+		eachHasEmbedding?: boolean | null,
+	): void;
+	assertImages(
+		result: ExtractionResult,
+		minCount?: number | null,
+		maxCount?: number | null,
+		formatsInclude?: string[] | null,
+	): void;
+	assertPages(result: ExtractionResult, minCount?: number | null, exactCount?: number | null): void;
+	assertElements(result: ExtractionResult, minCount?: number | null, typesInclude?: string[] | null): void;
+	assertOcrElements(
+		result: ExtractionResult,
+		hasElements?: boolean | null,
+		elementsHaveGeometry?: boolean | null,
+		elementsHaveConfidence?: boolean | null,
+		minCount?: number | null,
+	): void;
+	assertDocument(
+		result: ExtractionResult,
+		hasDocument?: boolean,
+		minNodeCount?: number | null,
+		nodeTypesInclude?: string[] | null,
+		hasGroups?: boolean | null,
+	): void;
+}
 
-export const assertions = {
+
+export const assertions: Assertions = {
 	assertExpectedMime(result: ExtractionResult, expected: string[]): void {
 		if (!expected.length) {
 			return;
