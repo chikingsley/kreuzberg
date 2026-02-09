@@ -255,6 +255,7 @@ defmodule Kreuzberg.ExtractionConfig do
     * `"pdf_options"` - PDF-specific options (map or nil)
     * `"max_concurrent_extractions"` - Maximum concurrent extractions (positive integer or nil)
     * `"html_options"` - HTML to Markdown conversion options (map or nil)
+    * `"include_document_structure"` - Include document structure in extraction (boolean)
     * `"use_cache"` - Enable caching (boolean)
     * `"enable_quality_processing"` - Enable quality processing (boolean)
     * `"force_ocr"` - Force OCR usage (boolean)
@@ -277,6 +278,7 @@ defmodule Kreuzberg.ExtractionConfig do
         "pdf_options" => nil,
         "html_options" => nil,
         "max_concurrent_extractions" => nil,
+        "include_document_structure" => false,
         "use_cache" => true,
         "enable_quality_processing" => true,
         "force_ocr" => false,
@@ -300,6 +302,7 @@ defmodule Kreuzberg.ExtractionConfig do
         "max_concurrent_extractions" => nil,
         "use_cache" => true,
         "enable_quality_processing" => true,
+        "include_document_structure" => false,
         "force_ocr" => false,
         "output_format" => "plain",
         "result_format" => "unified"
