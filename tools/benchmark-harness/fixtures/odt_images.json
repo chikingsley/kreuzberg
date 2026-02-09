@@ -1,10 +1,10 @@
 {
   "document": "../../../test_documents/odt/image.odt",
   "file_type": "odt",
-  "file_size": 7659,
+  "file_size": 33360,
   "expected_frameworks": ["kreuzberg"],
   "metadata": {
-    "description": "ODT document with extractable text content",
-    "category": "text"
+    "description": "ODT document containing embedded images",
+    "category": "image"
   }
 }

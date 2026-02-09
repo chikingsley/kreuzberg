@@ -1,7 +1,7 @@
 {
   "document": "../../../../test_documents/vendored/pdfplumber/pdf/issue-297-example.pdf",
   "file_type": "pdf",
-  "file_size": 5251,
+  "file_size": 472,
   "expected_frameworks": [
     "kreuzberg",
     "docling",
@@ -11,8 +11,8 @@
     "pymupdf4llm"
   ],
   "metadata": {
-    "description": "Document from pdfplumber test suite (issue-140, has extractable text)",
+    "description": "Document from pdfplumber test suite (issue-297 minimal PDF)",
     "source": "pdfplumber",
-    "size_category": "small"
+    "size_category": "minimal"
   }
 }
