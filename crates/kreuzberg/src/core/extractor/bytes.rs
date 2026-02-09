@@ -5,17 +5,13 @@
 //! - Legacy format conversion (DOC, PPT)
 //! - Extraction pipeline orchestration
 
-#[cfg(not(all(feature = "office", not(target_arch = "wasm32"))))]
+#[cfg(not(feature = "office"))]
 use crate::KreuzbergError;
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::core::mime::{LEGACY_POWERPOINT_MIME_TYPE, LEGACY_WORD_MIME_TYPE};
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use crate::extraction::libreoffice::{convert_doc_to_docx, convert_ppt_to_pptx};
 use crate::types::ExtractionResult;
 
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use super::file::apply_libreoffice_metadata;
 use super::file::extract_bytes_with_extractor;
 #[cfg(feature = "otel")]
 use super::file::record_error;
@@ -71,36 +67,28 @@ pub async fn extract_bytes(content: &[u8], mime_type: &str, config: &ExtractionC
     let result = async {
         let validated_mime = mime::validate_mime_type(mime_type)?;
 
+        // Native DOC/PPT extractors are registered in the plugin registry.
+        // When the office feature is disabled, these MIME types are unsupported.
+        #[cfg(not(feature = "office"))]
         match validated_mime.as_str() {
-            #[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-            LEGACY_WORD_MIME_TYPE => {
-                let conversion = convert_doc_to_docx(content).await?;
-                let mut result =
-                    extract_bytes_with_extractor(&conversion.converted_bytes, &conversion.target_mime, config).await?;
-                apply_libreoffice_metadata(&mut result, LEGACY_WORD_MIME_TYPE, &conversion);
-                return Ok(result);
-            }
-            #[cfg(not(all(feature = "office", not(target_arch = "wasm32"))))]
             LEGACY_WORD_MIME_TYPE => {
                 return Err(KreuzbergError::UnsupportedFormat(
-                    "Legacy Word conversion requires the `office` feature or LibreOffice support".to_string(),
+                    "Legacy Word extraction requires the `office` feature".to_string(),
                 ));
             }
-            #[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-            LEGACY_POWERPOINT_MIME_TYPE => {
-                let conversion = convert_ppt_to_pptx(content).await?;
-                let mut result =
-                    extract_bytes_with_extractor(&conversion.converted_bytes, &conversion.target_mime, config).await?;
-                apply_libreoffice_metadata(&mut result, LEGACY_POWERPOINT_MIME_TYPE, &conversion);
-                return Ok(result);
-            }
-            #[cfg(not(all(feature = "office", not(target_arch = "wasm32"))))]
             LEGACY_POWERPOINT_MIME_TYPE => {
                 return Err(KreuzbergError::UnsupportedFormat(
-                    "Legacy PowerPoint conversion requires the `office` feature or LibreOffice support".to_string(),
+                    "Legacy PowerPoint extraction requires the `office` feature".to_string(),
                 ));
             }
             _ => {}
+        }
+
+        // Suppress unused import warnings when office feature is enabled
+        #[cfg(feature = "office")]
+        {
+            let _ = LEGACY_WORD_MIME_TYPE;
+            let _ = LEGACY_POWERPOINT_MIME_TYPE;
         }
 
         extract_bytes_with_extractor(content, &validated_mime, config).await

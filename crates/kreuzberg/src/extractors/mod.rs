@@ -92,6 +92,9 @@ pub mod bibtex;
 pub mod citation;
 
 #[cfg(feature = "office")]
+pub mod doc;
+
+#[cfg(feature = "office")]
 pub mod docx;
 
 #[cfg(feature = "office")]
@@ -131,6 +134,9 @@ pub mod jats;
 pub mod pdf;
 
 #[cfg(feature = "office")]
+pub mod ppt;
+
+#[cfg(feature = "office")]
 pub mod pptx;
 
 #[cfg(feature = "office")]
@@ -165,6 +171,9 @@ pub use bibtex::BibtexExtractor;
 
 #[cfg(feature = "office")]
 pub use citation::CitationExtractor;
+
+#[cfg(feature = "office")]
+pub use doc::DocExtractor;
 
 #[cfg(feature = "office")]
 pub use docx::DocxExtractor;
@@ -206,6 +215,9 @@ pub use typst::TypstExtractor;
 
 #[cfg(feature = "pdf")]
 pub use pdf::PdfExtractor;
+
+#[cfg(feature = "office")]
+pub use ppt::PptExtractor;
 
 #[cfg(feature = "office")]
 pub use pptx::PptxExtractor;
@@ -312,7 +324,9 @@ pub fn register_default_extractors() -> Result<()> {
         registry.register(Arc::new(OrgModeExtractor::new()))?;
         registry.register(Arc::new(OpmlExtractor::new()))?;
         registry.register(Arc::new(TypstExtractor::new()))?;
+        registry.register(Arc::new(DocExtractor::new()))?;
         registry.register(Arc::new(DocxExtractor::new()))?;
+        registry.register(Arc::new(PptExtractor::new()))?;
         registry.register(Arc::new(PptxExtractor::new()))?;
         registry.register(Arc::new(OdtExtractor::new()))?;
     }
@@ -407,8 +421,10 @@ mod tests {
 
         #[cfg(all(feature = "tokio-runtime", feature = "office"))]
         {
-            expected_count += 3;
+            expected_count += 5;
+            assert!(extractor_names.contains(&"doc-extractor".to_string()));
             assert!(extractor_names.contains(&"docx-extractor".to_string()));
+            assert!(extractor_names.contains(&"ppt-extractor".to_string()));
             assert!(extractor_names.contains(&"pptx-extractor".to_string()));
             assert!(extractor_names.contains(&"odt-extractor".to_string()));
         }

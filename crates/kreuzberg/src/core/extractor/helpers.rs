@@ -3,8 +3,6 @@
 //! This module provides shared utilities used across extraction modules.
 
 use crate::plugins::DocumentExtractor;
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use crate::utils::intern_mime_type;
 use crate::utils::{PoolSizeHint, estimate_pool_size};
 use crate::{KreuzbergError, Result};
 use std::sync::Arc;
@@ -52,20 +50,4 @@ pub(in crate::core::extractor) fn get_extractor(mime_type: &str) -> Result<Arc<d
 #[inline]
 pub fn get_pool_sizing_hint(file_size: u64, mime_type: &str) -> PoolSizeHint {
     estimate_pool_size(file_size, mime_type)
-}
-
-/// Convert a MIME type string to a pooled String for efficient deduplication.
-///
-/// This function uses the string interning pool to reduce memory allocations
-/// for repeatedly used MIME types (e.g., "application/pdf" appears thousands of times
-/// in batch processing). The interned string is converted to an owned String to satisfy
-/// the ExtractionResult::mime_type field type.
-///
-/// # Performance
-///
-/// For pre-interned MIME types (all common types), this is O(1) pointer dereference.
-/// For unknown MIME types, this allocates once per unique type and caches the result.
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-pub(in crate::core::extractor) fn pool_mime_type(mime_type: &str) -> String {
-    intern_mime_type(mime_type).to_string()
 }

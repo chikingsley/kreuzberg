@@ -215,9 +215,7 @@ fn push_content_node(
     let node_idx = doc.push_node(node);
 
     // Wire parent → child using add_child, EXCEPT for PageBreak nodes which are always root-level
-    if !is_page_break
-        && let Some((_, parent_idx)) = section_stack.last()
-    {
+    if !is_page_break && let Some((_, parent_idx)) = section_stack.last() {
         doc.add_child(*parent_idx, node_idx);
     }
 

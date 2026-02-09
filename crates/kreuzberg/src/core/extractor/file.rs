@@ -6,24 +6,13 @@
 //! - File validation and reading
 //! - Extraction pipeline orchestration
 
-#[cfg(any(feature = "otel", not(all(feature = "office", not(target_arch = "wasm32")))))]
+#[cfg(any(feature = "otel", not(feature = "office")))]
 use crate::KreuzbergError;
 use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::core::mime::{LEGACY_POWERPOINT_MIME_TYPE, LEGACY_WORD_MIME_TYPE};
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use crate::extraction::libreoffice::{convert_doc_to_docx, convert_ppt_to_pptx};
 use crate::types::ExtractionResult;
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use crate::types::LibreOfficeConversionResult;
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use serde_json::json;
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use std::borrow::Cow;
 use std::path::Path;
-
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-use super::helpers::pool_mime_type;
 
 use super::helpers::get_extractor;
 
@@ -150,38 +139,28 @@ pub async fn extract_file(
 
         let detected_mime = mime::detect_or_validate(Some(path), mime_type)?;
 
+        // Native DOC/PPT extractors are registered in the plugin registry.
+        // When the office feature is disabled, these MIME types are unsupported.
+        #[cfg(not(feature = "office"))]
         match detected_mime.as_str() {
-            #[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-            LEGACY_WORD_MIME_TYPE => {
-                let original_bytes = tokio::fs::read(path).await?;
-                let conversion = convert_doc_to_docx(&original_bytes).await?;
-                let mut result =
-                    extract_bytes_with_extractor(&conversion.converted_bytes, &conversion.target_mime, config).await?;
-                apply_libreoffice_metadata(&mut result, LEGACY_WORD_MIME_TYPE, &conversion);
-                return Ok(result);
-            }
-            #[cfg(not(all(feature = "office", not(target_arch = "wasm32"))))]
             LEGACY_WORD_MIME_TYPE => {
                 return Err(KreuzbergError::UnsupportedFormat(
-                    "Legacy Word conversion requires the `office` feature or LibreOffice support".to_string(),
+                    "Legacy Word extraction requires the `office` feature".to_string(),
                 ));
             }
-            #[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-            LEGACY_POWERPOINT_MIME_TYPE => {
-                let original_bytes = tokio::fs::read(path).await?;
-                let conversion = convert_ppt_to_pptx(&original_bytes).await?;
-                let mut result =
-                    extract_bytes_with_extractor(&conversion.converted_bytes, &conversion.target_mime, config).await?;
-                apply_libreoffice_metadata(&mut result, LEGACY_POWERPOINT_MIME_TYPE, &conversion);
-                return Ok(result);
-            }
-            #[cfg(not(all(feature = "office", not(target_arch = "wasm32"))))]
             LEGACY_POWERPOINT_MIME_TYPE => {
                 return Err(KreuzbergError::UnsupportedFormat(
-                    "Legacy PowerPoint conversion requires the `office` feature or LibreOffice support".to_string(),
+                    "Legacy PowerPoint extraction requires the `office` feature".to_string(),
                 ));
             }
             _ => {}
+        }
+
+        // Suppress unused import warnings when office feature is enabled
+        #[cfg(feature = "office")]
+        {
+            let _ = LEGACY_WORD_MIME_TYPE;
+            let _ = LEGACY_POWERPOINT_MIME_TYPE;
         }
 
         extract_file_with_extractor(path, &detected_mime, config).await
@@ -220,22 +199,4 @@ pub(in crate::core::extractor) async fn extract_bytes_with_extractor(
     let mut result = extractor.extract_bytes(content, mime_type, config).await?;
     result = crate::core::pipeline::run_pipeline(result, config).await?;
     Ok(result)
-}
-
-#[cfg(all(feature = "office", not(target_arch = "wasm32")))]
-pub(in crate::core::extractor) fn apply_libreoffice_metadata(
-    result: &mut ExtractionResult,
-    legacy_mime: &str,
-    conversion: &LibreOfficeConversionResult,
-) {
-    result.mime_type = pool_mime_type(legacy_mime).into();
-    result.metadata.additional.insert(
-        Cow::Borrowed("libreoffice_conversion"),
-        json!({
-            "converter": "libreoffice",
-            "original_format": conversion.original_format,
-            "target_format": conversion.target_format,
-            "target_mime": conversion.target_mime,
-        }),
-    );
 }
