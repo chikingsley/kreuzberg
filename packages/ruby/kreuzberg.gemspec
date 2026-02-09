@@ -75,7 +75,16 @@ fallback_files = Dir.chdir(__dir__) do
        .map { |path| "vendor/#{path.delete_prefix('crates/')}" }
   end
 
-  ruby_fallback + core_fallback + ffi_fallback + tesseract_fallback
+  paddle_ocr_fallback = Dir.chdir(repo_root) do
+    Dir.glob('crates/kreuzberg-paddle-ocr/**/*', File::FNM_DOTMATCH)
+       .reject { |f| File.directory?(f) }
+       .reject { |f| f.include?('/target/') }
+       .grep_v(/\.(swp|bak|tmp)$/)
+       .grep_v(/~$/)
+       .map { |path| "vendor/#{path.delete_prefix('crates/')}" }
+  end
+
+  ruby_fallback + core_fallback + ffi_fallback + tesseract_fallback + paddle_ocr_fallback
 end
 
 vendor_files = Dir.chdir(__dir__) do
@@ -111,6 +120,16 @@ vendor_files = Dir.chdir(__dir__) do
                                 []
                               end
 
+  kreuzberg_paddle_ocr_files = if Dir.exist?('vendor/kreuzberg-paddle-ocr')
+                                  Dir.glob('vendor/kreuzberg-paddle-ocr/**/*', File::FNM_DOTMATCH)
+                                     .reject { |f| File.directory?(f) }
+                                     .reject { |f| f.include?('/target/') }
+                                     .grep_v(/\.(swp|bak|tmp)$/)
+                                     .grep_v(/~$/)
+                                else
+                                  []
+                                end
+
   rb_sys_files = if Dir.exist?('vendor/rb-sys')
                    Dir.glob('vendor/rb-sys/**/*', File::FNM_DOTMATCH)
                       .reject { |f| File.directory?(f) }
@@ -127,7 +146,7 @@ vendor_files = Dir.chdir(__dir__) do
                      []
                    end
 
-  kreuzberg_files + kreuzberg_ffi_files + kreuzberg_tesseract_files + rb_sys_files + workspace_toml
+  kreuzberg_files + kreuzberg_ffi_files + kreuzberg_tesseract_files + kreuzberg_paddle_ocr_files + rb_sys_files + workspace_toml
 end
 
 # When vendor files exist, get ext/ files from filesystem (to include modified Cargo.toml

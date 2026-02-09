@@ -79,7 +79,7 @@ for dir in kreuzberg kreuzberg-tesseract kreuzberg-ffi kreuzberg-paddle-ocr rb-s
 done
 
 # Update kreuzberg and kreuzberg-tesseract to use local workspace dependencies
-for crate_dir in kreuzberg kreuzberg-tesseract; do
+for crate_dir in kreuzberg kreuzberg-tesseract kreuzberg-paddle-ocr; do
   # Replace workspace = true with actual versions for metadata fields
   sed -i.bak "s/^version.workspace = true/version = \"${core_version}\"/" "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
   sed -i.bak 's/^edition.workspace = true/edition = "2024"/' "$REPO_ROOT/packages/ruby/vendor/$crate_dir/Cargo.toml"
@@ -96,6 +96,12 @@ done
 # Update kreuzberg-tesseract path in kreuzberg
 sed -i.bak \
   's/^kreuzberg-tesseract = { version = "[^"]*", optional = true }/kreuzberg-tesseract = { path = "..\/kreuzberg-tesseract", optional = true }/' \
+  "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml"
+rm -f "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml.bak"
+
+# Update kreuzberg-paddle-ocr path in kreuzberg
+sed -i.bak \
+  's/^kreuzberg-paddle-ocr = { version = "[^"]*", optional = true }/kreuzberg-paddle-ocr = { path = "..\/kreuzberg-paddle-ocr", optional = true }/' \
   "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml"
 rm -f "$REPO_ROOT/packages/ruby/vendor/kreuzberg/Cargo.toml.bak"
 
@@ -146,7 +152,7 @@ fi
 # Generate vendor workspace Cargo.toml with extracted versions
 cat >"$REPO_ROOT/packages/ruby/vendor/Cargo.toml" <<EOF
 [workspace]
-members = ["kreuzberg", "kreuzberg-tesseract", "kreuzberg-ffi"]
+members = ["kreuzberg", "kreuzberg-tesseract", "kreuzberg-ffi", "kreuzberg-paddle-ocr"]
 resolver = "2"
 
 [workspace.package]

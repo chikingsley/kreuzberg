@@ -251,6 +251,7 @@ fn test_extraction_config_no_unknown_fields_in_default() {
         "max_concurrent_extractions",
         "result_format",
         "output_format",
+        "security_limits",
     ];
 
     for key in obj.keys() {

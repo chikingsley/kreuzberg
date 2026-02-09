@@ -4,8 +4,7 @@
 //! finding slide paths, and iterating through slides.
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
+use std::io::{Cursor, Read, Seek};
 use std::path::Path;
 use zip::ZipArchive;
 
@@ -13,15 +12,15 @@ use super::elements::Slide;
 use super::image_handling::get_full_image_path;
 use crate::error::{KreuzbergError, Result};
 
-pub(super) struct PptxContainer {
-    pub(super) archive: ZipArchive<File>,
+pub(super) struct PptxContainer<R: Read + Seek> {
+    pub(super) archive: ZipArchive<R>,
     slide_paths: Vec<String>,
 }
 
-impl PptxContainer {
+impl PptxContainer<std::fs::File> {
     pub(super) fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         // IO errors must bubble up unchanged - file access issues need user reports ~keep
-        let file = File::open(path)?;
+        let file = std::fs::File::open(path)?;
 
         let mut archive = match ZipArchive::new(file) {
             Ok(arc) => arc,
@@ -38,7 +37,30 @@ impl PptxContainer {
 
         Ok(Self { archive, slide_paths })
     }
+}
 
+impl PptxContainer<Cursor<Vec<u8>>> {
+    pub(super) fn from_bytes(data: &[u8]) -> Result<Self> {
+        let cursor = Cursor::new(data.to_vec());
+
+        let mut archive = match ZipArchive::new(cursor) {
+            Ok(arc) => arc,
+            Err(zip::result::ZipError::Io(io_err)) => return Err(io_err.into()), // Bubble up IO errors ~keep
+            Err(e) => {
+                return Err(KreuzbergError::parsing(format!(
+                    "Failed to read PPTX archive (invalid format): {}",
+                    e
+                )));
+            }
+        };
+
+        let slide_paths = Self::find_slide_paths(&mut archive)?;
+
+        Ok(Self { archive, slide_paths })
+    }
+}
+
+impl<R: Read + Seek> PptxContainer<R> {
     pub(super) fn slide_paths(&self) -> &[String] {
         &self.slide_paths
     }
@@ -63,7 +85,7 @@ impl PptxContainer {
         super::image_handling::get_slide_rels_path(slide_path)
     }
 
-    fn find_slide_paths(archive: &mut ZipArchive<File>) -> Result<Vec<String>> {
+    fn find_slide_paths(archive: &mut ZipArchive<R>) -> Result<Vec<String>> {
         if let Ok(rels_data) = Self::read_file_from_archive(archive, "ppt/_rels/presentation.xml.rels")
             && let Ok(paths) = super::parser::parse_presentation_rels(&rels_data)
         {
@@ -84,7 +106,7 @@ impl PptxContainer {
         Ok(slide_paths)
     }
 
-    fn read_file_from_archive(archive: &mut ZipArchive<File>, path: &str) -> Result<Vec<u8>> {
+    fn read_file_from_archive(archive: &mut ZipArchive<R>, path: &str) -> Result<Vec<u8>> {
         let mut file = match archive.by_name(path) {
             Ok(f) => f,
             Err(zip::result::ZipError::Io(io_err)) => return Err(io_err.into()), // Bubble up IO errors ~keep
@@ -102,14 +124,14 @@ impl PptxContainer {
     }
 }
 
-pub(super) struct SlideIterator {
-    container: PptxContainer,
+pub(super) struct SlideIterator<R: Read + Seek> {
+    container: PptxContainer<R>,
     current_index: usize,
     total_slides: usize,
 }
 
-impl SlideIterator {
-    pub(super) fn new(container: PptxContainer) -> Self {
+impl<R: Read + Seek> SlideIterator<R> {
+    pub(super) fn new(container: PptxContainer<R>) -> Self {
         let total_slides = container.slide_paths().len();
         Self {
             container,

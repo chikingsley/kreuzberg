@@ -72,12 +72,39 @@ pub fn extract_pptx_from_path(
     extract_images: bool,
     page_config: Option<&crate::core::config::PageConfig>,
 ) -> Result<PptxExtractionResult> {
+    let container = PptxContainer::open(path)?;
+    extract_pptx_from_container(container, extract_images, page_config)
+}
+
+/// Extract PPTX content from a byte buffer.
+///
+/// # Arguments
+///
+/// * `data` - Raw PPTX file bytes
+/// * `extract_images` - Whether to extract embedded images
+/// * `page_config` - Optional page configuration for boundary tracking
+///
+/// # Returns
+///
+/// A `PptxExtractionResult` containing extracted content, metadata, and images.
+pub fn extract_pptx_from_bytes(
+    data: &[u8],
+    extract_images: bool,
+    page_config: Option<&crate::core::config::PageConfig>,
+) -> Result<PptxExtractionResult> {
+    let container = PptxContainer::from_bytes(data)?;
+    extract_pptx_from_container(container, extract_images, page_config)
+}
+
+fn extract_pptx_from_container<R: std::io::Read + std::io::Seek>(
+    mut container: PptxContainer<R>,
+    extract_images: bool,
+    page_config: Option<&crate::core::config::PageConfig>,
+) -> Result<PptxExtractionResult> {
     let config = ParserConfig {
         extract_images,
         ..Default::default()
     };
-
-    let mut container = PptxContainer::open(path)?;
 
     let metadata = extract_metadata(&mut container.archive);
 
@@ -168,45 +195,6 @@ pub fn extract_pptx_from_path(
         page_structure,
         page_contents,
     })
-}
-
-/// Extract PPTX content from a byte buffer.
-///
-/// # Arguments
-///
-/// * `data` - Raw PPTX file bytes
-/// * `extract_images` - Whether to extract embedded images
-/// * `page_config` - Optional page configuration for boundary tracking
-///
-/// # Returns
-///
-/// A `PptxExtractionResult` containing extracted content, metadata, and images.
-pub fn extract_pptx_from_bytes(
-    data: &[u8],
-    extract_images: bool,
-    page_config: Option<&crate::core::config::PageConfig>,
-) -> Result<PptxExtractionResult> {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    let unique_id = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let temp_path = std::env::temp_dir().join(format!("temp_pptx_{}_{}.pptx", std::process::id(), unique_id));
-
-    // IO errors must bubble up - temp file write issues need user reports ~keep
-    std::fs::write(&temp_path, data)?;
-
-    let result = extract_pptx_from_path(
-        temp_path.to_str().ok_or_else(|| {
-            crate::KreuzbergError::validation("Invalid temp path - contains invalid UTF-8".to_string())
-        })?,
-        extract_images,
-        page_config,
-    );
-
-    if let Err(e) = std::fs::remove_file(&temp_path) {
-        tracing::warn!("Failed to remove temp PPTX file: {}", e);
-    }
-
-    result
 }
 
 // Re-export Slide implementation methods for internal use

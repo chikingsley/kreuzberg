@@ -457,6 +457,32 @@ func assertElements(t *testing.T, result *kreuzberg.ExtractionResult, minCount *
 	}
 }
 
+func assertOcrElements(t *testing.T, result *kreuzberg.ExtractionResult, hasElements, hasGeometry, hasConfidence *bool, minCount *int) {
+	t.Helper()
+	if hasElements != nil && *hasElements {
+		if len(result.OcrElements) == 0 {
+			t.Fatalf("expected OCR elements, but none found")
+		}
+	}
+	if hasGeometry != nil && *hasGeometry {
+		for i, elem := range result.OcrElements {
+			if elem.Geometry == nil {
+				t.Fatalf("OCR element %d expected to have geometry", i)
+			}
+		}
+	}
+	if hasConfidence != nil && *hasConfidence {
+		for i, elem := range result.OcrElements {
+			if elem.Confidence == nil {
+				t.Fatalf("OCR element %d expected to have confidence score", i)
+			}
+		}
+	}
+	if minCount != nil && len(result.OcrElements) < *minCount {
+		t.Fatalf("expected at least %d OCR elements, found %d", *minCount, len(result.OcrElements))
+	}
+}
+
 func runExtractionBytes(t *testing.T, relativePath string, configJSON []byte) *kreuzberg.ExtractionResult {
 	t.Helper()
 	documentPath := ensureDocument(t, relativePath, true)

@@ -3464,7 +3464,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-paddle-ocr"
-version = "4.2.14"
+version = "4.2.15"
 dependencies = [
  "geo-clipper",
  "geo-types",

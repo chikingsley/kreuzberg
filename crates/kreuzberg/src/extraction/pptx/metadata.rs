@@ -4,7 +4,7 @@
 //! and extracting notes from slides.
 
 use std::collections::HashMap;
-use std::fs::File;
+use std::io::{Read, Seek};
 use zip::ZipArchive;
 
 use crate::error::Result;
@@ -22,7 +22,7 @@ use serde_json::Value;
 use super::container::PptxContainer;
 
 /// Extract comprehensive metadata from PPTX using office_metadata module
-pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
+pub(super) fn extract_metadata<R: Read + Seek>(archive: &mut ZipArchive<R>) -> PptxMetadata {
     #[cfg(feature = "office")]
     {
         let mut metadata_map = HashMap::new();
@@ -121,7 +121,7 @@ pub(super) fn extract_metadata(archive: &mut ZipArchive<File>) -> PptxMetadata {
     }
 }
 
-pub(super) fn extract_all_notes(container: &mut PptxContainer) -> Result<HashMap<u32, String>> {
+pub(super) fn extract_all_notes<R: Read + Seek>(container: &mut PptxContainer<R>) -> Result<HashMap<u32, String>> {
     let mut notes = HashMap::new();
 
     let slide_paths: Vec<String> = container.slide_paths().to_vec();

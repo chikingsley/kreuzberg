@@ -1,5 +1,5 @@
 {
-  "document": "../../../test_documents/odt/extraction_test.odt",
+  "document": "../../../test_documents/odt/image.odt",
   "file_type": "odt",
   "file_size": 7659,
   "expected_frameworks": ["kreuzberg"],

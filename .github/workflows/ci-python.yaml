@@ -62,7 +62,7 @@ env:
   RUST_MIN_STACK: 16777216
   PDFIUM_VERSION: "7578"
   PDFIUM_STATIC_VERSION: "7442b"
-  ORT_VERSION: "1.24.1"
+  ORT_VERSION: "1.23.2"
   MACOSX_DEPLOYMENT_TARGET: "14.0"
   BUILD_PROFILE: "ci"
 
@@ -247,7 +247,11 @@ jobs:
           before-script-linux: |
             set -euo pipefail
             rustup component add rust-src || true
-            apk add --no-cache openssl-dev pkgconf clang clang-dev libc++-dev musl-dev cmake make build-base
+            if command -v apk &>/dev/null; then
+              apk add --no-cache openssl-dev pkgconf clang clang-dev libc++-dev musl-dev cmake make build-base
+            elif command -v apt-get &>/dev/null; then
+              apt-get update && apt-get install -y libssl-dev pkg-config clang cmake make musl-tools
+            fi
             echo "=== Building CLI Binary (musllinux) ==="
             cargo build --release --package kreuzberg-cli --features all
             mkdir -p kreuzberg

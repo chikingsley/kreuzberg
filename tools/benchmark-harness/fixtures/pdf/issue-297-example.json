@@ -1,5 +1,5 @@
 {
-  "document": "../../../../test_documents/vendored/pdfplumber/pdf/issue-140-example.pdf",
+  "document": "../../../../test_documents/vendored/pdfplumber/pdf/issue-297-example.pdf",
   "file_type": "pdf",
   "file_size": 5251,
   "expected_frameworks": [
