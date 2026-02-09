@@ -153,6 +153,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Plain);
@@ -199,6 +200,7 @@ mod tests {
                 footnotes: vec![],
                 attributes: Vec::new(),
             }),
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Djot);
@@ -221,6 +223,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Djot);
@@ -244,6 +247,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Html);
@@ -268,6 +272,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Html);
@@ -292,6 +297,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Markdown);
@@ -323,6 +329,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Djot);
@@ -357,6 +364,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Html);
@@ -406,6 +414,7 @@ mod tests {
             elements: None,
             ocr_elements: None,
             djot_content: Some(djot_content),
+            document: None,
         };
 
         apply_output_format(&mut result, OutputFormat::Djot);

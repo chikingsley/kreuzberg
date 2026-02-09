@@ -866,6 +866,26 @@ fn render_assertions(assertions: &Assertions) -> String {
         ));
     }
 
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = document.has_document.to_string();
+        let min_node_count = document
+            .min_node_count
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".into());
+        let node_types = if !document.node_types_include.is_empty() {
+            render_string_array(&document.node_types_include)
+        } else {
+            "null".into()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".into());
+        buffer.push_str(&format!(
+            "    assertions.assertDocument(result, {has_document}, {min_node_count}, {node_types}, {has_groups});\n"
+        ));
+    }
+
     buffer
 }
 

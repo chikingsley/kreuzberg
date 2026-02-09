@@ -184,6 +184,7 @@ mod tests {
             }),
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let markup = extraction_result_to_djot(&result).expect("Should convert");
@@ -204,6 +205,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let markup = extraction_result_to_djot(&result).expect("Should convert");

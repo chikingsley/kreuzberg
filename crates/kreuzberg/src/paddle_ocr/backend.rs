@@ -429,6 +429,7 @@ impl OcrBackend for PaddleOcrBackend {
             pages: None,
             elements: None,
             ocr_elements: ocr_elements_opt,
+            document: None,
         })
     }
 

@@ -35,6 +35,10 @@ impl ConfigBuilder {
         self.config.use_cache = use_cache;
     }
 
+    fn set_include_document_structure(&mut self, include: bool) {
+        self.config.include_document_structure = include;
+    }
+
     fn set_ocr_from_json(&mut self, ocr_json: &str) -> Result<(), String> {
         let ocr_config: OcrConfig =
             serde_json::from_str(ocr_json).map_err(|e| format!("Failed to parse OCR config JSON: {}", e))?;
@@ -135,6 +139,39 @@ pub unsafe extern "C" fn kreuzberg_config_builder_set_use_cache(builder: *mut Co
 
         clear_last_error();
         unsafe { (*builder).set_use_cache(use_cache != 0) };
+        0
+    })
+}
+
+/// Set the include_document_structure field.
+///
+/// # Arguments
+///
+/// * `builder` - Non-null pointer to ConfigBuilder
+/// * `include` - 1 for true, 0 for false
+///
+/// # Returns
+///
+/// 0 on success, -1 on error (NULL builder)
+///
+/// # Safety
+///
+/// This function is meant to be called from C/FFI code. The caller must ensure:
+/// - `builder` must be a valid, non-null pointer previously returned by `kreuzberg_config_builder_new`
+/// - The pointer must be properly aligned and point to a valid ConfigBuilder instance
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn kreuzberg_config_builder_set_include_document_structure(
+    builder: *mut ConfigBuilder,
+    include: i32,
+) -> i32 {
+    ffi_panic_guard_i32!("kreuzberg_config_builder_set_include_document_structure", {
+        if builder.is_null() {
+            set_last_error("ConfigBuilder pointer cannot be NULL".to_string());
+            return -1;
+        }
+
+        clear_last_error();
+        unsafe { (*builder).set_include_document_structure(include != 0) };
         0
     })
 }
@@ -522,6 +559,25 @@ mod tests {
             assert!(!config.is_null());
 
             assert!((*config).use_cache);
+
+            // Clean up
+            let _ = Box::from_raw(config);
+        }
+    }
+
+    #[test]
+    fn test_builder_include_document_structure() {
+        unsafe {
+            let builder = kreuzberg_config_builder_new();
+            assert!(!builder.is_null());
+
+            let result = kreuzberg_config_builder_set_include_document_structure(builder, 1);
+            assert_eq!(result, 0);
+
+            let config = kreuzberg_config_builder_build(builder);
+            assert!(!config.is_null());
+
+            assert!((*config).include_document_structure);
 
             // Clean up
             let _ = Box::from_raw(config);

@@ -444,6 +444,7 @@ impl DocumentExtractor for FictionBookExtractor {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

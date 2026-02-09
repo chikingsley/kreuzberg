@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.kreuzberg.ExtractionResult;
 import dev.kreuzberg.Kreuzberg;
 import dev.kreuzberg.MissingDependencyException;
-import dev.kreuzberg.OcrElement;
 import dev.kreuzberg.Table;
 import dev.kreuzberg.config.ExtractionConfig;
 import org.junit.jupiter.api.Assumptions;
@@ -455,37 +454,43 @@ public final class E2EHelpers {
             }
         }
 
-        public static void assertOcrElements(
+        public static void assertDocument(
                 ExtractionResult result,
-                Boolean eachHasText,
-                Boolean eachHasGeometry,
-                Boolean eachHasConfidence,
-                Integer minCount
+                boolean hasDocument,
+                Integer minNodeCount,
+                List<String> nodeTypesInclude,
+                Boolean hasGroups
         ) {
-            var ocrElements = result.getOcrElements();
-            int count = ocrElements != null ? ocrElements.size() : 0;
-            if (minCount != null) {
-                assertTrue(count >= minCount,
-                        String.format("Expected OCR element count >= %d, got %d", minCount, count));
-            }
-            if (ocrElements != null && eachHasText != null && eachHasText) {
-                for (OcrElement elem : ocrElements) {
-                    String text = elem.getText();
-                    assertTrue(text != null && !text.isEmpty(),
-                            "Expected each OCR element to have text");
+            var document = result.getDocument();
+            if (hasDocument) {
+                assertNotNull(document, "Expected document but got null");
+                var nodes = document.getNodes();
+                assertNotNull(nodes, "Expected document nodes but got null");
+                if (minNodeCount != null) {
+                    assertTrue(nodes.size() >= minNodeCount,
+                            String.format("Expected at least %d nodes, found %d", minNodeCount, nodes.size()));
                 }
-            }
-            if (ocrElements != null && eachHasGeometry != null && eachHasGeometry) {
-                for (OcrElement elem : ocrElements) {
-                    assertNotNull(elem.getGeometry(),
-                            "Expected each OCR element to have geometry");
+                if (nodeTypesInclude != null && !nodeTypesInclude.isEmpty()) {
+                    var types = nodes.stream()
+                            .map(n -> n.getContent().getNodeType())
+                            .filter(t -> t != null)
+                            .toList();
+                    for (String expected : nodeTypesInclude) {
+                        boolean found = types.stream()
+                                .anyMatch(t -> t.toLowerCase().equals(expected.toLowerCase()));
+                        assertTrue(found,
+                                String.format("Expected node type '%s' not found in %s", expected, types));
+                    }
                 }
-            }
-            if (ocrElements != null && eachHasConfidence != null && eachHasConfidence) {
-                for (OcrElement elem : ocrElements) {
-                    assertNotNull(elem.getConfidence(),
-                            "Expected each OCR element to have confidence");
+                if (hasGroups != null) {
+                    boolean hasGroupNodes = nodes.stream()
+                            .anyMatch(n -> "group".equals(n.getContent().getNodeType()));
+                    assertTrue(hasGroupNodes == hasGroups,
+                            String.format("Expected hasGroups=%b but got %b", hasGroups, hasGroupNodes));
                 }
+            } else {
+                assertTrue(document == null,
+                        String.format("Expected document to be null but got %s", document));
             }
         }
     }

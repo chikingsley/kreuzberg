@@ -118,6 +118,7 @@ impl DocumentExtractor for TypstExtractor {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

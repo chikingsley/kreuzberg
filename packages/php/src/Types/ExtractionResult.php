@@ -19,6 +19,7 @@ namespace Kreuzberg\Types;
  * @property-read array<Element>|null $elements Semantic elements when output_format='element_based'
  * @property-read array<OcrElement>|null $ocrElements OCR elements with positioning and confidence when OCR element config enabled
  * @property-read DjotContent|null $djotContent Structured Djot content when output_format='djot'
+ * @property-read DocumentStructure|null $document Hierarchical document structure when include_document_structure=true
  */
 readonly class ExtractionResult
 {
@@ -32,6 +33,7 @@ readonly class ExtractionResult
      * @param array<Element>|null $elements
      * @param array<OcrElement>|null $ocrElements
      * @param DjotContent|null $djotContent
+     * @param DocumentStructure|null $document
      */
     public function __construct(
         public string $content,
@@ -46,6 +48,7 @@ readonly class ExtractionResult
         public ?array $elements = null,
         public ?array $ocrElements = null,
         public ?DjotContent $djotContent = null,
+        public ?DocumentStructure $document = null,
     ) {
     }
 
@@ -146,6 +149,13 @@ readonly class ExtractionResult
             $djotContent = DjotContent::fromArray($djotContentData);
         }
 
+        $document = null;
+        if (isset($data['document'])) {
+            /** @var array<string, mixed> $documentData */
+            $documentData = $data['document'];
+            $document = DocumentStructure::fromArray($documentData);
+        }
+
         return new self(
             content: $content,
             mimeType: $mimeType,
@@ -163,6 +173,7 @@ readonly class ExtractionResult
             elements: $elements,
             ocrElements: $ocrElements,
             djotContent: $djotContent,
+            document: $document,
         );
     }
 }

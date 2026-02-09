@@ -1265,7 +1265,7 @@ public final class Kreuzberg {
 				MemorySegment ptr = array.getAtIndex(ValueLayout.ADDRESS, i);
 				if (ptr == null || ptr.address() == 0) {
 					results.add(new ExtractionResult("", "", Metadata.empty(), List.of(), List.of(), List.of(),
-							List.of(), List.of(), null, List.of(), List.of(), null));
+							List.of(), List.of(), null, List.of(), List.of(), null, null));
 				} else {
 					// Use parseResult (not parseAndFreeResult) to avoid double-free.
 					// Memory is freed collectively by KREUZBERG_FREE_BATCH_RESULT in the finally

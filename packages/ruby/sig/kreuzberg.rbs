@@ -254,6 +254,7 @@ module Kreuzberg
       attr_reader use_cache: bool
       attr_reader enable_quality_processing: bool
       attr_reader force_ocr: bool
+      attr_reader include_document_structure: bool
       attr_reader ocr: OCR?
       attr_reader chunking: Chunking?
       attr_reader language_detection: LanguageDetection?
@@ -277,6 +278,7 @@ module Kreuzberg
         ?use_cache: bool,
         ?enable_quality_processing: bool,
         ?force_ocr: bool,
+        ?include_document_structure: bool,
         ?ocr: (OCR | Hash[Symbol, untyped])?,
         ?chunking: (Chunking | Hash[Symbol, untyped])?,
         ?language_detection: (LanguageDetection | Hash[Symbol, untyped])?,
@@ -338,7 +340,8 @@ module Kreuzberg
     pages: Array[page_content_hash]?,
     elements: Array[element_hash]?,
     ocr_elements: Array[ocr_element_hash]?,
-    djot_content: djot_content_hash?
+    djot_content: djot_content_hash?,
+    document: document_structure_hash?
   }
 
   type page_content_hash = {
@@ -387,6 +390,34 @@ module Kreuzberg
   }
 
   type attributes_hash = Hash[String, String | Integer | bool | Array[String] | nil]
+
+  type document_bounding_box_hash = {
+    x0: Float,
+    y0: Float,
+    x1: Float,
+    y1: Float
+  }
+
+  type document_annotation_hash = {
+    key: String,
+    value: String
+  }
+
+  type document_node_hash = {
+    id: String,
+    content: Hash[untyped, untyped],
+    parent: Integer?,
+    children: Array[Integer],
+    content_layer: String,
+    page: Integer?,
+    page_end: Integer?,
+    bbox: document_bounding_box_hash?,
+    annotations: Array[document_annotation_hash]
+  }
+
+  type document_structure_hash = {
+    nodes: Array[document_node_hash]
+  }
 
   type element_hash = {
     element_id: String,
@@ -705,6 +736,68 @@ module Kreuzberg
       end
     end
 
+    # Structured document representation
+    class DocumentStructure
+      attr_reader nodes: Array[DocumentNode]
+
+      def initialize: (Hash[String | Symbol, untyped] hash) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+
+      private
+
+      def parse_nodes: (Array[untyped]? nodes_data) -> Array[DocumentNode]
+    end
+
+    # Single node in the document structure tree
+    class DocumentNode
+      attr_reader id: String
+      attr_reader content: Hash[untyped, untyped]
+      attr_reader parent: Integer?
+      attr_reader children: Array[Integer]
+      attr_reader content_layer: String
+      attr_reader page: Integer?
+      attr_reader page_end: Integer?
+      attr_reader bbox: DocumentBoundingBox?
+      attr_reader annotations: Array[DocumentAnnotation]
+
+      def initialize: (Hash[String | Symbol, untyped] hash) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+
+      private
+
+      def assign_core_fields: (Hash[String | Symbol, untyped] hash) -> void
+      def assign_tree_fields: (Hash[String | Symbol, untyped] hash) -> void
+      def assign_metadata_fields: (Hash[String | Symbol, untyped] hash) -> void
+      def parse_children: (Array[untyped]? children_data) -> Array[Integer]
+      def extract_child_index: (untyped child) -> Integer
+      def parse_bbox: (Hash[String | Symbol, untyped]? bbox_data) -> DocumentBoundingBox?
+      def parse_annotations: (Array[untyped]? annotations_data) -> Array[DocumentAnnotation]
+    end
+
+    # Bounding box for document node positioning
+    class DocumentBoundingBox
+      attr_reader x0: Float?
+      attr_reader y0: Float?
+      attr_reader x1: Float?
+      attr_reader y1: Float?
+
+      def initialize: (Hash[String | Symbol, untyped] hash) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+
+      private
+
+      def extract_float: (Hash[String | Symbol, untyped] hash, String key) -> Float?
+    end
+
+    # Annotation for a document node
+    class DocumentAnnotation
+      attr_reader key: String
+      attr_reader value: String
+
+      def initialize: (Hash[String | Symbol, untyped] hash) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
     attr_reader content: String
     attr_reader mime_type: String
     attr_reader metadata: Hash[untyped, untyped]
@@ -717,6 +810,7 @@ module Kreuzberg
     attr_reader elements: Array[ElementStruct]?
     attr_reader ocr_elements: Array[OcrElement]?
     attr_reader djot_content: DjotContent?
+    attr_reader document: DocumentStructure?
 
     def initialize: (extraction_result_hash hash) -> void
     def to_h: () -> Hash[Symbol, untyped]
@@ -741,6 +835,7 @@ module Kreuzberg
     def parse_ocr_elements: (Array[ocr_element_hash]? ocr_elements_data) -> Array[OcrElement]?
     def parse_page_hierarchy: (Hash[String, untyped]? hierarchy_data) -> PageHierarchy?
     def parse_djot_content: (Hash[String, untyped]? djot_data) -> DjotContent?
+    def parse_document_structure: (Hash[String, untyped]? document_data) -> DocumentStructure?
     def get_value: (Hash[String | Symbol, untyped] hash, String key, ?untyped default) -> untyped
     def serialize_tables: () -> Array[table_hash]
     def serialize_chunks: () -> Array[chunk_hash]?

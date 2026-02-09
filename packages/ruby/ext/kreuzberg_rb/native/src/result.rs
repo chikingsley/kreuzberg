@@ -324,5 +324,75 @@ pub fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> R
         set_hash_entry(ruby, &hash, "elements", ruby.qnil().as_value())?;
     }
 
+    // Convert document structure
+    if let Some(doc_structure) = result.document {
+        let document_hash = ruby.hash_new();
+        let nodes_array = ruby.ary_new();
+
+        for node in doc_structure.nodes {
+            let node_hash = ruby.hash_new();
+            node_hash.aset("id", node.id.as_ref())?;
+            node_hash.aset("content", node.content.clone())?;
+
+            if let Some(parent_idx) = node.parent {
+                node_hash.aset("parent", parent_idx.0 as i64)?;
+            } else {
+                node_hash.aset("parent", ruby.qnil().as_value())?;
+            }
+
+            let children_array = ruby.ary_new();
+            for child_idx in node.children {
+                children_array.push(child_idx.0 as i64)?;
+            }
+            node_hash.aset("children", children_array)?;
+
+            let layer_str = match node.content_layer {
+                kreuzberg::types::ContentLayer::Body => "body",
+                kreuzberg::types::ContentLayer::Header => "header",
+                kreuzberg::types::ContentLayer::Footer => "footer",
+                kreuzberg::types::ContentLayer::Footnote => "footnote",
+            };
+            node_hash.aset("content_layer", layer_str)?;
+
+            if let Some(page) = node.page {
+                node_hash.aset("page", page as i64)?;
+            } else {
+                node_hash.aset("page", ruby.qnil().as_value())?;
+            }
+
+            if let Some(page_end) = node.page_end {
+                node_hash.aset("page_end", page_end as i64)?;
+            } else {
+                node_hash.aset("page_end", ruby.qnil().as_value())?;
+            }
+
+            if let Some(bbox) = node.bbox {
+                let bbox_hash = ruby.hash_new();
+                bbox_hash.aset("x0", bbox.x0)?;
+                bbox_hash.aset("y0", bbox.y0)?;
+                bbox_hash.aset("x1", bbox.x1)?;
+                bbox_hash.aset("y1", bbox.y1)?;
+                node_hash.aset("bbox", bbox_hash)?;
+            } else {
+                node_hash.aset("bbox", ruby.qnil().as_value())?;
+            }
+
+            let annotations_array = ruby.ary_new();
+            for annotation in node.annotations {
+                let ann_hash = ruby.hash_new();
+                ann_hash.aset("key", annotation.key.clone())?;
+                ann_hash.aset("value", annotation.value.clone())?;
+                annotations_array.push(ann_hash)?;
+            }
+            node_hash.aset("annotations", annotations_array)?;
+
+            nodes_array.push(node_hash)?;
+        }
+        document_hash.aset("nodes", nodes_array)?;
+        set_hash_entry(ruby, &hash, "document", document_hash.into_value_with(ruby))?;
+    } else {
+        set_hash_entry(ruby, &hash, "document", ruby.qnil().as_value())?;
+    }
+
     Ok(hash)
 }

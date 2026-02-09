@@ -1,0 +1,17 @@
+{
+  "id": "config_document_structure_disabled",
+  "description": "Tests document field is null when include_document_structure is false",
+  "tags": ["contract", "document_structure"],
+  "document": { "path": "pdf/fake_memo.pdf" },
+  "extraction": {
+    "method": "sync",
+    "input_type": "file",
+    "config": {}
+  },
+  "assertions": {
+    "expected_mime": "application/pdf",
+    "document": {
+      "has_document": false
+    }
+  }
+}

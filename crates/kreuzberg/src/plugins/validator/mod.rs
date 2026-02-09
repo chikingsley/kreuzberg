@@ -72,6 +72,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -94,6 +95,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -118,6 +120,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -157,6 +160,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -208,6 +212,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let txt_result = ExtractionResult {
@@ -222,6 +227,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         assert!(validator.should_validate(&pdf_result, &config));
@@ -309,6 +315,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -344,6 +351,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -374,6 +382,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -406,6 +415,7 @@ mod tests {
                 pages: None,
                 elements: None,
                 ocr_elements: None,
+                document: None,
             };
 
             assert!(validator.validate(&result, &config).await.is_ok());
@@ -428,6 +438,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();

@@ -72,6 +72,7 @@ pub enum OcrBackendType {
 ///             pages: None,
 ///             elements: None,
 ///             ocr_elements: None,
+///             document: None,
 ///         })
 ///     }
 ///
@@ -155,6 +156,7 @@ pub trait OcrBackend: Plugin {
     ///         pages: None,
     ///         elements: None,
     ///         ocr_elements: None,
+    ///         document: None,
     ///     })
     /// }
     /// # }
@@ -330,6 +332,7 @@ pub trait OcrBackend: Plugin {
 ///             pages: None,
 ///             elements: None,
 ///             ocr_elements: None,
+///             document: None,
 ///         })
 ///     }
 ///     fn supports_language(&self, _: &str) -> bool { true }
@@ -495,6 +498,7 @@ mod tests {
                 pages: None,
                 elements: None,
                 ocr_elements: None,
+                document: None,
             })
         }
 

@@ -462,6 +462,46 @@ public final class E2EHelpers {
                 }
             }
         }
+
+        public static void assertDocument(
+                ExtractionResult result,
+                boolean hasDocument,
+                Integer minNodeCount,
+                List<String> nodeTypesInclude,
+                Boolean hasGroups
+        ) {
+            var document = result.getDocument();
+            if (hasDocument) {
+                assertNotNull(document, "Expected document but got null");
+                var nodes = document.getNodes();
+                assertNotNull(nodes, "Expected document nodes but got null");
+                if (minNodeCount != null) {
+                    assertTrue(nodes.size() >= minNodeCount,
+                            String.format("Expected at least %d nodes, found %d", minNodeCount, nodes.size()));
+                }
+                if (nodeTypesInclude != null && !nodeTypesInclude.isEmpty()) {
+                    var types = nodes.stream()
+                            .map(n -> n.getContent().getNodeType())
+                            .filter(t -> t != null)
+                            .toList();
+                    for (String expected : nodeTypesInclude) {
+                        boolean found = types.stream()
+                                .anyMatch(t -> t.toLowerCase().equals(expected.toLowerCase()));
+                        assertTrue(found,
+                                String.format("Expected node type '%s' not found in %s", expected, types));
+                    }
+                }
+                if (hasGroups != null) {
+                    boolean hasGroupNodes = nodes.stream()
+                            .anyMatch(n -> "group".equals(n.getContent().getNodeType()));
+                    assertTrue(hasGroupNodes == hasGroups,
+                            String.format("Expected hasGroups=%b but got %b", hasGroups, hasGroupNodes));
+                }
+            } else {
+                assertTrue(document == null,
+                        String.format("Expected document to be null but got %s", document));
+            }
+        }
     }
 }
 "#;
@@ -1423,6 +1463,27 @@ fn render_assertions(assertions: &Assertions) -> String {
         buffer.push_str(&format!(
             "                E2EHelpers.Assertions.assertOcrElements(result, {}, {}, {}, {});\n",
             has_elements, has_geometry, has_confidence, min_literal
+        ));
+    }
+
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = document.has_document.to_string();
+        let min_node_count = document
+            .min_node_count
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".to_string());
+        let node_types = if !document.node_types_include.is_empty() {
+            render_string_list(&document.node_types_include)
+        } else {
+            "null".to_string()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".to_string());
+        buffer.push_str(&format!(
+            "                E2EHelpers.Assertions.assertDocument(result, {}, {}, {}, {});\n",
+            has_document, min_node_count, node_types, has_groups
         ));
     }
 

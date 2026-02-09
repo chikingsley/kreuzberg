@@ -37,6 +37,8 @@ final class ResultParser {
 	};
 	private static final TypeReference<DjotContent> DJOT_CONTENT = new TypeReference<>() {
 	};
+	private static final TypeReference<DocumentStructure> DOCUMENT_STRUCTURE = new TypeReference<>() {
+	};
 
 	private ResultParser() {
 	}
@@ -52,6 +54,15 @@ final class ResultParser {
 			String metadataJson, String chunksJson, String imagesJson, String pagesJson, String pageStructureJson,
 			String elementsJson, String ocrElementsJson, String djotContentJson, String language, String date,
 			String subject) throws KreuzbergException {
+		return parse(content, mimeType, tablesJson, detectedLanguagesJson, metadataJson, chunksJson, imagesJson,
+				pagesJson, pageStructureJson, elementsJson, ocrElementsJson, djotContentJson, language, date, subject,
+				null);
+	}
+
+	static ExtractionResult parse(String content, String mimeType, String tablesJson, String detectedLanguagesJson,
+			String metadataJson, String chunksJson, String imagesJson, String pagesJson, String pageStructureJson,
+			String elementsJson, String ocrElementsJson, String djotContentJson, String language, String date,
+			String subject, String documentStructureJson) throws KreuzbergException {
 		try {
 			Map<String, Object> metadata = decode(metadataJson, METADATA_MAP, Collections.emptyMap());
 			List<Table> tables = decode(tablesJson, TABLE_LIST, List.of());
@@ -63,13 +74,14 @@ final class ResultParser {
 			List<Element> elements = decode(elementsJson, ELEMENT_LIST, List.of());
 			List<OcrElement> ocrElements = decode(ocrElementsJson, OCR_ELEMENT_LIST, List.of());
 			DjotContent djotContent = decode(djotContentJson, DJOT_CONTENT, null);
+			DocumentStructure documentStructure = decode(documentStructureJson, DOCUMENT_STRUCTURE, null);
 
 			// Build Metadata with FFI-provided language, date, and subject if available
 			Metadata metadataObj = buildMetadata(metadata, language, date, subject);
 
 			return new ExtractionResult(content != null ? content : "", mimeType != null ? mimeType : "", metadataObj,
-					tables, detectedLanguages, chunks, images, pages, pageStructure, elements, ocrElements,
-					djotContent);
+					tables, detectedLanguages, chunks, images, pages, pageStructure, elements, ocrElements, djotContent,
+					documentStructure);
 		} catch (Exception e) {
 			throw new KreuzbergException("Failed to parse extraction result", e);
 		}
@@ -178,7 +190,7 @@ final class ResultParser {
 					wire.chunks != null ? wire.chunks : List.of(), wire.images != null ? wire.images : List.of(),
 					wire.pages != null ? wire.pages : List.of(), wire.pageStructure,
 					wire.elements != null ? wire.elements : List.of(),
-					wire.ocrElements != null ? wire.ocrElements : List.of(), wire.djotContent);
+					wire.ocrElements != null ? wire.ocrElements : List.of(), wire.djotContent, wire.document);
 		} catch (Exception e) {
 			throw new KreuzbergException("Failed to parse result JSON", e);
 		}
@@ -188,7 +200,8 @@ final class ResultParser {
 		WireExtractionResult wire = new WireExtractionResult(result.getContent(), result.getMimeType(),
 				result.getMetadata(), result.getTables(), result.getDetectedLanguages(), result.getChunks(),
 				result.getImages(), result.getPages(), result.getPageStructure().orElse(null), result.getElements(),
-				result.getOcrElements(), result.getDjotContent().orElse(null));
+				result.getOcrElements(), result.getDjotContent().orElse(null),
+				result.getDocumentStructure().orElse(null));
 		return MAPPER.writeValueAsString(wire);
 	}
 
@@ -213,6 +226,7 @@ final class ResultParser {
 		private final List<Element> elements;
 		private final List<OcrElement> ocrElements;
 		private final DjotContent djotContent;
+		private final DocumentStructure document;
 
 		WireExtractionResult(@JsonProperty("content") String content, @JsonProperty("mime_type") String mimeType,
 				@JsonProperty("metadata") Metadata metadata, @JsonProperty("tables") List<Table> tables,
@@ -222,7 +236,8 @@ final class ResultParser {
 				@JsonProperty("page_structure") PageStructure pageStructure,
 				@JsonProperty("elements") List<Element> elements,
 				@JsonProperty("ocr_elements") List<OcrElement> ocrElements,
-				@JsonProperty("djot_content") DjotContent djotContent) {
+				@JsonProperty("djot_content") DjotContent djotContent,
+				@JsonProperty("document") DocumentStructure document) {
 			this.content = content;
 			this.mimeType = mimeType;
 			this.metadata = metadata;
@@ -235,6 +250,7 @@ final class ResultParser {
 			this.elements = elements;
 			this.ocrElements = ocrElements;
 			this.djotContent = djotContent;
+			this.document = document;
 		}
 	}
 }

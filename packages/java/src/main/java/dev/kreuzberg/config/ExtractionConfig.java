@@ -44,6 +44,8 @@ public final class ExtractionConfig {
 	private final PageConfig pages;
 	private final Integer maxConcurrentExtractions;
 	private final Map<String, Object> securityLimits;
+	private final boolean includeDocumentStructure;
+	private final boolean includeDocumentStructureSet;
 
 	private ExtractionConfig(Builder builder) {
 		this.useCache = builder.useCache;
@@ -66,6 +68,8 @@ public final class ExtractionConfig {
 		this.pages = builder.pages;
 		this.maxConcurrentExtractions = builder.maxConcurrentExtractions;
 		this.securityLimits = builder.securityLimits;
+		this.includeDocumentStructure = builder.includeDocumentStructure;
+		this.includeDocumentStructureSet = builder.includeDocumentStructureSet;
 	}
 
 	public static Builder builder() {
@@ -156,6 +160,16 @@ public final class ExtractionConfig {
 
 	public Integer getMaxConcurrentExtractions() {
 		return maxConcurrentExtractions;
+	}
+
+	/**
+	 * Check if document structure extraction is enabled.
+	 *
+	 * @return true if document structure extraction is enabled
+	 * @since 4.3.0
+	 */
+	public boolean isIncludeDocumentStructure() {
+		return includeDocumentStructure;
 	}
 
 	/**
@@ -405,6 +419,9 @@ public final class ExtractionConfig {
 		if (includeDefaults || forceOcrSet) {
 			map.put("force_ocr", forceOcr);
 		}
+		if (includeDefaults || includeDocumentStructureSet) {
+			map.put("include_document_structure", includeDocumentStructure);
+		}
 		if (outputFormat != null) {
 			map.put("output_format", outputFormat);
 		}
@@ -464,6 +481,9 @@ public final class ExtractionConfig {
 		}
 		if (raw.containsKey("force_ocr")) {
 			builder.forceOcr(asBoolean(raw.get("force_ocr"), builder.forceOcr));
+		}
+		if (raw.containsKey("include_document_structure")) {
+			builder.includeDocumentStructure(asBoolean(raw.get("include_document_structure"), false));
 		}
 		if (raw.containsKey("output_format")) {
 			builder.outputFormat(asString(raw.get("output_format")));
@@ -566,9 +586,11 @@ public final class ExtractionConfig {
 		private boolean useCache = true;
 		private boolean enableQualityProcessing = true;
 		private boolean forceOcr = false;
+		private boolean includeDocumentStructure = false;
 		private boolean useCacheSet = false;
 		private boolean enableQualityProcessingSet = false;
 		private boolean forceOcrSet = false;
+		private boolean includeDocumentStructureSet = false;
 		private String outputFormat;
 		private String resultFormat;
 		private OcrConfig ocr;
@@ -602,6 +624,24 @@ public final class ExtractionConfig {
 		public Builder forceOcr(boolean forceOcr) {
 			this.forceOcr = forceOcr;
 			this.forceOcrSet = true;
+			return this;
+		}
+
+		/**
+		 * Enable or disable document structure extraction.
+		 *
+		 * <p>
+		 * When enabled, the extraction result will include a document structure
+		 * representing the hierarchical tree of document nodes.
+		 *
+		 * @param includeDocumentStructure
+		 *            true to enable document structure extraction
+		 * @return this builder for chaining
+		 * @since 4.3.0
+		 */
+		public Builder includeDocumentStructure(boolean includeDocumentStructure) {
+			this.includeDocumentStructure = includeDocumentStructure;
+			this.includeDocumentStructureSet = true;
 			return this;
 		}
 

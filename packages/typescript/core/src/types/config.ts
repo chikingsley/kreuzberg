@@ -350,4 +350,12 @@ export interface ExtractionConfig {
 	 * - "element_based": Semantic elements (headings, paragraphs, tables, etc.)
 	 */
 	resultFormat?: "unified" | "element_based";
+	/**
+	 * Include hierarchical document structure in extraction result.
+	 * Default: false
+	 *
+	 * When enabled, the result will include a DocumentStructure with a flat array
+	 * of nodes representing the document tree structure with semantic content types.
+	 */
+	includeDocumentStructure?: boolean;
 }

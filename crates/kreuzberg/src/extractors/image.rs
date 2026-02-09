@@ -153,6 +153,8 @@ impl DocumentExtractor for ImageExtractor {
                     images: None,
                     djot_content: None,
                     elements: None,
+                    ocr_elements: None,
+                    document: None,
                 });
             }
         }
@@ -175,6 +177,7 @@ impl DocumentExtractor for ImageExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

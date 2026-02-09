@@ -169,6 +169,9 @@ pub struct Assertions {
     /// OCR-specific assertions for element-based structured output
     #[serde(default)]
     pub ocr_elements: Option<OcrElementAssertion>,
+    /// Document structure assertions for hierarchical document tree validation
+    #[serde(default)]
+    pub document: Option<DocumentAssertion>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -240,6 +243,24 @@ pub struct OcrElementAssertion {
     /// Minimum number of OCR elements expected
     #[serde(default)]
     pub min_count: Option<usize>,
+}
+
+/// Document structure assertions for hierarchical document tree validation
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize)]
+pub struct DocumentAssertion {
+    /// Whether a document structure should be present
+    #[serde(default)]
+    pub has_document: bool,
+    /// Minimum number of nodes expected in the document tree
+    #[serde(default)]
+    pub min_node_count: Option<usize>,
+    /// Node types that must be present in the document structure
+    #[serde(default)]
+    pub node_types_include: Vec<String>,
+    /// Whether the document should have group nodes
+    #[serde(default)]
+    pub has_groups: Option<bool>,
 }
 
 #[allow(dead_code)]

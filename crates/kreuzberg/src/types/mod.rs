@@ -2,6 +2,7 @@
 
 // Module declarations
 pub mod djot;
+pub mod document_structure;
 pub mod extraction;
 pub mod formats;
 pub mod metadata;
@@ -12,6 +13,10 @@ pub mod tables;
 
 // Re-export all types for backward compatibility
 pub use djot::*;
+pub use document_structure::{
+    AnnotationKind, ContentLayer, DocumentNode, DocumentStructure, GridCell, NodeContent, NodeId, NodeIndex, TableGrid,
+    TextAnnotation,
+};
 pub use extraction::*;
 pub use formats::*;
 pub use metadata::*;

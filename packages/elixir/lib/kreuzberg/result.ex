@@ -17,6 +17,7 @@ defmodule Kreuzberg.ExtractionResult do
     * `:elements` - Optional list of semantic elements
     * `:ocr_elements` - Optional list of OCR elements with positioning and confidence
     * `:djot_content` - Optional rich Djot content structure
+    * `:document` - Optional hierarchical document structure
   """
 
   @type t :: %__MODULE__{
@@ -30,7 +31,8 @@ defmodule Kreuzberg.ExtractionResult do
           pages: list(Kreuzberg.Page.t()) | nil,
           elements: list(Kreuzberg.Element.t()) | nil,
           ocr_elements: list(Kreuzberg.OcrElement.t()) | nil,
-          djot_content: Kreuzberg.DjotContent.t() | nil
+          djot_content: Kreuzberg.DjotContent.t() | nil,
+          document: Kreuzberg.DocumentStructure.t() | nil
         }
 
   defstruct [
@@ -41,6 +43,7 @@ defmodule Kreuzberg.ExtractionResult do
     :elements,
     :ocr_elements,
     :djot_content,
+    :document,
     content: "",
     mime_type: "",
     metadata: %Kreuzberg.Metadata{},
@@ -77,7 +80,8 @@ defmodule Kreuzberg.ExtractionResult do
       pages: normalize_pages(Keyword.get(opts, :pages)),
       elements: normalize_elements(Keyword.get(opts, :elements)),
       ocr_elements: normalize_ocr_elements(Keyword.get(opts, :ocr_elements)),
-      djot_content: normalize_djot_content(Keyword.get(opts, :djot_content))
+      djot_content: normalize_djot_content(Keyword.get(opts, :djot_content)),
+      document: normalize_document(Keyword.get(opts, :document))
     }
   end
 
@@ -101,6 +105,12 @@ defmodule Kreuzberg.ExtractionResult do
         case result.djot_content do
           nil -> nil
           %Kreuzberg.DjotContent{} = d -> Kreuzberg.DjotContent.to_map(d)
+          other -> other
+        end,
+      "document" =>
+        case result.document do
+          nil -> nil
+          %Kreuzberg.DocumentStructure{} = doc -> Kreuzberg.DocumentStructure.to_map(doc)
           other -> other
         end
     }
@@ -182,4 +192,8 @@ defmodule Kreuzberg.ExtractionResult do
   defp normalize_djot_content(nil), do: nil
   defp normalize_djot_content(%Kreuzberg.DjotContent{} = d), do: d
   defp normalize_djot_content(map) when is_map(map), do: Kreuzberg.DjotContent.from_map(map)
+
+  defp normalize_document(nil), do: nil
+  defp normalize_document(%Kreuzberg.DocumentStructure{} = doc), do: doc
+  defp normalize_document(map) when is_map(map), do: Kreuzberg.DocumentStructure.from_map(map)
 end

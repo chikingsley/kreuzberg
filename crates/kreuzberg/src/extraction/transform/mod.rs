@@ -10,10 +10,12 @@
 //! - Safe bounds checking for text ranges
 
 mod content;
+pub(crate) mod document_tree;
 mod elements;
 mod types;
 
 // Re-export public API
+pub use document_tree::transform_to_document_structure;
 pub use elements::{detect_list_items, generate_element_id};
 pub use types::{ListItemMetadata, ListType};
 
@@ -307,6 +309,7 @@ mod tests {
             ]),
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let elements = transform_extraction_result_to_elements(&result);
@@ -394,6 +397,7 @@ mod tests {
             }]),
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let elements = transform_extraction_result_to_elements(&result);
@@ -437,6 +441,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let elements = transform_extraction_result_to_elements(&result);
@@ -470,6 +475,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let elements = transform_extraction_result_to_elements(&result);

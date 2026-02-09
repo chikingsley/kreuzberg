@@ -248,6 +248,7 @@ impl OcrBackend for TesseractBackend {
             elements: None,
             ocr_elements: ocr_result.ocr_elements,
             djot_content: None,
+            document: None,
         })
     }
 
@@ -323,6 +324,7 @@ impl OcrBackend for TesseractBackend {
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         })
     }
 

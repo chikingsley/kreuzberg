@@ -111,6 +111,7 @@ impl DocumentExtractor for CitationExtractor {
                     djot_content: None,
                     elements: None,
                     ocr_elements: None,
+                    document: None,
                 });
             }
         };
@@ -133,17 +134,17 @@ impl DocumentExtractor for CitationExtractor {
                     }
 
                     // Collect years
-                    if let Some(date) = &citation.date {
-                        if date.year > 0 {
-                            years_set.insert(date.year as u32);
-                        }
+                    if let Some(date) = &citation.date
+                        && date.year > 0
+                    {
+                        years_set.insert(date.year as u32);
                     }
 
                     // Collect DOIs
-                    if let Some(doi) = &citation.doi {
-                        if !doi.is_empty() {
-                            dois_vec.push(doi.clone());
-                        }
+                    if let Some(doi) = &citation.doi
+                        && !doi.is_empty()
+                    {
+                        dois_vec.push(doi.clone());
                     }
 
                     // Collect keywords
@@ -200,10 +201,10 @@ impl DocumentExtractor for CitationExtractor {
                         formatted_content.push_str(&format!("PMID: {}\n", pmid));
                     }
 
-                    if let Some(abstract_text) = &citation.abstract_text {
-                        if !abstract_text.is_empty() {
-                            formatted_content.push_str(&format!("Abstract: {}\n", abstract_text));
-                        }
+                    if let Some(abstract_text) = &citation.abstract_text
+                        && !abstract_text.is_empty()
+                    {
+                        formatted_content.push_str(&format!("Abstract: {}\n", abstract_text));
                     }
 
                     if !citation.keywords.is_empty() {
@@ -270,6 +271,7 @@ impl DocumentExtractor for CitationExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

@@ -520,6 +520,61 @@ export const chunkAssertions = {
             }
         }
     },
+
+    assertDocument(
+        result: ExtractionResult,
+        hasDocument: boolean = false,
+        minNodeCount?: number | null,
+        nodeTypesInclude?: string[] | null,
+        hasGroups?: boolean | null,
+    ): void {
+        const document = (result as unknown as PlainRecord).document as unknown[] | PlainRecord | undefined;
+        if (hasDocument) {
+            expect(document).toBeDefined();
+            let nodes: unknown[] | undefined;
+            if (Array.isArray(document)) {
+                nodes = document;
+            } else if (isPlainRecord(document)) {
+                nodes = document.nodes as unknown[] | undefined;
+            }
+            expect(nodes).toBeDefined();
+            if (!Array.isArray(nodes)) {
+                throw new Error("Expected document nodes to be an array");
+            }
+            if (typeof minNodeCount === "number") {
+                expect(nodes.length).toBeGreaterThanOrEqual(minNodeCount);
+            }
+            if (nodeTypesInclude && nodeTypesInclude.length > 0) {
+                const foundTypes = new Set<string>();
+                for (const node of nodes) {
+                    if (isPlainRecord(node)) {
+                        const nodeType = (node.nodeType ?? node.type) as string | undefined;
+                        if (nodeType) {
+                            foundTypes.add(nodeType);
+                        }
+                    }
+                }
+                for (const expectedType of nodeTypesInclude) {
+                    expect(foundTypes.has(expectedType)).toBe(true);
+                }
+            }
+            if (typeof hasGroups === "boolean") {
+                let hasGroupNodes = false;
+                for (const node of nodes) {
+                    if (isPlainRecord(node)) {
+                        const nodeType = (node.nodeType ?? node.type) as string | undefined;
+                        if (nodeType === "group") {
+                            hasGroupNodes = true;
+                            break;
+                        }
+                    }
+                }
+                expect(hasGroupNodes).toBe(hasGroups);
+            }
+        } else {
+            expect(document).toBeUndefined();
+        }
+    },
 };
 "#;
 
@@ -913,6 +968,26 @@ fn render_assertions(assertions: &Assertions) -> String {
         let min = ocr.min_count.map(|v| v.to_string()).unwrap_or_else(|| "null".into());
         buffer.push_str(&format!(
             "    chunkAssertions.assertOcrElements(result, {has_elements}, {has_geometry}, {has_confidence}, {min});\n"
+        ));
+    }
+
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = document.has_document.to_string();
+        let min_node_count = document
+            .min_node_count
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".into());
+        let node_types = if !document.node_types_include.is_empty() {
+            render_string_array(&document.node_types_include)
+        } else {
+            "null".into()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "null".into());
+        buffer.push_str(&format!(
+            "    chunkAssertions.assertDocument(result, {has_document}, {min_node_count}, {node_types}, {has_groups});\n"
         ));
     }
 

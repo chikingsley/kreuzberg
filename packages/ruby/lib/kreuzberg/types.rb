@@ -271,4 +271,99 @@ module Kreuzberg
 
     const :structured_data, T::Array[StructuredData]
   end
+
+  # Bounding box for document node positioning.
+  #
+  # Represents rectangular coordinates for a node within the document.
+  #
+  # @example
+  #   bbox = Kreuzberg::DocumentBoundingBox.new(
+  #     x0: 10.0,
+  #     y0: 20.0,
+  #     x1: 100.0,
+  #     y1: 50.0
+  #   )
+  #
+  class DocumentBoundingBox < T::Struct
+    extend T::Sig
+
+    const :x0, Float
+
+    const :y0, Float
+
+    const :x1, Float
+
+    const :y1, Float
+  end
+
+  # Annotation for a document node.
+  #
+  # Provides additional metadata about document node content.
+  #
+  class DocumentAnnotation < T::Struct
+    extend T::Sig
+
+    const :key, String
+
+    const :value, String
+  end
+
+  # Single node in the document structure tree.
+  #
+  # Represents a logical unit of content with deterministic ID, content,
+  # tree structure information, and metadata.
+  #
+  # @example
+  #   node = Kreuzberg::DocumentNode.new(
+  #     id: "node-abc123",
+  #     content: "This is the content",
+  #     parent: nil,
+  #     children: [],
+  #     content_layer: "body",
+  #     page: 1,
+  #     page_end: 1,
+  #     bbox: bbox,
+  #     annotations: []
+  #   )
+  #
+  class DocumentNode < T::Struct
+    extend T::Sig
+
+    const :id, String
+
+    const :content, String
+
+    const :parent, T.nilable(Integer)
+
+    const :children, T::Array[Integer]
+
+    const :content_layer, String
+
+    const :page, T.nilable(Integer)
+
+    const :page_end, T.nilable(Integer)
+
+    const :bbox, T.nilable(DocumentBoundingBox)
+
+    const :annotations, T::Array[DocumentAnnotation]
+  end
+
+  # Structured document representation.
+  #
+  # Provides a hierarchical, tree-based representation of document content
+  # using a flat array of nodes with index-based parent/child references.
+  #
+  # @example
+  #   structure = Kreuzberg::DocumentStructure.new(
+  #     nodes: [node1, node2, node3]
+  #   )
+  #   structure.nodes.each do |node|
+  #     puts "#{node.id}: #{node.content}"
+  #   end
+  #
+  class DocumentStructure < T::Struct
+    extend T::Sig
+
+    const :nodes, T::Array[DocumentNode]
+  end
 end

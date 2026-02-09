@@ -67,6 +67,7 @@ use crate::KreuzbergError;
 ///             pages: None,
 ///             elements: None,
 ///             ocr_elements: None,
+///             document: None,
 ///         })
 ///     }
 ///
@@ -149,6 +150,7 @@ pub trait DocumentExtractor: Plugin {
     ///         pages: None,
     ///         elements: None,
     ///         ocr_elements: None,
+    ///         document: None,
     ///     })
     /// }
     /// # }
@@ -223,6 +225,7 @@ pub trait DocumentExtractor: Plugin {
     ///         pages: None,
     ///         elements: None,
     ///         ocr_elements: None,
+    ///         document: None,
     ///     })
     /// }
     /// # }

@@ -269,6 +269,51 @@ module E2ERuby
       end
     end
 
+    def self.assert_ocr_elements(result, has_elements: nil, elements_have_geometry: nil, elements_have_confidence: nil, min_count: nil)
+      ocr_elements = result.ocr_elements
+      if has_elements
+        expect(ocr_elements).not_to be_nil
+        expect(Array(ocr_elements).length).not_to eq(0)
+      end
+      if ocr_elements.is_a?(Array)
+        expect(ocr_elements.length).to be >= min_count if min_count
+        if elements_have_geometry
+          ocr_elements.each do |el|
+            expect(el.geometry).not_to be_nil
+            expect(['rectangle', 'quadrilateral']).to include(el.geometry&.type)
+          end
+        end
+        if elements_have_confidence
+          ocr_elements.each do |el|
+            expect(el.confidence).not_to be_nil
+            expect(el.confidence&.recognition).to be > 0
+          end
+        end
+      end
+    end
+
+    def self.assert_document(result, has_document: false, min_node_count: nil, node_types_include: nil, has_groups: nil)
+      document = result.document
+      if has_document
+        expect(document).not_to be_nil
+        nodes = document.is_a?(Array) ? document : Array(document&.nodes)
+        expect(nodes).not_to be_nil
+        expect(nodes.length).to be >= min_node_count if min_node_count
+        if node_types_include
+          found_types = nodes.map { |n| (n.node_type || n.type) }.compact.uniq
+          node_types_include.each do |t|
+            expect(found_types).to include(t)
+          end
+        end
+        if has_groups.is_a?(TrueClass) || has_groups.is_a?(FalseClass)
+          has_group_nodes = nodes.any? { |n| (n.node_type || n.type) == 'group' }
+          expect(has_group_nodes).to eq(has_groups)
+        end
+      else
+        expect(document).to be_nil
+      end
+    end
+
     class << self
       private
 
@@ -675,6 +720,31 @@ fn render_assertions(assertions: &Assertions) -> String {
         if !args.is_empty() {
             buffer.push_str(&format!(
                 "      E2ERuby::Assertions.assert_ocr_elements(result, {})\n",
+                args.join(", ")
+            ));
+        }
+    }
+
+    if let Some(document) = assertions.document.as_ref() {
+        let mut args = vec![format!(
+            "has_document: {}",
+            if document.has_document { "true" } else { "false" }
+        )];
+        if let Some(min_count) = document.min_node_count {
+            args.push(format!("min_node_count: {}", render_numeric_literal(min_count as u64)));
+        }
+        if !document.node_types_include.is_empty() {
+            args.push(format!(
+                "node_types_include: {}",
+                render_string_array(&document.node_types_include)
+            ));
+        }
+        if let Some(has_groups) = document.has_groups {
+            args.push(format!("has_groups: {}", if has_groups { "true" } else { "false" }));
+        }
+        if !args.is_empty() {
+            buffer.push_str(&format!(
+                "      E2ERuby::Assertions.assert_document(result, {})\n",
                 args.join(", ")
             ));
         }

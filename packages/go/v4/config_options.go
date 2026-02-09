@@ -127,6 +127,13 @@ func WithMaxConcurrentExtractions(max int) ExtractionOption {
 	}
 }
 
+// WithIncludeDocumentStructure sets whether to include the document structure tree.
+func WithIncludeDocumentStructure(include bool) ExtractionOption {
+	return func(c *ExtractionConfig) {
+		c.IncludeDocumentStructure = &include
+	}
+}
+
 // WithOutputFormat sets the content output format.
 // Options: "plain", "markdown", "djot", "html"
 func WithOutputFormat(format string) ExtractionOption {

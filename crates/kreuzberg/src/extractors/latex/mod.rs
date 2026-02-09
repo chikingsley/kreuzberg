@@ -105,6 +105,7 @@ impl DocumentExtractor for LatexExtractor {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

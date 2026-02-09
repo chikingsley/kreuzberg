@@ -182,6 +182,57 @@ RSpec.describe 'contract fixtures' do
     end
   end
 
+  it 'config_document_structure' do
+    E2ERuby.run_fixture(
+      'config_document_structure',
+      'pdf/fake_memo.pdf',
+      { include_document_structure: true },
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/pdf']
+      )
+      E2ERuby::Assertions.assert_document(result, has_document: true, min_node_count: 1, node_types_include: %w[paragraph])
+    end
+  end
+
+  it 'config_document_structure_disabled' do
+    E2ERuby.run_fixture(
+      'config_document_structure_disabled',
+      'pdf/fake_memo.pdf',
+      nil,
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/pdf']
+      )
+      E2ERuby::Assertions.assert_document(result, has_document: false)
+    end
+  end
+
+  it 'config_document_structure_with_headings' do
+    E2ERuby.run_fixture(
+      'config_document_structure_with_headings',
+      'docx/fake.docx',
+      { include_document_structure: true },
+      requirements: [],
+      notes: nil,
+      skip_if_missing: true
+    ) do |result|
+      E2ERuby::Assertions.assert_expected_mime(
+        result,
+        ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      )
+      E2ERuby::Assertions.assert_document(result, has_document: true, min_node_count: 1)
+    end
+  end
+
   it 'config_force_ocr' do
     E2ERuby.run_fixture(
       'config_force_ocr',

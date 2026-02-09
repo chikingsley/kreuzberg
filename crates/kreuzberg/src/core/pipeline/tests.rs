@@ -30,6 +30,7 @@ async fn test_run_pipeline_basic() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -56,6 +57,7 @@ async fn test_pipeline_with_quality_processing() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: true,
@@ -80,6 +82,7 @@ async fn test_pipeline_without_quality_processing() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: false,
@@ -105,6 +108,7 @@ async fn test_pipeline_with_chunking() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig {
         chunking: Some(crate::ChunkingConfig {
@@ -138,6 +142,7 @@ async fn test_pipeline_without_chunking() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig {
         chunking: None,
@@ -170,6 +175,7 @@ async fn test_pipeline_preserves_metadata() {
         djot_content: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig::default();
 
@@ -206,6 +212,7 @@ async fn test_pipeline_preserves_tables() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig::default();
 
@@ -239,6 +246,7 @@ async fn test_pipeline_empty_content() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig::default();
 
@@ -263,6 +271,7 @@ async fn test_pipeline_with_all_features() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     let config = ExtractionConfig {
         enable_quality_processing: true,
@@ -319,6 +328,7 @@ Natural language processing enables computers to understand human language.
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     #[cfg(feature = "keywords-yake")]
@@ -367,6 +377,7 @@ async fn test_pipeline_without_keyword_config() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     let config = ExtractionConfig {
@@ -406,6 +417,7 @@ async fn test_pipeline_keyword_extraction_short_content() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     #[cfg(feature = "keywords-yake")]
@@ -544,6 +556,7 @@ async fn test_postprocessor_runs_before_validator() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -642,6 +655,7 @@ async fn test_quality_processing_runs_before_validator() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
     result.metadata.additional.insert(
         Cow::Borrowed(VALIDATION_MARKER_KEY),
@@ -841,6 +855,7 @@ async fn test_multiple_postprocessors_run_before_validator() {
         pages: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     let config = ExtractionConfig::default();
@@ -869,6 +884,7 @@ async fn test_run_pipeline_with_output_format_plain() {
         djot_content: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     let config = crate::core::config::ExtractionConfig {
@@ -918,6 +934,7 @@ async fn test_run_pipeline_with_output_format_djot() {
             footnotes: vec![],
             attributes: Vec::new(),
         }),
+        document: None,
     };
 
     let config = crate::core::config::ExtractionConfig {
@@ -944,6 +961,7 @@ async fn test_run_pipeline_with_output_format_html() {
         djot_content: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     };
 
     let config = crate::core::config::ExtractionConfig {
@@ -984,6 +1002,7 @@ async fn test_run_pipeline_applies_output_format_last() {
             footnotes: vec![],
             attributes: Vec::new(),
         }),
+        document: None,
     };
 
     let config = crate::core::config::ExtractionConfig {

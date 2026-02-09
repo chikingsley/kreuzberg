@@ -251,6 +251,7 @@ fn test_extraction_config_no_unknown_fields_in_default() {
         "max_concurrent_extractions",
         "result_format",
         "output_format",
+        "include_document_structure",
         "security_limits",
     ];
 
@@ -346,4 +347,54 @@ fn test_output_format_all_variants() {
         let deserialized: OutputFormat = serde_json::from_value(serialized).expect("Failed to deserialize");
         assert_eq!(fmt, deserialized, "Format should survive roundtrip");
     }
+}
+
+#[test]
+fn test_include_document_structure_default_is_false() {
+    let config = ExtractionConfig::default();
+    assert!(
+        !config.include_document_structure,
+        "Default include_document_structure should be false"
+    );
+}
+
+#[test]
+fn test_include_document_structure_serialization_roundtrip() {
+    // Test with include_document_structure explicitly set to true
+    let config = ExtractionConfig {
+        include_document_structure: true,
+        ..ExtractionConfig::default()
+    };
+
+    // Serialize to JSON
+    let json_string = serde_json::to_string(&config).expect("Failed to serialize");
+
+    // Deserialize back
+    let deserialized: ExtractionConfig =
+        serde_json::from_str(&json_string).expect("Failed to deserialize config from JSON");
+
+    // Verify the field survived the roundtrip
+    assert_eq!(
+        config.include_document_structure, deserialized.include_document_structure,
+        "include_document_structure should survive roundtrip"
+    );
+    assert!(
+        deserialized.include_document_structure,
+        "Deserialized include_document_structure should be true"
+    );
+
+    // Also test with false to ensure explicit false values are preserved
+    let config_false = ExtractionConfig {
+        include_document_structure: false,
+        ..ExtractionConfig::default()
+    };
+
+    let json_string_false = serde_json::to_string(&config_false).expect("Failed to serialize");
+    let deserialized_false: ExtractionConfig =
+        serde_json::from_str(&json_string_false).expect("Failed to deserialize config from JSON");
+
+    assert!(
+        !deserialized_false.include_document_structure,
+        "Explicitly false include_document_structure should survive roundtrip"
+    );
 }

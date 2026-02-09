@@ -506,6 +506,13 @@ public sealed class ExtractionResult
     /// </summary>
     [JsonPropertyName("djot_content")]
     public DjotContent? DjotContent { get; set; }
+
+    /// <summary>
+    /// Structured document representation with hierarchical node tree.
+    /// Available when document structure extraction is enabled.
+    /// </summary>
+    [JsonPropertyName("document")]
+    public DocumentStructure? Document { get; set; }
 }
 
 /// <summary>
@@ -1874,6 +1881,14 @@ public sealed class ExtractionConfig
     [JsonPropertyName("result_format")]
     public string? ResultFormat { get; init; }
 
+    /// <summary>
+    /// Whether to include structured document representation in the extraction result.
+    /// When enabled, the result will contain a hierarchical tree of document nodes.
+    /// Default: false
+    /// </summary>
+    [JsonPropertyName("include_document_structure")]
+    public bool IncludeDocumentStructure { get; init; }
+
 }
 
 /// <summary>
@@ -3024,4 +3039,262 @@ public sealed class Footnote
     /// </summary>
     [JsonPropertyName("content")]
     public List<FormattedBlock> Content { get; set; } = new();
+}
+
+/// <summary>
+/// Top-level structured document representation with a flat array of nodes forming a tree.
+/// Nodes are stored in document/reading order with index-based parent-child references.
+/// </summary>
+public sealed class DocumentStructure
+{
+    /// <summary>
+    /// All nodes in the document, stored in document/reading order.
+    /// </summary>
+    [JsonPropertyName("nodes")]
+    public List<DocumentNode> Nodes { get; set; } = new();
+}
+
+/// <summary>
+/// A single node in the document tree structure.
+/// Each node has a deterministic ID, typed content, optional parent/children references, and metadata.
+/// </summary>
+public sealed class DocumentNode
+{
+    /// <summary>
+    /// Deterministic identifier generated from content hash and position.
+    /// The same document always produces the same IDs, useful for diffing and caching.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Node content with type-specific data.
+    /// Uses a discriminator field to identify the content type.
+    /// </summary>
+    [JsonPropertyName("content")]
+    public NodeContent Content { get; set; } = new();
+
+    /// <summary>
+    /// Parent node index (None means this is a root-level node).
+    /// </summary>
+    [JsonPropertyName("parent")]
+    public uint? Parent { get; set; }
+
+    /// <summary>
+    /// Child node indices in reading order.
+    /// </summary>
+    [JsonPropertyName("children")]
+    public List<uint> Children { get; set; } = new();
+
+    /// <summary>
+    /// Content layer classification (Body, Header, Footer, Footnote).
+    /// </summary>
+    [JsonPropertyName("content_layer")]
+    public string ContentLayer { get; set; } = "body";
+
+    /// <summary>
+    /// Page number where this node starts (1-indexed), if available.
+    /// </summary>
+    [JsonPropertyName("page")]
+    public uint? Page { get; set; }
+
+    /// <summary>
+    /// Page number where this node ends (for multi-page tables/sections), if available.
+    /// </summary>
+    [JsonPropertyName("page_end")]
+    public uint? PageEnd { get; set; }
+
+    /// <summary>
+    /// Bounding box in document coordinates, if available.
+    /// </summary>
+    [JsonPropertyName("bbox")]
+    public BoundingBox? Bbox { get; set; }
+
+    /// <summary>
+    /// Inline annotations (formatting, links) on this node's text content.
+    /// </summary>
+    [JsonPropertyName("annotations")]
+    public List<DocumentTextAnnotation> Annotations { get; set; } = new();
+}
+
+/// <summary>
+/// Node content with type-specific data.
+/// Uses node_type discriminator to identify the content variant.
+/// </summary>
+public sealed class NodeContent
+{
+    /// <summary>
+    /// Node type discriminator (title, heading, paragraph, list, list_item, table, image, code, quote, formula, footnote, group, page_break).
+    /// </summary>
+    [JsonPropertyName("node_type")]
+    public string NodeType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Text content (for title, heading, paragraph, list_item, code, formula, footnote).
+    /// </summary>
+    [JsonPropertyName("text")]
+    public string? Text { get; set; }
+
+    /// <summary>
+    /// Heading level (1-6) for heading nodes.
+    /// </summary>
+    [JsonPropertyName("level")]
+    public int? Level { get; set; }
+
+    /// <summary>
+    /// Whether a list is ordered (numbered) or unordered (bulleted).
+    /// </summary>
+    [JsonPropertyName("ordered")]
+    public bool? Ordered { get; set; }
+
+    /// <summary>
+    /// Table grid structure with cells.
+    /// </summary>
+    [JsonPropertyName("grid")]
+    public TableGrid? Grid { get; set; }
+
+    /// <summary>
+    /// Alternative text for images.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Image index reference for images.
+    /// </summary>
+    [JsonPropertyName("image_index")]
+    public uint? ImageIndex { get; set; }
+
+    /// <summary>
+    /// Programming language for code blocks.
+    /// </summary>
+    [JsonPropertyName("language")]
+    public string? Language { get; set; }
+
+    /// <summary>
+    /// Label for group/section nodes.
+    /// </summary>
+    [JsonPropertyName("label")]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Heading level for group heading.
+    /// </summary>
+    [JsonPropertyName("heading_level")]
+    public int? HeadingLevel { get; set; }
+
+    /// <summary>
+    /// Heading text for group nodes.
+    /// </summary>
+    [JsonPropertyName("heading_text")]
+    public string? HeadingText { get; set; }
+}
+
+/// <summary>
+/// Structured table grid with row and column dimensions and cell-level metadata.
+/// </summary>
+public sealed class TableGrid
+{
+    /// <summary>
+    /// Number of rows in the table.
+    /// </summary>
+    [JsonPropertyName("rows")]
+    public int Rows { get; set; }
+
+    /// <summary>
+    /// Number of columns in the table.
+    /// </summary>
+    [JsonPropertyName("cols")]
+    public int Cols { get; set; }
+
+    /// <summary>
+    /// All cells in row-major order.
+    /// </summary>
+    [JsonPropertyName("cells")]
+    public List<GridCell> Cells { get; set; } = new();
+}
+
+/// <summary>
+/// Individual grid cell with content and position/span metadata.
+/// </summary>
+public sealed class GridCell
+{
+    /// <summary>
+    /// Cell text content.
+    /// </summary>
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Zero-indexed row position.
+    /// </summary>
+    [JsonPropertyName("row")]
+    public uint Row { get; set; }
+
+    /// <summary>
+    /// Zero-indexed column position.
+    /// </summary>
+    [JsonPropertyName("col")]
+    public uint Col { get; set; }
+
+    /// <summary>
+    /// Number of rows this cell spans.
+    /// </summary>
+    [JsonPropertyName("row_span")]
+    public uint RowSpan { get; set; } = 1;
+
+    /// <summary>
+    /// Number of columns this cell spans.
+    /// </summary>
+    [JsonPropertyName("col_span")]
+    public uint ColSpan { get; set; } = 1;
+
+    /// <summary>
+    /// Whether this is a header cell.
+    /// </summary>
+    [JsonPropertyName("is_header")]
+    public bool IsHeader { get; set; }
+
+    /// <summary>
+    /// Bounding box for this cell, if available.
+    /// </summary>
+    [JsonPropertyName("bbox")]
+    public BoundingBox? Bbox { get; set; }
+}
+
+/// <summary>
+/// Inline text annotation with byte-range based formatting and link information.
+/// Annotations reference byte offsets into the node's text content.
+/// </summary>
+public sealed class DocumentTextAnnotation
+{
+    /// <summary>
+    /// Start byte offset in the node's text content (inclusive).
+    /// </summary>
+    [JsonPropertyName("start")]
+    public uint Start { get; set; }
+
+    /// <summary>
+    /// End byte offset in the node's text content (exclusive).
+    /// </summary>
+    [JsonPropertyName("end")]
+    public uint End { get; set; }
+
+    /// <summary>
+    /// Annotation type discriminator (bold, italic, underline, strikethrough, code, subscript, superscript, link).
+    /// </summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>
+    /// URL for link annotations.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+
+    /// <summary>
+    /// Title for link annotations.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
 }

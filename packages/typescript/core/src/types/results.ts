@@ -344,6 +344,141 @@ export interface OcrElement {
 	backend_metadata?: Record<string, unknown>;
 }
 
+// ============================================================================
+// Document Structure types
+
+/**
+ * Semantic node type in document structure.
+ */
+export type NodeContentType =
+	| "title"
+	| "heading"
+	| "paragraph"
+	| "list"
+	| "list_item"
+	| "table"
+	| "image"
+	| "code"
+	| "quote"
+	| "formula"
+	| "footnote"
+	| "group"
+	| "page_break";
+
+/**
+ * Content layer classification for document nodes.
+ */
+export type ContentLayer = "body" | "header" | "footer" | "footnote";
+
+/**
+ * Structured table grid with cell-level metadata.
+ */
+export interface TableGrid {
+	rows: number;
+	cols: number;
+	cells: GridCell[];
+}
+
+/**
+ * Individual grid cell with position and span metadata.
+ */
+export interface GridCell {
+	content: string;
+	row: number;
+	col: number;
+	rowSpan: number;
+	colSpan: number;
+	isHeader: boolean;
+	bbox?: BoundingBox | null;
+}
+
+/**
+ * Inline text annotation (formatting, links).
+ */
+export interface TextAnnotation {
+	start: number;
+	end: number;
+	kind: AnnotationKind;
+}
+
+/**
+ * Types of inline text annotations.
+ */
+export type AnnotationKind =
+	| { annotationType: "bold" }
+	| { annotationType: "italic" }
+	| { annotationType: "underline" }
+	| { annotationType: "strikethrough" }
+	| { annotationType: "code" }
+	| { annotationType: "subscript" }
+	| { annotationType: "superscript" }
+	| { annotationType: "link"; url: string; title?: string | null };
+
+/**
+ * Tagged union for node content. Each variant carries only type-specific data.
+ */
+export type NodeContent =
+	| { nodeType: "title"; text: string }
+	| { nodeType: "heading"; level: number; text: string }
+	| { nodeType: "paragraph"; text: string }
+	| { nodeType: "list"; ordered: boolean }
+	| { nodeType: "list_item"; text: string }
+	| { nodeType: "table"; grid: TableGrid }
+	| {
+			nodeType: "image";
+			description?: string | null;
+			imageIndex?: number | null;
+	  }
+	| { nodeType: "code"; text: string; language?: string | null }
+	| { nodeType: "quote" }
+	| { nodeType: "formula"; text: string }
+	| { nodeType: "footnote"; text: string }
+	| {
+			nodeType: "group";
+			label?: string | null;
+			headingLevel?: number | null;
+			headingText?: string | null;
+	  }
+	| { nodeType: "page_break" };
+
+/**
+ * A single node in the document tree.
+ *
+ * Each node has deterministic id, typed content, optional parent/children
+ * for tree structure, and metadata like page number, bounding box, and content layer.
+ */
+export interface DocumentNode {
+	/** Deterministic identifier (hash of content + position) */
+	id: string;
+	/** Node content — tagged enum, type-specific data only */
+	content: NodeContent;
+	/** Parent node index (undefined = root-level node) */
+	parent?: number | null;
+	/** Child node indices in reading order */
+	children?: number[] | null;
+	/** Content layer classification */
+	contentLayer?: ContentLayer | null;
+	/** Page number where this node starts (1-indexed) */
+	page?: number | null;
+	/** Page number where this node ends (for multi-page tables/sections) */
+	pageEnd?: number | null;
+	/** Bounding box in document coordinates */
+	bbox?: BoundingBox | null;
+	/** Inline annotations (formatting, links) on this node's text content */
+	annotations?: TextAnnotation[] | null;
+}
+
+/**
+ * Top-level structured document representation.
+ *
+ * A flat array of nodes with index-based parent/child references forming a tree.
+ * Root-level nodes have parent undefined. Nodes are in document/reading order.
+ */
+export interface DocumentStructure {
+	/** All nodes in document/reading order */
+	nodes: DocumentNode[];
+}
+
 export interface ExtractionResult {
 	content: string;
 	mimeType: string;
@@ -355,4 +490,5 @@ export interface ExtractionResult {
 	pages?: PageContent[];
 	elements?: Element[];
 	ocr_elements?: OcrElement[];
+	document?: DocumentStructure | null;
 }

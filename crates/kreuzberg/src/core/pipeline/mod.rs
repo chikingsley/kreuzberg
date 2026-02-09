@@ -84,6 +84,11 @@ pub async fn run_pipeline(mut result: ExtractionResult, config: &ExtractionConfi
         ));
     }
 
+    // Transform to structured document tree if requested
+    if config.include_document_structure {
+        result.document = Some(crate::extraction::transform::transform_to_document_structure(&result));
+    }
+
     // Apply output format conversion as the final step
     apply_output_format(&mut result, config.output_format);
 
@@ -126,6 +131,11 @@ pub fn run_pipeline_sync(mut result: ExtractionResult, config: &ExtractionConfig
         result.elements = Some(crate::extraction::transform::transform_extraction_result_to_elements(
             &result,
         ));
+    }
+
+    // Transform to structured document tree if requested
+    if config.include_document_structure {
+        result.document = Some(crate::extraction::transform::transform_to_document_structure(&result));
     }
 
     // Apply output format conversion as the final step

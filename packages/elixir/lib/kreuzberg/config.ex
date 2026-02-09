@@ -145,7 +145,8 @@ defmodule Kreuzberg.ExtractionConfig do
           enable_quality_processing: boolean(),
           force_ocr: boolean(),
           output_format: output_format,
-          result_format: result_format
+          result_format: result_format,
+          include_document_structure: boolean()
         }
 
   @derive Jason.Encoder
@@ -166,7 +167,8 @@ defmodule Kreuzberg.ExtractionConfig do
     enable_quality_processing: true,
     force_ocr: false,
     output_format: "plain",
-    result_format: "unified"
+    result_format: "unified",
+    include_document_structure: false
   ]
 
   @doc """
@@ -333,7 +335,8 @@ defmodule Kreuzberg.ExtractionConfig do
       "enable_quality_processing" => config.enable_quality_processing,
       "force_ocr" => config.force_ocr,
       "output_format" => normalize_format_value(config.output_format),
-      "result_format" => normalize_format_value(config.result_format)
+      "result_format" => normalize_format_value(config.result_format),
+      "include_document_structure" => config.include_document_structure
     }
   end
 

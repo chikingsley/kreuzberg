@@ -331,3 +331,63 @@ def assert_ocr_elements(
                 recognition = getattr(confidence, "recognition", None)
                 if not isinstance(recognition, (int, float)) or recognition <= 0:
                     pytest.fail(f"OCR element {i} has invalid confidence recognition: {recognition}")
+
+
+def _get_document_nodes(document: Any) -> list[Any]:
+    if isinstance(document, (list, tuple)):
+        return list(document)
+    nodes = getattr(document, "nodes", None)
+    if nodes is None:
+        pytest.fail("Expected document.nodes but got None")
+    return nodes
+
+
+def _get_node_types(nodes: list[Any]) -> set[str]:
+    found: set[str] = set()
+    for node in nodes:
+        node_type = getattr(node, "node_type", None)
+        if node_type is None:
+            node_type = getattr(node, "type", None)
+        if node_type:
+            found.add(node_type)
+    return found
+
+
+def _check_groups(nodes: list[Any], has_groups: bool) -> None:
+    def _get_node_type(node: Any) -> str | None:
+        node_type = getattr(node, "node_type", None)
+        if node_type is None:
+            node_type = getattr(node, "type", None)
+        return node_type
+
+    has_group_nodes = any(_get_node_type(n) == "group" for n in nodes)
+    if has_groups and not has_group_nodes:
+        pytest.fail("Expected document to have group nodes but found none")
+    if not has_groups and has_group_nodes:
+        pytest.fail("Expected document to not have group nodes but found some")
+
+
+def assert_document(
+    result: Any,
+    has_document: bool = False,
+    min_node_count: int | None = None,
+    node_types_include: list[str] | None = None,
+    has_groups: bool | None = None,
+) -> None:
+    document = getattr(result, "document", None)
+    if not has_document:
+        if document is not None:
+            pytest.fail(f"Expected document to be None but got {type(document)}")
+        return
+    if document is None:
+        pytest.fail("Expected document but got None")
+    nodes = _get_document_nodes(document)
+    if min_node_count is not None and len(nodes) < min_node_count:
+        pytest.fail(f"Expected at least {min_node_count} nodes, found {len(nodes)}")
+    if node_types_include:
+        found_types = _get_node_types(nodes)
+        for expected_type in node_types_include:
+            if expected_type not in found_types:
+                pytest.fail(f"Expected node type {expected_type!r} not found in {found_types}")
+    if has_groups is not None:
+        _check_groups(nodes, has_groups)

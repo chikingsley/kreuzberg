@@ -118,6 +118,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -150,6 +151,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -178,6 +180,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -206,6 +209,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -245,6 +249,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let config_with_keywords = ExtractionConfig {
@@ -273,6 +278,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let long_result = ExtractionResult {
@@ -287,6 +293,7 @@ machine learning that uses neural networks with multiple layers.
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let short_duration = processor.estimated_duration_ms(&short_result);

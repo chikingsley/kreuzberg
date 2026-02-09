@@ -813,11 +813,15 @@ module Kreuzberg
     #   )
     #   config = Extraction.new(postprocessor: postprocessor)
     #
+    # @example With document structure
+    #   config = Extraction.new(include_document_structure: true)
+    #
     # @example With all options
     #   config = Extraction.new(
     #     use_cache: true,
     #     enable_quality_processing: true,
     #     force_ocr: false,
+    #     include_document_structure: true,
     #     ocr: Config::OCR.new(language: "deu"),
     #     chunking: Config::Chunking.new(max_chars: 500),
     #     language_detection: Config::LanguageDetection.new(enabled: true),
@@ -828,6 +832,7 @@ module Kreuzberg
     #
     class Extraction
       attr_reader :use_cache, :enable_quality_processing, :force_ocr,
+                  :include_document_structure,
                   :ocr, :chunking, :language_detection, :pdf_options,
                   :images, :postprocessor,
                   :token_reduction, :keywords, :html_options, :pages,
@@ -853,7 +858,7 @@ module Kreuzberg
       #
       # Keys that are allowed in the Extraction config
       ALLOWED_KEYS = %i[
-        use_cache enable_quality_processing force_ocr ocr chunking
+        use_cache enable_quality_processing force_ocr include_document_structure ocr chunking
         language_detection pdf_options image_extraction
         postprocessor token_reduction keywords html_options pages
         max_concurrent_extractions output_format result_format
@@ -918,6 +923,7 @@ module Kreuzberg
                      use_cache: true,
                      enable_quality_processing: true,
                      force_ocr: false,
+                     include_document_structure: false,
                      ocr: nil,
                      chunking: nil,
                      language_detection: nil,
@@ -934,7 +940,8 @@ module Kreuzberg
                      security_limits: nil)
         kwargs = {
           use_cache: use_cache, enable_quality_processing: enable_quality_processing,
-          force_ocr: force_ocr, ocr: ocr, chunking: chunking, language_detection: language_detection,
+          force_ocr: force_ocr, include_document_structure: include_document_structure,
+          ocr: ocr, chunking: chunking, language_detection: language_detection,
           pdf_options: pdf_options, image_extraction: image_extraction,
           postprocessor: postprocessor,
           token_reduction: token_reduction, keywords: keywords, html_options: html_options,
@@ -958,6 +965,7 @@ module Kreuzberg
         @use_cache = params[:use_cache] ? true : false
         @enable_quality_processing = params[:enable_quality_processing] ? true : false
         @force_ocr = params[:force_ocr] ? true : false
+        @include_document_structure = params[:include_document_structure] ? true : false
         @ocr = normalize_config(params[:ocr], OCR)
         @chunking = normalize_config(params[:chunking], Chunking)
         @language_detection = normalize_config(params[:language_detection], LanguageDetection)
@@ -995,24 +1003,29 @@ module Kreuzberg
       end
 
       def to_h
+        core_config_hash.merge(sub_config_hash).compact
+      end
+
+      def core_config_hash
         {
           use_cache: @use_cache,
           enable_quality_processing: @enable_quality_processing,
           force_ocr: @force_ocr,
-          ocr: @ocr&.to_h,
-          chunking: @chunking&.to_h,
-          language_detection: @language_detection&.to_h,
-          pdf_options: @pdf_options&.to_h,
-          image_extraction: @images&.to_h,
-          postprocessor: @postprocessor&.to_h,
-          token_reduction: @token_reduction&.to_h,
-          keywords: @keywords&.to_h,
-          html_options: @html_options&.to_h,
-          pages: @pages&.to_h,
+          include_document_structure: @include_document_structure,
           max_concurrent_extractions: @max_concurrent_extractions,
           output_format: @output_format,
           result_format: @result_format
-        }.compact
+        }
+      end
+
+      def sub_config_hash
+        {
+          ocr: @ocr&.to_h, chunking: @chunking&.to_h,
+          language_detection: @language_detection&.to_h, pdf_options: @pdf_options&.to_h,
+          image_extraction: @images&.to_h, postprocessor: @postprocessor&.to_h,
+          token_reduction: @token_reduction&.to_h, keywords: @keywords&.to_h,
+          html_options: @html_options&.to_h, pages: @pages&.to_h
+        }
       end
 
       # Serialize configuration to JSON string
@@ -1127,6 +1140,8 @@ module Kreuzberg
           @enable_quality_processing = value ? true : false
         when :force_ocr
           @force_ocr = value ? true : false
+        when :include_document_structure
+          @include_document_structure = value ? true : false
         when :ocr
           @ocr = normalize_config(value, OCR)
         when :chunking
@@ -1206,6 +1221,7 @@ module Kreuzberg
         @use_cache = merged.use_cache
         @enable_quality_processing = merged.enable_quality_processing
         @force_ocr = merged.force_ocr
+        @include_document_structure = merged.include_document_structure
         @ocr = merged.ocr
         @chunking = merged.chunking
         @language_detection = merged.language_detection

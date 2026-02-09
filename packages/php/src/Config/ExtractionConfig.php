@@ -216,6 +216,17 @@ readonly class ExtractionConfig
          * @default 'plain'
          */
         public string $outputFormat = 'plain',
+
+        /**
+         * Include hierarchical document structure.
+         *
+         * When enabled, the extraction result will include a DocumentStructure
+         * with a hierarchical tree of document nodes representing the semantic structure.
+         *
+         * @var bool
+         * @default false
+         */
+        public bool $includeDocumentStructure = false,
     ) {
     }
 
@@ -350,6 +361,13 @@ readonly class ExtractionConfig
             $tokenReduction = TokenReductionConfig::fromArray($tokenReductionData);
         }
 
+        /** @var bool $includeDocumentStructure */
+        $includeDocumentStructure = $data['include_document_structure'] ?? false;
+        if (!is_bool($includeDocumentStructure)) {
+            /** @var bool $includeDocumentStructure */
+            $includeDocumentStructure = (bool) $includeDocumentStructure;
+        }
+
         return new self(
             useCache: $useCache,
             enableQualityProcessing: $enableQualityProcessing,
@@ -367,6 +385,7 @@ readonly class ExtractionConfig
             maxConcurrentExtractions: $maxConcurrentExtractions,
             resultFormat: $resultFormat,
             outputFormat: $outputFormat,
+            includeDocumentStructure: $includeDocumentStructure,
         );
     }
 

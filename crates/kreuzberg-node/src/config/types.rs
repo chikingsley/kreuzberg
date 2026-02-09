@@ -858,6 +858,8 @@ pub struct JsExtractionConfig {
     pub output_format: Option<String>,
     /// Result structure format: "unified" | "element_based"
     pub result_format: Option<String>,
+    /// Include document structure in extraction result
+    pub include_document_structure: Option<bool>,
 }
 
 impl TryFrom<JsPageConfig> for kreuzberg::core::config::PageConfig {
@@ -934,6 +936,7 @@ impl TryFrom<JsExtractionConfig> for ExtractionConfig {
                 })
                 .transpose()?
                 .unwrap_or_default(),
+            include_document_structure: val.include_document_structure.unwrap_or(false),
             security_limits: None,
         })
     }
@@ -1032,6 +1035,7 @@ impl TryFrom<ExtractionConfig> for JsExtractionConfig {
                 kreuzberg::types::OutputFormat::Unified => "unified".to_string(),
                 kreuzberg::types::OutputFormat::ElementBased => "element_based".to_string(),
             }),
+            include_document_structure: Some(val.include_document_structure),
         })
     }
 }

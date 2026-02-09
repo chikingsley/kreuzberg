@@ -376,6 +376,58 @@ pub mod assertions {
         }
     }
 
+    /// Assert document structure presence and properties.
+    pub fn assert_document(
+        result: &ExtractionResult,
+        has_document: bool,
+        min_node_count: Option<usize>,
+        node_types_include: Option<&[&str]>,
+        has_groups: Option<bool>,
+    ) {
+        if !has_document {
+            assert!(result.document.is_none(), "Expected document to be None but got Some");
+            return;
+        }
+
+        let document = result.document.as_ref().expect("Expected document in result");
+        let nodes = &document.nodes;
+
+        if let Some(min) = min_node_count {
+            assert!(
+                nodes.len() >= min,
+                "Expected at least {min} document nodes, found {}",
+                nodes.len()
+            );
+        }
+
+        if let Some(types) = node_types_include {
+            let found_types: std::collections::HashSet<String> = nodes
+                .iter()
+                .filter_map(|n| {
+                    serde_json::to_value(&n.content)
+                        .ok()
+                        .and_then(|v| v.get("node_type").and_then(|t| t.as_str().map(String::from)))
+                })
+                .collect();
+            for expected in types {
+                assert!(
+                    found_types.contains(*expected),
+                    "Expected document to include node type {expected}, found types: {found_types:?}",
+                );
+            }
+        }
+
+        if let Some(expect_groups) = has_groups {
+            let has_group_nodes = nodes.iter().any(|n| {
+                serde_json::to_value(&n.content)
+                    .ok()
+                    .and_then(|v| v.get("node_type").and_then(|t| t.as_str().map(|s| s == "group")))
+                    .unwrap_or(false)
+            });
+            assert_eq!(has_group_nodes, expect_groups, "Group node presence mismatch");
+        }
+    }
+
     fn lookup_path<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
         if let Some(found) = lookup_path_inner(value, path) {
             return Some(found);

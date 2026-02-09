@@ -252,6 +252,7 @@ mod tests {
                 pages: None,
                 elements: None,
                 ocr_elements: None,
+                document: None,
             })
         }
 
@@ -380,6 +381,7 @@ mod tests {
                 pages: None,
                 elements: None,
                 ocr_elements: None,
+                document: None,
             })
         }
 

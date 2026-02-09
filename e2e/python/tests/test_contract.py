@@ -182,6 +182,51 @@ def test_config_chunking() -> None:
     helpers.assert_chunks(result, min_count=1, each_has_content=True)
 
 
+def test_config_document_structure() -> None:
+    """Tests include_document_structure config produces document tree"""
+
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
+    if not document_path.exists():
+        pytest.skip(f"Skipping config_document_structure: missing document at {document_path}")
+
+    config = helpers.build_config({"include_document_structure": True})
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/pdf"])
+    helpers.assert_document(result, has_document=True, min_node_count=1, node_types_include=["paragraph"])
+
+
+def test_config_document_structure_disabled() -> None:
+    """Tests document field is null when include_document_structure is false"""
+
+    document_path = helpers.resolve_document("pdf/fake_memo.pdf")
+    if not document_path.exists():
+        pytest.skip(f"Skipping config_document_structure_disabled: missing document at {document_path}")
+
+    config = helpers.build_config(None)
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/pdf"])
+    helpers.assert_document(result, has_document=False)
+
+
+def test_config_document_structure_with_headings() -> None:
+    """Tests document structure with DOCX heading-driven nesting"""
+
+    document_path = helpers.resolve_document("docx/fake.docx")
+    if not document_path.exists():
+        pytest.skip(f"Skipping config_document_structure_with_headings: missing document at {document_path}")
+
+    config = helpers.build_config({"include_document_structure": True})
+
+    result = extract_file_sync(document_path, None, config)
+
+    helpers.assert_expected_mime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
+    helpers.assert_document(result, has_document=True, min_node_count=1)
+
+
 def test_config_force_ocr() -> None:
     """Tests force_ocr configuration option"""
 

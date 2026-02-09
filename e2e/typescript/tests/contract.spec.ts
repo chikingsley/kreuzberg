@@ -284,6 +284,89 @@ describe("contract fixtures", () => {
 	);
 
 	it(
+		"config_document_structure",
+		() => {
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping config_document_structure: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig({ include_document_structure: true });
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "config_document_structure", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["application/pdf"]);
+			chunkAssertions.assertDocument(result, true, 1, ["paragraph"], null);
+		},
+		TEST_TIMEOUT_MS,
+	);
+
+	it(
+		"config_document_structure_disabled",
+		() => {
+			const documentPath = resolveDocument("pdf/fake_memo.pdf");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping config_document_structure_disabled: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig(undefined);
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "config_document_structure_disabled", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, ["application/pdf"]);
+			chunkAssertions.assertDocument(result, false, null, null, null);
+		},
+		TEST_TIMEOUT_MS,
+	);
+
+	it(
+		"config_document_structure_with_headings",
+		() => {
+			const documentPath = resolveDocument("docx/fake.docx");
+			if (!existsSync(documentPath)) {
+				console.warn("Skipping config_document_structure_with_headings: missing document at", documentPath);
+				return;
+			}
+			const config = buildConfig({ include_document_structure: true });
+			let result: ExtractionResult | null = null;
+			try {
+				result = extractFileSync(documentPath, null, config);
+			} catch (error) {
+				if (shouldSkipFixture(error, "config_document_structure_with_headings", [], undefined)) {
+					return;
+				}
+				throw error;
+			}
+			if (result === null) {
+				return;
+			}
+			assertions.assertExpectedMime(result, [
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			]);
+			chunkAssertions.assertDocument(result, true, 1, null, null);
+		},
+		TEST_TIMEOUT_MS,
+	);
+
+	it(
 		"config_force_ocr",
 		() => {
 			const documentPath = resolveDocument("pdf/fake_memo.pdf");

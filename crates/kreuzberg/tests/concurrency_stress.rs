@@ -387,6 +387,7 @@ async fn test_concurrent_pipeline_processing() {
                 elements: None,
                 ocr_elements: None,
                 djot_content: None,
+                document: None,
             };
 
             run_pipeline(result, &config).await

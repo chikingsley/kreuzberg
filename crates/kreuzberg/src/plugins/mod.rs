@@ -51,6 +51,7 @@
 //! #             djot_content: None,
 //! #             elements: None,
 //! #             ocr_elements: None,
+//! #             document: None,
 //! #         })
 //! #     }
 //! #     async fn extract_file(&self, _: &std::path::Path, _: &str, _: &kreuzberg::ExtractionConfig)
@@ -67,6 +68,7 @@
 //! #             djot_content: None,
 //! #             elements: None,
 //! #             ocr_elements: None,
+//! #             document: None,
 //! #         })
 //! #     }
 //! #     fn supported_mime_types(&self) -> &[&str] { &[] }
@@ -132,6 +134,7 @@
 //!             pages: None,
 //!             elements: None,
 //!             ocr_elements: None,
+//!             document: None,
 //!         })
 //!     }
 //!

@@ -170,6 +170,7 @@ impl OcrBackend for FfiOcrBackend {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

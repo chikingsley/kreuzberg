@@ -69,6 +69,7 @@ pub fn to_c_extraction_result(result: ExtractionResult) -> std::result::Result<*
         djot_content: _,
         elements,
         ocr_elements,
+        document: _,
     } = result;
 
     let sanitized_content = if content.contains('\0') {
@@ -376,6 +377,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let c_result = to_c_extraction_result(result);
@@ -416,6 +418,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let c_result = to_c_extraction_result(result);
@@ -466,6 +469,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let c_result = to_c_extraction_result(result);
@@ -546,6 +550,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let c_result = to_c_extraction_result(result);

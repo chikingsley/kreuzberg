@@ -459,6 +459,7 @@ impl DocumentExtractor for RstExtractor {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

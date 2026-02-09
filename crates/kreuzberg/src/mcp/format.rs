@@ -301,6 +301,7 @@ mod tests {
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let formatted = format_extraction_result(&result);
@@ -332,6 +333,7 @@ mod tests {
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let formatted = format_extraction_result(&result);
@@ -367,6 +369,7 @@ mod tests {
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let formatted = format_extraction_result(&result);
@@ -390,6 +393,7 @@ mod tests {
             elements: None,
             ocr_elements: None,
             djot_content: None,
+            document: None,
         };
 
         let formatted = format_extraction_result(&result);

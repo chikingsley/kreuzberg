@@ -79,7 +79,8 @@ class KreuzbergTest {
 			return new ExtractionResult(result.getContent().toUpperCase(), result.getMimeType(), result.getMetadata(),
 					result.getTables(), result.getDetectedLanguages(), result.getChunks(), result.getImages(),
 					result.getPages(), result.getPageStructure().orElse(null), result.getElements(),
-					result.getOcrElements(), result.getDjotContent().orElse(null));
+					result.getOcrElements(), result.getDjotContent().orElse(null),
+					result.getDocumentStructure().orElse(null));
 		};
 
 		Kreuzberg.registerPostProcessor(name, processor);

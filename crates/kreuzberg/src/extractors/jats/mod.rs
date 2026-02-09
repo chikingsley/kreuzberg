@@ -169,6 +169,7 @@ impl DocumentExtractor for JatsExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

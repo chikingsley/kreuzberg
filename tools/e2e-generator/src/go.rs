@@ -923,6 +923,28 @@ fn render_assertions(assertions: &Assertions) -> String {
         )
         .unwrap();
     }
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = format!("{}", document.has_document);
+        let min_node_count = document
+            .min_node_count
+            .map(|v| format!("intPtr({v})"))
+            .unwrap_or_else(|| "nil".to_string());
+        let node_types = if !document.node_types_include.is_empty() {
+            render_string_slice(&document.node_types_include)
+        } else {
+            "nil".to_string()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| format!("boolPtr({v})"))
+            .unwrap_or_else(|| "nil".to_string());
+        writeln!(
+            buffer,
+            "    assertDocument(t, result, {}, {}, {}, {})",
+            has_document, min_node_count, node_types, has_groups
+        )
+        .unwrap();
+    }
     buffer
 }
 

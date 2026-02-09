@@ -408,6 +408,7 @@ impl DocumentExtractor for DocbookExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

@@ -983,6 +983,28 @@ fn render_assertions(buffer: &mut String, assertions: &Assertions) -> Result<()>
         )?;
     }
 
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = if document.has_document { "true" } else { "false" };
+        let min_node_count = document
+            .min_node_count
+            .map(|v| format!("{}", v))
+            .unwrap_or_else(|| "null".to_string());
+        let node_types = if !document.node_types_include.is_empty() {
+            format!("new[] {{ {} }}", render_string_array(&document.node_types_include))
+        } else {
+            "null".to_string()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| if v { "true" } else { "false" }.to_string())
+            .unwrap_or_else(|| "null".to_string());
+        writeln!(
+            buffer,
+            "            TestHelpers.AssertDocument(result, {}, {}, {}, {});",
+            has_document, min_node_count, node_types, has_groups
+        )?;
+    }
+
     Ok(())
 }
 

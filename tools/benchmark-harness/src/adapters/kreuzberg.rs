@@ -252,13 +252,13 @@ fn build_java_classpath() -> Result<String> {
     let mut parts = vec![classes_dir.to_string_lossy().to_string()];
 
     let dep_dir = root.join("packages/java/target/dependency");
-    if dep_dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(&dep_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().is_some_and(|ext| ext == "jar") {
-                    parts.push(path.to_string_lossy().to_string());
-                }
+    if dep_dir.exists()
+        && let Ok(entries) = std::fs::read_dir(&dep_dir)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().is_some_and(|ext| ext == "jar") {
+                parts.push(path.to_string_lossy().to_string());
             }
         }
     }

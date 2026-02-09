@@ -227,6 +227,72 @@ defmodule E2E.ContractTest do
       end
     end
 
+    test "config_document_structure" do
+      case E2E.Helpers.run_fixture(
+        "config_document_structure",
+        "pdf/fake_memo.pdf",
+        %{include_document_structure: true},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_document(has_document: true, min_node_count: 1, node_types_include: ["paragraph"])
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_document_structure_disabled" do
+      case E2E.Helpers.run_fixture(
+        "config_document_structure_disabled",
+        "pdf/fake_memo.pdf",
+        nil,
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/pdf"])
+          |> E2E.Helpers.assert_document(has_document: false)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
+    test "config_document_structure_with_headings" do
+      case E2E.Helpers.run_fixture(
+        "config_document_structure_with_headings",
+        "docx/fake.docx",
+        %{include_document_structure: true},
+        requirements: [],
+        notes: nil,
+        skip_if_missing: true
+      ) do
+        {:ok, result} ->
+          result
+          |> E2E.Helpers.assert_expected_mime(["application/vnd.openxmlformats-officedocument.wordprocessingml.document"])
+          |> E2E.Helpers.assert_document(has_document: true, min_node_count: 1)
+
+        {:skipped, reason} ->
+          IO.puts("SKIPPED: #{reason}")
+
+        {:error, reason} ->
+          flunk("Extraction failed: #{inspect(reason)}")
+      end
+    end
+
     test "config_force_ocr" do
       case E2E.Helpers.run_fixture(
         "config_force_ocr",

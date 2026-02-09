@@ -241,6 +241,88 @@ fn test_config_chunking() {
 }
 
 #[test]
+fn test_config_document_structure() {
+    // Tests include_document_structure config produces document tree
+
+    let document_path = resolve_document("pdf/fake_memo.pdf");
+    if !document_path.exists() {
+        println!(
+            "Skipping config_document_structure: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config: ExtractionConfig = serde_json::from_str(
+        r#"{
+  "include_document_structure": true
+}"#,
+    )
+    .expect("Fixture config should deserialize");
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for config_document_structure: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/pdf"]);
+    assertions::assert_document(&result, true, Some(1), Some(&["paragraph"]), None);
+}
+
+#[test]
+fn test_config_document_structure_disabled() {
+    // Tests document field is null when include_document_structure is false
+
+    let document_path = resolve_document("pdf/fake_memo.pdf");
+    if !document_path.exists() {
+        println!(
+            "Skipping config_document_structure_disabled: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config = ExtractionConfig::default();
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for config_document_structure_disabled: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(&result, &["application/pdf"]);
+    assertions::assert_document(&result, false, None, None, None);
+}
+
+#[test]
+fn test_config_document_structure_with_headings() {
+    // Tests document structure with DOCX heading-driven nesting
+
+    let document_path = resolve_document("docx/fake.docx");
+    if !document_path.exists() {
+        println!(
+            "Skipping config_document_structure_with_headings: missing document at {}",
+            document_path.display()
+        );
+        return;
+    }
+    let config: ExtractionConfig = serde_json::from_str(
+        r#"{
+  "include_document_structure": true
+}"#,
+    )
+    .expect("Fixture config should deserialize");
+
+    let result = match kreuzberg::extract_file_sync(&document_path, None, &config) {
+        Err(err) => panic!("Extraction failed for config_document_structure_with_headings: {err:?}"),
+        Ok(result) => result,
+    };
+
+    assertions::assert_expected_mime(
+        &result,
+        &["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    );
+    assertions::assert_document(&result, true, Some(1), None, None);
+}
+
+#[test]
 fn test_config_force_ocr() {
     // Tests force_ocr configuration option
 

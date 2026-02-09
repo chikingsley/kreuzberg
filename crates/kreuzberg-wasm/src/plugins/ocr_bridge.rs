@@ -167,6 +167,7 @@ impl OcrBackend for JsOcrBackendWrapper {
             elements: None,
             djot_content: None,
             ocr_elements: None,
+            document: None,
         })
     }
 
@@ -206,6 +207,7 @@ impl OcrBackend for JsOcrBackendWrapper {
             elements: None,
             djot_content: None,
             ocr_elements: None,
+            document: None,
         })
     }
 
@@ -222,6 +224,7 @@ impl OcrBackend for JsOcrBackendWrapper {
             elements: None,
             djot_content: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

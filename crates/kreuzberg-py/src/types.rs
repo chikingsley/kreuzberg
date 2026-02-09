@@ -19,6 +19,7 @@ use crate::plugins::json_value_to_py;
 ///     metadata (dict): Document metadata as key-value pairs
 ///     tables (list[ExtractedTable]): Extracted tables
 ///     detected_languages (list[dict] | None): Detected languages with confidence scores
+///     document (DocumentStructure | None): Hierarchical document structure if extraction enabled
 ///
 /// Example:
 ///     >>> from kreuzberg import extract_file_sync, ExtractionConfig
@@ -28,6 +29,8 @@ use crate::plugins::json_value_to_py;
 ///     >>> print(len(result.tables))
 ///     >>> if result.detected_languages:
 ///     ...     print(result.detected_languages)
+///     >>> if result.document:
+///     ...     print(f"Document has {len(result.document['nodes'])} nodes")
 #[pyclass(name = "ExtractionResult", module = "kreuzberg")]
 pub struct ExtractionResult {
     #[pyo3(get)]
@@ -49,6 +52,8 @@ pub struct ExtractionResult {
     pages: Option<Py<PyList>>,
 
     elements: Option<Py<PyList>>,
+
+    document: Option<Py<PyAny>>,
 
     #[pyo3(get)]
     pub output_format: Option<String>,
@@ -95,6 +100,11 @@ impl ExtractionResult {
     #[getter]
     fn elements<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyList>> {
         self.elements.as_ref().map(|e| e.bind(py).clone())
+    }
+
+    #[getter]
+    fn document<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyAny>> {
+        self.document.as_ref().map(|d| d.bind(py).clone())
     }
 
     #[getter]
@@ -503,6 +513,18 @@ impl ExtractionResult {
             None
         };
 
+        let document = if let Some(doc_struct) = result.document {
+            let doc_json = serde_json::to_value(&doc_struct).map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+                    "Failed to serialize document_structure: {}",
+                    e
+                ))
+            })?;
+            Some(json_value_to_py(py, &doc_json)?.unbind())
+        } else {
+            None
+        };
+
         Ok(Self {
             content: result.content,
             mime_type: result.mime_type.to_string(),
@@ -513,6 +535,7 @@ impl ExtractionResult {
             chunks,
             pages,
             elements,
+            document,
             output_format,
             result_format,
             djot_content,
@@ -552,6 +575,7 @@ mod tests {
                 images: None,
                 pages: None,
                 elements: None,
+                document: None,
                 djot_content: None,
                 ocr_elements: None,
             };
@@ -563,6 +587,7 @@ mod tests {
             assert!(py_result.metadata(py).is_empty());
             assert_eq!(py_result.tables(py).len(), 0);
             assert!(py_result.detected_languages.is_some());
+            assert!(py_result.document.is_none());
             assert_eq!(py_result.__str__(), "ExtractionResult: 5 characters");
             let repr = py_result.__repr__();
             assert!(repr.contains("mime_type='text/plain'"));
@@ -583,6 +608,7 @@ mod tests {
                 images: None,
                 pages: None,
                 elements: None,
+                document: None,
                 djot_content: None,
                 ocr_elements: None,
             };

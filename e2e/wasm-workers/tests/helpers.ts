@@ -402,6 +402,61 @@ export const assertions = {
 			}
 		}
 	},
+
+	assertDocument(
+		result: ExtractionResult,
+		hasDocument: boolean,
+		minNodeCount: number | null,
+		nodeTypesInclude: string[] | null,
+		hasGroups: boolean | null,
+	): void {
+		const document = (result as unknown as PlainRecord).document as unknown[] | PlainRecord | undefined;
+		if (hasDocument) {
+			expect(document !== undefined && document !== null).toBe(true);
+			let nodes: unknown[] | undefined;
+			if (Array.isArray(document)) {
+				nodes = document;
+			} else if (isPlainRecord(document)) {
+				nodes = (document as PlainRecord).nodes as unknown[] | undefined;
+			}
+			expect(nodes !== undefined && nodes !== null).toBe(true);
+			if (!Array.isArray(nodes)) {
+				throw new Error("Expected document nodes to be an array");
+			}
+			if (typeof minNodeCount === "number") {
+				expect(nodes.length >= minNodeCount).toBe(true);
+			}
+			if (nodeTypesInclude && nodeTypesInclude.length > 0) {
+				const foundTypes = new Set<string>();
+				for (const node of nodes) {
+					if (isPlainRecord(node)) {
+						const nodeType = ((node as PlainRecord).nodeType ?? (node as PlainRecord).type) as string | undefined;
+						if (nodeType) {
+							foundTypes.add(nodeType);
+						}
+					}
+				}
+				for (const expectedType of nodeTypesInclude) {
+					expect(foundTypes.has(expectedType)).toBe(true);
+				}
+			}
+			if (typeof hasGroups === "boolean") {
+				let hasGroupNodes = false;
+				for (const node of nodes) {
+					if (isPlainRecord(node)) {
+						const nodeType = ((node as PlainRecord).nodeType ?? (node as PlainRecord).type) as string | undefined;
+						if (nodeType === "group") {
+							hasGroupNodes = true;
+							break;
+						}
+					}
+				}
+				expect(hasGroupNodes).toBe(hasGroups);
+			}
+		} else {
+			expect(document === undefined || document === null).toBe(true);
+		}
+	},
 };
 
 function lookupMetadataPath(metadata: PlainRecord, path: string): unknown {

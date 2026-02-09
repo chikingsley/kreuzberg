@@ -332,11 +332,9 @@ impl<R: Read + Seek> DocxParser<R> {
                     _ => {}
                 },
                 Ok(Event::Text(e)) => {
-                    if in_text {
-                        if let Some(ref mut run) = current_run {
-                            let text = e.decode()?.into_owned();
-                            run.text.push_str(&text);
-                        }
+                    if in_text && let Some(ref mut run) = current_run {
+                        let text = e.decode()?.into_owned();
+                        run.text.push_str(&text);
                     }
                 }
                 Ok(Event::End(ref e)) => match e.name().as_ref() {
@@ -367,17 +365,17 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     b"w:tc" => {
-                        if let Some(cell) = current_cell.take() {
-                            if let Some(ref mut row) = current_row {
-                                row.cells.push(cell);
-                            }
+                        if let Some(cell) = current_cell.take()
+                            && let Some(ref mut row) = current_row
+                        {
+                            row.cells.push(cell);
                         }
                     }
                     b"w:tr" => {
-                        if let Some(row) = current_row.take() {
-                            if let Some(ref mut table) = current_table {
-                                table.rows.push(row);
-                            }
+                        if let Some(row) = current_row.take()
+                            && let Some(ref mut table) = current_table
+                        {
+                            table.rows.push(row);
                         }
                     }
                     b"w:tbl" => {
@@ -411,10 +409,10 @@ impl<R: Read + Seek> DocxParser<R> {
                 Ok(Event::Start(ref e)) => {
                     if e.name().as_ref() == b"w:num" {
                         for attr in e.attributes().flatten() {
-                            if attr.key.as_ref() == b"w:numId" {
-                                if let Ok(id_str) = std::str::from_utf8(&attr.value) {
-                                    current_num_id = id_str.parse().ok();
-                                }
+                            if attr.key.as_ref() == b"w:numId"
+                                && let Ok(id_str) = std::str::from_utf8(&attr.value)
+                            {
+                                current_num_id = id_str.parse().ok();
                             }
                         }
                     }
@@ -491,20 +489,18 @@ impl<R: Read + Seek> DocxParser<R> {
                     _ => {}
                 },
                 Ok(Event::Text(e)) => {
-                    if in_text {
-                        if let Some(ref mut run) = current_run {
-                            let text = e.decode()?.into_owned();
-                            run.text.push_str(&text);
-                        }
+                    if in_text && let Some(ref mut run) = current_run {
+                        let text = e.decode()?.into_owned();
+                        run.text.push_str(&text);
                     }
                 }
                 Ok(Event::End(ref e)) => match e.name().as_ref() {
                     b"w:t" => in_text = false,
                     b"w:r" => {
-                        if let Some(run) = current_run.take() {
-                            if let Some(ref mut para) = current_paragraph {
-                                para.add_run(run);
-                            }
+                        if let Some(run) = current_run.take()
+                            && let Some(ref mut para) = current_paragraph
+                        {
+                            para.add_run(run);
                         }
                     }
                     b"w:p" => {
@@ -555,34 +551,33 @@ impl<R: Read + Seek> DocxParser<R> {
                     _ => {}
                 },
                 Ok(Event::Text(e)) => {
-                    if in_text {
-                        if let Some(ref mut run) = current_run {
-                            let text = e.decode()?.into_owned();
-                            run.text.push_str(&text);
-                        }
+                    if in_text && let Some(ref mut run) = current_run {
+                        let text = e.decode()?.into_owned();
+                        run.text.push_str(&text);
                     }
                 }
                 Ok(Event::End(ref e)) => match e.name().as_ref() {
                     b"w:t" => in_text = false,
                     b"w:r" => {
-                        if let Some(run) = current_run.take() {
-                            if let Some(ref mut para) = current_paragraph {
-                                para.add_run(run);
-                            }
+                        if let Some(run) = current_run.take()
+                            && let Some(ref mut para) = current_paragraph
+                        {
+                            para.add_run(run);
                         }
                     }
                     b"w:p" => {
-                        if let Some(para) = current_paragraph.take() {
-                            if let Some(ref mut note) = current_note {
-                                note.paragraphs.push(para);
-                            }
+                        if let Some(para) = current_paragraph.take()
+                            && let Some(ref mut note) = current_note
+                        {
+                            note.paragraphs.push(para);
                         }
                     }
                     b"w:footnote" | b"w:endnote" => {
-                        if let Some(note) = current_note.take() {
-                            if note.id != "-1" && note.id != "0" {
-                                notes.push(note);
-                            }
+                        if let Some(note) = current_note.take()
+                            && note.id != "-1"
+                            && note.id != "0"
+                        {
+                            notes.push(note);
                         }
                     }
                     _ => {}

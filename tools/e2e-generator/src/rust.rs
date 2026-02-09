@@ -382,6 +382,26 @@ fn render_assertions(assertions: &Assertions) -> String {
         ));
     }
 
+    if let Some(document) = assertions.document.as_ref() {
+        let has_document = document.has_document;
+        let min_node_count = document
+            .min_node_count
+            .map(|v| format!("Some({v})"))
+            .unwrap_or_else(|| "None".into());
+        let node_types = if !document.node_types_include.is_empty() {
+            format!("Some(&{})", render_string_slice(&document.node_types_include))
+        } else {
+            "None".to_string()
+        };
+        let has_groups = document
+            .has_groups
+            .map(|v| format!("Some({v})"))
+            .unwrap_or_else(|| "None".into());
+        buffer.push_str(&format!(
+            "    assertions::assert_document(&result, {has_document}, {min_node_count}, {node_types}, {has_groups});\n"
+        ));
+    }
+
     buffer
 }
 
@@ -776,6 +796,15 @@ fn generate_mime_extension_lookup_test_rust(test_spec: &PluginTestSpec, buf: &mu
     Ok(())
 }
 
+/// Map serde-renamed JSON field names to actual Rust struct field names.
+fn serde_to_rust_field(field: &str) -> &str {
+    match field {
+        "max_chars" => "max_characters",
+        "max_overlap" => "overlap",
+        _ => field,
+    }
+}
+
 fn generate_object_property_assertions_rust(
     assertions: &crate::fixtures::PluginAssertions,
     buf: &mut String,
@@ -805,12 +834,13 @@ fn generate_object_property_assertions_rust(
                 if path.contains('.') {
                     let parts: Vec<&str> = path.split('.').collect();
                     if parts.len() == 2 {
+                        let rust_field = serde_to_rust_field(parts[1]);
                         match value {
                             Value::Number(n) => {
                                 writeln!(
                                     buf,
                                     "    assert_eq!(config.{}.as_ref().unwrap().{}, {});",
-                                    parts[0], parts[1], n
+                                    parts[0], rust_field, n
                                 )?;
                             }
                             Value::String(s) => {
@@ -818,15 +848,23 @@ fn generate_object_property_assertions_rust(
                                     buf,
                                     "    assert_eq!(config.{}.as_ref().unwrap().{}, \"{}\");",
                                     parts[0],
-                                    parts[1],
+                                    rust_field,
                                     escape_rust_string(s)
                                 )?;
                             }
                             Value::Bool(b) => {
                                 if *b {
-                                    writeln!(buf, "    assert!(config.{}.as_ref().unwrap().{});", parts[0], parts[1])?;
+                                    writeln!(
+                                        buf,
+                                        "    assert!(config.{}.as_ref().unwrap().{});",
+                                        parts[0], rust_field
+                                    )?;
                                 } else {
-                                    writeln!(buf, "    assert!(!config.{}.as_ref().unwrap().{});", parts[0], parts[1])?;
+                                    writeln!(
+                                        buf,
+                                        "    assert!(!config.{}.as_ref().unwrap().{});",
+                                        parts[0], rust_field
+                                    )?;
                                 }
                             }
                             _ => {

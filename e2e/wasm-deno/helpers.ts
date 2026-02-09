@@ -448,6 +448,65 @@ export const assertions = {
 			}
 		}
 	},
+
+	assertDocument(
+		result: ExtractionResult,
+		hasDocument: boolean = false,
+		minNodeCount?: number | null,
+		nodeTypesInclude?: string[] | null,
+		hasGroups?: boolean | null,
+	): void {
+		const document = (result as unknown as PlainRecord).document as unknown[] | PlainRecord | undefined;
+		if (hasDocument) {
+			assertExists(document, "Expected document to be defined");
+			let nodes: unknown[] | undefined;
+			if (Array.isArray(document)) {
+				nodes = document;
+			} else if (isPlainRecord(document)) {
+				nodes = (document as PlainRecord).nodes as unknown[] | undefined;
+			}
+			assertExists(nodes, "Expected document nodes to be defined");
+			if (!Array.isArray(nodes)) {
+				throw new Error("Expected document nodes to be an array");
+			}
+			if (typeof minNodeCount === "number") {
+				assertEquals(
+					nodes.length >= minNodeCount,
+					true,
+					`Expected at least ${minNodeCount} nodes, got ${nodes.length}`,
+				);
+			}
+			if (nodeTypesInclude && nodeTypesInclude.length > 0) {
+				const foundTypes = new Set<string>();
+				for (const node of nodes) {
+					if (isPlainRecord(node)) {
+						const nodeType = ((node as PlainRecord).nodeType ?? (node as PlainRecord).type) as string | undefined;
+						if (nodeType) {
+							foundTypes.add(nodeType);
+						}
+					}
+				}
+				for (const expectedType of nodeTypesInclude) {
+					assertEquals(foundTypes.has(expectedType), true, `Expected node type ${expectedType} not found`);
+				}
+			}
+			if (typeof hasGroups === "boolean") {
+				let hasGroupNodes = false;
+				for (const node of nodes) {
+					if (isPlainRecord(node)) {
+						const nodeType = ((node as PlainRecord).nodeType ?? (node as PlainRecord).type) as string | undefined;
+						if (nodeType === "group") {
+							hasGroupNodes = true;
+							break;
+						}
+					}
+				}
+				assertEquals(hasGroupNodes, hasGroups, `Expected hasGroups to be ${hasGroups}, but got ${hasGroupNodes}`);
+			}
+		} else {
+			assertEquals(document === undefined || document === null, true, "Expected document to be undefined");
+		}
+	},
 };
 
 function lookupMetadataPath(metadata: PlainRecord, path: string): unknown {

@@ -200,6 +200,66 @@ Deno.test("config_chunking", { permissions: { read: true } }, async () => {
 	assertions.assertChunks(result, 1, null, true, null);
 });
 
+Deno.test("config_document_structure", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("pdf/fake_memo.pdf");
+	const config = buildConfig({ include_document_structure: true });
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/octet-stream", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "config_document_structure", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/pdf"]);
+	assertions.assertDocument(result, true, 1, ["paragraph"], null);
+});
+
+Deno.test("config_document_structure_disabled", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("pdf/fake_memo.pdf");
+	const config = buildConfig(undefined);
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/octet-stream", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "config_document_structure_disabled", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/pdf"]);
+	assertions.assertDocument(result, false, null, null, null);
+});
+
+Deno.test("config_document_structure_with_headings", { permissions: { read: true } }, async () => {
+	const documentBytes = await resolveDocument("docx/fake.docx");
+	const config = buildConfig({ include_document_structure: true });
+	let result: ExtractionResult | null = null;
+	try {
+		// Sync file extraction - WASM uses extractBytes with pre-read bytes
+		result = await extractBytes(documentBytes, "application/octet-stream", config);
+	} catch (error) {
+		if (shouldSkipFixture(error, "config_document_structure_with_headings", [], undefined)) {
+			return;
+		}
+		throw error;
+	}
+	if (result === null) {
+		return;
+	}
+	assertions.assertExpectedMime(result, ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]);
+	assertions.assertDocument(result, true, 1, null, null);
+});
+
 Deno.test("config_force_ocr", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("pdf/fake_memo.pdf");
 	const config = buildConfig({ force_ocr: true });

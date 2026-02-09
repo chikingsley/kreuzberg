@@ -250,6 +250,7 @@ Main extraction configuration controlling all aspects of document processing.
 | `output_format` | `OutputFormat` | `Plain` | Output format for extracted text content (Plain, Markdown, Djot, Html) |
 | `html_options` | `ConversionOptions` | `None` | HTML to Markdown conversion options (heading styles, list formatting, code block styles). Only available with `html` feature. |
 | `security_limits` | `SecurityLimits?` | `None` (uses defaults) | Archive security thresholds: max archive size (500MB), compression ratio (100:1), file count (10K), nesting depth, content size, XML depth, table cells. Only available with `archives` feature. |
+| `include_document_structure` | `bool` | `false` | Enable structured document model output. When true, the `document` field on ExtractionResult is populated with a tree-based representation of document content. |
 
 ### Result Format vs Output Format
 

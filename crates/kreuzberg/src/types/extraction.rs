@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use super::djot::DjotContent;
+use super::document_structure::DocumentStructure;
 use super::metadata::Metadata;
 use super::ocr_elements::OcrElement;
 use super::page::PageContent;
@@ -90,6 +91,21 @@ pub struct ExtractionResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub ocr_elements: Option<Vec<OcrElement>>,
+
+    /// Structured document tree (when document structure extraction is enabled).
+    ///
+    /// When `include_document_structure` is true in `ExtractionConfig`, this field
+    /// contains the full hierarchical representation of the document including:
+    /// - Heading-driven section nesting
+    /// - Table grids with cell-level metadata
+    /// - Content layer classification (body, header, footer, footnote)
+    /// - Inline text annotations (formatting, links)
+    /// - Bounding boxes and page numbers
+    ///
+    /// Independent of `result_format` — can be combined with Unified or ElementBased.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub document: Option<DocumentStructure>,
 }
 
 /// A text chunk with optional embedding and metadata.
@@ -292,7 +308,7 @@ pub enum ElementType {
 }
 
 /// Bounding box coordinates for element positioning.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct BoundingBox {
     /// Left x-coordinate

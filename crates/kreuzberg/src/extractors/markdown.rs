@@ -235,6 +235,7 @@ impl DocumentExtractor for MarkdownExtractor {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

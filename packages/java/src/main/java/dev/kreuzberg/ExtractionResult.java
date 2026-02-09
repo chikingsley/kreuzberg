@@ -29,11 +29,12 @@ public final class ExtractionResult {
 	private final List<OcrElement> ocrElements;
 	@JsonProperty("djot_content")
 	private final DjotContent djotContent;
+	private final DocumentStructure document;
 
 	ExtractionResult(String content, String mimeType, Metadata metadata, List<Table> tables,
 			List<String> detectedLanguages, List<Chunk> chunks, List<ExtractedImage> images, List<PageContent> pages,
-			PageStructure pageStructure, List<Element> elements, List<OcrElement> ocrElements,
-			DjotContent djotContent) {
+			PageStructure pageStructure, List<Element> elements, List<OcrElement> ocrElements, DjotContent djotContent,
+			DocumentStructure document) {
 		this.content = Objects.requireNonNull(content, "content must not be null");
 		this.mimeType = Objects.requireNonNull(mimeType, "mimeType must not be null");
 		this.metadata = metadata != null ? metadata : Metadata.empty();
@@ -50,6 +51,7 @@ public final class ExtractionResult {
 		this.elements = Collections.unmodifiableList(elements != null ? elements : List.of());
 		this.ocrElements = Collections.unmodifiableList(ocrElements != null ? ocrElements : List.of());
 		this.djotContent = djotContent;
+		this.document = document;
 	}
 
 	public String getContent() {
@@ -160,6 +162,20 @@ public final class ExtractionResult {
 
 	public Optional<DjotContent> getDjotContent() {
 		return Optional.ofNullable(djotContent);
+	}
+
+	/**
+	 * Get the document structure (optional).
+	 *
+	 * <p>
+	 * Available when document structure extraction is enabled in the extraction
+	 * configuration via {@code include_document_structure=true}.
+	 *
+	 * @return document structure, or empty if not available
+	 * @since 4.3.0
+	 */
+	public Optional<DocumentStructure> getDocumentStructure() {
+		return Optional.ofNullable(document);
 	}
 
 	/**
@@ -326,6 +342,7 @@ public final class ExtractionResult {
 		return "ExtractionResult{" + "contentLength=" + content.length() + ", mimeType='" + mimeType + '\''
 				+ ", tables=" + tables.size() + ", detectedLanguages=" + detectedLanguages + ", chunks=" + chunks.size()
 				+ ", images=" + images.size() + ", pages=" + pages.size() + ", elements=" + elements.size()
-				+ ", ocrElements=" + ocrElements.size() + ", hasDjotContent=" + (djotContent != null) + '}';
+				+ ", ocrElements=" + ocrElements.size() + ", hasDjotContent=" + (djotContent != null)
+				+ ", hasDocumentStructure=" + (document != null) + '}';
 	}
 }

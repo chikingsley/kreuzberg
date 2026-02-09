@@ -14,15 +14,19 @@ class ResultFormat(StrEnum):
     ELEMENT_BASED = "element_based"
 
 __all__ = [
+    "AnnotationType",
     "Attributes",
     "BoundingBox",
     "Chunk",
     "ChunkMetadata",
     "ChunkingConfig",
+    "ContentLayer",
     "DjotContent",
     "DjotImage",
     "DjotLink",
     "DjotTable",
+    "DocumentNode",
+    "DocumentStructure",
     "Element",
     "ElementMetadata",
     "ElementType",
@@ -37,6 +41,7 @@ __all__ = [
     "ExtractionResult",
     "Footnote",
     "FormattedBlock",
+    "GridCell",
     "HeaderMetadata",
     "HierarchyConfig",
     "HtmlConversionOptions",
@@ -53,6 +58,8 @@ __all__ = [
     "LinkMetadata",
     "Metadata",
     "MissingDependencyError",
+    "NodeContent",
+    "NodeContentType",
     "OCRError",
     "OcrBackendProtocol",
     "OcrBoundingGeometry",
@@ -80,7 +87,9 @@ __all__ = [
     "RakeParams",
     "ResultFormat",
     "StructuredData",
+    "TableGrid",
     "TesseractConfig",
+    "TextAnnotation",
     "TokenReductionConfig",
     "ValidationError",
     "ValidatorProtocol",
@@ -394,6 +403,7 @@ class ExtractionConfig:
     security_limits: dict[str, int] | None
     result_format: str
     output_format: str
+    include_document_structure: bool
 
     def __init__(
         self,
@@ -415,6 +425,7 @@ class ExtractionConfig:
         security_limits: dict[str, int] | None = None,
         result_format: str | None = None,
         output_format: str | None = None,
+        include_document_structure: bool | None = None,
     ) -> None: ...
     @staticmethod
     def from_file(path: str | Path) -> ExtractionConfig: ...
@@ -1602,6 +1613,148 @@ class Element(TypedDict):
     text: str
     metadata: ElementMetadata
 
+NodeContentType: TypeAlias = Literal[
+    "title",
+    "heading",
+    "paragraph",
+    "list",
+    "list_item",
+    "table",
+    "image",
+    "code",
+    "quote",
+    "formula",
+    "footnote",
+    "group",
+    "page_break",
+]
+
+ContentLayer: TypeAlias = Literal["body", "header", "footer", "footnote"]
+
+AnnotationType: TypeAlias = Literal[
+    "bold",
+    "italic",
+    "underline",
+    "strikethrough",
+    "code",
+    "subscript",
+    "superscript",
+    "link",
+]
+
+class GridCell(TypedDict, total=False):
+    """Individual cell in a table grid."""
+
+    content: str
+    row: int
+    col: int
+    row_span: int
+    col_span: int
+    is_header: bool
+    bbox: BoundingBox | None
+
+class TableGrid(TypedDict, total=False):
+    """Structured table grid with cell-level metadata."""
+
+    rows: int
+    cols: int
+    cells: list[GridCell]
+
+class TextAnnotation(TypedDict, total=False):
+    """Inline text annotation with byte-range formatting.
+
+    Annotations reference byte offsets into a node's text content.
+    """
+
+    start: int
+    end: int
+    annotation_type: AnnotationType
+    url: str | None
+    title: str | None
+
+class NodeContent(TypedDict, total=False):
+    """Tagged node content. The node_type field discriminates the variant.
+
+    Common fields by node_type:
+        title: node_type, text
+        heading: node_type, text, level
+        paragraph: node_type, text
+        list: node_type, ordered
+        list_item: node_type, text
+        table: node_type, grid
+        image: node_type, description, image_index
+        code: node_type, text, language
+        quote: node_type
+        formula: node_type, text
+        footnote: node_type, text
+        group: node_type, label, heading_level, heading_text
+        page_break: node_type
+    """
+
+    node_type: NodeContentType
+    text: str
+    level: int
+    ordered: bool
+    grid: TableGrid
+    description: str | None
+    image_index: int | None
+    language: str | None
+    label: str | None
+    heading_level: int | None
+    heading_text: str | None
+
+class DocumentNode(TypedDict, total=False):
+    """A node in the hierarchical document structure.
+
+    Attributes:
+        id: Deterministic node identifier generated from content hash.
+        content: Node content — tagged dict with node_type discriminant.
+        parent: Index of parent node, or None for root nodes.
+        children: Indices of child nodes in reading order.
+        content_layer: Content layer classification (body, header, footer, footnote).
+        page: Page number where node starts (1-indexed), or None.
+        page_end: Page number where node ends, or None.
+        bbox: Bounding box of the node on the page.
+        annotations: Inline text annotations (formatting, links).
+    """
+
+    id: str
+    content: NodeContent
+    parent: int | None
+    children: list[int]
+    content_layer: ContentLayer
+    page: int | None
+    page_end: int | None
+    bbox: BoundingBox | None
+    annotations: list[TextAnnotation]
+
+class DocumentStructure(TypedDict):
+    """Hierarchical document structure.
+
+    Provides a tree-based representation of document content with nodes, parent-child
+    relationships, and semantic information. Enable with ExtractionConfig(include_document_structure=True).
+
+    Attributes:
+        nodes (list[DocumentNode]): Flat array of document nodes in reading order.
+            Each node contains content, position information, and relationships to other nodes.
+            Parent-child relationships use index-based references into this array.
+
+    Example:
+        Access document structure after extraction:
+            >>> from kreuzberg import extract_file_sync, ExtractionConfig
+            >>> config = ExtractionConfig(include_document_structure=True)
+            >>> result = extract_file_sync("document.pdf", None, config)
+            >>> if result.document:
+            ...     nodes = result.document["nodes"]
+            ...     print(f"Document has {len(nodes)} nodes")
+            ...     root_node = nodes[0]
+            ...     print(f"Root node: {root_node['id']}")
+            ...     children = [nodes[i] for i in root_node.get("children", [])]
+            ...     print(f"Root has {len(children)} children")
+    """
+
+    nodes: list[DocumentNode]
+
 class ExtractionResult:
     content: str
     mime_type: str
@@ -1612,6 +1765,7 @@ class ExtractionResult:
     images: list[ExtractedImage] | None
     pages: list[PageContent] | None
     elements: list[Element] | None
+    document: DocumentStructure | None
     ocr_elements: list[OcrElement] | None
     djot_content: DjotContent | None
     output_format: str | None

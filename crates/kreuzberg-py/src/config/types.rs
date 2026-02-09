@@ -56,7 +56,8 @@ impl ExtractionConfig {
         max_concurrent_extractions=None,
         pages=None,
         result_format=None,
-        output_format=None
+        output_format=None,
+        include_document_structure=None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -76,6 +77,7 @@ impl ExtractionConfig {
         pages: Option<PageConfig>,
         result_format: Option<String>,
         output_format: Option<String>,
+        include_document_structure: Option<bool>,
     ) -> PyResult<Self> {
         let (html_options_inner, html_options_dict) = parse_html_options_dict(html_options)?;
         Ok(Self {
@@ -94,6 +96,7 @@ impl ExtractionConfig {
                 html_options: html_options_inner,
                 max_concurrent_extractions,
                 pages: pages.map(Into::into),
+                include_document_structure: include_document_structure.unwrap_or(false),
                 result_format: if let Some(rf) = result_format {
                     match rf.to_lowercase().as_str() {
                         "unified" => kreuzberg::types::OutputFormat::Unified,
@@ -168,6 +171,16 @@ impl ExtractionConfig {
     #[setter]
     fn set_force_ocr(&mut self, value: bool) {
         self.inner.force_ocr = value;
+    }
+
+    #[getter]
+    fn include_document_structure(&self) -> bool {
+        self.inner.include_document_structure
+    }
+
+    #[setter]
+    fn set_include_document_structure(&mut self, value: bool) {
+        self.inner.include_document_structure = value;
     }
 
     #[getter]

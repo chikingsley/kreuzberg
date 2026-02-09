@@ -203,6 +203,7 @@ pub fn batch_extract_bytes_sync(
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         }));
     }
     Ok(results)

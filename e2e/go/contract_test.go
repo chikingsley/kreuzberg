@@ -89,6 +89,28 @@ func TestContractConfigChunking(t *testing.T) {
 	assertChunks(t, result, intPtr(1), nil, boolPtr(true), nil)
 }
 
+func TestContractConfigDocumentStructure(t *testing.T) {
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
+"include_document_structure": true
+}`))
+	assertExpectedMime(t, result, []string{"application/pdf"})
+	assertDocument(t, result, true, intPtr(1), []string{"paragraph"}, nil)
+}
+
+func TestContractConfigDocumentStructureDisabled(t *testing.T) {
+	result := runExtraction(t, "pdf/fake_memo.pdf", nil)
+	assertExpectedMime(t, result, []string{"application/pdf"})
+	assertDocument(t, result, false, nil, nil, nil)
+}
+
+func TestContractConfigDocumentStructureWithHeadings(t *testing.T) {
+	result := runExtraction(t, "docx/fake.docx", []byte(`{
+"include_document_structure": true
+}`))
+	assertExpectedMime(t, result, []string{"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+	assertDocument(t, result, true, intPtr(1), nil, nil)
+}
+
 func TestContractConfigForceOcr(t *testing.T) {
 	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "force_ocr": true

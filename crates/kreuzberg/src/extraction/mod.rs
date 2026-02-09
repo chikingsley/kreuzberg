@@ -49,6 +49,7 @@ pub use structured::{JsonExtractionConfig, StructuredDataResult, parse_json, par
 pub use text::parse_text;
 pub use transform::{
     ListItemMetadata, ListType, detect_list_items, generate_element_id, transform_extraction_result_to_elements,
+    transform_to_document_structure,
 };
 
 #[cfg(feature = "ocr")]

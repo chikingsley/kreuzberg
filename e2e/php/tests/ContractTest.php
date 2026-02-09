@@ -205,6 +205,63 @@ class ContractTest extends TestCase
     }
 
     /**
+     * Tests include_document_structure config produces document tree
+     */
+    public function test_config_document_structure(): void
+    {
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping config_document_structure: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(['include_document_structure' => true]);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/pdf']);
+        Helpers::assertDocument($result, true, 1, ['paragraph'], null);
+    }
+
+    /**
+     * Tests document field is null when include_document_structure is false
+     */
+    public function test_config_document_structure_disabled(): void
+    {
+        $documentPath = Helpers::resolveDocument('pdf/fake_memo.pdf');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping config_document_structure_disabled: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(null);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/pdf']);
+        Helpers::assertDocument($result, false, null, null, null);
+    }
+
+    /**
+     * Tests document structure with DOCX heading-driven nesting
+     */
+    public function test_config_document_structure_with_headings(): void
+    {
+        $documentPath = Helpers::resolveDocument('docx/fake.docx');
+        if (!file_exists($documentPath)) {
+            $this->markTestSkipped('Skipping config_document_structure_with_headings: missing document at ' . $documentPath);
+        }
+
+        $config = Helpers::buildConfig(['include_document_structure' => true]);
+
+        $kreuzberg = new Kreuzberg($config);
+        $result = $kreuzberg->extractFile($documentPath);
+
+        Helpers::assertExpectedMime($result, ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+        Helpers::assertDocument($result, true, 1, null, null);
+    }
+
+    /**
      * Tests force_ocr configuration option
      */
     public function test_config_force_ocr(): void

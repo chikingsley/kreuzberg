@@ -140,6 +140,8 @@ pub struct JsExtractionResult {
     #[serde(skip)]
     pub pages: Option<Vec<JsPageContent>>,
     pub elements: Option<Vec<JsElement>>,
+    #[napi(ts_type = "DocumentStructure | null")]
+    pub document: Option<serde_json::Value>,
 }
 
 impl TryFrom<RustExtractionResult> for JsExtractionResult {
@@ -298,6 +300,18 @@ impl TryFrom<RustExtractionResult> for JsExtractionResult {
                 .collect()
         });
 
+        let document = val
+            .document
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()
+            .map_err(|e| {
+                Error::new(
+                    Status::GenericFailure,
+                    format!("Failed to serialize document structure: {}", e),
+                )
+            })?;
+
         Ok(JsExtractionResult {
             content: val.content,
             mime_type: val.mime_type.to_string(),
@@ -345,6 +359,7 @@ impl TryFrom<RustExtractionResult> for JsExtractionResult {
             images,
             pages,
             elements,
+            document,
         })
     }
 }
@@ -487,6 +502,8 @@ impl TryFrom<JsExtractionResult> for RustExtractionResult {
             None
         };
 
+        let document = val.document.and_then(|v| serde_json::from_value(v).ok());
+
         Ok(RustExtractionResult {
             content: val.content,
             mime_type: std::borrow::Cow::Owned(val.mime_type),
@@ -536,6 +553,7 @@ impl TryFrom<JsExtractionResult> for RustExtractionResult {
                     })
                     .collect()
             }),
+            document,
             djot_content: None,
             ocr_elements: None,
         })

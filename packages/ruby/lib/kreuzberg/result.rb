@@ -6,12 +6,15 @@ rescue LoadError
   require 'json/pure'
 end
 
+require_relative 'document_structure'
+
 module Kreuzberg
   # @example
   # rubocop:disable Metrics/ClassLength
   class Result
     attr_reader :content, :mime_type, :metadata, :metadata_json, :tables,
-                :detected_languages, :chunks, :images, :pages, :elements, :ocr_elements, :djot_content
+                :detected_languages, :chunks, :images, :pages, :elements, :ocr_elements, :djot_content,
+                :document
 
     # @!attribute [r] cells
     #   @return [Array<Array<String>>] Table cells (2D array)
@@ -327,6 +330,7 @@ module Kreuzberg
       @elements = parse_elements(get_value(hash, 'elements'))
       @ocr_elements = parse_ocr_elements(get_value(hash, 'ocr_elements'))
       @djot_content = parse_djot_content(get_value(hash, 'djot_content'))
+      @document = parse_document_structure(get_value(hash, 'document'))
     end
     # rubocop:enable Metrics/AbcSize
 
@@ -346,7 +350,8 @@ module Kreuzberg
         pages: serialize_pages,
         elements: serialize_elements,
         ocr_elements: serialize_ocr_elements,
-        djot_content: @djot_content&.to_h
+        djot_content: @djot_content&.to_h,
+        document: @document&.to_h
       }
     end
 
@@ -639,6 +644,12 @@ module Kreuzberg
       return nil if djot_data.nil?
 
       DjotContent.new(djot_data)
+    end
+
+    def parse_document_structure(document_data)
+      return nil if document_data.nil?
+
+      DocumentStructure.new(document_data)
     end
   end
   # rubocop:enable Metrics/ClassLength

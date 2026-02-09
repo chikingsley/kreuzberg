@@ -312,6 +312,57 @@ public class ContractTest {
     }
 
     @Test
+    public void configDocumentStructure() throws Exception {
+        JsonNode config = MAPPER.readTree("{\"include_document_structure\":true}");
+        E2EHelpers.runFixture(
+            "config_document_structure",
+            "pdf/fake_memo.pdf",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/pdf"));
+                E2EHelpers.Assertions.assertDocument(result, true, 1, Arrays.asList("paragraph"), null);
+            }
+        );
+    }
+
+    @Test
+    public void configDocumentStructureDisabled() throws Exception {
+        JsonNode config = null;
+        E2EHelpers.runFixture(
+            "config_document_structure_disabled",
+            "pdf/fake_memo.pdf",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/pdf"));
+                E2EHelpers.Assertions.assertDocument(result, false, null, null, null);
+            }
+        );
+    }
+
+    @Test
+    public void configDocumentStructureWithHeadings() throws Exception {
+        JsonNode config = MAPPER.readTree("{\"include_document_structure\":true}");
+        E2EHelpers.runFixture(
+            "config_document_structure_with_headings",
+            "docx/fake.docx",
+            config,
+            Collections.emptyList(),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                E2EHelpers.Assertions.assertDocument(result, true, 1, null, null);
+            }
+        );
+    }
+
+    @Test
     public void configForceOcr() throws Exception {
         JsonNode config = MAPPER.readTree("{\"force_ocr\":true}");
         E2EHelpers.runFixture(

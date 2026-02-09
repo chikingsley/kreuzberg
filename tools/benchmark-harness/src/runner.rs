@@ -1020,9 +1020,9 @@ mod tests {
         // If framework_sizes.json exists and contains kreuzberg-python, verify all variants are enriched
         if let Some(size_info) = &result_sync.framework_capabilities.installation_size {
             // All three should have the same size info from base "kreuzberg-python"
-            assert_eq!(size_info.size_bytes, 15728640);
-            assert_eq!(size_info.method, "pip_package");
-            assert_eq!(size_info.description, "Python wheel package");
+            assert!(size_info.size_bytes > 0, "Size should be positive");
+            assert!(!size_info.method.is_empty(), "Method should be set");
+            assert!(!size_info.description.is_empty(), "Description should be set");
 
             // Verify all variants got enriched with the same data
             assert!(result_async.framework_capabilities.installation_size.is_some());

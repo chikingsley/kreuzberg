@@ -247,10 +247,10 @@ fn measure_npm_package(package: &str) -> Result<Option<u64>> {
                     let path = entry.path();
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                         // The native addon: kreuzberg-node.linux-x64-gnu.node, etc.
-                        if name.ends_with(".node") {
-                            if let Ok(metadata) = fs::metadata(&path) {
-                                total += metadata.len();
-                            }
+                        if name.ends_with(".node")
+                            && let Ok(metadata) = fs::metadata(&path)
+                        {
+                            total += metadata.len();
                         }
                     }
                 }
@@ -264,20 +264,19 @@ fn measure_npm_package(package: &str) -> Result<Option<u64>> {
 
         // Also check npm platform packages (e.g. crates/kreuzberg-node/npm/linux-x64-gnu/)
         let npm_dir = node_crate.join("npm");
-        if npm_dir.exists() {
-            if let Ok(entries) = fs::read_dir(&npm_dir) {
-                for entry in entries.flatten() {
-                    let platform_dir = entry.path();
-                    if platform_dir.is_dir() {
-                        // Look for .node files in platform dirs
-                        if let Ok(files) = fs::read_dir(&platform_dir) {
-                            for file in files.flatten() {
-                                if file.path().extension().and_then(|e| e.to_str()) == Some("node") {
-                                    if let Ok(metadata) = file.metadata() {
-                                        total += metadata.len();
-                                    }
-                                }
-                            }
+        if npm_dir.exists()
+            && let Ok(entries) = fs::read_dir(&npm_dir)
+        {
+            for entry in entries.flatten() {
+                let platform_dir = entry.path();
+                if platform_dir.is_dir()
+                    && let Ok(files) = fs::read_dir(&platform_dir)
+                {
+                    for file in files.flatten() {
+                        if file.path().extension().and_then(|e| e.to_str()) == Some("node")
+                            && let Ok(metadata) = file.metadata()
+                        {
+                            total += metadata.len();
                         }
                     }
                 }
@@ -295,14 +294,14 @@ fn measure_npm_package(package: &str) -> Result<Option<u64>> {
         .output()
         .ok();
 
-    if let Some(output) = output {
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&stdout) {
-                if let Some(size) = json.get(0).and_then(|v| v.get("size")).and_then(|v| v.as_u64()) {
-                    return Ok(Some(size));
-                }
-            }
+    if let Some(output) = output
+        && output.status.success()
+    {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&stdout)
+            && let Some(size) = json.get(0).and_then(|v| v.get("size")).and_then(|v| v.as_u64())
+        {
+            return Ok(Some(size));
         }
     }
 

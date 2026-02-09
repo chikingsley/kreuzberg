@@ -77,6 +77,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -130,6 +131,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -200,6 +202,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -233,6 +236,7 @@ mod tests {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();
@@ -263,6 +267,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         assert_eq!(processor.estimated_duration_ms(&result), 0);
@@ -317,6 +322,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let txt_result = ExtractionResult {
@@ -331,6 +337,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         assert!(processor.should_process(&pdf_result, &config));
@@ -363,6 +370,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config = ExtractionConfig::default();

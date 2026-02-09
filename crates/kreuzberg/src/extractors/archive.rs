@@ -85,6 +85,7 @@ fn build_archive_result(
         djot_content: None,
         elements: None,
         ocr_elements: None,
+        document: None,
     }
 }
 

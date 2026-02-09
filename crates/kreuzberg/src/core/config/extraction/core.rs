@@ -124,6 +124,16 @@ pub struct ExtractionConfig {
     /// when format conversion is applied.
     #[serde(default)]
     pub output_format: OutputFormat,
+
+    /// Enable structured document tree output.
+    ///
+    /// When true, populates the `document` field on `ExtractionResult` with a
+    /// hierarchical `DocumentStructure` containing heading-driven section nesting,
+    /// table grids, content layer classification, and inline annotations.
+    ///
+    /// Independent of `result_format` — can be combined with Unified or ElementBased.
+    #[serde(default)]
+    pub include_document_structure: bool,
 }
 
 impl Default for ExtractionConfig {
@@ -150,6 +160,7 @@ impl Default for ExtractionConfig {
             security_limits: None,
             result_format: crate::types::OutputFormat::Unified,
             output_format: OutputFormat::Plain,
+            include_document_structure: false,
         }
     }
 }

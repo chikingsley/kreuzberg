@@ -25,9 +25,10 @@ Kreuzberg supports **element-based output**, an optional output format that segm
 ```mermaid
 flowchart LR
     Doc[Document] --> Extract[Extract]
-    Extract --> Decision{Output Format?}
+    Extract --> Decision{Output Mode?}
     Decision -->|Unified Default| Unified[Unified Output<br/>content: string<br/>metadata: object<br/>tables: array<br/>pages: array]
     Decision -->|Element-Based| Elements[Element-Based Output<br/>elements: array<br/>Each element has:<br/>- element_id<br/>- element_type<br/>- text<br/>- metadata]
+    Decision -->|Document Structure| DocStruct[Document Structure<br/>document: tree<br/>Each node has:<br/>- id, content<br/>- parent/children<br/>- annotations]
 ```
 
 ### Compatibility with Unstructured.io
@@ -1038,21 +1039,21 @@ def print_hierarchy(node, indent=0):
 print_hierarchy(hierarchy)
 ```
 
-## Comparison: Unified vs Element-Based
+## Comparison: Unified vs Element-Based vs Document Structure
 
-| Aspect | Unified Output (Default) | Element-Based Output |
-|--------|-------------------------|----------------------|
-| **Use Case** | Full document text, metadata extraction | Semantic segmentation, element-level processing |
-| **Output Structure** | Single `content` field + metadata | Array of `elements` with individual metadata |
-| **Granularity** | Document-level | Element-level |
-| **Performance** | Faster (less processing) | Slower (element detection & segmentation) |
-| **Metadata** | Document metadata + per-page metadata | Element metadata (type, coordinates, page) |
-| **Best For** | LLM prompts, full-text search, simple workflows | RAG chunking, semantic search, structured extraction |
-| **Compatibility** | Kreuzberg-specific | Unstructured.io compatible |
-| **Table Access** | `result.tables` array | `element_type == "table"` |
-| **Image Access** | `result.images` array | `element_type == "image"` |
-| **Page Access** | `result.pages` array | `metadata.page_number` per element |
-| **Hierarchy** | `page.hierarchy` for PDFs | `additional.level` in title elements |
+| Aspect | Unified Output (Default) | Element-Based Output | Document Structure |
+|--------|-------------------------|----------------------|-------------------|
+| **Use Case** | Full document text, metadata extraction | Semantic segmentation, element-level processing | Hierarchical document representation, tree traversal |
+| **Output Structure** | Single `content` field + metadata | Array of `elements` with individual metadata | Tree of `DocumentNode` with parent/child links |
+| **Granularity** | Document-level | Element-level (flat list) | Node-level (hierarchical tree) |
+| **Performance** | Fastest (less processing) | Moderate (element detection) | Moderate (tree construction) |
+| **Hierarchy** | None (flat text) | Flat list with level metadata | True tree with parent/child relationships |
+| **Config Flag** | Default | `result_format: "element_based"` | `include_document_structure: true` |
+| **Result Field** | `content` | `elements` | `document` |
+| **Table Support** | `result.tables` array | `element_type == "table"` | `NodeContent::Table` with structured `TableGrid` |
+| **Annotations** | None | None | Inline `TextAnnotation` (bold, italic, links) |
+| **Content Layers** | None | None | Body, Header, Footer, Footnote per node |
+| **Best For** | LLM prompts, full-text search | Unstructured.io compat, semantic search | Document analysis, tree-based processing, rich formatting |
 
 ### When to Choose Each Format
 
@@ -1073,10 +1074,20 @@ print_hierarchy(hierarchy)
 - ✅ Custom chunking strategies based on structure
 - ✅ Hierarchical document reconstruction
 
-**Use Both** when you need:
+**Choose Document Structure** for:
+- ✅ True hierarchical document representation
+- ✅ Tree-based traversal and processing
+- ✅ Preserving document nesting (sections, subsections)
+- ✅ Rich inline annotations (bold, italic, links)
+- ✅ Structured table representation with cell-level data
+- ✅ Content layer classification (body vs headers/footers)
+- ✅ Document diffing and comparison (deterministic node IDs)
+
+**Use Multiple Modes** when you need:
 - ✅ Element-based processing + per-page content
 - ✅ Full document text + semantic segmentation
 - ✅ Migration from Unstructured with gradual adoption
+- ✅ Document structure analysis + element-level metadata
 
 ## Migration from Unstructured
 
@@ -1135,6 +1146,7 @@ Element-based output creates additional data structures:
 
 ## Next Steps
 
+- **[Document Structure Guide](./document-structure.md)** - Hierarchical tree-based document representation
 - **[Type Reference](../reference/types.md)** - Complete type definitions for Element, ElementMetadata, BoundingBox
 - **[Migration Guide](../migration/from-unstructured.md)** - Migrate from Unstructured.io with code examples
 - **[Extraction Guide](./extraction.md)** - Learn about all extraction modes

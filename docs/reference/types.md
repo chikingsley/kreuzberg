@@ -23,6 +23,8 @@ pub struct ExtractionResult {
     pub pages: Option<Vec<PageContent>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub elements: Option<Vec<Element>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document: Option<DocumentStructure>,
 }
 ```
 
@@ -41,6 +43,7 @@ class ExtractionResult(TypedDict):
     djot_content: DjotContent | None
     pages: list[PageContent] | None
     elements: list[Element] | None
+    document: DocumentStructure | None
 ```
 
 ### TypeScript
@@ -57,6 +60,7 @@ export interface ExtractionResult {
     djotContent?: DjotContent;
     pages?: PageContent[];
     elements?: Element[];
+    document?: DocumentStructure;
 }
 ```
 
@@ -65,7 +69,7 @@ export interface ExtractionResult {
 ```ruby title="extraction_result.rb"
 class Kreuzberg::Result
     attr_reader :content, :mime_type, :metadata, :tables
-    attr_reader :detected_languages, :chunks, :images, :djot_content, :pages, :elements
+    attr_reader :detected_languages, :chunks, :images, :djot_content, :pages, :elements, :document
 end
 ```
 
@@ -82,7 +86,8 @@ public record ExtractionResult(
     List<ExtractedImage> images,
     DjotContent djotContent,
     List<PageContent> pages,
-    List<Element> elements
+    List<Element> elements,
+    DocumentStructure document
 ) {}
 ```
 
@@ -100,6 +105,7 @@ type ExtractionResult struct {
     DjotContent       *DjotContent     `json:"djot_content,omitempty"`
     Pages             []PageContent    `json:"pages,omitempty"`
     Elements          []Element        `json:"elements,omitempty"`
+    Document          *DocumentStructure `json:"document,omitempty"`
 }
 ```
 
@@ -4805,3 +4811,775 @@ end
 - `djot`: Returns content formatted as Djot (lightweight markup format)
 - `html`: Returns content as HTML
 - When `djot` is selected and the document is in Djot format, the `djot_content` field on `ExtractionResult` will be populated with structured Djot AST data
+
+## DocumentStructure
+
+Tree-based representation of document structure when `include_document_structure` is enabled in ExtractionConfig. Contains a hierarchical model of document nodes representing headings, paragraphs, lists, tables, and other semantic content.
+
+### Rust
+
+```rust title="document_structure.rs"
+pub struct DocumentStructure {
+    pub nodes: Vec<DocumentNode>,
+}
+
+pub struct DocumentNode {
+    pub id: NodeId,
+    pub content: NodeContent,
+    pub parent: Option<NodeIndex>,
+    pub children: Vec<NodeIndex>,
+    pub content_layer: ContentLayer,
+    pub page: Option<u32>,
+    pub page_end: Option<u32>,
+    pub bbox: Option<BoundingBox>,
+    pub annotations: Vec<TextAnnotation>,
+}
+
+pub struct NodeId(pub String);
+
+pub type NodeIndex = u32;
+
+#[serde(tag = "node_type")]
+pub enum NodeContent {
+    Title { text: String },
+    Heading { level: u8, text: String },
+    Paragraph { text: String },
+    List { ordered: bool },
+    ListItem { text: String },
+    Table { grid: TableGrid },
+    Image { description: Option<String>, image_index: Option<usize> },
+    Code { text: String, language: Option<String> },
+    Quote,
+    Formula { text: String },
+    Footnote { text: String },
+    Group { label: Option<String>, heading_level: Option<u8>, heading_text: Option<String> },
+    PageBreak,
+}
+
+pub enum ContentLayer {
+    Body,
+    Header,
+    Footer,
+    Footnote,
+}
+
+pub struct TableGrid {
+    pub rows: u32,
+    pub cols: u32,
+    pub cells: Vec<GridCell>,
+}
+
+pub struct GridCell {
+    pub content: String,
+    pub row: u32,
+    pub col: u32,
+    pub row_span: u32,
+    pub col_span: u32,
+    pub is_header: bool,
+    pub bbox: Option<BoundingBox>,
+}
+
+pub struct TextAnnotation {
+    pub start: u32,
+    pub end: u32,
+    pub kind: AnnotationKind,
+}
+
+#[serde(tag = "annotation_type")]
+pub enum AnnotationKind {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    Code,
+    Subscript,
+    Superscript,
+    Link { url: String, title: Option<String> },
+}
+```
+
+### Python
+
+```python title="document_structure.py"
+class DocumentStructure(TypedDict):
+    nodes: list[DocumentNode]
+
+class DocumentNode(TypedDict):
+    id: str
+    content: NodeContent
+    parent: int | None
+    children: list[int]
+    content_layer: ContentLayer
+    page: int | None
+    page_end: int | None
+    bbox: BoundingBox | None
+    annotations: list[TextAnnotation]
+
+ContentLayer = Literal["body", "header", "footer", "footnote"]
+
+class NodeContent(TypedDict, total=False):
+    node_type: str  # Discriminator: "title", "heading", "paragraph", etc.
+    text: str
+    level: int
+    ordered: bool
+    grid: TableGrid
+    description: str
+    image_index: int
+    language: str
+    label: str
+    heading_level: int
+    heading_text: str
+
+class TableGrid(TypedDict):
+    rows: int
+    cols: int
+    cells: list[GridCell]
+
+class GridCell(TypedDict):
+    content: str
+    row: int
+    col: int
+    row_span: int
+    col_span: int
+    is_header: bool
+    bbox: BoundingBox | None
+
+class TextAnnotation(TypedDict):
+    start: int
+    end: int
+    kind: AnnotationKind
+
+class AnnotationKind(TypedDict, total=False):
+    annotation_type: str  # Discriminator: "bold", "italic", etc.
+    url: str
+    title: str
+```
+
+### TypeScript
+
+```typescript title="document_structure.ts"
+export interface DocumentStructure {
+    nodes: DocumentNode[];
+}
+
+export interface DocumentNode {
+    id: string;
+    content: NodeContent;
+    parent: number | null;
+    children: number[];
+    contentLayer: ContentLayer;
+    page: number | null;
+    pageEnd: number | null;
+    bbox: BoundingBox | null;
+    annotations: TextAnnotation[];
+}
+
+export type ContentLayer = "body" | "header" | "footer" | "footnote";
+
+export type NodeContent =
+    | { nodeType: "title"; text: string }
+    | { nodeType: "heading"; level: number; text: string }
+    | { nodeType: "paragraph"; text: string }
+    | { nodeType: "list"; ordered: boolean }
+    | { nodeType: "listItem"; text: string }
+    | { nodeType: "table"; grid: TableGrid }
+    | { nodeType: "image"; description?: string; imageIndex?: number }
+    | { nodeType: "code"; text: string; language?: string }
+    | { nodeType: "quote" }
+    | { nodeType: "formula"; text: string }
+    | { nodeType: "footnote"; text: string }
+    | { nodeType: "group"; label?: string; headingLevel?: number; headingText?: string }
+    | { nodeType: "pageBreak" };
+
+export interface TableGrid {
+    rows: number;
+    cols: number;
+    cells: GridCell[];
+}
+
+export interface GridCell {
+    content: string;
+    row: number;
+    col: number;
+    rowSpan: number;
+    colSpan: number;
+    isHeader: boolean;
+    bbox: BoundingBox | null;
+}
+
+export interface TextAnnotation {
+    start: number;
+    end: number;
+    kind: AnnotationKind;
+}
+
+export type AnnotationKind =
+    | { annotationType: "bold" }
+    | { annotationType: "italic" }
+    | { annotationType: "underline" }
+    | { annotationType: "strikethrough" }
+    | { annotationType: "code" }
+    | { annotationType: "subscript" }
+    | { annotationType: "superscript" }
+    | { annotationType: "link"; url: string; title?: string };
+```
+
+### Ruby
+
+```ruby title="document_structure.rb"
+class Kreuzberg::DocumentStructure
+    attr_reader :nodes
+
+    def initialize(nodes:)
+        @nodes = nodes
+    end
+end
+
+class Kreuzberg::DocumentNode
+    attr_reader :id, :content, :parent, :children, :content_layer, :page, :page_end, :bbox, :annotations
+
+    def initialize(id:, content:, parent:, children:, content_layer:, page:, page_end:, bbox:, annotations:)
+        @id = id
+        @content = content
+        @parent = parent
+        @children = children
+        @content_layer = content_layer
+        @page = page
+        @page_end = page_end
+        @bbox = bbox
+        @annotations = annotations
+    end
+end
+
+module Kreuzberg::ContentLayer
+    BODY = "body"
+    HEADER = "header"
+    FOOTER = "footer"
+    FOOTNOTE = "footnote"
+end
+
+# NodeContent and AnnotationKind are returned as Hashes with node_type/annotation_type discriminators
+```
+
+### Java
+
+```java title="DocumentStructure.java"
+public record DocumentStructure(
+    List<DocumentNode> nodes
+) {}
+
+public record DocumentNode(
+    String id,
+    NodeContent content,
+    Integer parent,
+    List<Integer> children,
+    ContentLayer contentLayer,
+    Integer page,
+    Integer pageEnd,
+    BoundingBox bbox,
+    List<TextAnnotation> annotations
+) {}
+
+public enum ContentLayer {
+    BODY("body"),
+    HEADER("header"),
+    FOOTER("footer"),
+    FOOTNOTE("footnote");
+
+    private final String value;
+
+    ContentLayer(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
+
+public sealed interface NodeContent {
+    record Title(String text) implements NodeContent {}
+    record Heading(int level, String text) implements NodeContent {}
+    record Paragraph(String text) implements NodeContent {}
+    record List(boolean ordered) implements NodeContent {}
+    record ListItem(String text) implements NodeContent {}
+    record Table(TableGrid grid) implements NodeContent {}
+    record Image(Optional<String> description, Optional<Integer> imageIndex) implements NodeContent {}
+    record Code(String text, Optional<String> language) implements NodeContent {}
+    record Quote() implements NodeContent {}
+    record Formula(String text) implements NodeContent {}
+    record Footnote(String text) implements NodeContent {}
+    record Group(Optional<String> label, Optional<Integer> headingLevel, Optional<String> headingText) implements NodeContent {}
+    record PageBreak() implements NodeContent {}
+}
+
+public record TableGrid(
+    int rows,
+    int cols,
+    List<GridCell> cells
+) {}
+
+public record GridCell(
+    String content,
+    int row,
+    int col,
+    int rowSpan,
+    int colSpan,
+    boolean isHeader,
+    BoundingBox bbox
+) {}
+
+public record TextAnnotation(
+    int start,
+    int end,
+    AnnotationKind kind
+) {}
+
+public sealed interface AnnotationKind {
+    record Bold() implements AnnotationKind {}
+    record Italic() implements AnnotationKind {}
+    record Underline() implements AnnotationKind {}
+    record Strikethrough() implements AnnotationKind {}
+    record Code() implements AnnotationKind {}
+    record Subscript() implements AnnotationKind {}
+    record Superscript() implements AnnotationKind {}
+    record Link(String url, Optional<String> title) implements AnnotationKind {}
+}
+```
+
+### Go
+
+```go title="document_structure.go"
+type DocumentStructure struct {
+    Nodes []DocumentNode `json:"nodes"`
+}
+
+type DocumentNode struct {
+    ID             string                 `json:"id"`
+    Content        NodeContent            `json:"content"`
+    Parent         *int                   `json:"parent,omitempty"`
+    Children       []int                  `json:"children"`
+    ContentLayer   ContentLayer           `json:"content_layer"`
+    Page           *int                   `json:"page,omitempty"`
+    PageEnd        *int                   `json:"page_end,omitempty"`
+    BBox           *BoundingBox           `json:"bbox,omitempty"`
+    Annotations    []TextAnnotation       `json:"annotations"`
+}
+
+type ContentLayer string
+
+const (
+    ContentLayerBody     ContentLayer = "body"
+    ContentLayerHeader   ContentLayer = "header"
+    ContentLayerFooter   ContentLayer = "footer"
+    ContentLayerFootnote ContentLayer = "footnote"
+)
+
+type NodeContent struct {
+    NodeType      string                 `json:"node_type"`
+    Text          string                 `json:"text,omitempty"`
+    Level         int                    `json:"level,omitempty"`
+    Ordered       bool                   `json:"ordered,omitempty"`
+    Grid          *TableGrid             `json:"grid,omitempty"`
+    Description   string                 `json:"description,omitempty"`
+    ImageIndex    *int                   `json:"image_index,omitempty"`
+    Language      string                 `json:"language,omitempty"`
+    Label         string                 `json:"label,omitempty"`
+    HeadingLevel  *int                   `json:"heading_level,omitempty"`
+    HeadingText   string                 `json:"heading_text,omitempty"`
+}
+
+type TableGrid struct {
+    Rows  int32      `json:"rows"`
+    Cols  int32      `json:"cols"`
+    Cells []GridCell `json:"cells"`
+}
+
+type GridCell struct {
+    Content   string       `json:"content"`
+    Row       int32        `json:"row"`
+    Col       int32        `json:"col"`
+    RowSpan   int32        `json:"row_span"`
+    ColSpan   int32        `json:"col_span"`
+    IsHeader  bool         `json:"is_header"`
+    BBox      *BoundingBox `json:"bbox,omitempty"`
+}
+
+type TextAnnotation struct {
+    Start int                `json:"start"`
+    End   int                `json:"end"`
+    Kind  AnnotationKind     `json:"kind"`
+}
+
+type AnnotationKind struct {
+    AnnotationType string `json:"annotation_type"`
+    URL            string `json:"url,omitempty"`
+    Title          string `json:"title,omitempty"`
+}
+```
+
+### C#
+
+```csharp title="DocumentStructure.cs"
+public sealed class DocumentStructure
+{
+    public IReadOnlyList<DocumentNode> Nodes { get; init; }
+}
+
+public sealed class DocumentNode
+{
+    public string Id { get; init; }
+    public NodeContent Content { get; init; }
+    public int? Parent { get; init; }
+    public IReadOnlyList<int> Children { get; init; }
+    public ContentLayer ContentLayer { get; init; }
+    public int? Page { get; init; }
+    public int? PageEnd { get; init; }
+    public BoundingBox? BBox { get; init; }
+    public IReadOnlyList<TextAnnotation> Annotations { get; init; }
+}
+
+public enum ContentLayer
+{
+    Body,
+    Header,
+    Footer,
+    Footnote,
+}
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "nodeType")]
+[JsonDerivedType(typeof(TitleNode), "title")]
+[JsonDerivedType(typeof(HeadingNode), "heading")]
+[JsonDerivedType(typeof(ParagraphNode), "paragraph")]
+[JsonDerivedType(typeof(ListNode), "list")]
+[JsonDerivedType(typeof(ListItemNode), "listItem")]
+[JsonDerivedType(typeof(TableNode), "table")]
+[JsonDerivedType(typeof(ImageNode), "image")]
+[JsonDerivedType(typeof(CodeNode), "code")]
+[JsonDerivedType(typeof(QuoteNode), "quote")]
+[JsonDerivedType(typeof(FormulaNode), "formula")]
+[JsonDerivedType(typeof(FootnoteNode), "footnote")]
+[JsonDerivedType(typeof(GroupNode), "group")]
+[JsonDerivedType(typeof(PageBreakNode), "pageBreak")]
+public abstract record NodeContent;
+
+public record TitleNode(string Text) : NodeContent;
+public record HeadingNode(int Level, string Text) : NodeContent;
+public record ParagraphNode(string Text) : NodeContent;
+public record ListNode(bool Ordered) : NodeContent;
+public record ListItemNode(string Text) : NodeContent;
+public record TableNode(TableGrid Grid) : NodeContent;
+public record ImageNode(string? Description = null, int? ImageIndex = null) : NodeContent;
+public record CodeNode(string Text, string? Language = null) : NodeContent;
+public record QuoteNode() : NodeContent;
+public record FormulaNode(string Text) : NodeContent;
+public record FootnoteNode(string Text) : NodeContent;
+public record GroupNode(string? Label = null, int? HeadingLevel = null, string? HeadingText = null) : NodeContent;
+public record PageBreakNode() : NodeContent;
+
+public sealed class TableGrid
+{
+    public int Rows { get; init; }
+    public int Cols { get; init; }
+    public IReadOnlyList<GridCell> Cells { get; init; }
+}
+
+public sealed class GridCell
+{
+    public string Content { get; init; }
+    public int Row { get; init; }
+    public int Col { get; init; }
+    public int RowSpan { get; init; }
+    public int ColSpan { get; init; }
+    public bool IsHeader { get; init; }
+    public BoundingBox? BBox { get; init; }
+}
+
+public sealed class TextAnnotation
+{
+    public int Start { get; init; }
+    public int End { get; init; }
+    public AnnotationKind Kind { get; init; }
+}
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "annotationType")]
+[JsonDerivedType(typeof(BoldAnnotation), "bold")]
+[JsonDerivedType(typeof(ItalicAnnotation), "italic")]
+[JsonDerivedType(typeof(UnderlineAnnotation), "underline")]
+[JsonDerivedType(typeof(StrikethroughAnnotation), "strikethrough")]
+[JsonDerivedType(typeof(CodeAnnotation), "code")]
+[JsonDerivedType(typeof(SubscriptAnnotation), "subscript")]
+[JsonDerivedType(typeof(SuperscriptAnnotation), "superscript")]
+[JsonDerivedType(typeof(LinkAnnotation), "link")]
+public abstract record AnnotationKind;
+
+public record BoldAnnotation() : AnnotationKind;
+public record ItalicAnnotation() : AnnotationKind;
+public record UnderlineAnnotation() : AnnotationKind;
+public record StrikethroughAnnotation() : AnnotationKind;
+public record CodeAnnotation() : AnnotationKind;
+public record SubscriptAnnotation() : AnnotationKind;
+public record SuperscriptAnnotation() : AnnotationKind;
+public record LinkAnnotation(string Url, string? Title = null) : AnnotationKind;
+```
+
+### PHP
+
+```php title="document_structure.php"
+class DocumentStructure {
+    public readonly array $nodes;
+
+    public function __construct(array $nodes) {
+        $this->nodes = $nodes;
+    }
+}
+
+class DocumentNode {
+    public readonly string $id;
+    public readonly array $content;
+    public readonly ?int $parent;
+    public readonly array $children;
+    public readonly string $contentLayer;
+    public readonly ?int $page;
+    public readonly ?int $pageEnd;
+    public readonly ?BoundingBox $bbox;
+    public readonly array $annotations;
+
+    public function __construct(
+        string $id,
+        array $content,
+        ?int $parent,
+        array $children,
+        string $contentLayer,
+        ?int $page,
+        ?int $pageEnd,
+        ?BoundingBox $bbox,
+        array $annotations
+    ) {
+        $this->id = $id;
+        $this->content = $content;
+        $this->parent = $parent;
+        $this->children = $children;
+        $this->contentLayer = $contentLayer;
+        $this->page = $page;
+        $this->pageEnd = $pageEnd;
+        $this->bbox = $bbox;
+        $this->annotations = $annotations;
+    }
+}
+
+class ContentLayer {
+    public const BODY = 'body';
+    public const HEADER = 'header';
+    public const FOOTER = 'footer';
+    public const FOOTNOTE = 'footnote';
+}
+
+class TableGrid {
+    public readonly int $rows;
+    public readonly int $cols;
+    public readonly array $cells;
+
+    public function __construct(int $rows, int $cols, array $cells) {
+        $this->rows = $rows;
+        $this->cols = $cols;
+        $this->cells = $cells;
+    }
+}
+
+class GridCell {
+    public readonly string $content;
+    public readonly int $row;
+    public readonly int $col;
+    public readonly int $rowSpan;
+    public readonly int $colSpan;
+    public readonly bool $isHeader;
+    public readonly ?BoundingBox $bbox;
+
+    public function __construct(string $content, int $row, int $col, int $rowSpan, int $colSpan, bool $isHeader, ?BoundingBox $bbox) {
+        $this->content = $content;
+        $this->row = $row;
+        $this->col = $col;
+        $this->rowSpan = $rowSpan;
+        $this->colSpan = $colSpan;
+        $this->isHeader = $isHeader;
+        $this->bbox = $bbox;
+    }
+}
+
+class TextAnnotation {
+    public readonly int $start;
+    public readonly int $end;
+    public readonly array $kind;
+
+    public function __construct(int $start, int $end, array $kind) {
+        $this->start = $start;
+        $this->end = $end;
+        $this->kind = $kind;
+    }
+}
+```
+
+### Elixir
+
+```elixir title="document_structure.ex"
+defmodule Kreuzberg.DocumentStructure do
+  @type t :: %__MODULE__{
+    nodes: list(DocumentNode.t())
+  }
+
+  defstruct [:nodes]
+end
+
+defmodule Kreuzberg.DocumentNode do
+  @type t :: %__MODULE__{
+    id: String.t(),
+    content: Kreuzberg.NodeContent.t(),
+    parent: non_neg_integer() | nil,
+    children: list(non_neg_integer()),
+    content_layer: atom(),
+    page: non_neg_integer() | nil,
+    page_end: non_neg_integer() | nil,
+    bbox: Kreuzberg.BoundingBox.t() | nil,
+    annotations: list(Kreuzberg.TextAnnotation.t())
+  }
+
+  defstruct [:id, :content, :parent, :children, :content_layer, :page, :page_end, :bbox, :annotations]
+end
+
+defmodule Kreuzberg.ContentLayer do
+  @type t :: :body | :header | :footer | :footnote
+end
+
+defmodule Kreuzberg.NodeContent do
+  @type t ::
+    {:title, String.t()} |
+    {:heading, pos_integer(), String.t()} |
+    {:paragraph, String.t()} |
+    {:list, boolean()} |
+    {:list_item, String.t()} |
+    {:table, Kreuzberg.TableGrid.t()} |
+    {:image, String.t() | nil, non_neg_integer() | nil} |
+    {:code, String.t(), String.t() | nil} |
+    :quote |
+    {:formula, String.t()} |
+    {:footnote, String.t()} |
+    {:group, String.t() | nil, pos_integer() | nil, String.t() | nil} |
+    :page_break
+end
+
+defmodule Kreuzberg.TableGrid do
+  @type t :: %__MODULE__{
+    rows: pos_integer(),
+    cols: pos_integer(),
+    cells: list(Kreuzberg.GridCell.t())
+  }
+
+  defstruct [:rows, :cols, :cells]
+end
+
+defmodule Kreuzberg.GridCell do
+  @type t :: %__MODULE__{
+    content: String.t(),
+    row: pos_integer(),
+    col: pos_integer(),
+    row_span: pos_integer(),
+    col_span: pos_integer(),
+    is_header: boolean(),
+    bbox: Kreuzberg.BoundingBox.t() | nil
+  }
+
+  defstruct [:content, :row, :col, :row_span, :col_span, :is_header, :bbox]
+end
+
+defmodule Kreuzberg.TextAnnotation do
+  @type t :: %__MODULE__{
+    start: non_neg_integer(),
+    end: non_neg_integer(),
+    kind: Kreuzberg.AnnotationKind.t()
+  }
+
+  defstruct [:start, :end, :kind]
+end
+
+defmodule Kreuzberg.AnnotationKind do
+  @type t ::
+    :bold |
+    :italic |
+    :underline |
+    :strikethrough |
+    :code |
+    :subscript |
+    :superscript |
+    {:link, String.t(), String.t() | nil}
+end
+```
+
+### WebAssembly
+
+```typescript title="document_structure_wasm.ts"
+export interface DocumentStructure {
+    nodes: DocumentNode[];
+}
+
+export interface DocumentNode {
+    id: string;
+    content: NodeContent;
+    parent: number | null;
+    children: number[];
+    contentLayer: ContentLayer;
+    page: number | null;
+    pageEnd: number | null;
+    bbox: BoundingBox | null;
+    annotations: TextAnnotation[];
+}
+
+export type ContentLayer = "body" | "header" | "footer" | "footnote";
+
+export type NodeContent =
+    | { nodeType: "title"; text: string }
+    | { nodeType: "heading"; level: number; text: string }
+    | { nodeType: "paragraph"; text: string }
+    | { nodeType: "list"; ordered: boolean }
+    | { nodeType: "listItem"; text: string }
+    | { nodeType: "table"; grid: TableGrid }
+    | { nodeType: "image"; description?: string; imageIndex?: number }
+    | { nodeType: "code"; text: string; language?: string }
+    | { nodeType: "quote" }
+    | { nodeType: "formula"; text: string }
+    | { nodeType: "footnote"; text: string }
+    | { nodeType: "group"; label?: string; headingLevel?: number; headingText?: string }
+    | { nodeType: "pageBreak" };
+
+export interface TableGrid {
+    rows: number;
+    cols: number;
+    cells: GridCell[];
+}
+
+export interface GridCell {
+    content: string;
+    row: number;
+    col: number;
+    rowSpan: number;
+    colSpan: number;
+    isHeader: boolean;
+    bbox: BoundingBox | null;
+}
+
+export interface TextAnnotation {
+    start: number;
+    end: number;
+    kind: AnnotationKind;
+}
+
+export type AnnotationKind =
+    | { annotationType: "bold" }
+    | { annotationType: "italic" }
+    | { annotationType: "underline" }
+    | { annotationType: "strikethrough" }
+    | { annotationType: "code" }
+    | { annotationType: "subscript" }
+    | { annotationType: "superscript" }
+    | { annotationType: "link"; url: string; title?: string };
+```

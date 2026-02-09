@@ -2,19 +2,100 @@ package kreuzberg
 
 import "encoding/json"
 
+// DocumentStructure represents a hierarchical tree of document nodes.
+// It uses a flat array of nodes with index-based parent/child references
+// for efficient traversal and compact serialization.
+type DocumentStructure struct {
+	Nodes []DocumentNode `json:"nodes"`
+}
+
+// DocumentNode represents a single node in the document tree.
+// Each node has a deterministic ID, typed content, optional parent/children
+// references for tree structure, and metadata like page number and annotations.
+type DocumentNode struct {
+	ID           string           `json:"id"`
+	Content      NodeContent      `json:"content"`
+	Parent       *uint32          `json:"parent,omitempty"`
+	Children     []uint32         `json:"children,omitempty"`
+	ContentLayer ContentLayer     `json:"content_layer,omitempty"`
+	Page         *uint32          `json:"page,omitempty"`
+	PageEnd      *uint32          `json:"page_end,omitempty"`
+	Bbox         *BoundingBox     `json:"bbox,omitempty"`
+	Annotations  []TextAnnotation `json:"annotations,omitempty"`
+}
+
+// ContentLayer classification for document nodes.
+type ContentLayer string
+
+const (
+	ContentLayerBody     ContentLayer = "body"
+	ContentLayerHeader   ContentLayer = "header"
+	ContentLayerFooter   ContentLayer = "footer"
+	ContentLayerFootnote ContentLayer = "footnote"
+)
+
+// NodeContent is a tagged enum for node content.
+// The node_type field discriminates between content types.
+type NodeContent struct {
+	NodeType     string     `json:"node_type"`
+	Text         string     `json:"text,omitempty"`
+	Level        *int       `json:"level,omitempty"`
+	Ordered      *bool      `json:"ordered,omitempty"`
+	Grid         *TableGrid `json:"grid,omitempty"`
+	Description  *string    `json:"description,omitempty"`
+	ImageIndex   *uint32    `json:"image_index,omitempty"`
+	Language     *string    `json:"language,omitempty"`
+	Label        *string    `json:"label,omitempty"`
+	HeadingLevel *int       `json:"heading_level,omitempty"`
+	HeadingText  *string    `json:"heading_text,omitempty"`
+}
+
+// TableGrid represents a structured table with cell-level metadata.
+type TableGrid struct {
+	Rows  uint32     `json:"rows"`
+	Cols  uint32     `json:"cols"`
+	Cells []GridCell `json:"cells"`
+}
+
+// GridCell represents an individual grid cell with position and span metadata.
+type GridCell struct {
+	Content  string       `json:"content"`
+	Row      uint32       `json:"row"`
+	Col      uint32       `json:"col"`
+	RowSpan  uint32       `json:"row_span"`
+	ColSpan  uint32       `json:"col_span"`
+	IsHeader bool         `json:"is_header"`
+	Bbox     *BoundingBox `json:"bbox,omitempty"`
+}
+
+// TextAnnotation represents inline text annotation with byte-range based formatting and links.
+type TextAnnotation struct {
+	Start uint32         `json:"start"`
+	End   uint32         `json:"end"`
+	Kind  AnnotationKind `json:"kind"`
+}
+
+// AnnotationKind represents types of inline text annotations.
+type AnnotationKind struct {
+	AnnotationType string  `json:"annotation_type"`
+	URL            *string `json:"url,omitempty"`
+	Title          *string `json:"title,omitempty"`
+}
+
 // ExtractionResult mirrors the Rust ExtractionResult struct returned by the core API.
 type ExtractionResult struct {
-	Content           string           `json:"content"`
-	MimeType          string           `json:"mime_type"`
-	Metadata          Metadata         `json:"metadata"`
-	Tables            []Table          `json:"tables"`
-	DetectedLanguages []string         `json:"detected_languages,omitempty"`
-	Chunks            []Chunk          `json:"chunks,omitempty"`
-	Images            []ExtractedImage `json:"images,omitempty"`
-	Pages             []PageContent    `json:"pages,omitempty"`
-	Elements          []Element        `json:"elements,omitempty"`
-	OcrElements       []OcrElement     `json:"ocr_elements,omitempty"`
-	DjotContent       *DjotContent     `json:"djot_content,omitempty"`
+	Content           string             `json:"content"`
+	MimeType          string             `json:"mime_type"`
+	Metadata          Metadata           `json:"metadata"`
+	Tables            []Table            `json:"tables"`
+	DetectedLanguages []string           `json:"detected_languages,omitempty"`
+	Chunks            []Chunk            `json:"chunks,omitempty"`
+	Images            []ExtractedImage   `json:"images,omitempty"`
+	Pages             []PageContent      `json:"pages,omitempty"`
+	Elements          []Element          `json:"elements,omitempty"`
+	OcrElements       []OcrElement       `json:"ocr_elements,omitempty"`
+	DjotContent       *DjotContent       `json:"djot_content,omitempty"`
+	Document          *DocumentStructure `json:"document,omitempty"`
 }
 
 // Table represents a detected table in the source document.

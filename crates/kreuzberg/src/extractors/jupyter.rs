@@ -346,6 +346,7 @@ impl DocumentExtractor for JupyterExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

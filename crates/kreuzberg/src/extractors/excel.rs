@@ -145,6 +145,7 @@ impl DocumentExtractor for ExcelExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 
@@ -192,6 +193,7 @@ impl DocumentExtractor for ExcelExtractor {
             djot_content: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         })
     }
 

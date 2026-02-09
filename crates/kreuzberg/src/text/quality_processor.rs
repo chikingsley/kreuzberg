@@ -127,6 +127,7 @@ mod tests {
 	            elements: None,
 	            ocr_elements: None,
 	            djot_content: None,
+	            document: None,
 	        };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -156,6 +157,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         processor.process(&mut result, &config).await.unwrap();
@@ -192,6 +194,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let config_with_quality = ExtractionConfig {
@@ -223,6 +226,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let long_result = ExtractionResult {
@@ -237,6 +241,7 @@ mod tests {
             pages: None,
             elements: None,
             ocr_elements: None,
+            document: None,
         };
 
         let short_duration = processor.estimated_duration_ms(&short_result);

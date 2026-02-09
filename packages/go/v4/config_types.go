@@ -86,6 +86,7 @@ type ExtractionConfig struct {
 	Pages                    *PageConfig              `json:"pages,omitempty"`
 	SecurityLimits           *SecurityLimitsConfig    `json:"security_limits,omitempty"`
 	MaxConcurrentExtractions *int                     `json:"max_concurrent_extractions,omitempty"`
+	IncludeDocumentStructure *bool                    `json:"include_document_structure,omitempty"`
 	OutputFormat             string                   `json:"output_format,omitempty"`
 	ResultFormat             string                   `json:"result_format,omitempty"`
 }

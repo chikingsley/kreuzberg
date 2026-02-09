@@ -881,6 +881,25 @@ fn render_assertions(assertions: &Assertions) -> String {
         }
     }
 
+    if let Some(document) = assertions.document.as_ref() {
+        let mut args = vec![format!("has_document: {}", document.has_document)];
+        if let Some(min_count) = document.min_node_count {
+            args.push(format!("min_node_count: {}", render_numeric_literal(min_count as u64)));
+        }
+        if !document.node_types_include.is_empty() {
+            args.push(format!(
+                "node_types_include: {}",
+                render_string_list(&document.node_types_include)
+            ));
+        }
+        if let Some(has_groups) = document.has_groups {
+            args.push(format!("has_groups: {}", has_groups));
+        }
+        if !args.is_empty() {
+            pipes.push(format!("E2E.Helpers.assert_document({})", args.join(", ")));
+        }
+    }
+
     if pipes.is_empty() {
         return String::new();
     }
