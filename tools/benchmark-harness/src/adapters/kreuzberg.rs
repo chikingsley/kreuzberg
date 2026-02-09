@@ -422,15 +422,18 @@ pub fn create_node_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
 ///
 /// The WASM build uses the `wasm-target` feature which enables: pdf, html, xml, email,
 /// language-detection, chunking, quality, office. It does NOT include: excel, archives,
-/// ocr/images. PDF uses PDFium (WASM build). Office formats (DOCX, PPTX, ODT) use
-/// native Rust parsers (no tokio required in non-batch mode).
+/// ocr/images. PDF uses PDFium (WASM build). Office formats (DOCX, PPTX, ODT, DOC, PPT) use
+/// native Rust parsers: DOCX/PPTX/ODT via zip-based parsing, DOC/PPT via native OLE/CFB
+/// extraction (no tokio required in non-batch mode).
 fn get_kreuzberg_wasm_supported_formats() -> Vec<String> {
     vec![
         // Documents (office feature, in-memory parsers only — no libreoffice on wasm)
         "pdf",
         "docx",
+        "doc",
         "odt",
         "pptx",
+        "ppt",
         "ppsx",
         "pptm",
         "rtf",
