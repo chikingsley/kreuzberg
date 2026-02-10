@@ -779,7 +779,14 @@ fn link_system_frameworks(target: &str) {
     } else if target.contains("linux") {
         // PDFium and tesseract/leptonica are built with g++/libstdc++.
         if target.contains("musl") {
-            // musl builds: statically link libstdc++ for fully portable binaries
+            // musl builds: statically link libstdc++ for fully portable binaries.
+            // Add GCC library path so the linker can find libstdc++.a
+            if let Ok(output) = Command::new("gcc").arg("--print-file-name=libstdc++.a").output() {
+                let path = String::from_utf8_lossy(&output.stdout);
+                if let Some(parent) = Path::new(path.trim()).parent() {
+                    println!("cargo:rustc-link-search=native={}", parent.display());
+                }
+            }
             println!("cargo:rustc-link-lib=static=stdc++");
             // libm is part of musl libc, linked statically by default
         } else {

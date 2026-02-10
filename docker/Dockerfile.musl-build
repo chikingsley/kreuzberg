@@ -56,7 +56,9 @@ COPY crates/kreuzberg-pdfium-render/ crates/kreuzberg-pdfium-render/
 # Remove workspace members that aren't included
 RUN sed -i '/kreuzberg-py/d; /kreuzberg_rb/d; /kreuzberg-node/d; /kreuzberg-ffi/d; /kreuzberg-php/d; /kreuzberg_rustler/d; /"crates\/kreuzberg-wasm"/d; /^\[profile\.release\.package\.kreuzberg-wasm\]$/,$d; /benchmark-harness/d; /e2e-generator/d; /e2e\/rust/d' Cargo.toml
 
-# Build release binary (musl target defaults to static linking)
+# Remove the linker-facing libstdc++.so symlink so that -lstdc++ resolves
+# only to libstdc++.a (static). Keep the runtime .so.6 for proc-macros.
+RUN rm -f /usr/lib/libstdc++.so
 RUN cargo build --release --package kreuzberg-cli --features all && \
     cp target/release/kreuzberg /build/kreuzberg && \
     strip /build/kreuzberg

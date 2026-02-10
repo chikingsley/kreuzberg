@@ -13,7 +13,7 @@ keywords = ["document", "extraction", "cli", "tool", "parser"]
 categories = ["command-line-utilities", "text-processing"]
 
 [dependencies]
-kreuzberg = { path = "../kreuzberg", version = "4.2.15", features = ["cli", "bundled-pdfium"] }
+kreuzberg = { path = "../kreuzberg", version = "4.2.15", features = ["cli"] }
 clap = { workspace = true }
 tokio = { workspace = true }
 anyhow = { workspace = true }
@@ -23,7 +23,9 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [features]
-default = []
+default = ["bundled-pdfium"]
+bundled-pdfium = ["kreuzberg/bundled-pdfium"]
+static-pdfium = ["kreuzberg/static-pdfium"]
 api = ["kreuzberg/api"]
 mcp = ["kreuzberg/mcp"]
 mcp-http = ["kreuzberg/mcp-http"]

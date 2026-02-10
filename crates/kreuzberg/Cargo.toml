@@ -112,9 +112,9 @@ full = [
     "mcp",
     "otel",
 ]
-server = ["static-pdfium", "excel", "html", "ocr", "paddle-ocr", "chunking", "api", "mcp"]
+server = ["pdf", "excel", "html", "ocr", "paddle-ocr", "chunking", "api", "mcp"]
 cli = [
-    "static-pdfium",
+    "pdf",
     "excel",
     "office",
     "email",
