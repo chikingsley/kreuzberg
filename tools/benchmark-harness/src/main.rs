@@ -497,7 +497,16 @@ async fn main() -> Result<()> {
                     "unknown".to_string()
                 };
                 let status = if info.estimated { " (estimated)" } else { "" };
-                println!("  {}: {}{} - {}", name, size_str, status, info.description);
+                let sys_str = if info.system_deps_bytes > 0 {
+                    format!(
+                        " (pkg: {}, sys: {})",
+                        format_size(info.package_bytes),
+                        format_size(info.system_deps_bytes)
+                    )
+                } else {
+                    String::new()
+                };
+                println!("  {}: {}{}{} - {}", name, size_str, sys_str, status, info.description);
             }
 
             // Create parent directory if needed

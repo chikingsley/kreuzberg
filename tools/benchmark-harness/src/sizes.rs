@@ -13,8 +13,14 @@ use std::process::Command;
 /// Information about a framework's disk size
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FrameworkSize {
-    /// Size in bytes
+    /// Size in bytes (package + system deps combined)
     pub size_bytes: u64,
+    /// Package-only size in bytes (before adding system deps)
+    #[serde(default)]
+    pub package_bytes: u64,
+    /// System dependency size in bytes (libreoffice, tesseract, ffmpeg, etc.)
+    #[serde(default)]
+    pub system_deps_bytes: u64,
     /// Method used to measure (pip_package, npm_package, binary_size, jar_size, etc.)
     pub method: String,
     /// Human-readable description
@@ -53,6 +59,26 @@ const FRAMEWORKS: &[(&str, &str, &str)] = &[
     ("mineru", "pip_package", "MinerU document intelligence"),
 ];
 
+/// Known system dependency sizes (in bytes) for frameworks that require
+/// OS-level packages (libreoffice, tesseract, ffmpeg, etc.).
+/// Sizes are approximate installed sizes on Linux (Ubuntu/Debian amd64).
+fn system_deps_bytes(framework: &str) -> u64 {
+    match framework {
+        // libreoffice ~300MB, tesseract-ocr+lang ~30MB, pandoc ~40MB,
+        // poppler-utils ~20MB, libmagic ~1MB
+        "unstructured" => 400_000_000,
+        // ffmpeg ~100MB, exiftool ~25MB
+        "markitdown" => 125_000_000,
+        // libgl1 ~1MB, fonts-noto-cjk ~88MB, fonts-noto-core ~10MB, fontconfig ~2MB
+        "mineru" => 101_000_000,
+        // libgl1 ~1MB, libglib2.0-0 ~4MB, tesseract-ocr+eng ~20MB
+        "docling" => 25_000_000,
+        // JRE/JDK ~200MB (required to run Tika JAR)
+        "tika" => 200_000_000,
+        _ => 0,
+    }
+}
+
 /// Measure framework sizes
 /// Returns sizes for all frameworks that can be measured.
 /// Frameworks that are not installed are silently skipped.
@@ -61,11 +87,14 @@ pub fn measure_framework_sizes() -> Result<FrameworkSizes> {
 
     for (name, method, description) in FRAMEWORKS {
         match measure_framework(name, method) {
-            Ok(Some(size)) => {
+            Ok(Some(pkg_size)) => {
+                let sys_size = system_deps_bytes(name);
                 sizes.insert(
                     name.to_string(),
                     FrameworkSize {
-                        size_bytes: size,
+                        size_bytes: pkg_size + sys_size,
+                        package_bytes: pkg_size,
+                        system_deps_bytes: sys_size,
                         method: method.to_string(),
                         description: description.to_string(),
                         estimated: false,
@@ -92,11 +121,14 @@ pub fn measure_framework_sizes_strict() -> Result<FrameworkSizes> {
 
     for (name, method, description) in FRAMEWORKS {
         match measure_framework(name, method) {
-            Ok(Some(size)) => {
+            Ok(Some(pkg_size)) => {
+                let sys_size = system_deps_bytes(name);
                 sizes.insert(
                     name.to_string(),
                     FrameworkSize {
-                        size_bytes: size,
+                        size_bytes: pkg_size + sys_size,
+                        package_bytes: pkg_size,
+                        system_deps_bytes: sys_size,
                         method: method.to_string(),
                         description: description.to_string(),
                         estimated: false,
