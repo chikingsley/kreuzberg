@@ -364,6 +364,12 @@ Next steps: [C# Quick Start](quickstart.md) • [C# API Reference](../reference/
 
 ## CLI
 
+Install script (Linux / macOS):
+
+```bash title="Terminal"
+curl -fsSL https://raw.githubusercontent.com/kreuzberg-dev/kreuzberg/main/scripts/install.sh | bash
+```
+
 Homebrew tap (macOS / Linux):
 
 ```bash title="Terminal"
@@ -376,11 +382,17 @@ Cargo install:
 cargo install kreuzberg-cli
 ```
 
-Docker image:
+Docker (CLI-only image):
 
 ```bash title="Terminal"
-docker pull ghcr.io/kreuzberg-dev/kreuzberg:latest       # Core image with essential features
-docker pull ghcr.io/kreuzberg-dev/kreuzberg:latest   # Full image with all extensions
+docker pull ghcr.io/kreuzberg-dev/kreuzberg-cli:latest
+docker run -v $(pwd):/data ghcr.io/kreuzberg-dev/kreuzberg-cli:latest extract /data/document.pdf
+```
+
+Docker (full image with all extensions):
+
+```bash title="Terminal"
+docker pull ghcr.io/kreuzberg-dev/kreuzberg:latest
 ```
 
 Next steps: [CLI Usage](../cli/usage.md) • [API Server Guide](../guides/api-server.md)

@@ -4,6 +4,10 @@ The Kreuzberg CLI provides command-line access to all extraction features. This 
 
 ## Installation
 
+=== "Install Script (Linux/macOS)"
+
+    --8<-- "snippets/cli/install_script.md"
+
 === "Homebrew (macOS/Linux)"
 
     --8<-- "snippets/cli/install_homebrew.md"

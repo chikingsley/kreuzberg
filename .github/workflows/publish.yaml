@@ -411,22 +411,6 @@ jobs:
             python: "3.10"
             needs_qemu: false
             extra_args: ""
-          - label: linux-x86_64-musllinux
-            os: ubuntu-latest
-            artifact: python-wheels-linux-x86_64-musllinux
-            rust_target: x86_64-unknown-linux-musl
-            manylinux: musllinux_1_2
-            python: "3.10"
-            needs_qemu: false
-            extra_args: ""
-          - label: linux-aarch64-musllinux
-            os: ubuntu-24.04-arm
-            artifact: python-wheels-linux-aarch64-musllinux
-            rust_target: aarch64-unknown-linux-musl
-            manylinux: musllinux_1_2
-            python: "3.10"
-            needs_qemu: false
-            extra_args: ""
           - label: macos-arm64
             os: macos-latest
             artifact: python-wheels-macos
@@ -542,10 +526,7 @@ jobs:
             set -euo pipefail
             rustup component add rust-src || true
             # Install dependencies based on the container distro
-            if command -v apk >/dev/null 2>&1; then
-              # Alpine (musllinux containers)
-              apk add --no-cache openssl-dev pkgconf clang clang-dev libc++-dev musl-dev cmake make build-base
-            elif command -v yum >/dev/null 2>&1; then
+            if command -v yum >/dev/null 2>&1; then
               # CentOS/RHEL (manylinux containers)
               yum install -y openssl openssl-devel pkgconfig
               export OPENSSL_LIB_DIR=/usr/lib64
@@ -601,7 +582,6 @@ jobs:
           python-version: '3.10'
 
       - name: Smoke test wheel
-        if: ${{ !contains(matrix.manylinux, 'musllinux') }}
         shell: bash
         run: scripts/ci/python/smoke-test-wheel.sh
 
@@ -700,16 +680,6 @@ jobs:
             rust_target: ""
             use_cross: false
             use_napi_cross: false
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            rust_target: x86_64-unknown-linux-musl
-            use_cross: false
-            use_napi_cross: true
-          - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            rust_target: aarch64-unknown-linux-musl
-            use_cross: false
-            use_napi_cross: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -850,12 +820,6 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             use_cross: false
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            use_cross: false
-          - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            use_cross: false
           - os: macos-latest
             target: aarch64-apple-darwin
             use_cross: false
@@ -901,12 +865,6 @@ jobs:
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
         run: scripts/publish/cli/configure-cross-linker.sh
 
-      - name: Configure musl linker
-        if: ${{ contains(matrix.target, 'musl') }}
-        env:
-          CLI_TARGET: ${{ matrix.target }}
-        run: scripts/publish/cli/configure-musl-linker.sh
-
       - name: Build CLI
         shell: bash
         run: scripts/build_cli_binary.sh ${{ matrix.target }}
@@ -936,6 +894,73 @@ jobs:
         with:
           name: cli-${{ matrix.target }}
           path: kreuzberg-cli-${{ matrix.target }}.zip
+          retention-days: 14
+
+  cli-musl-binaries:
+    name: Build CLI musl binary (${{ matrix.arch }})
+    needs: [prepare, validate-versions, check-cli]
+    if: |
+      needs.prepare.outputs.release_cli == 'true' &&
+      needs.check-cli.outputs.exists != 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build static CLI binary via Docker
+        run: |
+          docker build -f docker/Dockerfile.musl-build \
+            --output type=local,dest=./dist .
+
+      - name: Verify static binary
+        run: |
+          file dist/kreuzberg
+          if readelf -d dist/kreuzberg 2>/dev/null | grep NEEDED; then
+            echo "ERROR: Binary has dynamic dependencies"
+            exit 1
+          fi
+          echo "Binary is fully statically linked"
+
+      - name: Package CLI artifact
+        run: |
+          TARGET="${{ matrix.target }}"
+          STAGE="kreuzberg-cli-${TARGET}"
+          mkdir -p "$STAGE"
+          cp dist/kreuzberg "$STAGE/"
+          cp LICENSE "$STAGE/"
+          cp README.md "$STAGE/"
+          tar -czf "kreuzberg-cli-${TARGET}.tar.gz" "$STAGE"
+          rm -rf "$STAGE"
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: kreuzberg-cli-${{ matrix.target }}.tar.gz
           retention-days: 14
 
   homebrew-bottles:
@@ -2001,14 +2026,14 @@ jobs:
 
   upload-cli-release:
     name: Upload CLI binaries to GitHub Release
-    needs: [prepare, validate-versions, check-cli, cli-binaries]
+    needs: [prepare, validate-versions, check-cli, cli-binaries, cli-musl-binaries]
     if: |
       always() &&
       needs.prepare.outputs.dry_run != 'true' &&
       needs.prepare.outputs.is_tag == 'true' &&
       needs.prepare.outputs.release_cli == 'true' &&
       needs.check-cli.outputs.exists != 'true' &&
-      needs.cli-binaries.result == 'success'
+      (needs.cli-binaries.result == 'success' || needs.cli-musl-binaries.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -3138,6 +3163,7 @@ jobs:
       - publish-hex
       - publish-homebrew
       - upload-cli-release
+      - cli-musl-binaries
       - upload-go-release
       - homebrew-bottles
       - upload-homebrew-bottles

@@ -121,6 +121,7 @@ jobs:
     outputs:
       core_exists: ${{ steps.core.outputs.exists }}
       full_exists: ${{ steps.full.outputs.exists }}
+      cli_exists: ${{ steps.cli.outputs.exists }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -148,6 +149,13 @@ jobs:
           SUMMARY_LABEL: full
         run: scripts/publish/check-docker-tag.sh
 
+      - name: Check CLI image tag
+        id: cli
+        env:
+          DOCKER_TAG: ghcr.io/kreuzberg-dev/kreuzberg-cli:${{ needs.prepare.outputs.version }}
+          SUMMARY_LABEL: cli
+        run: scripts/publish/check-docker-tag.sh
+
   publish-docker:
     name: Publish Docker image (${{ matrix.variant }})
     needs:
@@ -170,6 +178,11 @@ jobs:
           - variant: full
             dockerfile: docker/Dockerfile.full
             image: ghcr.io/kreuzberg-dev/kreuzberg
+            tag_suffix: ""
+            extra_tag: "latest"
+          - variant: cli
+            dockerfile: docker/Dockerfile.cli
+            image: ghcr.io/kreuzberg-dev/kreuzberg-cli
             tag_suffix: ""
             extra_tag: "latest"
     if: ${{ needs.prepare.outputs.release_docker == 'true' }}
@@ -195,19 +208,19 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Skip because tag already exists
-        if: ${{ needs.prepare.outputs.force_republish != 'true' && ((matrix.variant == 'core' && needs.check-docker.outputs.core_exists == 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists == 'true')) }}
+        if: ${{ needs.prepare.outputs.force_republish != 'true' && ((matrix.variant == 'core' && needs.check-docker.outputs.core_exists == 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists == 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists == 'true')) }}
         run: echo "Docker tag already exists for variant ${{ matrix.variant }}; skipping publish." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build AMD64 test image
-        if: ${{ needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') }}
+        if: ${{ needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists != 'true') }}
         run: docker build -f ${{ matrix.dockerfile }} --build-arg PDFIUM_VERSION=${{ env.PDFIUM_VERSION }} --build-arg ONNXRUNTIME_VERSION=${{ env.ORT_VERSION }} -t kreuzberg-publish:${{ matrix.variant }}-test .
 
       - name: Run Docker feature tests
-        if: ${{ needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') }}
+        if: ${{ needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists != 'true') }}
         run: ./scripts/test_docker.sh --skip-build --image kreuzberg-publish:${{ matrix.variant }}-test --variant ${{ matrix.variant }} --verbose
 
       - name: Log in to GitHub Container Registry
-        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true')) }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists != 'true')) }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -215,7 +228,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
-        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true')) }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists != 'true')) }}
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
@@ -225,7 +238,7 @@ jobs:
             type=raw,value=${{ matrix.extra_tag }}
 
       - name: Build and push image
-        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true')) }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && (needs.prepare.outputs.force_republish == 'true' || (matrix.variant == 'core' && needs.check-docker.outputs.core_exists != 'true') || (matrix.variant == 'full' && needs.check-docker.outputs.full_exists != 'true') || (matrix.variant == 'cli' && needs.check-docker.outputs.cli_exists != 'true')) }}
         uses: docker/build-push-action@v6
         with:
           context: .

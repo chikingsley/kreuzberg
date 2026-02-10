@@ -35,14 +35,39 @@ Command-line interface with configuration and caching
 
 The CLI is tested and officially supported on:
 
-- ✅ Linux x86_64
-- ✅ Linux aarch64 (ARM64)
+- ✅ Linux x86_64 (glibc and musl static)
+- ✅ Linux aarch64 / ARM64 (glibc and musl static)
 - ✅ macOS aarch64 (Apple Silicon)
 - ✅ Windows x86_64
 
-All platforms receive precompiled binaries through GitHub releases and are tested in continuous integration.
+All platforms receive precompiled binaries through GitHub releases. Linux musl binaries are fully statically linked with zero runtime dependencies.
 
 ## Installation
+
+### Install Script (Linux / macOS)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kreuzberg-dev/kreuzberg/main/scripts/install.sh | bash
+```
+
+### Homebrew
+
+```bash
+brew install kreuzberg-dev/tap/kreuzberg
+```
+
+### Cargo
+
+```bash
+cargo install kreuzberg-cli
+```
+
+### Docker
+
+```bash
+docker pull ghcr.io/kreuzberg-dev/kreuzberg-cli:latest
+docker run -v $(pwd):/data ghcr.io/kreuzberg-dev/kreuzberg-cli:latest extract /data/document.pdf
+```
 
 ### From Source
 
