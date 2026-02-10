@@ -160,6 +160,11 @@ fn extract_package_name(framework: &str) -> &str {
 ///
 /// Packages must be installed in the project .venv via `uv sync --group bench-*`.
 /// Returns an error if the package cannot be found or measured.
+///
+/// For kreuzberg: measures the single package directory (includes native .so).
+/// For third-party frameworks (docling, unstructured, mineru, etc.): measures
+/// the entire venv site-packages to capture transitive dependencies like
+/// torch/transformers that dominate the actual installation footprint.
 fn measure_pip_package(package: &str) -> Result<Option<u64>> {
     // For native packages (e.g. kreuzberg installed via maturin develop),
     // use Python to find the actual package directory which includes the native .so.
@@ -177,8 +182,40 @@ fn measure_pip_package(package: &str) -> Result<Option<u64>> {
         return Ok(None);
     }
 
+    // For third-party packages, measure the full venv site-packages to capture
+    // transitive deps (e.g. torch, transformers) that dominate the footprint.
+    if package != "kreuzberg" {
+        if let Some(size) = measure_venv_site_packages() {
+            return Ok(Some(size));
+        }
+    }
+
     let stdout = String::from_utf8_lossy(&output.stdout);
     Ok(parse_pip_show_size(&stdout, package))
+}
+
+/// Measure the total size of `.venv/lib/python*/site-packages/`.
+/// Returns None if no .venv is found or the path doesn't exist.
+fn measure_venv_site_packages() -> Option<u64> {
+    let venv_lib = Path::new(".venv/lib");
+    if !venv_lib.exists() {
+        return None;
+    }
+
+    // Find the python* subdirectory (e.g. python3.12)
+    let entries = fs::read_dir(venv_lib).ok()?;
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with("python") {
+            let site_packages = entry.path().join("site-packages");
+            if site_packages.exists() {
+                return Some(dir_size(&site_packages));
+            }
+        }
+    }
+
+    None
 }
 
 /// Parse pip show -f output to extract package size
@@ -354,28 +391,26 @@ fn measure_binary(name: &str) -> Result<Option<u64>> {
         }
     }
 
-    // For kreuzberg-go, measure the FFI shared library (Go links against it via CGO)
+    // For kreuzberg-go, measure the FFI shared library (Go links against it via CGO).
+    // Do NOT fall back to measuring the Go source directory — it includes test fixtures
+    // and build artifacts that inflate the size to ~843 MB.
     if name.starts_with("kreuzberg-go") {
-        let go_paths = [
+        let go_ffi_paths = [
             "target/release/libkreuzberg_ffi.so",
             "target/release/libkreuzberg_ffi.dylib",
-            "packages/go/kreuzberg",
-            "packages/go/v4/kreuzberg",
-            "target/release/libkreuzberg_go.so",
-            "target/release/libkreuzberg_go.dylib",
+            "target/release/kreuzberg_ffi.dll",
         ];
-        for path in go_paths {
+        for path in go_ffi_paths {
             if let Ok(metadata) = fs::metadata(path) {
                 return Ok(Some(metadata.len()));
             }
         }
-        // Measure the Go package directory
-        for dir in ["packages/go/v4", "packages/go/v2"] {
-            let go_pkg_dir = Path::new(dir);
-            if go_pkg_dir.exists() {
-                return Ok(Some(dir_size(go_pkg_dir)));
-            }
+        // Fall back to measuring all native FFI libs (includes pdfium)
+        let ffi_size = measure_native_ffi_libs();
+        if ffi_size > 0 {
+            return Ok(Some(ffi_size));
         }
+        return Ok(None);
     }
 
     // Try which to find binary in PATH
@@ -520,11 +555,14 @@ fn measure_gem_package(package: &str) -> Result<Option<u64>> {
     }
     let ruby_lib = Path::new("packages/ruby/lib");
     if ruby_lib.exists() {
-        let mut total = dir_size(ruby_lib);
+        let lib_size = dir_size(ruby_lib);
+        let mut total = lib_size;
 
-        // If lib/ doesn't contain native extensions (e.g. .bundle or .so),
-        // add the FFI native libs from target/release/ as fallback.
-        if !has_native_extension(ruby_lib) {
+        // Add FFI native libs unless lib/ already contains a substantial native
+        // extension (> 5 MB). Small .so files may be stubs or incomplete artifacts
+        // that don't include the full FFI + pdfium libs.
+        let has_substantial_native = has_native_extension(ruby_lib) && lib_size > 5_000_000;
+        if !has_substantial_native {
             total += measure_native_ffi_libs();
         }
 
@@ -570,54 +608,66 @@ fn measure_wasm_bundle(name: &str) -> Result<Option<u64>> {
 }
 
 /// Measure .NET NuGet package size
+///
+/// Checks project build output directories first, then NuGet cache as fallback.
+/// Always ensures native FFI libs are included in the total since the .NET
+/// package depends on the Rust shared library at runtime.
 fn measure_nuget_package(name: &str) -> Result<Option<u64>> {
-    // Try to find the package in common NuGet cache locations
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
-    let nuget_paths = [
-        format!("{}/.nuget/packages/kreuzberg", home),
-        format!("{}/.nuget/packages/kreuzberg.native", home),
-        "packages/csharp/bin/Release".to_string(),
-        "packages/csharp/bin/Debug".to_string(),
-        "packages/csharp/Kreuzberg/bin/Release".to_string(),
-        "packages/csharp/Kreuzberg/bin/Debug".to_string(),
-        "packages/csharp/Benchmark/bin/Release".to_string(),
-        "packages/csharp/Benchmark/bin/Debug".to_string(),
-    ];
-
-    for path in nuget_paths {
-        let dir = Path::new(&path);
-        if dir.exists() {
-            return Ok(Some(dir_size(dir)));
-        }
-    }
-
-    // Try dotnet list to find package location
     if name.starts_with("kreuzberg-csharp") {
-        // Check both old and current project directory names
+        // Check project build output directories first
         let project_dirs = ["packages/csharp/Kreuzberg", "packages/csharp/Kreuzberg.Native"];
         for proj_dir_str in project_dirs {
             let proj_dir = Path::new(proj_dir_str);
-            let csproj = proj_dir.join(format!("{}.csproj", proj_dir.file_name().unwrap().to_string_lossy()));
-            if csproj.exists() {
-                // Measure the compiled output (bin directory)
-                let bin_dir = proj_dir.join("bin");
+            // Check bin/Release first, then bin/Debug
+            for config in ["Release", "Debug"] {
+                let bin_dir = proj_dir.join("bin").join(config);
                 if bin_dir.exists() {
                     let mut total = dir_size(&bin_dir);
 
-                    // Check if bin/ contains native FFI libs (e.g. in runtimes/*/native/).
-                    // In CI, the runtimes/ dir may not be populated by the build task.
+                    // Always add native FFI libs if bin/ doesn't contain them.
+                    // In CI, the runtimes/*/native/ dir may not be populated.
                     if !has_native_extension(&bin_dir) {
                         total += measure_native_ffi_libs();
                     }
 
                     return Ok(Some(total));
                 }
-                // Fall back to measuring the FFI shared library directly
-                let ffi_size = measure_native_ffi_libs();
-                if ffi_size > 0 {
-                    return Ok(Some(ffi_size));
-                }
             }
+        }
+
+        // Also check Benchmark project output
+        for config in ["Release", "Debug"] {
+            let bench_bin = Path::new("packages/csharp/Benchmark/bin").join(config);
+            if bench_bin.exists() {
+                let mut total = dir_size(&bench_bin);
+                if !has_native_extension(&bench_bin) {
+                    total += measure_native_ffi_libs();
+                }
+                return Ok(Some(total));
+            }
+        }
+
+        // Fall back to NuGet cache, but always add FFI libs
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
+        let nuget_cache_paths = [
+            format!("{}/.nuget/packages/kreuzberg", home),
+            format!("{}/.nuget/packages/kreuzberg.native", home),
+        ];
+        for path in nuget_cache_paths {
+            let dir = Path::new(&path);
+            if dir.exists() {
+                let mut total = dir_size(dir);
+                if !has_native_extension(dir) {
+                    total += measure_native_ffi_libs();
+                }
+                return Ok(Some(total));
+            }
+        }
+
+        // Last resort: just the FFI libs
+        let ffi_size = measure_native_ffi_libs();
+        if ffi_size > 0 {
+            return Ok(Some(ffi_size));
         }
     }
 
