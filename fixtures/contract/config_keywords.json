@@ -1,0 +1,28 @@
+{
+	"id": "config_keywords",
+	"description": "Tests keyword extraction via YAKE algorithm",
+	"tags": ["contract", "config", "keywords"],
+	"document": {
+		"path": "pdf/fake_memo.pdf"
+	},
+	"extraction": {
+		"method": "sync",
+		"input_type": "file",
+		"config": {
+			"keywords": {
+				"algorithm": "yake",
+				"max_keywords": 10
+			}
+		}
+	},
+	"assertions": {
+		"expected_mime": "application/pdf",
+		"min_content_length": 10,
+		"metadata": {
+			"keywords": { "exists": true }
+		}
+	},
+	"skip": {
+		"requires_feature": ["keywords-yake"]
+	}
+}

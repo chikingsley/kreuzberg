@@ -325,6 +325,11 @@ impl ExtractionResult {
             }
         }
 
+        // Propagate additional metadata fields (e.g. keyword extraction results)
+        for (key, value) in &result.metadata.additional {
+            metadata_dict.set_item(key.as_ref(), json_value_to_py(py, value)?)?;
+        }
+
         let metadata = metadata_dict.clone().unbind();
 
         let tables = PyList::empty(py);
