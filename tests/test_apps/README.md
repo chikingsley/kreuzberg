@@ -945,7 +945,7 @@ For language-specific issues, see the README in each tests/test_apps subdirector
 - **Docker issues:** `tests/test_apps/docker/README.md`
 - **Homebrew issues:** `tests/test_apps/homebrew/README.md`
 
-For core Kreuzberg issues, see the [main repository](https://github.com/Goldziher/kreuzberg).
+For core Kreuzberg issues, see the [main repository](https://github.com/kreuzberg-dev/kreuzberg).
 
 ---
 

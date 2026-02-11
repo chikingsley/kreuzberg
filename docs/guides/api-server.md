@@ -757,7 +757,7 @@ Clear all cached files.
 - **Name:** `kreuzberg-mcp`
 - **Title:** Kreuzberg Document Intelligence MCP Server
 - **Version:** Current package version
-- **Website:** https://goldziher.github.io/kreuzberg/
+- **Website:** https://kreuzberg-dev.github.io/kreuzberg/
 - **Protocol:** MCP (Model Context Protocol)
 - **Transport:** stdio (stdin/stdout)
 

@@ -267,9 +267,10 @@ impl ServerHandler for KreuzbergMcp {
             server_info: Implementation {
                 name: "kreuzberg-mcp".to_string(),
                 title: Some("Kreuzberg Document Intelligence MCP Server".to_string()),
+                description: Some("Document intelligence library for extracting content from PDFs, images, office documents, and more.".to_string()),
                 version: env!("CARGO_PKG_VERSION").to_string(),
                 icons: None,
-                website_url: Some("https://goldziher.github.io/kreuzberg/".to_string()),
+                website_url: Some("https://kreuzberg-dev.github.io/kreuzberg/".to_string()),
             },
             instructions: Some(
                 "Extract content from documents in various formats. Supports PDFs, Word documents, \
@@ -505,7 +506,7 @@ mod tests {
         assert_eq!(info.server_info.version, env!("CARGO_PKG_VERSION"));
         assert_eq!(
             info.server_info.website_url,
-            Some("https://goldziher.github.io/kreuzberg/".to_string())
+            Some("https://kreuzberg-dev.github.io/kreuzberg/".to_string())
         );
         assert!(info.instructions.is_some());
         assert!(info.capabilities.tools.is_some());

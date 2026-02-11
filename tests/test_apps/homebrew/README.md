@@ -181,6 +181,6 @@ export VERBOSE=1
 
 ## Support
 
-For issues with Kreuzberg itself, see: https://github.com/Goldziher/kreuzberg
+For issues with Kreuzberg itself, see: https://github.com/kreuzberg-dev/kreuzberg
 
 For Homebrew issues, see: https://docs.brew.sh

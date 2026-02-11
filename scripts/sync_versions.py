@@ -757,7 +757,7 @@ def main():
         # Docker compose images
         (
             repo_root / "tests/test_apps/docker/docker-compose.yml",
-            r'(image: goldziher/kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(-core)?',
+            r'(image: kreuzberg-dev/kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(-core)?',
             rf'\g<1>{version}\g<2>',
         ),
         # Docs: Installation guide Java Maven/Gradle versions

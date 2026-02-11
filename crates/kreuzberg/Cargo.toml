@@ -230,7 +230,7 @@ axum = { version = "0.8", features = ["macros", "json", "multipart"], optional =
 tower = { version = "0.5", optional = true }
 tower-http = { version = "0.6", features = ["cors", "trace", "limit"], optional = true }
 utoipa = { version = "5.4", features = ["axum_extras"], optional = true }
-rmcp = { version = "0.14.0", features = [
+rmcp = { version = "0.15.0", features = [
     "server",
     "macros",
     "base64",
@@ -269,7 +269,7 @@ reqwest = { workspace = true, default-features = false, features = [
     "blocking",
 ], optional = true }
 # Use rustls-tls for fastembed on non-Windows platforms
-fastembed = { version = "5.8", default-features = false, features = [
+fastembed = { version = "5.9", default-features = false, features = [
     "hf-hub-rustls-tls",
     "ort-load-dynamic",
 ], optional = true }
@@ -288,7 +288,7 @@ reqwest = { workspace = true, default-features = false, features = [
     "blocking",
 ], optional = true }
 # Use native-tls for fastembed on Windows
-fastembed = { version = "5.8", default-features = false, features = [
+fastembed = { version = "5.9", default-features = false, features = [
     "hf-hub-native-tls",
     "ort-load-dynamic",
 ], optional = true }
