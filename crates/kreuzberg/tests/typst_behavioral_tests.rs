@@ -272,25 +272,13 @@ async fn test_typst_metadata_extraction_completeness() {
         .await
         .expect("Extraction failed");
 
-    let has_title = result
-        .metadata
-        .additional
-        .get("title")
-        .map(|t| t.to_string().len() > 0)
-        .unwrap_or(false);
-
-    let has_author = result
-        .metadata
-        .additional
-        .get("author")
-        .map(|a| a.to_string().len() > 0)
-        .unwrap_or(false);
-
+    let has_title = result.metadata.title.as_ref().map(|t| !t.is_empty()).unwrap_or(false);
+    let has_author = result.metadata.authors.as_ref().map(|a| !a.is_empty()).unwrap_or(false);
     let has_keywords = result
         .metadata
-        .additional
-        .get("keywords")
-        .map(|k| k.to_string().len() > 0)
+        .keywords
+        .as_ref()
+        .map(|k| !k.is_empty())
         .unwrap_or(false);
 
     assert!(
@@ -785,8 +773,8 @@ async fn test_typst_metadata_field_completeness() {
         .await
         .expect("Extraction failed");
 
-    let has_title = result.metadata.additional.get("title").is_some();
-    let has_author = result.metadata.additional.get("author").is_some();
+    let has_title = result.metadata.title.is_some();
+    let has_author = result.metadata.authors.is_some();
     let has_date = result.metadata.created_at.is_some();
 
     assert!(
@@ -911,15 +899,9 @@ async fn test_typst_basic_metadata_regression() {
         .await
         .expect("Extraction failed");
 
-    assert!(
-        result.metadata.additional.get("title").is_some(),
-        "Title metadata must be extracted."
-    );
+    assert!(result.metadata.title.is_some(), "Title metadata must be extracted.");
 
-    assert!(
-        result.metadata.additional.get("author").is_some(),
-        "Author metadata must be extracted."
-    );
+    assert!(result.metadata.authors.is_some(), "Author metadata must be extracted.");
 }
 
 /// TEST 29: Regression - Bold formatting

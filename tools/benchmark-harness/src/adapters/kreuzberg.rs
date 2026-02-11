@@ -428,7 +428,8 @@ pub fn create_node_batch_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
 fn get_kreuzberg_wasm_supported_formats() -> Vec<String> {
     vec![
         // Documents (office feature, in-memory parsers only — no external tools on wasm)
-        "pdf",
+        // NOTE: "pdf" excluded — PDFium WASM module requires separate initialization
+        // that the benchmark harness does not provide.
         "docx",
         "doc",
         "odt",

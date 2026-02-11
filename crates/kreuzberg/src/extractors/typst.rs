@@ -29,8 +29,6 @@ use crate::types::{ExtractionResult, Metadata};
 use async_trait::async_trait;
 #[cfg(feature = "office")]
 use regex::Regex;
-#[cfg(feature = "office")]
-use std::borrow::Cow;
 
 /// Typst document extractor
 #[cfg(feature = "office")]
@@ -155,11 +153,11 @@ impl TypstParser {
 
     fn extract_metadata(&mut self) {
         if let Some(title) = self.extract_quoted_value("title") {
-            self.metadata.additional.insert(Cow::Borrowed("title"), title.into());
+            self.metadata.title = Some(title);
         }
 
         if let Some(author) = self.extract_quoted_value("author") {
-            self.metadata.additional.insert(Cow::Borrowed("author"), author.into());
+            self.metadata.authors = Some(vec![author]);
         }
 
         if let Some(date) = self.extract_quoted_value("date") {
@@ -167,15 +165,11 @@ impl TypstParser {
         }
 
         if let Some(subject) = self.extract_quoted_value("subject") {
-            self.metadata
-                .additional
-                .insert(Cow::Borrowed("subject"), subject.into());
+            self.metadata.subject = Some(subject);
         }
 
         if let Some(keywords) = self.extract_keywords() {
-            self.metadata
-                .additional
-                .insert(Cow::Borrowed("keywords"), keywords.into());
+            self.metadata.keywords = Some(keywords);
         }
     }
 
@@ -189,14 +183,24 @@ impl TypstParser {
         None
     }
 
-    fn extract_keywords(&self) -> Option<String> {
+    fn extract_keywords(&self) -> Option<Vec<String>> {
         let pattern = r#"keywords:\s*(?:"([^"]*)"|(\([^)]*\)))"#;
         if let Ok(re) = Regex::new(pattern)
             && let Some(caps) = re.captures(&self.content)
         {
+            // Single quoted string: split by comma
             if let Some(m) = caps.get(1) {
-                return Some(m.as_str().to_string());
+                let keywords: Vec<String> = m
+                    .as_str()
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !keywords.is_empty() {
+                    return Some(keywords);
+                }
             }
+            // Array form: ("keyword1", "keyword2")
             if let Some(m) = caps.get(2) {
                 let array_str = m.as_str();
                 let mut keywords = Vec::new();
@@ -209,7 +213,7 @@ impl TypstParser {
                     }
                 }
                 if !keywords.is_empty() {
-                    return Some(keywords.join(", "));
+                    return Some(keywords);
                 }
             }
         }
@@ -497,8 +501,10 @@ mod tests {
 
         let (_, metadata) = TypstExtractor::extract_from_typst(content);
 
-        assert!(metadata.additional.contains_key("title"));
-        assert!(metadata.additional.contains_key("author"));
+        assert!(metadata.title.is_some(), "Title should be extracted");
+        assert_eq!(metadata.title.as_deref(), Some("Test Document"));
+        assert!(metadata.authors.is_some(), "Author should be extracted");
+        assert_eq!(metadata.authors.as_deref(), Some(&["Test Author".to_string()][..]));
     }
 
     #[test]
@@ -614,20 +620,22 @@ $ a^2 + b^2 = c^2 $"#;
 
         let (_, metadata) = TypstExtractor::extract_from_typst(content);
 
-        assert!(metadata.additional.contains_key("title"), "Title should be extracted");
-        assert!(metadata.additional.contains_key("author"), "Author should be extracted");
+        assert_eq!(
+            metadata.title.as_deref(),
+            Some("Advanced Document"),
+            "Title should be extracted"
+        );
+        assert!(metadata.authors.is_some(), "Author should be extracted");
+        assert_eq!(metadata.authors.as_deref(), Some(&["John Doe".to_string()][..]));
         assert!(metadata.created_at.is_some(), "Date should be extracted");
-        assert!(
-            metadata.additional.contains_key("subject"),
+        assert_eq!(
+            metadata.subject.as_deref(),
+            Some("Test Subject"),
             "Subject should be extracted"
         );
-        assert!(
-            metadata
-                .additional
-                .get("keywords")
-                .map(|v| !v.to_string().is_empty())
-                .unwrap_or(false)
-        );
+        assert!(metadata.keywords.is_some(), "Keywords should be extracted");
+        let keywords = metadata.keywords.unwrap();
+        assert_eq!(keywords, vec!["test", "example", "rust"]);
     }
 
     #[test]

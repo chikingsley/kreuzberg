@@ -68,9 +68,24 @@ impl SyncExtractor for EmailExtractor {
             attachments: attachment_names,
         };
 
+        // Filter out keys already represented in EmailMetadata to avoid
+        // flattened field conflicts (e.g. "attachments" as string vs Vec).
+        const EMAIL_STRUCT_KEYS: &[&str] = &[
+            "from_email",
+            "from_name",
+            "to_emails",
+            "cc_emails",
+            "bcc_emails",
+            "message_id",
+            "attachments",
+            "subject",
+            "date",
+        ];
         let mut additional = AHashMap::new();
         for (key, value) in &email_result.metadata {
-            additional.insert(Cow::Owned(key.clone()), serde_json::json!(value));
+            if !EMAIL_STRUCT_KEYS.contains(&key.as_str()) {
+                additional.insert(Cow::Owned(key.clone()), serde_json::json!(value));
+            }
         }
 
         Ok(ExtractionResult {
