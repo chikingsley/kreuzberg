@@ -324,6 +324,20 @@ pub fn extraction_result_to_ruby(ruby: &Ruby, result: RustExtractionResult) -> R
         set_hash_entry(ruby, &hash, "elements", ruby.qnil().as_value())?;
     }
 
+    // Convert ocr_elements
+    if let Some(ocr_elements) = result.ocr_elements {
+        let elements_array = ruby.ary_new();
+        for elem in ocr_elements {
+            let elem_json = serde_json::to_value(&elem)
+                .map_err(|e| runtime_error(format!("Failed to serialize ocr_element: {}", e)))?;
+            let elem_ruby = json_value_to_ruby(ruby, &elem_json)?;
+            elements_array.push(elem_ruby)?;
+        }
+        set_hash_entry(ruby, &hash, "ocr_elements", elements_array.into_value_with(ruby))?;
+    } else {
+        set_hash_entry(ruby, &hash, "ocr_elements", ruby.qnil().as_value())?;
+    }
+
     // Convert document structure
     if let Some(doc_structure) = result.document {
         let document_hash = ruby.hash_new();
