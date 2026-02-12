@@ -375,6 +375,7 @@ fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>
         let below: Vec<(u64, u64)> = rest.iter().filter(|p| p.0 == pt.0).copied().collect();
         let right: Vec<(u64, u64)> = rest.iter().filter(|p| p.1 == pt.1).copied().collect();
 
+        let mut found_for_top_left = false;
         for &below_pt in &below {
             if !edge_connects(pt, below_pt) {
                 continue;
@@ -396,8 +397,13 @@ fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>
                     let x1 = f64::from_bits(bottom_right.0);
                     let bottom = f64::from_bits(bottom_right.1);
                     cells.push((x0, top, x1, bottom));
-                    break; // Found the smallest cell for this top-left corner and this below point
+                    found_for_top_left = true;
+                    break;
                 }
+            }
+
+            if found_for_top_left {
+                break;
             }
         }
     }
@@ -977,9 +983,8 @@ mod tests {
         let intersections = edges_to_intersections(&edges, 1.0, 1.0);
         let cells = intersections_to_cells(&intersections, &edges);
 
-        // A 3x3 grid produces 6 cells: 4 minimal (1x1) + 2 spanning cells
-        // (matching pdfplumber's behavior — spanning cells get resolved during table grouping)
-        assert_eq!(cells.len(), 6);
+        // A 3x3 grid should produce only the 4 minimal cells (no spanning boxes).
+        assert_eq!(cells.len(), 4);
         // Verify all 4 minimal cells are present
         assert!(cells.contains(&(0.0, 0.0, 50.0, 50.0)));
         assert!(cells.contains(&(50.0, 0.0, 100.0, 50.0)));
