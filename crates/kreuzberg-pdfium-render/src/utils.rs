@@ -438,6 +438,7 @@ pub(crate) mod test {
     // Provides a function that binds to the correct Pdfium configuration during unit tests,
     // depending on selected crate features.
 
+    #[cfg(not(feature = "static"))]
     use crate::error::PdfiumError;
     use crate::pdfium::Pdfium;
 

@@ -528,8 +528,10 @@ pub mod prelude {
 mod tests {
     use crate::prelude::*;
     use crate::utils::test::test_bind_to_pdfium;
+    #[cfg(not(feature = "static"))]
     use image_025::ImageFormat;
     use std::fs::File;
+    #[cfg(not(feature = "static"))]
     use std::path::Path;
 
     #[test]

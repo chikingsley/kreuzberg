@@ -305,7 +305,7 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     fn FPDF_SetSandBoxPolicy(&self, policy: FPDF_DWORD, enable: FPDF_BOOL);
 
     #[cfg(not(target_arch = "wasm32"))]
-    #[cfg(feature = "pdfium_use_win32")]
+    #[cfg(all(feature = "pdfium_use_win32", target_os = "windows"))]
     /// Sets printing mode when printing on Windows.
     ///
     ///    mode - `FPDF_PRINTMODE_EMF` to output EMF (default)
@@ -3213,7 +3213,7 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     fn FPDFBitmap_Destroy(&self, bitmap: FPDF_BITMAP);
 
     #[cfg(not(target_arch = "wasm32"))]
-    #[cfg(feature = "pdfium_use_win32")]
+    #[cfg(all(feature = "pdfium_use_win32", target_os = "windows"))]
     /// Renders the contents of a page to a device (screen, bitmap, or printer).
     /// This function is only supported on Windows.
     ///
@@ -6249,21 +6249,34 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     #[allow(non_snake_case)]
     fn FPDFText_GetFontWeight(&self, text_page: FPDF_TEXTPAGE, index: c_int) -> c_int;
 
-    #[cfg(any(
-        feature = "pdfium_6569",
-        feature = "pdfium_6555",
-        feature = "pdfium_6490",
-        feature = "pdfium_6406",
-        feature = "pdfium_6337",
-        feature = "pdfium_6295",
-        feature = "pdfium_6259",
-        feature = "pdfium_6164",
-        feature = "pdfium_6124",
-        feature = "pdfium_6110",
-        feature = "pdfium_6084",
-        feature = "pdfium_6043",
-        feature = "pdfium_6015",
-        feature = "pdfium_5961"
+    #[cfg(all(
+        any(
+            feature = "pdfium_6569",
+            feature = "pdfium_6555",
+            feature = "pdfium_6490",
+            feature = "pdfium_6406",
+            feature = "pdfium_6337",
+            feature = "pdfium_6295",
+            feature = "pdfium_6259",
+            feature = "pdfium_6164",
+            feature = "pdfium_6124",
+            feature = "pdfium_6110",
+            feature = "pdfium_6084",
+            feature = "pdfium_6043",
+            feature = "pdfium_6015",
+            feature = "pdfium_5961"
+        ),
+        not(any(
+            feature = "pdfium_future",
+            feature = "pdfium_7543",
+            feature = "pdfium_7350",
+            feature = "pdfium_7215",
+            feature = "pdfium_7123",
+            feature = "pdfium_6996",
+            feature = "pdfium_6721",
+            feature = "pdfium_6666",
+            feature = "pdfium_6611",
+        ))
     ))]
     /// Gets the text rendering mode of character.
     ///
@@ -8872,21 +8885,34 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     #[allow(non_snake_case)]
     fn FPDFFont_GetFamilyName(&self, font: FPDF_FONT, buffer: *mut c_char, length: c_ulong) -> c_ulong;
 
-    #[cfg(any(
-        feature = "pdfium_6569",
-        feature = "pdfium_6555",
-        feature = "pdfium_6490",
-        feature = "pdfium_6406",
-        feature = "pdfium_6337",
-        feature = "pdfium_6295",
-        feature = "pdfium_6259",
-        feature = "pdfium_6164",
-        feature = "pdfium_6124",
-        feature = "pdfium_6110",
-        feature = "pdfium_6084",
-        feature = "pdfium_6043",
-        feature = "pdfium_6015",
-        feature = "pdfium_5961"
+    #[cfg(all(
+        any(
+            feature = "pdfium_6569",
+            feature = "pdfium_6555",
+            feature = "pdfium_6490",
+            feature = "pdfium_6406",
+            feature = "pdfium_6337",
+            feature = "pdfium_6295",
+            feature = "pdfium_6259",
+            feature = "pdfium_6164",
+            feature = "pdfium_6124",
+            feature = "pdfium_6110",
+            feature = "pdfium_6084",
+            feature = "pdfium_6043",
+            feature = "pdfium_6015",
+            feature = "pdfium_5961"
+        ),
+        not(any(
+            feature = "pdfium_future",
+            feature = "pdfium_7543",
+            feature = "pdfium_7350",
+            feature = "pdfium_7215",
+            feature = "pdfium_7123",
+            feature = "pdfium_6996",
+            feature = "pdfium_6721",
+            feature = "pdfium_6666",
+            feature = "pdfium_6611",
+        ))
     ))]
     /// Gets the font name of a font.
     ///

@@ -21,9 +21,9 @@ mod flatten; // Keep internal flatten operation private.
 
 use object::ownership::PdfPageObjectOwnership;
 
-use crate::bindgen::{
-    FLAT_PRINT, FLATTEN_FAIL, FLATTEN_NOTHINGTODO, FLATTEN_SUCCESS, FPDF_DOCUMENT, FPDF_FORMHANDLE, FPDF_PAGE,
-};
+#[cfg(not(feature = "flatten"))]
+use crate::bindgen::{FLAT_PRINT, FLATTEN_FAIL, FLATTEN_NOTHINGTODO, FLATTEN_SUCCESS};
+use crate::bindgen::{FPDF_DOCUMENT, FPDF_FORMHANDLE, FPDF_PAGE};
 use crate::bindings::PdfiumLibraryBindings;
 use crate::create_transform_setters;
 use crate::error::{PdfiumError, PdfiumInternalError};
@@ -825,7 +825,7 @@ impl<'a> PdfPage<'a> {
     // Use a custom-written flatten operation, rather than Pdfium's built-in flatten. See:
     // https://github.com/ajrcarey/pdfium-render/issues/140
     pub fn flatten(&mut self) -> Result<(), PdfiumError> {
-        flatten_page(self.handle())
+        flatten::flatten_page(self.page_handle)
     }
 
     /// Flattens all annotations and form fields on this [PdfPage] into the page contents.

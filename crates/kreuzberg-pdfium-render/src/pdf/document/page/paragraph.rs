@@ -768,7 +768,7 @@ impl<'a> PdfParagraph<'a> {
         self.fragments
             .iter()
             .filter_map(|fragment| match fragment {
-                PdfParagraphFragment::StyledString(ref string) => Some(string.text.as_str()),
+                PdfParagraphFragment::StyledString(string) => Some(string.text.as_str()),
                 PdfParagraphFragment::LineBreak(_) => Some("\n"),
                 _ => None,
             })
@@ -782,7 +782,7 @@ impl<'a> PdfParagraph<'a> {
         self.fragments
             .iter()
             .filter_map(|fragment| match fragment {
-                PdfParagraphFragment::StyledString(ref string) => Some(string.text.as_str()),
+                PdfParagraphFragment::StyledString(string) => Some(string.text.as_str()),
                 _ => None,
             })
             .collect::<Vec<_>>()
