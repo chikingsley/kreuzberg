@@ -70,6 +70,7 @@ fn extract_edges_from_path(path_obj: &PdfPagePathObject, page_height: f64) -> Re
     // Collect all segment data for rectangle detection
     let mut points: Vec<(f64, f64)> = Vec::new();
     let mut has_bezier = false;
+    let mut has_close = false;
     let mut line_count = 0;
 
     let mut current_x: f64 = 0.0;
@@ -96,11 +97,15 @@ fn extract_edges_from_path(path_obj: &PdfPagePathObject, page_height: f64) -> Re
             }
             _ => {}
         }
+
+        if segment.is_close() {
+            has_close = true;
+        }
     }
 
     // Detect rectangular paths: MoveTo + 3-4 LineTo segments, no beziers,
     // forming an axis-aligned rectangle. These should be classified as RectEdge.
-    let is_rect = !has_bezier && (line_count == 3 || line_count == 4) && is_rectangular_path(&points);
+    let is_rect = !has_bezier && has_close && (line_count == 3 || line_count == 4) && is_rectangular_path(&points);
 
     // Now walk segments again to emit edges with correct types
     for segment in segments.iter() {
