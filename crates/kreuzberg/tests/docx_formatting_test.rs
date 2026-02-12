@@ -321,7 +321,7 @@ async fn test_docx_table_cell_formatting_preserved() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn test_docx_produces_markdown_mime_type() {
+async fn test_docx_preserves_input_mime_type_regression_guard() {
     let path = get_test_file_path("docx/unit_test_formatting.docx");
     if !path.exists() {
         return;
@@ -334,6 +334,6 @@ async fn test_docx_produces_markdown_mime_type() {
     assert_eq!(
         result.mime_type.as_ref() as &str,
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "DOCX extractor should preserve input MIME type"
+        "Regression guard: DOCX extraction output should preserve the original DOCX MIME type for API compatibility"
     );
 }
