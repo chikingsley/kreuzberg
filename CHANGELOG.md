@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.3.1] - 2026-02-12
+
+### Fixed
+
+#### Elixir Package Checksums (#383)
+- **Fixed checksum mismatch for Elixir 4.3.0 Hex package**: Updated `checksum-Elixir.Kreuzberg.Native.exs` with correct SHA256 checksums for all 8 precompiled NIF binaries (NIF 2.16/2.17 across aarch64-apple-darwin, aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-pc-windows-gnu). The 4.3.0 release shipped with outdated 4.2.10 checksums, causing installation failures.
+
+#### Dependency Updates
+- **Updated all dependencies across 10 language ecosystems**: Rust, Python, Node/TypeScript, Ruby, PHP, Go, Java, C#, Elixir, WASM, and pre-commit hooks all updated to latest compatible versions.
+- **Enhanced dependency update tasks**: All language-specific `task update` commands now upgrade to latest major versions (not just respecting version constraints). PHP, Ruby, C#, Elixir, and Python update tasks enhanced with major version upgrade support.
+
+#### WASM Compatibility
+- **Fixed WASM build failures**: Added explicit `getrandom 0.3.4` dependency with `wasm_js` feature to `kreuzberg-wasm` crate to ensure transitive dependencies (ahash, lopdf, rand_core) have WebAssembly support enabled.
+
+#### Dependency Pins
+- **Pinned lzma-rust2 to 0.15.7**: The 0.16.1 upgrade is incompatible with crc 3.4.0. Keeping 0.15.7 until upstream compatibility is restored.
+
+---
+
 ## [4.3.0] - 2026-02-11
 
 ### Added

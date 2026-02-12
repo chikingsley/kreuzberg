@@ -390,9 +390,9 @@ dependencies = [
 
 [[package]]
 name = "aws-lc-sys"
-version = "0.37.0"
+version = "0.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c34dda4df7017c8db52132f0f8a2e0f8161649d15723ed63fc00c82d0f2081a"
+checksum = "b092fe214090261288111db7a2b2c2118e5a7f30dc2569f1732c4069a6840549"
 dependencies = [
  "cc",
  "cmake",
@@ -510,7 +510,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "benchmark-harness"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -1712,7 +1712,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "e2e-rust"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "async-trait",
  "hex",
@@ -3186,9 +3186,9 @@ checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "jiff"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d89a5b5e10d5a9ad6e5d1f4bd58225f655d6fe9767575a5e8ac5a6fe64e04495"
+checksum = "c867c356cc096b33f4981825ab281ecba3db0acefe60329f044c1789d94c6543"
 dependencies = [
  "jiff-static",
  "jiff-tzdb-platform",
@@ -3201,9 +3201,9 @@ dependencies = [
 
 [[package]]
 name = "jiff-static"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff7a39c8862fc1369215ccf0a8f12dd4598c7f6484704359f0351bd617034dbf"
+checksum = "f7946b4325269738f270bb55b3c19ab5c5040525f83fd625259422a9d25d9be5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "anyhow",
@@ -3308,7 +3308,7 @@ dependencies = [
  "fb2",
  "filetime",
  "flate2",
- "getrandom 0.3.4",
+ "getrandom 0.4.1",
  "hayro-jbig2",
  "hayro-jpeg2000",
  "hex",
@@ -3385,7 +3385,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-cli"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3401,7 +3401,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-e2e-generator"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -3419,7 +3419,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-ffi"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3438,7 +3438,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-node"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3464,7 +3464,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-paddle-ocr"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "geo-clipper",
  "geo-types",
@@ -3479,7 +3479,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-pdfium-render"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "bindgen",
  "bitflags 2.10.0",
@@ -3505,7 +3505,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-php"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3520,7 +3520,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-py"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "ahash",
  "async-trait",
@@ -3537,7 +3537,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-tesseract"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "cc",
  "cmake",
@@ -3550,12 +3550,13 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg-wasm"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
  "console_error_panic_hook",
  "futures",
+ "getrandom 0.3.4",
  "getrandom 0.4.1",
  "js-sys",
  "kreuzberg",
@@ -3574,7 +3575,7 @@ dependencies = [
 
 [[package]]
 name = "kreuzberg_rustler"
-version = "4.3.0"
+version = "4.3.1"
 dependencies = [
  "kreuzberg",
  "rustler",
@@ -3670,7 +3671,7 @@ checksum = "3d0b95e02c851351f877147b7deea7b1afb1df71b63aa5f8270716e0c5720616"
 dependencies = [
  "bitflags 2.10.0",
  "libc",
- "redox_syscall 0.7.0",
+ "redox_syscall 0.7.1",
 ]
 
 [[package]]
@@ -6014,9 +6015,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49f3fe0889e69e2ae9e41f4d6c4c0181701d00e4697b356fb1f74173a5e0ee27"
+checksum = "35985aa610addc02e24fc232012c86fd11f14111180f902b67e2d5331f8ebf2b"
 dependencies = [
  "bitflags 2.10.0",
 ]
@@ -7177,9 +7178,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.114"
+version = "2.0.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4d107df263a3013ef9b1879b0df87d706ff80f65a86ea879bd9c31f9b307c2a"
+checksum = "6e614ed320ac28113fa64972c4262d5dbc89deacdfd00c34a3e4cea073243c12"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9295,9 +9296,9 @@ checksum = "a7948af682ccbc3342b6e9420e8c51c1fe5d7bf7756002b4a3c6cabfe96a7e3c"
 
 [[package]]
 name = "zmij"
-version = "1.0.20"
+version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4de98dfa5d5b7fef4ee834d0073d560c9ca7b6c46a71d058c48db7960f8cfaf7"
+checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
 
 [[package]]
 name = "zopfli"
