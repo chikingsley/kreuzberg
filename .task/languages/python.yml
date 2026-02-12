@@ -142,7 +142,7 @@ tasks:
     dir: packages/python
     cmds:
       - echo "Updating Python dependencies to latest versions..."
-      - uv sync --all-packages --all-extras --upgrade-package "*" --no-install-workspace --no-install-project
+      - uv sync --all-packages --all-extras --upgrade --no-install-workspace --no-install-project
       - echo "Checking remaining outdated dependencies..."
       - uv pip list --outdated || true
 
