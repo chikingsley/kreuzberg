@@ -80,7 +80,7 @@ fn convert_docx_table_to_table(docx_table: &crate::extraction::docx::parser::Tab
                 .map(|cell| {
                     cell.paragraphs
                         .iter()
-                        .map(|para| para.to_text())
+                        .map(|para| para.runs_to_markdown())
                         .collect::<Vec<_>>()
                         .join(" ")
                         .trim()
@@ -125,7 +125,7 @@ impl DocumentExtractor for DocxExtractor {
                         let _guard = span.entered();
                         let doc = crate::extraction::docx::parser::parse_document(&content_owned)?;
 
-                        let text = doc.extract_text();
+                        let text = doc.to_markdown();
 
                         let tables: Vec<Table> = doc
                             .tables
@@ -144,7 +144,7 @@ impl DocumentExtractor for DocxExtractor {
             } else {
                 let doc = crate::extraction::docx::parser::parse_document(content)?;
 
-                let text = doc.extract_text();
+                let text = doc.to_markdown();
 
                 let tables: Vec<Table> = doc
                     .tables
@@ -162,7 +162,7 @@ impl DocumentExtractor for DocxExtractor {
             {
                 let doc = crate::extraction::docx::parser::parse_document(content)?;
 
-                let text = doc.extract_text();
+                let text = doc.to_markdown();
 
                 let tables: Vec<Table> = doc
                     .tables
@@ -323,6 +323,7 @@ impl DocumentExtractor for DocxExtractor {
                             image_count: None,
                             table_count: None,
                             hidden: None,
+                            is_blank: None,
                         })
                         .collect(),
                 ),

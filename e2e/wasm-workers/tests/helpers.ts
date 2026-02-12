@@ -389,6 +389,11 @@ export const assertions = {
 		if (typeof exactCount === "number") {
 			expect(pages.length).toBe(exactCount);
 		}
+		for (const page of pages) {
+			const p = page as unknown as Record<string, unknown>;
+			const isBlank = p.isBlank;
+			expect(isBlank === undefined || isBlank === null || typeof isBlank === "boolean").toBe(true);
+		}
 	},
 
 	assertElements(result: ExtractionResult, minCount: number | null, typesInclude: string[] | null): void {
@@ -440,7 +445,7 @@ export const assertions = {
 				expect(hasGroupNodes).toBe(hasGroups);
 			}
 		} else {
-			expect(doc).toBeUndefined();
+			expect(doc == null).toBe(true);
 		}
 	},
 };

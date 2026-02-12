@@ -1,0 +1,145 @@
+From: Zoom <email@domain.com>
+To: email@domain.com
+Subject: Someone has joined your meeting - Someone: 45
+ Minute Meeting
+Date: Fri, 28 Oct 2022 08:59:12 +0000 (UTC)
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+</head>
+<body style="height: 100% !important; width: 100% !important; background-color: #f4f5f9; margin: 0; padding: 0;">
+<table border="0" cellpadding="0" cellspacing="0" align="center" style="font-size: 13px;color:#39394d;font-family: Arial;background-color: #f4f5f9; width: 100%; height: 100%;padding-bottom: 10px;" border="0" cellpadding="0" cellspacing="0" align="center">
+    <tr>
+        <td style="vertical-align: top">
+            <table border="0" cellpadding="0" cellspacing="0" align="center" style="width: 592px;">
+                <tr>
+                    <td style="vertical-align: top;padding: 0px; background-color: #f4f5f9">
+                        <table border="0" cellpadding="0" cellspacing="0" align="center"
+                               style="margin-left: 0px;margin-right: 0px;width: 100%;background-color: #ffffff;padding-bottom: 37px;">
+
+                            <tr>
+                                <td style="padding-top: 30px;padding-bottom: 10px;background-color:#f4f5f9;text-align: center">
+                                    <a href="https://zoom.us">
+                                        <img src="https://us06st1.zoom.us/static/6.2.9277/image/new/ZoomLogo.png" style="border-style: solid;" width="110" height="25" border="0"/>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding-left: 28px;padding-right: 28px;">
+                                    <table border="0" cellpadding="0" cellspacing="0" align="center" style="width: 100%;font-size: 13px;color: #39394d;font-family: Arial;">
+                                        <tr>
+                                            <td colspan="2" style="vertical-align: top; padding-top: 57px;padding-bottom: 10px;">Hi  Someone ,</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="vertical-align: top;line-height: 25px;">
+                                                    Someone has joined your meeting:
+                                            </td>
+                                        </tr>
+
+                                                <tr style="height: 8px;"></tr>
+                                                <tr>
+                                                    <td style="height: 18px;width: 22%;vertical-align: top;color:#747487">
+                                                        <strong>Topic</strong>
+                                                    </td>
+                                                    <td style="vertical-align: top;"><strong>Someone: 45 Minute Meeting</strong></td>
+                                                </tr>
+                                                <tr style="height: 8px;"></tr>
+                                                <tr>
+                                                    <td style="height: 18px;width: 22%;vertical-align: top;color:#747487">
+                                                        <strong>Meeting ID</strong>
+                                                    </td>
+                                                    <td style="vertical-align: top;">869 1664 1575</td>
+                                                </tr>
+                                                <tr style="height: 8px;"></tr>
+                                                <tr>
+                                                    <td style="height: 18px;width: 22%;vertical-align: top;color:#747487"><strong>Time</strong></td>
+                                                    <td style="vertical-align: top;">Oct 28, 2022 11:00 AM Stockholm</td>
+                                                </tr>
+
+                                        <tr>
+                                            <td colspan="2" style="vertical-align: top; padding-top: 15px;padding-bottom: 15px">
+                                                <table border="0" cellpadding="0" cellspacing="0" align="left">
+                                                    <tbody>
+                                                    <tr>
+                                                        <td style="padding-left:30px;padding-top: 10px; padding-bottom: 10px; background-color: #2D8CFF; border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
+                                                            &nbsp;
+                                                        </td>
+                                                        <td style="background-color:#2D8CFF; font-family:helvetica,arial; font-size:16px; line-height:20px; font-weight: 700; padding-top: 10px; padding-bottom: 10px;">
+                                                            <a style="color:#FFFFFF;text-decoration: none;" href="https://us06web.zoom.us/s/86916641575">
+                                                                Start Meeting
+                                                            </a>
+                                                        </td>
+                                                        <td style="padding-right:30px;padding-top: 10px; padding-bottom: 10px; background-color: #2D8CFF; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
+                                                            &nbsp;
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <table border="0" cellpadding="0" cellspacing="0" align="center" style="width: 100%;font-size: 13px;color: #39394d;font-family: Arial;">
+                                        <tr>
+                                            <td style="padding-top: 28px;padding-bottom: 28px;">
+                                                Thank you for choosing Zoom.<br>
+                                                -The Zoom Team
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top: 30px; padding-bottom: 30px; background-color: #FFFFFF; border-top-color:#F0F2F4; border-top-style: solid; border-top-width: 1px;">
+                                    <table align="center" border="0" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                        <tr>
+                                            <td>
+                                                <a href="https://twitter.com/zoom_us" style="text-decoration: none;">
+                                                    <img alt="" border="0" height="25" src="https://go.pardot.com/l/84442/2015-06-24/wht/84442/5264/twitter.png"
+                                                         style="width: 25px; height: 25px; border-width: 0px; border-style: solid;"
+                                                    />
+                                                </a>
+                                            </td>
+                                            <td style="padding-left:10px; padding-right: 10px;">
+                                                <a href="https://www.linkedin.com/company/zoom-video-communications/"
+                                                   style="text-decoration: none;">
+                                                    <img alt="" border="0" height="25" src="https://go.pardot.com/l/84442/2015-06-24/wj1/84442/5270/linkedin.png"
+                                                         style="width: 25px; height: 25px; border-width: 0px; border-style: solid;"
+                                                    />
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <a href="https://blog.zoom.us/" style="text-decoration: none;">
+                                                    <img alt="" border="0" src="https://go.pardot.com/l/84442/2015-06-24/wv9/84442/5282/zoomblog.png"
+                                                         style="width: 25px; height: 25px; border-width: 0px; border-style: solid;"
+                                                    />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tbody>
+                                        <tr>
+                                            <td style="font-family:helvetica,arial; font-size:12px; line-height:18px; color:#999999; text-align:center; padding-top: 10px;">
+                                                Copyright &copy;2022 Zoom Video Communications, Inc. All rights reserved.
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
+
+From 1759159613117388594@xxx Wed Mar 01 10:09:01 +0000 2023
+X-GM-THRID: 1759159613117388594

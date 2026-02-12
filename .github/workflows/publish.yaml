@@ -38,7 +38,7 @@ env:
   CARGO_TERM_COLOR: always
   PDFIUM_VERSION: "7578"
   PDFIUM_STATIC_VERSION: "7442b"
-  ORT_VERSION: "1.23.2"
+  ORT_VERSION: "1.24.1"
   MACOSX_DEPLOYMENT_TARGET: "14.0"
 
 permissions:
@@ -411,22 +411,6 @@ jobs:
             python: "3.10"
             needs_qemu: false
             extra_args: ""
-          - label: linux-x86_64-musllinux
-            os: ubuntu-latest
-            artifact: python-wheels-linux-x86_64-musllinux
-            rust_target: x86_64-unknown-linux-musl
-            manylinux: musllinux_1_2
-            python: "3.10"
-            needs_qemu: false
-            extra_args: ""
-          - label: linux-aarch64-musllinux
-            os: ubuntu-24.04-arm
-            artifact: python-wheels-linux-aarch64-musllinux
-            rust_target: aarch64-unknown-linux-musl
-            manylinux: musllinux_1_2
-            python: "3.10"
-            needs_qemu: false
-            extra_args: ""
           - label: macos-arm64
             os: macos-latest
             artifact: python-wheels-macos
@@ -542,10 +526,7 @@ jobs:
             set -euo pipefail
             rustup component add rust-src || true
             # Install dependencies based on the container distro
-            if command -v apk >/dev/null 2>&1; then
-              # Alpine (musllinux containers)
-              apk add --no-cache openssl-dev pkgconf clang clang-dev libc++-dev musl-dev cmake make build-base
-            elif command -v yum >/dev/null 2>&1; then
+            if command -v yum >/dev/null 2>&1; then
               # CentOS/RHEL (manylinux containers)
               yum install -y openssl openssl-devel pkgconfig
               export OPENSSL_LIB_DIR=/usr/lib64
@@ -601,7 +582,6 @@ jobs:
           python-version: '3.10'
 
       - name: Smoke test wheel
-        if: ${{ !contains(matrix.manylinux, 'musllinux') }}
         shell: bash
         run: scripts/ci/python/smoke-test-wheel.sh
 
@@ -700,16 +680,6 @@ jobs:
             rust_target: ""
             use_cross: false
             use_napi_cross: false
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            rust_target: x86_64-unknown-linux-musl
-            use_cross: false
-            use_napi_cross: true
-          - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            rust_target: aarch64-unknown-linux-musl
-            use_cross: false
-            use_napi_cross: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -850,12 +820,6 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             use_cross: false
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            use_cross: false
-          - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            use_cross: false
           - os: macos-latest
             target: aarch64-apple-darwin
             use_cross: false
@@ -901,12 +865,6 @@ jobs:
         if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
         run: scripts/publish/cli/configure-cross-linker.sh
 
-      - name: Configure musl linker
-        if: ${{ contains(matrix.target, 'musl') }}
-        env:
-          CLI_TARGET: ${{ matrix.target }}
-        run: scripts/publish/cli/configure-musl-linker.sh
-
       - name: Build CLI
         shell: bash
         run: scripts/build_cli_binary.sh ${{ matrix.target }}
@@ -936,6 +894,73 @@ jobs:
         with:
           name: cli-${{ matrix.target }}
           path: kreuzberg-cli-${{ matrix.target }}.zip
+          retention-days: 14
+
+  cli-musl-binaries:
+    name: Build CLI musl binary (${{ matrix.arch }})
+    needs: [prepare, validate-versions, check-cli]
+    if: |
+      needs.prepare.outputs.release_cli == 'true' &&
+      needs.check-cli.outputs.exists != 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build static CLI binary via Docker
+        run: |
+          docker build -f docker/Dockerfile.musl-build \
+            --output type=local,dest=./dist .
+
+      - name: Verify static binary
+        run: |
+          file dist/kreuzberg
+          if readelf -d dist/kreuzberg 2>/dev/null | grep NEEDED; then
+            echo "ERROR: Binary has dynamic dependencies"
+            exit 1
+          fi
+          echo "Binary is fully statically linked"
+
+      - name: Package CLI artifact
+        run: |
+          TARGET="${{ matrix.target }}"
+          STAGE="kreuzberg-cli-${TARGET}"
+          mkdir -p "$STAGE"
+          cp dist/kreuzberg "$STAGE/"
+          cp LICENSE "$STAGE/"
+          cp README.md "$STAGE/"
+          tar -czf "kreuzberg-cli-${TARGET}.tar.gz" "$STAGE"
+          rm -rf "$STAGE"
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: kreuzberg-cli-${{ matrix.target }}.tar.gz
           retention-days: 14
 
   homebrew-bottles:
@@ -2001,14 +2026,14 @@ jobs:
 
   upload-cli-release:
     name: Upload CLI binaries to GitHub Release
-    needs: [prepare, validate-versions, check-cli, cli-binaries]
+    needs: [prepare, validate-versions, check-cli, cli-binaries, cli-musl-binaries]
     if: |
       always() &&
       needs.prepare.outputs.dry_run != 'true' &&
       needs.prepare.outputs.is_tag == 'true' &&
       needs.prepare.outputs.release_cli == 'true' &&
       needs.check-cli.outputs.exists != 'true' &&
-      needs.cli-binaries.result == 'success'
+      (needs.cli-binaries.result == 'success' || needs.cli-musl-binaries.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -2108,6 +2133,16 @@ jobs:
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: scripts/publish/check_cratesio.sh "${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish kreuzberg-pdfium-render
+        if: ${{ steps.crate_check.outputs.pdfium_exists != 'true' && needs.prepare.outputs.dry_run != 'true' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: scripts/publish/publish-cargo-crate.sh kreuzberg-pdfium-render
+
+      - name: Wait for pdfium-render indexing
+        if: ${{ steps.crate_check.outputs.pdfium_exists != 'true' && needs.prepare.outputs.dry_run != 'true' }}
+        run: scripts/publish/wait-for-package.sh cratesio "kreuzberg-pdfium-render" "${{ needs.prepare.outputs.version }}" 10
 
       - name: Publish kreuzberg-tesseract
         if: ${{ steps.crate_check.outputs.tesseract_exists != 'true' && needs.prepare.outputs.dry_run != 'true' }}
@@ -2451,8 +2486,21 @@ jobs:
         working-directory: packages/elixir
         run: mix docs
 
+      - name: Re-check Hex.pm before publish
+        id: recheck
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 60 \
+            "https://hex.pm/api/packages/kreuzberg/releases/${{ needs.prepare.outputs.version }}")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Package kreuzberg@${{ needs.prepare.outputs.version }} already exists on Hex.pm — skipping publish"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to Hex.pm
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         working-directory: packages/elixir
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
@@ -2461,6 +2509,10 @@ jobs:
       - name: Hex.pm dry-run summary
         if: ${{ needs.prepare.outputs.dry_run == 'true' }}
         run: echo "Dry run requested; Hex.pm publish skipped." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Hex.pm already published summary
+        if: ${{ steps.recheck.outputs.exists == 'true' }}
+        run: echo "Package kreuzberg@${{ needs.prepare.outputs.version }} already published on Hex.pm — skipped." >> "$GITHUB_STEP_SUMMARY"
 
   publish-pypi:
     name: Publish Python packages to PyPI
@@ -2583,15 +2635,24 @@ jobs:
           mkdir -p dist
           cp packages/ruby/pkg/*.gem dist/
 
+      - name: Re-check RubyGems before publish
+        id: recheck
+        run: |
+          scripts/publish/check_rubygems.sh "${{ needs.prepare.outputs.version }}" >> "$GITHUB_OUTPUT"
+
       - name: Configure trusted publishing credentials
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         uses: rubygems/configure-rubygems-credentials@v1.0.0
 
       - name: Publish gems to RubyGems
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         env:
           RUBYGEMS_VERSION: ${{ needs.prepare.outputs.version }}
         run: scripts/publish/publish-gems-direct.sh dist
+
+      - name: RubyGems already published summary
+        if: ${{ steps.recheck.outputs.exists == 'true' }}
+        run: echo "Gem kreuzberg@${{ needs.prepare.outputs.version }} already published on RubyGems — skipped." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Dry run summary
         if: ${{ needs.prepare.outputs.dry_run == 'true' }}
@@ -2664,29 +2725,38 @@ jobs:
       - name: Pack platform packages
         run: scripts/publish/pack-node-platform-packages.sh crates/kreuzberg-node/npm
 
+      - name: Re-check npm before publish
+        id: recheck
+        run: |
+          scripts/publish/check_npm.sh "${{ needs.prepare.outputs.version }}" >> "$GITHUB_OUTPUT"
+
       - name: Publish native binary packages
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         run: scripts/publish/publish-node-packages.sh crates/kreuzberg-node/npm "${{ needs.prepare.outputs.npm_tag }}"
 
       - name: Wait for npm indexing
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: scripts/publish/wait-for-package.sh npm "@kreuzberg/node-linux-x64-gnu" "${{ needs.prepare.outputs.version }}" 25
 
       - name: Wait for npm indexing (ARM64)
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: scripts/publish/wait-for-package.sh npm "@kreuzberg/node-linux-arm64-gnu" "${{ needs.prepare.outputs.version }}" 25
 
       - name: Prepare main Node package metadata
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         run: scripts/publish/node/prepublish-main-package.sh crates/kreuzberg-node
 
       - name: Publish main Node package
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         run: scripts/publish/publish-main-node-package.sh crates/kreuzberg-node "${{ needs.prepare.outputs.npm_tag }}"
+
+      - name: npm already published summary
+        if: ${{ steps.recheck.outputs.exists == 'true' }}
+        run: echo "Node package @kreuzberg/node@${{ needs.prepare.outputs.version }} already published on npm — skipped." >> "$GITHUB_STEP_SUMMARY"
 
   publish-wasm:
     name: Publish WASM package
@@ -3087,7 +3157,22 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: scripts/publish/homebrew/extract-bottle-hashes.sh dist/homebrew
 
+      - name: Re-check Homebrew tap before publish
+        id: recheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          api_response=$(timeout 120s gh api repos/kreuzberg-dev/homebrew-tap/contents/Formula/kreuzberg.rb --jq '.content' 2>/dev/null || echo "")
+          if [[ -n "$api_response" ]] && [[ "$api_response" != "null" ]] && echo "$api_response" | base64 -d 2>/dev/null | grep -q "version \"${VERSION}\""; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Homebrew formula already contains version ${VERSION} — skipping publish"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Git credentials
+        if: ${{ steps.recheck.outputs.exists != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
         run: |
@@ -3097,11 +3182,16 @@ jobs:
           git config --global user.email "bot@kreuzberg.dev"
 
       - name: Update Homebrew formula with bottles
+        if: ${{ steps.recheck.outputs.exists != 'true' }}
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
           VERSION: ${{ needs.prepare.outputs.version }}
           DRY_RUN: 'false'
         run: scripts/publish/homebrew/update-formula-with-bottles.sh dist/homebrew homebrew-tap
+
+      - name: Homebrew already published summary
+        if: ${{ steps.recheck.outputs.exists == 'true' }}
+        run: echo "Homebrew formula already contains version ${{ needs.prepare.outputs.version }} — skipped." >> "$GITHUB_STEP_SUMMARY"
 
   release-finalize:
     name: Finalize release and update notes
@@ -3128,6 +3218,7 @@ jobs:
       - publish-hex
       - publish-homebrew
       - upload-cli-release
+      - cli-musl-binaries
       - upload-go-release
       - homebrew-bottles
       - upload-homebrew-bottles

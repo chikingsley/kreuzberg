@@ -60,14 +60,14 @@ env:
   RUST_MIN_STACK: 16777216
   PDFIUM_VERSION: "7578"
   PDFIUM_STATIC_VERSION: "7442b"
-  ORT_VERSION: "1.23.2"
+  ORT_VERSION: "1.24.1"
   MACOSX_DEPLOYMENT_TARGET: "14.0"
   BUILD_PROFILE: "ci"
 
 jobs:
   build-java:
     name: Java Bindings (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     timeout-minutes: 180
     strategy:
       fail-fast: true
@@ -202,7 +202,7 @@ jobs:
 
   test-java:
     name: Java Tests (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     needs: build-java
     timeout-minutes: 180
     strategy:

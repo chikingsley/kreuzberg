@@ -216,4 +216,4 @@ Follows Kreuzberg conventions:
 
 - Main Kreuzberg repository: https://github.com/kreuzberg-dev/kreuzberg
 - Python package: https://pypi.org/project/kreuzberg/
-- Documentation: https://goldziher.github.io/kreuzberg/
+- Documentation: https://kreuzberg-dev.github.io/kreuzberg/

@@ -223,7 +223,9 @@ defmodule Kreuzberg.Helpers do
           images: normalized["images"],
           pages: normalized["pages"],
           elements: normalized["elements"],
-          djot_content: normalized["djot_content"]
+          ocr_elements: normalized["ocr_elements"],
+          djot_content: normalized["djot_content"],
+          document: normalized["document"]
         )
 
         {:ok, result}

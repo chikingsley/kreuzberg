@@ -615,6 +615,59 @@ pub fn kreuzberg_clear_extractors() {
     })
 }
 
+/// Unregister an OCR backend by name.
+///
+/// Delegates to the Rust core OCR backend registry.
+///
+/// # Parameters
+///
+/// - `name` (string): Name of the OCR backend to unregister
+///
+/// # Example
+///
+/// ```php
+/// kreuzberg_unregister_ocr_backend('custom-ocr');
+/// ```
+#[php_function]
+pub fn kreuzberg_unregister_ocr_backend(name: String) -> PhpResult<()> {
+    kreuzberg::plugins::unregister_ocr_backend(&name)
+        .map_err(|e| PhpException::default(format!("Failed to unregister OCR backend: {}", e)))
+}
+
+/// List all registered OCR backends.
+///
+/// Delegates to the Rust core OCR backend registry.
+///
+/// # Returns
+///
+/// Array of OCR backend names
+///
+/// # Example
+///
+/// ```php
+/// $backends = kreuzberg_list_ocr_backends();
+/// ```
+#[php_function]
+pub fn kreuzberg_list_ocr_backends() -> PhpResult<Vec<String>> {
+    kreuzberg::plugins::list_ocr_backends()
+        .map_err(|e| PhpException::default(format!("Failed to list OCR backends: {}", e)))
+}
+
+/// Clear all registered OCR backends.
+///
+/// Delegates to the Rust core OCR backend registry.
+///
+/// # Example
+///
+/// ```php
+/// kreuzberg_clear_ocr_backends();
+/// ```
+#[php_function]
+pub fn kreuzberg_clear_ocr_backends() -> PhpResult<()> {
+    kreuzberg::plugins::clear_ocr_backends()
+        .map_err(|e| PhpException::default(format!("Failed to clear OCR backends: {}", e)))
+}
+
 /// Test a plugin with sample data.
 ///
 /// Tests a registered extractor plugin with sample data to verify it works correctly.
@@ -766,5 +819,8 @@ pub fn get_function_builders() -> Vec<ext_php_rs::builders::FunctionBuilder<'sta
         wrap_function!(kreuzberg_list_extractors),
         wrap_function!(kreuzberg_clear_extractors),
         wrap_function!(kreuzberg_test_plugin),
+        wrap_function!(kreuzberg_unregister_ocr_backend),
+        wrap_function!(kreuzberg_list_ocr_backends),
+        wrap_function!(kreuzberg_clear_ocr_backends),
     ]
 }

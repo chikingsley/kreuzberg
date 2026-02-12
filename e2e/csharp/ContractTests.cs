@@ -214,6 +214,21 @@ namespace Kreuzberg.E2E.Contract {
         }
 
         [SkippableFact]
+        public void ConfigKeywords()
+        {
+            TestHelpers.SkipIfLegacyOfficeDisabled("pdf/fake_memo.pdf");
+            TestHelpers.SkipIfOfficeTestOnWindows("pdf/fake_memo.pdf");
+            var documentPath = TestHelpers.EnsureDocument("pdf/fake_memo.pdf", true);
+            var config = TestHelpers.BuildConfig("{\"keywords\":{\"algorithm\":\"yake\",\"max_keywords\":10}}");
+
+            var result = KreuzbergClient.ExtractFileSync(documentPath, config);
+            TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });
+            TestHelpers.AssertMinContentLength(result, 10);
+            var metadataNode = TestHelpers.MetadataToJson(result.Metadata);
+            TestHelpers.AssertMetadata(metadataNode, "keywords", @"{""exists"": true}");
+        }
+
+        [SkippableFact]
         public void ConfigLanguageDetection()
         {
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/fake_memo.pdf");

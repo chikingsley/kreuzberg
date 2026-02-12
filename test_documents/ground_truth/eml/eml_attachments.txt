@@ -1,0 +1,6 @@
+From: test@mailgun.com
+To: recipient@example.com
+Subject: Test message with PDF attachment
+Date: Mon, 04 Jun 2014 13:50:00 -0400
+
+Test - body content

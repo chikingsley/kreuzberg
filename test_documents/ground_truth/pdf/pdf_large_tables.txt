@@ -1,0 +1,597 @@
+                                             PubTables-1M: Towards comprehensive table extraction from unstructured
+                                                                         documents
+
+                                                                      Brandon Smock             Rohith Pesala              Robin Abraham
+                                                                                                  Microsoft
+                                                                                                Redmond, WA
+
+
+
+
+arXiv:2110.00061v3 [cs.LG] 18 Nov 2021
+                                                                           brsmock,ropesala,robin.abraham@microsoft.com
+
+
+
+                                                                  Abstract
+
+                                             Recently, significant progress has been made applying
+                                         machine learning to the problem of table structure inference
+                                         and extraction from unstructured documents. However, one
+                                         of the greatest challenges remains the creation of datasets
+                                         with complete, unambiguous ground truth at scale. To ad-
+                                         dress this, we develop a new, more comprehensive dataset              Figure 1. An example of a presentation table whose underlying
+                                         for table extraction, called PubTables-1M. PubTables-1M               structure must be inferred, either manually or by automated sys-
+                                         contains nearly one million tables from scientific articles,          tems.
+                                         supports multiple input modalities, and contains detailed
+                                         header and location information for table structures, making
+                                         it useful for a wide variety of modeling approaches. It also          table extraction (TE). TE entails three subtasks [6], which we
+                                         addresses a significant source of ground truth inconsistency          illustrate in Fig. 2: table detection (TD), which locates the
+                                         observed in prior datasets called oversegmentation, using a           table; table structure recognition (TSR), which recognizes
+                                         novel canonicalization procedure. We demonstrate that these           the structure of a table in terms of rows, columns, and cells;
+                                         improvements lead to a significant increase in training per-          and functional analysis (FA), which recognizes the keys and
+                                         formance and a more reliable estimate of model performance            values of the table. TE is challenging for automated sys-
+                                         at evaluation for table structure recognition. Further, we            tems [9, 12, 17, 23] due to the wide variety of formats, styles,
+                                         show that transformer-based object detection models trained           and structures found in presented tables.
+                                         on PubTables-1M produce excellent results for all three tasks             Recently, there has been a shift in the research litera-
+                                         of detection, structure recognition, and functional analysis          ture from traditional rule-based methods [4, 11, 18] for TE to
+                                         without the need for any special customization for these tasks.       data-driven methods based on deep learning (DL) [14,17,22].
+                                         Data and code will be released at https://github.                     The primary advantage of DL methods is that they can learn
+                                         com/microsoft/table-transformer.                                      to be more robust to the wide variety of table presentation
+                                                                                                               formats. However, manually annotating tables for TSR is a
+                                                                                                               difficult and time-consuming process [7]. To overcome this,
+                                         1. Introduction                                                       researchers have turned recently to crowd-sourcing to con-
+                                                                                                               struct larger datasets [9,22,23]. These datasets are assembled
+                                            A table is a compact, structured representation for storing        from tables appearing in documents created by thousands
+                                         data and communicating it in documents and other manners              of authors, where an annotation for each table’s structure
+                                         of presentation. In its presented form, however, a table, such        and content is available in a markup format such as HTML,
+                                         as the one in Fig. 1, may not and often does not explicitly           XML, or LaTeX.
+                                         represent its logical structure. This is an important problem             While crowd-sourcing solves the problem of dataset size,
+                                         as a significant amount of data is communicated through doc-          repurposing annotations originally unintended for TE and
+                                         uments, but without structure information this data cannot            automatically converting these to ground truth presents its
+                                         be used in further applications.                                      own set of challenges with respect to completeness, consis-
+                                            The problem of inferring a table’s structure from its pre-         tency, and quality. This includes not only what information
+                                         sentation and converting it to a structured form is known as          is present but how explicitly this information is represented.
+
+
+                                                                                                           1
+                 Figure 2. Illustration of the three subtasks of table extraction addressed by the PubTables-1M dataset.
+
+
+For instance, markup annotations do not encode spatial coor-           tradictory feedback during training and an underestimate of
+dinates for cells, and they only encode logical relationships          true performance during evaluation.
+implicitly through cues such as layout [20]. Not only does                 To address these and other challenges, we develop a new
+this lack of explicit information limit the range of supervised        large-scale dataset for table extraction called PubTables-1M.
+modeling approaches, it also limits the quality control that           PubTables-1M contains nearly one million tables from scien-
+can be done to verify the annotations’ correctness.                    tific articles in the PubMed Central Open Access1 (PMCOA)
+    Another significant challenge for the use of crowd-                database. Among our contributions:
+sourced annotations is that these structure annotations en-               • PubTables-1M is nearly twice as large as the current
+coded in markup often exhibit an issue we refer to as over-                 largest comparable dataset and addresses all three tasks
+segmentation. Oversegmentation occurs in a structure anno-                  of table detection (TD), table structure recognition
+tation when a spanning cell in a header is split into multiple              (TSR), and functional analysis (FA).
+grid cells. We give examples of this in Fig. 3. Oversegmenta-
+tion in markup usually has no effect on how a table appears               • Compared to prior datasets, PubTables-1M contains
+due to borders between cells being invisible, leaving a pre-                richer annotation information, including annotations
+sentation table’s implicit logical structure and interpretation             for projected row headers and bounding boxes for all
+unaffected. However, oversegmentation can lead to signif-                   rows, columns, and cells, including blank cells. It also
+icant issues when used as ground truth for model training                   includes annotations on their original source documents,
+and evaluation.                                                             which supports multiple input modalities and enables a
+    The first issue is that an oversegmented annotation contra-             wide range of potential model architectures.
+dicts the logical interpretation of the table that its presenta-
+                                                                          • We introduce a novel canonicalization procedure that
+tion is meant to suggest. For instance, oversegmenting a cell
+                                                                            corrects oversegmentation and whose goal is to ensure
+annotation may indicate that its text applies to only one row
+                                                                            each table has a unique, unambiguous structure inter-
+when its presentation form suggests its text is meant to apply
+                                                                            pretation.
+to several rows, as in the cell in column 1, row 3 in Fig. 3.
+This is problematic for use as ground truth to teach a ma-                • To reduce additional sources of error, we implement
+chine learning model to correctly interpret a table’s structure.            several quality verification and control steps and pro-
+Even if oversegmented annotations were considered a valid                   vide measurable guarantees about the quality of the
+intepretation of a table’s structure, allowing them would and               ground truth.
+does lead to ambiguous and inconsistent ground truth, due to
+there then being multiple possible valid interpretations for a            • We show that data improvements alone lead to a sig-
+table’s structure, such as in Fig. 3. This violates the standard            nificant increase in performance for TSR models, due
+modeling assumption that there is exactly one correct ground                both to improved training and a more reliable estimate
+truth annotation for each table. Thus, datasets that contain                of performance at evaluation.
+oversegmented annotations in them lead to inconsistent, con-              1 https://www.ncbi.nlm.nih.gov/pmc/tools/openftlist/
+
+
+
+
+                                                                   2
+                 (a) Oversegmented structure annotation                                    (b) Canonical structure annotation
+
+Figure 3. In the above example, the structure annotation on the left is oversegmented, creating extra blank cells in the headers. The canonical
+structure annotation on the right merges these cells and captures its true logical structure.
+
+
+   • Finally, we apply the Detection Transformer (DETR)                   by prior work is how to define bounding boxes for all cells,
+     [2] for the first time to the tasks of TD, TSR, and FA,              including blank cells.
+     and demonstrate how with PubTables-1M all three tasks                    There are additional challenges related to annotation com-
+     can be addressed with a transformer-based object detec-              pleteness and quality that have not been addressed by prior
+     tion framework without any special customization for                 datasets. In terms of completeness, prior large-scale datasets
+     these tasks.                                                         have also not included bounding boxes for rows and columns.
+                                                                          Additionally, most datasets do not annotate the column
+2. Related Work                                                           header, and no prior large-scale dataset exists that speci-
+                                                                          fies the row header of a table. This not only limits the range
+Structure recognition datasets The first dataset to ad-
+                                                                          of modeling approaches that can be applied to TSR but limits
+dress all three table extraction tasks was the ICDAR-2013
+                                                                          how completely the overall TE task can be solved.
+dataset [6]. It remains popular for benchmarking TSR mod-
+                                                                              Another open challenge is automated verfication and mea-
+els due to its quality and relative completeness compared to
+                                                                          surement of annotation quality, which is important due to the
+other datasets. However, as a source of training data for table
+                                                                          impracticality of verifying large-scale annotations manually.
+extraction models it is limited, containing only 248 tables
+                                                                          Prior datasets have also not addressed the significant issue of
+for TD and TSR and 92 tables for FA.
+                                                                          oversegmented annotations. These are important issues, as
+   Recently, larger datasets [3, 9, 22, 23] have been created
+                                                                          noise and mistakes in training data potentially harm learning
+by collecting crowd-sourced table annotations automatically
+                                                                          and in evaluation data potentially lead to an underestimate of
+from existing documents. We summarize these datasets in
+                                                                          model performance. But currently the extent to which these
+Tab. 1. Each source table has an annotation for its content
+                                                                          issues affect model training and evaluation is unexplored.
+and structure in a markup format such as HTML, XML, or
+LaTeX. Various methods are used to determine each table’s
+spatial location within its containing document to create                 Modeling approaches One of the most common mod-
+a correspondence between its markup and its presentation.                 eling approaches for TSR is to frame the task as some
+From there, datasets commonly frame the TSR task as: given                form of object detection [14, 17, 22]. Other approaches
+an input table, output its cell structure—the assignment of               include those based on image-to-text [9] and graph-based
+cells to rows and columns—and the text content for each                   approaches [3,15]. While a number of general-purpose archi-
+cell, with image and HTML being example input and output                  tectures, such as Faster R-CNN [16], exist for these model
+formats, respectively, for these.                                         patterns, the unique characteristics of table and the relative
+   More recently, two large datasets, FinTabNet and an en-                lack of training data have both contributed to the commonly
+hanced version of PubTabNet, have added location infor-                   observed underperformance of these models when applied
+mation for cells, similar to ICDAR-2013. Adding location                  to TSR out-of-the-box.
+information enables the TSR task to be framed as outputting                  To get around deficiencies in training data, some ap-
+cell location instead of cell content, with cell content extrac-          proaches model TSR in ways that are only partial solutions
+tion being a trivial subsequent step. This increases the range            to the task, such as row and column detection in Deep-
+of possible supervised modeling approaches. However, the                  DeSRT [17], which ignores spanning cells, or image-to-
+bounding boxes for cells defined by these datasets cover only             markup without cell text content, as in models trained on
+the text portion of each and exclude any additional whites-               TableBank [9]. Other approaches use custom pipelines that
+pace a cell might contain. This has a few implications, such              branch to consider different cases separately, such as train-
+as making bounding boxes for blank cells undefined and                    ing separate models to recognize tables with and without
+excluding attributes contributed by whitespace, such as text              visible borders surrounding every cell [14, 22]. Many of the
+indentation and alignment. Therefore, one question left open              previously mentioned approaches also use engineered model
+
+
+                                                                      3
+                                  Table 1. Comparison of crowd-sourced datasets for table structure recognition.
+
+                                           Input                              Cell           Cell           Cell           Row & Column   Canonical
+          Dataset                                            # Tables
+                                           Modality                         Topology        Content       Location           Location     Structure
+          TableBank [9]                    Image                145K            X
+          SciTSR [3]                       PDF∗                  15K            X              X
+          PubTabNet [22, 23]               Image               510K‡            X              X              X†
+          FinTabNet [22]                   PDF∗                 113K            X              X              X†
+          PubTables-1M (ours)              PDF∗                 948K            X              X               X                     X       X
+          ∗
+            Multiple input modalities, such as image or text, can be derived from annotated PDF data.
+          ‡
+            The authors release annotations for 510K of the 568K total tables in their dataset.
+          †
+            For these datasets, cell bounding boxes are given for non-blank cells only and exclude any non-text portion of a cell.
+
+
+
+components or custom training procedures, and incorporate                                 these are removed. This provides a set of conditions for
+rules or other unlearned processing stages tailored to the TSR                            quality and consistency that the annotations are guaranteed to
+task, which brings in prior knowledge to lessen the burden                                meet. In the rest of this section, we describe these conditions
+placed on learning the task from data. Currently, no solution                             and the steps we take to derive ground truth that meets them.
+exists that uses a simple supervised learning approach with
+an off-the-shelf architecture, solves the TSR task completely,
+and achieves state-of-the-art performance.                                                Alignment Text in a PDF document has spatial location
+                                                                                          [xmin , ymin , xmax , ymax ], while text in an XML document ap-
+3. PubTables-1M                                                                           pears inside semantically labeled tags. Because the cor-
+                                                                                          respondence between these is not given, the first step in
+    In this section, we describe the process used to develop                              creating PubTables-1M is to match the text content from
+PubTables-1M. First, to obtain a large source of annotated                                both. We process the PDF document into a sequence of
+tables, we choose the PMCOA corpus, which consists of                                     characters each with their associated bounding box and use
+millions of publicly available scientific articles. In the PM-                            the Needleman-Wunsch algorithm [10] to align this with the
+COA corpus, each scientific article is given in two forms: as                             character sequence for the text extracted from each table
+a PDF document, which visually presents the article, and as                               HTML. This connects the text within each HTML tag to its
+an XML document, which provides a semantic description                                    spatial location with the PDF document. For each cell with
+and hierarchical organization of the document’s elements.                                 text, we compute the union of the bounding boxes for each
+Each table’s content and structure is specified using standard                            character of the cell’s text, which we refer to as a text cell
+HTML tags.                                                                                bounding box.
+    However, because this data was not intended for use as
+ground truth for table extraction modeling, it does not explic-
+itly label or guarantee multiple things that would be helpful                            Completion Following alignment, we complete the spatial
+for this purpose. For instance, although the same tables ap-                             annotations to define bounding boxes for rows, columns, and
+pear in both documents, no direct correspondence between                                 the entire table. The bounding box for the table is defined
+them is given, nor the spatial location of each table. In terms                          simply as the union of all text cell bounding boxes. The xmin
+of data quality, while tables are generally annotated reliably,                          and xmax of the bounding box for each row are defined as
+it is not guaranteed that column headers are annotated com-                              the xmin and xmax of the table, giving every row the same
+pletely or that text content as annotated exactly matches the                            horizontal length. The ymin and ymax of the bounding box for
+text content as it appears in the PDF. Finally, some labels,                             each row, m, are defined as the ymin and ymax of the union
+such as the row header for each table, are not annotated at                              of the text cells for each cell whose starting row or ending
+all.                                                                                     row is m. Similarly, the ymin and ymax of the bounding box
+    The basic approach we take to overcome these issues is                               for each column are defined as the ymin and ymax of the table.
+first we attempt to reliably infer as much missing annotation                            The xmin and xmax of the bounding box for each column,
+information as possible (for instance, the spatial location                              n, are defined as the xmin and xmax of the union of the text
+of each table) from the information that is present, then we                             cell for each cell whose starting column or ending column
+verify that each annotation meets certain requirements for                               is n. From these definitions, the grid cell for each cell is
+consistency. In some cases, we correct an annotation to                                  defined as the union of the bounding boxes of the cell’s
+attempt to make it more consistent, such as merging cells                                rows intersected with the union of the bounding boxes for
+that are oversegmented. We consider certain requirements                                 its columns. Unlike the text cell, the grid cell is defined even
+for tables to be strict and samples whose annotations violate                            for blank cells.
+
+
+                                                                                     4
+Canonicalization The primary goal of the canonicaliza-                        logical structure, there should be exactly one cell for every
+tion step is to correct oversegmentation in a table’s structure               tree node. We also assume that each value in the table is
+annotations. To do this, we need to make assumptions about                    indexed by a unique set of keys. We interpret this to mean
+a table’s intended structure. As the canonicalization algo-                   that each column in the body of the table corresponds to a
+rithm itself is relatively simple, we first describe it, then                 unique leaf node in the column header tree, and similarly that
+detail the assumptions that motivate it. Put simply, canoni-                  each row in the body corresponds to a unique leaf node in the
+calization amounts to merging adjacent cells under certain                    row header tree (the index of a row or column can serve as a
+conditions. This algorithm is given in Algorithm 1. But                       key if necessary). These assumptions enable us to determine
+because it only operates on cells in the headers, HTML does                   if a row or column header is only partially annotated and if
+not have a tag for specifying a table’s row header, and we                    so, to extend it to additional columns or rows, respectively.
+observed that the column headers for tables in the PMCOA                      However, to keep the precision of the algorithm high, for
+corpus are not always correct, we also include steps for in-                  row headers we only attempt to infer projected row headers
+ferring additional header cells that we believe can be reliably               (PRHs, also known as projected multi-level row headers [8],
+inferred in PMCOA markup annotations. These additional                        section headers [13], or super-rows [20]) and to infer cells
+steps significantly increase the number of cells whose over-                  that are in the first column of the header. The PRHs of a
+segmentation we are able to correct.                                          table can be identified using the rule in Line 7. Inference of
+                                                                              the full row header is considered outside the scope of this
+Algorithm 1 PubTables-1M Canonicalization                                     work.
+ 1: A DD CELLS TO THE COLUMN AND ROW HEADERS
+                                                                                  We also assume that any internal node in a header tree has
+ 2:    Split every blank spanning cell into blank grid cells
+                                                                              at least two children. If not, ambiguity could arise in a table’s
+ 3:    if the first row starts with a blank cell then add the first row
+       to the column header
+                                                                              logical structure because an internal node could optionally
+ 4:    if there is at least one row labeled as part of the column             be split into a parent node and a single child node. The final
+       header then                                                            assumptions we make are in regards to the root cause of
+ 5:        while every column in the column header does not have              oversegmentation in markup annotations. We assume that
+           at least one complete cell that only spans that column do:         cells will only be oversegmented if an oversegmentation
+           add the next row to the column header                              is consistent with the table’s appearance. In practice, this
+ 6:    end if                                                                 means that cells with centered text will not be oversegmented
+ 7:    for each row do: if the row is not in the column header and            in the direction of the alignment because this is likely to alter
+       has exactly one non-blank cell that occupies the first column          the table’s appearance. For non-centered text, we expect
+       then label it a projected row header                                   that when cells in either header are oversegmented, this
+ 8:    if any cell in the first column below the column header is
+                                                                              will happen vertically, as in Fig. 3b, and not horizontally
+       a spanning cell or blank then add the column (below the
+       column header) to the row header
+                                                                              due to the fact that text fills horizontal space before it fills
+ 9: M ERGE CELLS                                                              vertical space, leaving more vertical space unused. Further,
+10:   for each cell in the column header do recursively merge the             we expect that oversegmented cells in the row header will
+       cell with any adjacent cells above and below in the column             have text that is top aligned. Finally, we expect that when
+       header that span the exact same columns                                projected row headers are oversegmented, this will happen
+11:    for each cell in the column header do recursively merge the            horizontally, not vertically, as a projected row header already
+       cell with any adjacent blank cells below it if every adjacent          occupies only one row.
+       cell below it is blank and in the column header
+12:    for each cell in the column header do recursively merge the                Finally, there are two additional cases that we must handle
+       cell with any adjacent blank cells above it if every adjacent          by convention. One case is when one or more rows of blank
+       cell above it is blank                                                 grid cells are between a parent cell and all of its children
+13:    for each projected row header do merge all of the cells in             cells in the column header. In this case, we can choose either
+       the row into a single cell
+                                                                              to merge all of the blank cells with the parent cell above
+14:    for each cell in the row header do recursively merge the cell
+       with any adjacent blank cells below it
+                                                                              it or each with the child cell below it, and we choose the
+                                                                              convention to merge all of the blank cells with the child,
+                                                                              which occurs in Line 10. The final case is when a table has
+   We first assume that each table has an intended structure                  an blank stub head (according to the Wang model) in its
+consistent with the Wang model [21], which in a study Wang                    top-left corner. In this case, the blank cells are not part of the
+found was true for 97 percent of observed tables. Under                       table, so the assumptions about table structure do not suggest
+this model, the headers of the table each have a hierarchical                 how they should be grouped. We choose by convention to
+structure that corresponds logically to a tree. We assert that                merge all blank cells in the same column in a blank stub
+for a structure annotation to be consistent with a table’s                    head, which is consistent with the scheme in Line 10.
+
+
+                                                                          5
+Table 2. Estimated measure of oversegmentation for projected row headers (PRHs) by dataset. As PRHs are only one type of cell that can be
+oversegmented, this is a partial survey of the total oversegmentation in these datasets.
+
+                                        Total Tables          Total Tables                           Tables with an oversegmented PRH
+      Dataset
+                                       Investigated†         with a PRH∗                     Total      % (of total with a PRH)         % (of total investigated)
+      SciTSR                                   10,431                   342                    54                         15.79%                         0.52%
+      PubTabNet                               422,491               100,159                58,747                         58.65%                        13.90%
+      FinTabNet                                70,028                25,637                25,348                         98.87%                        36.20%
+      PubTables-1M (ours)                     761,262               153,705                      0                            0%                             0%
+      †
+        We exclude tables with fewer than five rows; to avoid column header rows we skip the first four rows when searching for PRHs.
+      ∗
+        PRH = projected row header; these can be reliably detected in datasets without any prior row or column header annotations.
+
+
+
+Limitations While the stated goal of canonicalization is                                consistency for the ground truth. This shows that improving
+applicable to any table structure annotation, we note that                              the explicitness of information is valuable in part because it
+Algorithm 1 is designed to achieve this specifically for the                            leads to more opportunities for catching inconsistencies and
+annotations in the PMCOA dataset. Canonicalizing tables                                 errors embedded within the data.
+from other datasets may require additional assumptions and
+is considered outside the scope of this work. Finally, it
+should be noted that canonicalization does not guarantee                                Dataset statistics and splits In total, PubTables-1M con-
+mistake-free annotations. Remaining issues are addressed                                tains 947,642 tables for TSR, of which 52.7% are complex
+using the automated quality control procedure described                                 (have at least one spanning cell). Prior to canonicalization,
+next.                                                                                   only 40.1% of the tables in the set were considered com-
+                                                                                        plex by the original annotators. Canonicalization adjusts the
+                                                                                        annotations in some way for 34.7% of tables, or 65.8% of
+Quality control Because PubTables-1M is too large to be                                 complex tables.
+verified manually, we check for potential errors automatically                              To further assess the impact on oversegmentation, we
+and filter these from the data. First, as tables rendered from                          compare our final dataset with other datasets in Tab. 2. Pre-
+markup should not contain overlapping rows or overlapping                               cisely measuring the amount of oversegmentation in a dataset
+columns, we discard any table where this occurs, as these are                           requires annotations for the row and column headers. But
+likely due to mistakes introduced by the alignment process.                             because other datasets lack these, we instead measure just
+To filter out mistakes made both by the original annotators                             oversegmented projected row headers (PRHs). PRHs can
+and our automated processing, we compare the edit distance                              be detected reliably without explicit annotations using the
+between the non-whitespace text for every cell in the original                          rule in Line 7. To account for missing column header an-
+XML annotations with the text extracted from the PDF inside                             notations, we do not start looking for PRHs until at least
+the grid cell bounding box. We filter out any tables for which                          the fifth row, which assumes the column header occupies at
+the normalized edit distance between these averaged over                                most four rows, and we simply exclude any tables that have
+every cell is above 0.05. We do not force the text from                                 fewer than five rows. In case there are un-annotated footers,
+each to be exactly equal, as the PDF text can differ even                               we also do not count any detected PRHs that are the last
+when everything is annotated correctly, due to things like                              rows of the table. A detected PRH is oversegmented if its
+word wrapping, which may add hyphens that are not in the                                row contains a blank cell. As can be seen, canonicalization
+source annotations. When the annotations do slightly differ                             eliminates a significant source of oversegmentation, and thus
+from their corresponding PDF text, we choose to consider                                ambiguity, that is present in other datasets. Interesting to
+the PDF text to be the ground truth. As tables with correct                             note, FinTabNet nearly always oversegments projected row
+location information provide an unambiguous assignment of                               headers. While self-consistent, this widespread oversegmen-
+all words in the table to cells, we also compute the average                            tation contradicts the logical structure of the table and causes
+fraction of overlap between each word appearing within the                              potential issues with combining this dataset with others that
+boundary of the table and its most overlapping grid cell, and                           annotate these rows differently.
+discard tables with an average below 0.9. Finally, we remove                                We split PubTables-1M randomly into train, validation,
+outliers by counting the number of objects in a table (defined                          and test sets at the document level using an 80/10/10 split.
+in Sec. 4) and removing tables with more than 100. In all,                              For TSR, this results in 758,849 tables for training; 94,959
+less than 0.1% of tables are discarded as outliers.                                     for validation; and 93,834 for testing. For TD, there are
+    PubTables-1M is the first dataset that verifies annotations                         460,589 fully-annotated pages containing tables for training;
+at the cell level and provides a measurable assurance of                                57,591 for validation; and 57,125 for testing. An example
+
+
+                                                                                   6
+                                                                        Table 3. Test performance of models on PubTables-1M using object
+                                                                        detection metrics.
+
+                                                                           Task            Model         AP       AP50      AP75           AR
+                                                                           TD           Faster R-CNN    0.825     0.985     0.927          0.866
+                                                                                            DETR        0.966     0.995     0.988          0.981
+                                                                           TSR + FA     Faster R-CNN    0.722     0.815     0.785          0.762
+                                                                                            DETR        0.912     0.971     0.948          0.942
+
+
+
+                                                                        avoid custom engineering the models and training proce-
+                                                                        dures for each task, using default settings wherever possible
+                                                                        to allow the data to drive the result.
+Figure 4. An example table with dilated bounding box annotations
+for different object classes for jointly modeling table structure       5. Experiments
+recognition and functional analysis.
+                                                                           In this section, we report the results of training the pro-
+                                                                        posed models on data derived from PubTables-1M. For TD,
+page and table annotation for TD is shown in Fig. 2. Note               we train two models: DETR and Faster R-CNN. We report
+that tables that span multiple pages are considered outside             the results in Tab. 3. For table detection, DETR slightly
+the scope of this work.                                                 outperforms Faster R-CNN on AP50 but significantly out-
+                                                                        performs on AP. We interpret this to mean that while both
+4. Proposed Model                                                       models are able to learn to detect tables, DETR precisely
+                                                                        localizes tables much better than Faster R-CNN.
+   We model all three tasks of TD, TSR, and FA as object                   For TSR and FA, we train three models: Faster R-CNN
+detection with images as input. For TD, we use two object               and DETR on the canonicalized data, and DETR on the origi-
+classes: table and table rotated. The table rotated class               nal, non-canonical (NC) annotations (DETR-NC). We report
+corresponds to tables that are rotated counterclockwise 90              the results using object detection metrics for the models
+degrees.                                                                trained on canonical data in Tab. 3, which measures per-
+                                                                        formance jointly on TSR and FA, and report results for all
+TSR and FA model We use a novel approach that models                    models using TSR-only metrics in Tab. 4. For TSR only,
+TSR and FA jointly using six object classes: table, table               we also evaluate DETR-NC on both the canonical and the
+column, table row, table column header, table projected row             original non-canonical test data.
+header, and table spanning cell. We illustrate these classes               For assessing TSR performance, we report the table con-
+in Fig. 4. The intersection of each pair of table column                tent accuracy metric (AccCont ), which is the percentage of
+and table row objects can be considered to form a seventh               tables whose text content matches the ground truth exactly
+implicit class, table grid cell. These objects model a table’s          for every cell, as well as several metrics for partial table
+hierarchical structure through physical overlap.                        correctness, which use different strategies to give credit for
+   For the TSR and FA model, we use bounding boxes that                 correct cells when not all cells are correct. For partial correct-
+are dilated. To create dilated bounding boxes, for each pair            ness, we use the F-score of the standard adjacent cell content
+of adjacent rows and each pair of adjacent columns, we                  metric [5] and the recently proposed GriTS metrics [19].
+expand their boundaries until they meet halfway, which fills            GriTS metrics have the form,
+the empty space in between them. Similarly we expand the
+objects from the other classes so their boundaries match                                                    P
+the adjustments made to the rows and columns they occupy.                                              2·     i,j f (Ãi,j , B̃i,j )
+After, there are no gaps or overlap between rows, between                         GriTSf (A, B) =                                      ,           (1)
+                                                                                                                |A| + |B|
+columns, or between cells.
+   To demonstrate the proposed dataset and the object detec-            which can also be interpreted as an F-score. GriTS represents
+tion modeling approach, we apply the Detection Transformer              the ground truth and predicted tables as matrices, A and B,
+(DETR) [2] to all three TE tasks. We train one DETR model               and computes a similarity score between the most similar
+for TD and one DETR model for both TSR and FA. For                      substructures [1] of these matrices, Ã and B̃, where a sub-
+comparison, we also train a Faster R-CNN [16] model for                 structure is defined as a selection of m rows and n columns
+the same tasks. All models use a ResNet-18 backbone pre-                from the matrix. Compared to other metrics for TSR, this for-
+trained on ImageNet with the first few layers frozen. We                mulation better captures the two-dimensional structure and
+
+
+                                                                    7
+                           Table 4. Test performance of the TSR + FA models on PubTables-1M on TSR metrics.
+
+               Test Data         Model          Table Category    AccCont   GriTSTop   GriTSCont    GriTSLoc   AdjCont
+               Non-Canonical     DETR-NC        Simple            0.8678     0.9872      0.9859      0.9821     0.9801
+                                                Complex           0.5360     0.9600      0.9618      0.9444     0.9505
+                                                All               0.7336     0.9762      0.9761      0.9668     0.9681
+               Canonical         DETR-NC        Simple            0.9349     0.9933      0.9920      0.9900     0.9865
+                                                Complex           0.2712     0.9257      0.9290      0.9044     0.9162
+                                                All               0.5851     0.9576      0.9588      0.9449     0.9494
+                                 Faster R-CNN   Simple            0.0867     0.8682      0.8571      0.6869     0.8024
+                                                Complex           0.1193     0.8556      0.8507      0.7518     0.7734
+                                                All               0.1039     0.8616      0.8538      0.7211     0.7871
+                                 DETR           Simple            0.9468     0.9949      0.9938      0.9922     0.9893
+                                                Complex           0.6944     0.9752      0.9763      0.9654     0.9667
+                                                All               0.8138     0.9845      0.9846      0.9781     0.9774
+
+
+
+ordering of cells of a table when comparing tables. Further,           6. Conclusion
+GriTS enables TSR to be assessed from multiple perspec-
+tives within the same formulation, with GriTSTop measuring                In this paper, we introduced a new dataset, PubTables-1M,
+cell topology recognition, GriTSCont measuring cell content            for table extraction in unstructured documents. PubTables-
+recognition, and GriTSLoc measuring cell location recogni-             1M address the challenge of creating complete, reliable
+tion.                                                                  ground truth at scale for table structure recognition. We
+   As can be seen in Tab. 4, DETR trained on the canonical             called attention to the problem that oversegmentation in
+data produces strong results for TSR and FA, outperforming             markup annotations leads to ambiguous ground truth in
+the other models when evaluated on all tables. Comparing               crowd-sourced datasets, and proposed a novel canonical-
+DETR-NC evaluated on NC ground truth versus DETR eval-                 ization procedure to address this. We demonstrated that
+uated on canonical ground truth, we see that using canonical           the proposed improvements to the ground truth data have a
+data improves performance on the metrics across all table              significant positive impact on model performance. Finally,
+types. This is even more apparent for the table accuracy               we adopted DETR for all three table extraction tasks and
+metric, for which the use of canonical data is responsible for         showed for the first time that it is possible to achieve state-
+a jump in performance from 0.5360 to 0.6944 for complex                of-the-art performance within a standard object detection
+tables.                                                                framework without the need for any special customization
+                                                                       for these tasks. While we do not believe this work raises any
+   To consider the positive impact that canonicalization has           issues regarding negative impacts to society, we welcome a
+just on facilitating a more reliable evaluation, we compare            discussion on any potential impacts raised by others.
+DETR-NC evaluated on canonical data versus NC data. Even
+though it is trained on NC data, the metrics for simple tables
+are much higher when DETR-NC is evaluated on canonical
+data (0.9349 accuracy) than when it is evaluted on NC data             7. Future Work
+(0.8678 accuracy). This shows even more clearly that the
+canonical data is less noisy and contributes to a more reliable
+                                                                           In the future, we hope to expand the proposed methods
+evaluation.
+                                                                       and canonicalization beyond scientific articles to data from
+   Overall the results confirm that canonical data signifi-            additional domains, such as tables in financial documents.
+cantly improves performance for TSR models. Even setting               We also hope to address the open challenge of accurately
+aside the argument that non-canonical data is noisier and              annotating row headers in large-scale datasets, which will
+more ambiguous, it is also a different way of annotating the           enable even more complete solutions for table extraction.
+data, using oversegmentation, which is less useful because it          Finally, table extraction is often just one stage in larger
+does not correspond to a table’s true logical structure. This          pipelines for document understanding and information re-
+difference is apparent when we compare DETR-NC versus                  trieval, and developing end-to-end systems in these areas is
+DETR, both evaluated on canonical test data. DETR-NC                   an important future direction with its own challenges. We
+performs much worse on complex tables due in large part                hope that releasing a large pool of detailed table annotations
+to the inconsistent scheme it learns for understanding the             from the PMCOA corpus in particular can further progress
+spanning cells in their headers.                                       in this area.
+
+
+                                                                   8
+8. Acknowledgments                                                            for end-to-end table detection and tabular data extraction from
+                                                                              scanned document images. In 2019 International Conference
+  We would like to thank Pramod Sharma, Natalia Larios                        on Document Analysis and Recognition (ICDAR), pages 128–
+Delgado, Joseph N. Wilson, Mandar Dixit, John Corring,                        133. IEEE, 2019. 1
+and Ching Pui WAN for helpful discussions and feedback                   [13] David Pinto, Andrew McCallum, Xing Wei, and W Bruce
+while preparing this manuscript.                                              Croft. Table extraction using conditional random fields. In
+                                                                              Proceedings of the 26th annual international ACM SIGIR con-
+References                                                                    ference on Research and development in informaion retrieval,
+                                                                              pages 235–242, 2003. 5
+ [1] Amihood Amir, Tzvika Hartman, Oren Kapah, B Riva                    [14] Devashish Prasad, Ayan Gadpal, Kshitij Kapadni, Manish
+     Shalom, and Dekel Tsur. Generalized LCS. Theoretical                     Visave, and Kavita Sultanpure. CascadeTabNet: An approach
+     computer science, 409(3):438–449, 2008. 7                                for end to end table detection and structure recognition from
+ [2] Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas               image-based documents. In Proceedings of the IEEE/CVF
+     Usunier, Alexander Kirillov, and Sergey Zagoruyko. End-to-               Conference on Computer Vision and Pattern Recognition
+     end object detection with transformers. In European Confer-              Workshops, pages 572–573, 2020. 1, 3
+     ence on Computer Vision, pages 213–229. Springer, 2020. 3,          [15] Shah Rukh Qasim, Hassan Mahmood, and Faisal Shafait.
+     7                                                                        Rethinking table recognition using graph neural networks. In
+ [3] Zewen Chi, Heyan Huang, Heng-Da Xu, Houjin Yu, Wanx-                     2019 International Conference on Document Analysis and
+     uan Yin, and Xian-Ling Mao. Complicated table structure                  Recognition (ICDAR), pages 142–147. IEEE, 2019. 3
+     recognition. arXiv preprint arXiv:1908.04729, 2019. 3, 4            [16] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun.
+ [4] Wolfgang Gatterbauer, Paul Bohunsky, Marcus Herzog,                      Faster R-CNN: Towards real-time object detection with region
+     Bernhard Krüpl, and Bernhard Pollak. Towards domain-                     proposal networks. arXiv preprint arXiv:1506.01497, 2015.
+     independent information extraction from web tables. In Pro-              3, 7
+     ceedings of the 16th international conference on World Wide         [17] Sebastian Schreiber, Stefan Agne, Ivo Wolf, Andreas Dengel,
+     Web, pages 71–80, 2007. 1                                                and Sheraz Ahmed. DeepDeSRT: Deep learning for detection
+ [5] Max Göbel, Tamir Hassan, Ermelinda Oro, and Giorgio Orsi.                and structure recognition of tables in document images. In
+     A methodology for evaluating algorithms for table under-                 2017 14th IAPR international conference on document anal-
+     standing in PDF documents. In Proceedings of the 2012 ACM                ysis and recognition (ICDAR), volume 1, pages 1162–1167.
+     symposium on Document engineering, pages 45–48, 2012. 7                  IEEE, 2017. 1, 3
+ [6] Max Göbel, Tamir Hassan, Ermelinda Oro, and Giorgio Orsi.           [18] Alexey O Shigarov. Table understanding using a rule engine.
+     ICDAR 2013 table competition. In 2013 12th International                 Expert Systems with Applications, 42(2):929–937, 2015. 1
+     Conference on Document Analysis and Recognition, pages              [19] Brandon Smock, Rohith Pesala, and Robin Abraham. GriTS:
+     1449–1453. IEEE, 2013. 1, 3                                              Grid table similarity metric for table structure recognition.
+ [7] Jianying Hu, Ramanujan Kashi, Daniel Lopresti, George                    2021. 7
+     Nagy, and Gordon Wilfong. Why table ground-truthing is              [20] Ashwin Tengli, Yiming Yang, and Nian Li Ma. Learning
+     hard. In Proceedings of Sixth International Conference on                table extraction from examples. In COLING 2004: Proceed-
+     Document Analysis and Recognition, pages 129–133. IEEE,                  ings of the 20th International Conference on Computational
+     2001. 1                                                                  Linguistics, pages 987–993, 2004. 2, 5
+ [8] Jianying Hu, Ramanujan S Kashi, Daniel P Lopresti, and Gor-         [21] Xinxin Wang. Tabular abstraction, editing, and formatting,
+     don Wilfong. Table structure recognition and its evaluation.             1996. 5
+     In Document Recognition and Retrieval VIII, volume 4307,
+                                                                         [22] Xinyi Zheng, Douglas Burdick, Lucian Popa, Xu Zhong, and
+     pages 44–55. International Society for Optics and Photonics,
+                                                                              Nancy Xin Ru Wang. Global table extractor (GTE): A frame-
+     2000. 5
+                                                                              work for joint table identification and cell structure recogni-
+ [9] Minghao Li, Lei Cui, Shaohan Huang, Furu Wei, Ming Zhou,                 tion using visual context. In Proceedings of the IEEE/CVF
+     and Zhoujun Li. Tablebank: Table benchmark for image-                    Winter Conference on Applications of Computer Vision, pages
+     based table detection and recognition. In Proceedings of The             697–706, 2021. 1, 3, 4
+     12th Language Resources and Evaluation Conference, pages
+                                                                         [23] Xu Zhong, Elaheh ShafieiBavani, and Antonio Jimeno Yepes.
+     1918–1925, 2020. 1, 3, 4
+                                                                              Image-based table recognition: data, model, and evaluation.
+[10] Saul B Needleman and Christian D Wunsch. A general                       arXiv preprint arXiv:1911.10683, 2019. 1, 3, 4
+     method applicable to the search for similarities in the amino
+     acid sequence of two proteins. Journal of molecular biology,
+     48(3):443–453, 1970. 4
+                                                                         9. Appendix
+[11] Ermelinda Oro and Massimo Ruffolo. TREX: An approach                9.1. Training Details
+     for recognizing and extracting tables from PDF documents.
+     In 2009 10th International Conference on Document Analysis             For both DETR models, we use a ResNet-18 backbone,
+     and Recognition, pages 906–910. IEEE, 2009. 1                       six layers in the encoder, and six layers in the decoder. For
+[12] Shubham Singh Paliwal, D Vishwanath, Rohit Rahul, Monika            TD, we use 15 object queries, and for TSR and FA we use
+     Sharma, and Lovekesh Vig. Tablenet: Deep learning model             125 object queries, each chosen to be slightly more than the
+
+
+                                                                     9
+maximum number of objects in each set’s training samples.               conflict resolution step involves suppressing objects or ad-
+Besides this, we use the same default architecture settings             justing their bounding boxes to eliminate conflict between
+for each model.                                                         objects of the same class. This is similar to non-maxima
+    All of the experiments are performed using a single                 suppression, except overlap between objects is defined in
+NVidia Tesla V100 GPU. We initialize the models with                    terms of children objects instead of pixels. Once the objects
+weights pre-trained on ImageNet and train each model for                are conflict-free, they are converted to a logical table.
+20 epochs using all default hyperparameters and training
+settings except for those we note here. For both models, we             9.3. Scoring
+use a learning rate drop of 1 and gamma of 0.9. For the TSR                Lastly, we note that for the sake of evaluation, once the
+and FA model, we also use an initial learning rate of 0.00005           text that occurs within each grid cell is extracted, we retroac-
+and a no-object class weight of 0.4. We limited hyperparam-             tively adjust the vertical extent of the row bounding boxes
+eter tuning to one short experiment to determine the initial            and the horizontal extent of the column bounding boxes to
+learning rate. We ran training experiments with three dif-              tightly wrap the text they contain. Note that cells contain the
+ferent initial learning rates of 0.0002, 0.0001, 0.00005 and            same text content before and after this tightening. We then
+chose to use the learning rate for each model that had the              use these adjusted bounding boxes for cell location scoring
+best performance on the validation set after one epoch of               purposes. This adjustment is necessary to properly score
+training.                                                               because we train the model using dilated bounding boxes,
+    We use no custom components, losses, or procedures for              which expand the boundaries between rows and between
+training the model, other than standard data augmentations,             columns to fill the gaps between them, thereby containing
+such as random cropping and resizing. To create training data           extraneous padding. This extraneous padding is useful for
+for the TD model, we render the PDF pages to images with                learning but would unfairly penalize the model if included at
+a maximum length of 1000 pixels and appropriately scale                 scoring time, therefore we consider the tightened cells to be
+the bounding boxes for the objects to image coordinates. For            the actual cell locations output by the model and score with
+TSR and FA, we first render the page containing the table as            these.
+an image with a maximum length of 1000 pixels, scale and
+pad the table bounding box with an additional 30 pixels on
+all sides (or fewer on a side if there are less than 30 pixels
+available on that side), and crop the image to this bounding
+box. The padding enables more variation in training through
+cropping augmentations.
+
+9.2. Inference
+    While the model is trained entirely as an object detector,
+at inference time an additional step is required to convert
+from objects output by the model to a structured table. Ob-
+jects in our model form hierarchical relationships, where
+a parent-child relationship between objects is indicated by
+physical containment, or overlap. For details on the full set
+of relationships in the hierarchy, please see the code. One
+thing we mention here is that according to this hierarchy no
+object can have two parents of the same object class. There-
+forem, a conflict occurs when two parent objects of the same
+class both overlap with a potential child object for that class.
+For example, two spanning cell objects are considered to
+conflict if they both overlap with the same grid cell. The
+definition of overlap can vary by object class but is generally
+when 50% of a child object’s bounding box by area overlaps
+with a parent object’s bounding box.
+    The ground truth data is conflict-free, so at training time
+the model learns to produce output that is also free of con-
+flicts. However, to address any conflicts produced by the
+model strictly at inference time once training has finished,
+we add to the models a simple conflict resolution step. The
+
+
+                                                                   10

@@ -62,7 +62,12 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
     let mut config = kreuzberg::core::config::ExtractionConfig::default();
 
     // Define field categories for validation
-    let boolean_fields = ["use_cache", "enable_quality_processing", "force_ocr"];
+    let boolean_fields = [
+        "use_cache",
+        "enable_quality_processing",
+        "force_ocr",
+        "include_document_structure",
+    ];
     let nested_fields = [
         "ocr",
         "chunking",
@@ -73,7 +78,13 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
         "token_reduction",
         "keywords",
         "pdf_options",
+        "html_options",
+        "security_limits",
     ];
+    // String/enum fields that are passed through via serde deserialization
+    let string_fields = ["result_format", "output_format"];
+    // Integer fields that are passed through via serde deserialization
+    let integer_fields = ["max_concurrent_extractions"];
 
     // Process each key in the map with validation
     for (key, value) in opts_map.iter() {
@@ -87,6 +98,7 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
                         "use_cache" => config.use_cache = bool_val,
                         "enable_quality_processing" => config.enable_quality_processing = bool_val,
                         "force_ocr" => config.force_ocr = bool_val,
+                        "include_document_structure" => config.include_document_structure = bool_val,
                         _ => {} // Already checked above
                     }
                 }
@@ -128,6 +140,43 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
             continue;
         }
 
+        // String/enum fields - validated as strings, handled by serde deserialization
+        if string_fields.contains(&field_name) {
+            match value.decode::<String>() {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(format!(
+                        "Invalid configuration: field '{}' must be a string, got: {}",
+                        field_name,
+                        describe_term_type(*value)
+                    ));
+                }
+            }
+            continue;
+        }
+
+        // Integer fields - validated as integers, handled by serde deserialization
+        if integer_fields.contains(&field_name) {
+            // Check if value is nil (allowed for optional integer fields)
+            if let Ok(atom_str) = value.atom_to_string()
+                && atom_str == "nil"
+            {
+                continue;
+            }
+
+            match value.decode::<u64>() {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(format!(
+                        "Invalid configuration: field '{}' must be a positive integer or nil, got: {}",
+                        field_name,
+                        describe_term_type(*value)
+                    ));
+                }
+            }
+            continue;
+        }
+
         // Unknown fields are accepted for forward compatibility
         // This allows newer Elixir code to pass options that Rust may not recognize yet
     }
@@ -151,6 +200,12 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
             config.keywords = deserialized.keywords;
             // PDF options are always available since kreuzberg is compiled with "full" feature
             config.pdf_options = deserialized.pdf_options;
+            // Forward remaining fields from deserialized config
+            config.result_format = deserialized.result_format;
+            config.output_format = deserialized.output_format;
+            config.html_options = deserialized.html_options;
+            config.max_concurrent_extractions = deserialized.max_concurrent_extractions;
+            config.security_limits = deserialized.security_limits;
         }
         Err(e) => {
             // Nested structure deserialization failed

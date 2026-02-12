@@ -1,0 +1,9 @@
+From: alice@example.com
+To: bob@example.com
+Subject: Example Multipart Digest Email
+
+This is the first message in the digest.
+
+This is the second message in the digest.
+
+This is the third message in the digest.

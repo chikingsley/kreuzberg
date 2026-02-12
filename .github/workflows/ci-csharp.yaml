@@ -60,13 +60,13 @@ env:
   DOTNET_VERSION: '10.0.x'
   PDFIUM_VERSION: '7578'
   PDFIUM_STATIC_VERSION: '7442b'
-  ORT_VERSION: '1.23.2'
+  ORT_VERSION: "1.24.1"
   MACOSX_DEPLOYMENT_TARGET: '14.0'
 
 jobs:
   build-csharp:
     name: C# Build + Smoke (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     timeout-minutes: 180
     strategy:
       fail-fast: true
@@ -181,7 +181,7 @@ jobs:
 
   test-csharp:
     name: C# Tests (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     needs: build-csharp
     timeout-minutes: 180
     strategy:

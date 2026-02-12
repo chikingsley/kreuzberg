@@ -87,6 +87,9 @@ function normalizeOcrConfig(ocr?: OcrConfig): NativeExtractionConfig | undefined
 		setIfDefined(normalized, "tesseractConfig", tesseract);
 	}
 
+	setIfDefined(normalized, "paddleOcrConfig", ocr.paddleOcrConfig);
+	setIfDefined(normalized, "elementConfig", ocr.elementConfig);
+
 	return normalized;
 }
 
@@ -341,6 +344,7 @@ function normalizeExtractionConfig(config: ExtractionConfig | null): NativeExtra
 	setIfDefined(normalized, "useCache", config.useCache);
 	setIfDefined(normalized, "enableQualityProcessing", config.enableQualityProcessing);
 	setIfDefined(normalized, "forceOcr", config.forceOcr);
+	setIfDefined(normalized, "includeDocumentStructure", config.includeDocumentStructure);
 	setIfDefined(normalized, "maxConcurrentExtractions", config.maxConcurrentExtractions);
 
 	const ocr = normalizeOcrConfig(config.ocr);

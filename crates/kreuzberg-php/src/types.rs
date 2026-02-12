@@ -109,6 +109,15 @@ pub struct ExtractionResult {
 
     /// Structured Djot content (when output_format='djot')
     djot_content_json: Option<String>,
+
+    /// Semantic elements (when output_format='element_based')
+    elements_json: Option<String>,
+
+    /// Document structure (when include_document_structure=true)
+    document_json: Option<String>,
+
+    /// OCR elements with spatial/confidence metadata
+    ocr_elements_json: Option<String>,
 }
 
 #[php_impl]
@@ -201,6 +210,33 @@ impl ExtractionResult {
                 if let Some(json) = &self.djot_content_json {
                     let value: serde_json::Value =
                         serde_json::from_str(json).map_err(|e| format!("Failed to parse djot_content: {}", e))?;
+                    Ok(Some(json_value_to_php(&value)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "elements" => {
+                if let Some(json) = &self.elements_json {
+                    let value: serde_json::Value =
+                        serde_json::from_str(json).map_err(|e| format!("Failed to parse elements: {}", e))?;
+                    Ok(Some(json_value_to_php(&value)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "document" => {
+                if let Some(json) = &self.document_json {
+                    let value: serde_json::Value =
+                        serde_json::from_str(json).map_err(|e| format!("Failed to parse document: {}", e))?;
+                    Ok(Some(json_value_to_php(&value)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "ocrElements" | "ocr_elements" => {
+                if let Some(json) = &self.ocr_elements_json {
+                    let value: serde_json::Value =
+                        serde_json::from_str(json).map_err(|e| format!("Failed to parse ocr_elements: {}", e))?;
                     Ok(Some(json_value_to_php(&value)?))
                 } else {
                     Ok(None)
@@ -319,7 +355,7 @@ impl ExtractionResult {
         };
 
         if let Some(count) = page_count {
-            metadata_obj.insert("pageCount".to_string(), json!(count));
+            metadata_obj.insert("page_count".to_string(), json!(count));
         }
 
         // Add pages metadata structure if available
@@ -429,6 +465,30 @@ impl ExtractionResult {
             .transpose()
             .map_err(|e| format!("Failed to serialize djot_content: {}", e))?;
 
+        // Serialize elements to JSON if present
+        let elements_json = result
+            .elements
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|e| format!("Failed to serialize elements: {}", e))?;
+
+        // Serialize document structure to JSON if present
+        let document_json = result
+            .document
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|e| format!("Failed to serialize document: {}", e))?;
+
+        // Serialize OCR elements to JSON if present
+        let ocr_elements_json = result
+            .ocr_elements
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|e| format!("Failed to serialize ocr_elements: {}", e))?;
+
         Ok(Self {
             content: result.content,
             mime_type: result.mime_type.to_string(),
@@ -440,6 +500,9 @@ impl ExtractionResult {
             pages,
             keywords,
             djot_content_json,
+            elements_json,
+            document_json,
+            ocr_elements_json,
         })
     }
 }

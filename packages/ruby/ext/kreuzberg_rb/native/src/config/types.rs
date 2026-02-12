@@ -58,6 +58,35 @@ pub fn parse_ocr_config(ruby: &Ruby, hash: RHash) -> Result<OcrConfig, Error> {
         config.tesseract_config = Some(parsed);
     }
 
+    if let Some(val) = get_kw(ruby, hash, "paddle_ocr_config")
+        && !val.is_nil()
+    {
+        config.paddle_ocr_config = Some(ruby_value_to_json(val)?);
+    }
+
+    if let Some(val) = get_kw(ruby, hash, "element_config")
+        && !val.is_nil()
+    {
+        let ec_json = ruby_value_to_json(val)?;
+        let parsed: kreuzberg::types::OcrElementConfig =
+            serde_json::from_value(ec_json).map_err(|e| runtime_error(format!("Invalid element_config: {}", e)))?;
+        config.element_config = Some(parsed);
+    }
+
+    if let Some(val) = get_kw(ruby, hash, "output_format")
+        && !val.is_nil()
+    {
+        let format_str = symbol_to_string(val)?;
+        let format: OutputFormat = match format_str.as_str() {
+            "plain" | "Plain" => OutputFormat::Plain,
+            "markdown" | "Markdown" => OutputFormat::Markdown,
+            "djot" | "Djot" => OutputFormat::Djot,
+            "html" | "Html" => OutputFormat::Html,
+            other => return Err(runtime_error(format!("Invalid ocr output_format: '{}'", other))),
+        };
+        config.output_format = Some(format);
+    }
+
     Ok(config)
 }
 
@@ -869,6 +898,10 @@ pub fn parse_extraction_config(ruby: &Ruby, opts: Option<RHash>) -> Result<Extra
 
         if let Some(val) = get_kw(ruby, hash, "force_ocr") {
             config.force_ocr = bool::try_convert(val)?;
+        }
+
+        if let Some(val) = get_kw(ruby, hash, "include_document_structure") {
+            config.include_document_structure = bool::try_convert(val)?;
         }
 
         if let Some(val) = get_kw(ruby, hash, "ocr")

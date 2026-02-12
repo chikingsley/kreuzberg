@@ -579,6 +579,10 @@ readonly class ExtractionConfig
         if ($this->outputFormat !== 'plain') {
             $result['output_format'] = $this->outputFormat;
         }
+        // includeDocumentStructure defaults to false, so only add if true
+        if ($this->includeDocumentStructure) {
+            $result['include_document_structure'] = true;
+        }
 
         return array_filter($result, static fn ($value): bool => $value !== null);
     }

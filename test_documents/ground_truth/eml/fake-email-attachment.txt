@@ -1,0 +1,20 @@
+From: Mallori Harrell <mallori@unstructured.io>
+To: Mallori Harrell <mallori@unstructured.io>
+Subject: Fake email with attachment
+Date: Fri, 23 Dec 2022 12:08:48 -0600
+
+Hello!
+
+Here's the attachments!
+
+It includes:
+
+   - Lots of whitespace
+   - Little to no content
+   - and is a quick read
+
+Best,
+
+Mallori
+
+Hey this is a fake attachment!

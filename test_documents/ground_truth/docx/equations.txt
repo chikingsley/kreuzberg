@@ -1,51 +1,9 @@
-This is a word document and this is an inline equation: $A= \pi r^{2}$ . If instead, I want an equation by line, I can do this:
+For $m = 1$,
 
-$$a^{2}+b^{2}=c^{2} \text{ \texttimes } 23$$
+$$sin\theta = \frac{m\lambda}{a} = \frac{(1)\left( 550 \times 10^{- 6}\text{ }mm \right)}{2.5\text{ }mm} = 2.2 \times 10^{- 4}$$
 
-And that is an equation by itself. Cheers!
+The angle is $\theta = \sin^{- 1}\left( 2.2 \times 10^{- 4} \right) = 2.2 \times 10^{- 4}rad$.
 
-This is another equation:
+From Eq. 36.1.3,
 
-$$f\left(x\right)=a{0}+\sum{n=1}^{ \infty }\left(a{n}\cos(\frac{n \pi x}{L})+b{n}\sin(\frac{n \pi x}{L})\right)$$
-
-This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text.
-
-This is a word document and this is an inline equation: $A= \pi r^{2}$ . If instead, I want an equation by line, I can do this:
-
-$$\left(x+a\right)^{n}=\sum{k=0}^{n}\left(\genfrac{}{}{0pt}{}{n}{k}\right)x^{k}a^{n-k}$$
-
-And that is an equation by itself. Cheers!
-
-This is another equation:
-
-$$\left(1+x\right)^{n}=1+\frac{nx}{1!}+\frac{n\left(n-1\right)x^{2}}{2!}+ \text{ \textellipsis }$$
-
-This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text. This is text.
-
-This is a word document and this is an inline equation: $A= \pi r^{2}$ . If instead, I want an equation by line, I can do this:
-
-$$e^{x}=1+\frac{x}{1!}+\frac{x^{2}}{2!}+\frac{x^{3}}{3!}+ \text{ \textellipsis } , - \infty < x < \infty$$
-
-And that is an equation by itself. Cheers!
-
-Large operators and integrals are represented with n-ary objects in OMML XML:
-
-$$\sum{0}^{2}x$$
-
-$$\bigcup{n=1}^{m}\left(X{n} \cap Y{n}\right)$$
-
-$$\prod{k=1}^{n}A{k}$$
-
-$$\bigwedge{}^{}x$$
-
-$$\int{}^{}(2x+1)dx$$
-
-$$\iint{0}^{1}xdx$$
-
-$$\iiint{}^{}ydy$$
-
-$$\oint{}^{}\frac{dy}{dx}$$
-
-$$\oiint{0}^{2 \pi }idt$$
-
-$$\oiiint{C}^{}\frac{1}{z}dz$$
+$$\frac{a}{\lambda} = \frac{m}{sin\theta} = \frac{1}{sin{45.0}^{\circ}} = 1.41.$$

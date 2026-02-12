@@ -58,10 +58,16 @@ def format_dependency(name: str, dep_spec: object) -> str:
         return f'{name} = "{dep_spec}"'
     elif isinstance(dep_spec, dict):
         version: str = dep_spec.get("version", "")
+        package: str | None = dep_spec.get("package")
         features: list[str] = dep_spec.get("features", [])
         default_features: bool | None = dep_spec.get("default-features")
 
-        parts: list[str] = [f'version = "{version}"']
+        parts: list[str] = []
+
+        if package:
+            parts.append(f'package = "{package}"')
+
+        parts.append(f'version = "{version}"')
 
         if features:
             features_str = ', '.join(f'"{f}"' for f in features)
@@ -138,7 +144,7 @@ def generate_vendor_cargo_toml(repo_root: Path, workspace_deps: dict[str, object
     deps_str = "\n".join(deps_lines)
 
     # Build members list based on actually copied crates
-    members = [name for name in ["kreuzberg", "kreuzberg-ffi", "kreuzberg-tesseract", "kreuzberg-paddle-ocr", "rb-sys"]
+    members = [name for name in ["kreuzberg", "kreuzberg-ffi", "kreuzberg-tesseract", "kreuzberg-paddle-ocr", "kreuzberg-pdfium-render", "rb-sys"]
                if name in copied_crates]
     members_str = ', '.join(f'"{m}"' for m in members)
 
@@ -191,6 +197,7 @@ def main() -> None:
         ("crates/kreuzberg-ffi", "kreuzberg-ffi"),
         ("crates/kreuzberg-tesseract", "kreuzberg-tesseract"),
         ("crates/kreuzberg-paddle-ocr", "kreuzberg-paddle-ocr"),
+        ("crates/kreuzberg-pdfium-render", "kreuzberg-pdfium-render"),
         ("vendor/rb-sys", "rb-sys"),
     ]
 
@@ -263,6 +270,13 @@ def main() -> None:
                 content = re.sub(
                     r'kreuzberg-paddle-ocr = \{ version = "[^"]*", optional = true \}',
                     'kreuzberg-paddle-ocr = { path = "../kreuzberg-paddle-ocr", optional = true }',
+                    content
+                )
+            # Only update pdfium-render path if it was actually copied
+            if "kreuzberg-pdfium-render" in copied_crates:
+                content = re.sub(
+                    r'pdfium-render = \{ package = "kreuzberg-pdfium-render", version = "[^"]*"',
+                    'pdfium-render = { package = "kreuzberg-pdfium-render", path = "../kreuzberg-pdfium-render"',
                     content
                 )
 

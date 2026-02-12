@@ -4,4 +4,4 @@ set -euo pipefail
 variant="${1:?missing variant}"
 
 echo "=== Running Docker feature tests (${variant}) ==="
-./scripts/test_docker.sh --skip-build --image "kreuzberg:${variant}" --variant "${variant}" --verbose
+python3 scripts/ci/docker/test_docker.py --image "kreuzberg:${variant}" --variant "${variant}" --verbose

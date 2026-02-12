@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [4.3.0] - 2026-02-11
+
 ### Added
+
+#### Blank Page Detection
+- **`is_blank` field on `PageInfo` and `PageContent`**: Pages with fewer than 3 non-whitespace characters and no tables or images are flagged as blank. Detection uses a two-phase approach: text-only analysis during extraction, then refinement after table/image assignment. Available across all 9 language bindings (Python, TypeScript, Ruby, Java, Go, C#, PHP, Elixir, WASM). Closes #378.
 
 #### PaddleOCR Backend
 - **PaddleOCR backend via ONNX Runtime**: New OCR backend (`kreuzberg-paddle-ocr`) using PaddlePaddle's PP-OCRv4 models converted to ONNX format, run via ONNX Runtime. Supports 6 languages (English, Chinese, Japanese, Korean, German, French) with automatic model downloading and caching. Provides superior CJK recognition compared to Tesseract.
@@ -50,12 +57,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### WASM Table Extraction
 - Fixed WASM adapter not recognizing `page_number` field (snake_case) from Rust FFI, causing table data to be silently dropped in Deno and Cloudflare Workers tests.
 
+#### DOCX Formatting Output (#376)
+- Fixed DOCX extraction producing plain text instead of formatted markdown. Bold, italic, underline, strikethrough, and hyperlinks are now rendered with proper markdown markers (`**bold**`, `*italic*`, `~~strikethrough~~`, `[text](url)`).
+- Fixed heading hierarchy: Title style maps to `#`, Heading1 to `##`, through Heading5+ clamped at `######`.
+- Fixed bullet lists (`- `), numbered lists (`1. `), and nested list indentation (2-space per level).
+- Fixed tables missing from markdown output. Tables are now interleaved with paragraphs in document order and rendered as markdown pipe tables.
+- Fixed table cell formatting being stripped — bold/italic inside table cells is now preserved.
+- Added 16 integration tests covering formatting, headings, lists, tables, and document structure.
+
+#### Typst Table Content Extraction
+- Fixed Typst `extract_table_content` double-counting opening parenthesis, which caused the table parser to consume all remaining document content after a `#table()` call.
+
 #### PaddleOCR Recognition Model
 - Fixed PaddleOCR recognition model (`en_PP-OCRv4_rec_infer.onnx`) failing to load with `ShapeInferenceError` on ONNX Runtime 1.23.x.
 - Fixed incorrect detection model filename in Docker and CI action (`en_PP-OCRv4_det_infer.onnx` → `ch_PP-OCRv4_det_infer.onnx`).
 
 #### Python Bindings
 - Fixed `OcrConfig` constructor silently ignoring `paddle_ocr_config` and `element_config` keyword arguments.
+- Fixed keyword extraction results (and all `metadata.additional` entries from post-processors) being silently dropped in Python bindings. The `ExtractionResult.from_rust()` method now propagates flattened additional metadata fields, matching all other bindings. Closes #379.
+
+#### TypeScript/Node.js Bindings
+- Fixed PaddleOCR config (`paddle_ocr_config`) and element config (`element_config`) being silently dropped by the NAPI-RS binding layer.
+- Fixed `ocr_elements` missing from extraction result conversion in TypeScript wrapper.
+
+#### Ruby Bindings
+- Fixed `kreuzberg-pdfium-render` vendored crate not included in gemspec, causing gem build failures.
+- Fixed PaddleOCR config and element config not being parsed in Ruby binding config layer.
+- Fixed `ocr_elements` missing from Ruby extraction result conversion.
+
+#### Go Bindings
+- Fixed `PdfMetadata` deserialization failing when keyword extraction produces object arrays instead of simple strings. Added lenient `UnmarshalJSON` fallback with field-by-field recovery.
+
+#### C# Bindings
+- Fixed keyword extraction data inaccessible in C# — `ExtractedKeywords` was marked `[JsonIgnore]` and excluded from metadata serialization. Added lenient metadata extraction fallback for mixed-type keyword fields.
+
+#### PHP Bindings
+- Fixed `document`, `elements`, and `ocrElements` properties inaccessible on `ExtractionResult` — these fields were not exposed through the `__get` handler.
+- Fixed `ExtractionConfig::toArray()` not serializing `include_document_structure`, causing document structure extraction to be silently ignored.
+- Fixed wrapper function names for document extractor management (`kreuzberg_*_document_extractors` → `kreuzberg_*_extractors`).
+- Added missing OCR backend management functions (`kreuzberg_list_ocr_backends`, `kreuzberg_clear_ocr_backends`, `kreuzberg_unregister_ocr_backend`).
+- Fixed `page_count` metadata key mismatch between serialization (`pageCount`) and deserialization (`page_count`).
+
+#### Elixir Bindings
+- Fixed NIF config parser not forwarding `include_document_structure`, `result_format`, `output_format`, `html_options`, `max_concurrent_extractions`, and `security_limits` options.
+- Added missing document extractor management NIFs (`list_document_extractors`, `unregister_document_extractor`, `clear_document_extractors`).
+
+#### CI
+- Fixed PHP E2E tests not actually running in CI — the task was configured to run package unit tests instead of E2E tests.
 
 ### Changed
 
@@ -1617,6 +1665,7 @@ See [Migration Guide](https://docs.kreuzberg.dev/migration/v3-to-v4/) for detail
 - [Format Support](reference/formats.md) - Supported file formats
 - [Extraction Guide](guides/extraction.md) - Extraction examples
 
+[4.3.0]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.3.0
 [4.2.15]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.2.15
 [4.2.14]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.2.14
 [4.2.13]: https://github.com/kreuzberg-dev/kreuzberg/releases/tag/v4.2.13

@@ -362,7 +362,7 @@ curl http://localhost:8000/health
 ```json title="Response"
 {
   "status": "healthy",
-  "version": "4.2.15"
+  "version": "4.3.0"
 }
 ```
 
@@ -373,7 +373,7 @@ The response may optionally include a `plugins` object containing information ab
 ```json title="Response with Plugins"
 {
   "status": "healthy",
-  "version": "4.2.15",
+  "version": "4.3.0",
   "plugins": {
     "ocr_backends_count": 2,
     "ocr_backends": ["tesseract"],
@@ -405,7 +405,7 @@ curl http://localhost:8000/info
 
 ```json title="Response"
 {
-  "version": "4.2.15",
+  "version": "4.3.0",
   "rust_backend": true
 }
 ```
@@ -757,7 +757,7 @@ Clear all cached files.
 - **Name:** `kreuzberg-mcp`
 - **Title:** Kreuzberg Document Intelligence MCP Server
 - **Version:** Current package version
-- **Website:** https://goldziher.github.io/kreuzberg/
+- **Website:** https://kreuzberg-dev.github.io/kreuzberg/
 - **Protocol:** MCP (Model Context Protocol)
 - **Transport:** stdio (stdin/stdout)
 

@@ -6,14 +6,7 @@ namespace E2EPhp;
 
 use Kreuzberg\Kreuzberg;
 use Kreuzberg\Config\ExtractionConfig;
-use Kreuzberg\Config\OcrConfig;
-use Kreuzberg\Config\ChunkingConfig;
-use Kreuzberg\Config\ImageExtractionConfig;
-use Kreuzberg\Config\LanguageDetectionConfig;
-use Kreuzberg\Config\PdfConfig;
-use Kreuzberg\Config\PostProcessorConfig;
-use Kreuzberg\Config\TokenReductionConfig;
-use Kreuzberg\ExtractionResult;
+use Kreuzberg\Types\ExtractionResult;
 use PHPUnit\Framework\Assert;
 
 class Helpers
@@ -48,52 +41,7 @@ class Helpers
             return null;
         }
 
-        $params = [];
-
-        // Handle nested config objects
-        if (isset($config['ocr']) && is_array($config['ocr'])) {
-            $ocrParams = [];
-            if (isset($config['ocr']['backend'])) {
-                $ocrParams['backend'] = $config['ocr']['backend'];
-            }
-            if (isset($config['ocr']['language'])) {
-                $ocrParams['language'] = $config['ocr']['language'];
-            }
-            if (!empty($ocrParams)) {
-                $params['ocr'] = new OcrConfig(...$ocrParams);
-            }
-        }
-        if (isset($config['chunking']) && is_array($config['chunking'])) {
-            $params['chunking'] = new ChunkingConfig(...$config['chunking']);
-        }
-        if (isset($config['images']) && is_array($config['images'])) {
-            $params['imageExtraction'] = new ImageExtractionConfig(...$config['images']);
-        }
-        if (isset($config['pdf_options']) && is_array($config['pdf_options'])) {
-            $params['pdf'] = new PdfConfig(...$config['pdf_options']);
-        }
-        if (isset($config['language_detection']) && is_array($config['language_detection'])) {
-            $params['languageDetection'] = new LanguageDetectionConfig(...$config['language_detection']);
-        }
-
-        // Handle scalar config options
-        if (isset($config['use_cache'])) {
-            $params['useCache'] = (bool)$config['use_cache'];
-        }
-        if (isset($config['force_ocr'])) {
-            $params['forceOcr'] = (bool)$config['force_ocr'];
-        }
-        if (isset($config['enable_quality_processing'])) {
-            $params['enableQualityProcessing'] = (bool)$config['enable_quality_processing'];
-        }
-        if (isset($config['output_format'])) {
-            $params['outputFormat'] = $config['output_format'];
-        }
-        if (isset($config['result_format'])) {
-            $params['resultFormat'] = $config['result_format'];
-        }
-
-        return new ExtractionConfig(...$params);
+        return ExtractionConfig::fromArray($config);
     }
 
     public static function assertExpectedMime(ExtractionResult $result, array $expected): void
@@ -231,8 +179,9 @@ class Helpers
             sprintf("Expected languages %s, missing %s", json_encode($expected), json_encode($missing))
         );
 
-        if ($minConfidence !== null && isset($result->metadata['confidence'])) {
-            $confidence = $result->metadata['confidence'];
+        $metaArr = self::metadataToArray($result->metadata);
+        if ($minConfidence !== null && isset($metaArr['confidence'])) {
+            $confidence = $metaArr['confidence'];
             Assert::assertGreaterThanOrEqual(
                 $minConfidence,
                 $confidence,
@@ -352,6 +301,15 @@ class Helpers
                 sprintf("Expected at least %d pages, found %d", $minCount, $count)
             );
         }
+
+        foreach ($pages as $page) {
+            if (property_exists($page, 'isBlank')) {
+                Assert::assertTrue(
+                    $page->isBlank === null || is_bool($page->isBlank),
+                    'isBlank should be null or bool'
+                );
+            }
+        }
     }
 
     public static function assertElements(
@@ -467,45 +425,30 @@ class Helpers
             return $metadata;
         }
 
-        // Convert Metadata object to array
+        // Use to_array() if available (extension Metadata object)
+        if (method_exists($metadata, 'to_array')) {
+            return $metadata->to_array();
+        }
+
+        // Fallback: Convert Metadata object to array using snake_case properties
         $result = [];
-        if (isset($metadata->language)) {
-            $result['language'] = $metadata->language;
+        $fields = [
+            'language', 'subject', 'format_type', 'title', 'authors',
+            'keywords', 'created_at', 'modified_at', 'created_by',
+            'modified_by', 'page_count', 'sheet_count', 'format',
+        ];
+        foreach ($fields as $field) {
+            if (isset($metadata->$field)) {
+                $result[$field] = $metadata->$field;
+            }
         }
-        if (isset($metadata->date)) {
-            $result['date'] = $metadata->date;
-        }
-        if (isset($metadata->subject)) {
-            $result['subject'] = $metadata->subject;
-        }
-        if (isset($metadata->formatType)) {
-            $result['format_type'] = $metadata->formatType;
-        }
-        if (isset($metadata->title)) {
-            $result['title'] = $metadata->title;
-        }
-        if (isset($metadata->authors)) {
-            $result['authors'] = $metadata->authors;
-        }
-        if (isset($metadata->keywords)) {
-            $result['keywords'] = $metadata->keywords;
-        }
-        if (isset($metadata->createdAt)) {
-            $result['created_at'] = $metadata->createdAt;
-        }
-        if (isset($metadata->modifiedAt)) {
-            $result['modified_at'] = $metadata->modifiedAt;
-        }
-        if (isset($metadata->createdBy)) {
-            $result['created_by'] = $metadata->createdBy;
-        }
-        if (isset($metadata->producer)) {
-            $result['producer'] = $metadata->producer;
-        }
-        if (isset($metadata->pageCount)) {
-            $result['page_count'] = $metadata->pageCount;
-        }
-        if (isset($metadata->custom) && is_array($metadata->custom)) {
+
+        // Include custom/additional fields
+        if (method_exists($metadata, 'get_additional')) {
+            foreach ($metadata->get_additional() as $key => $value) {
+                $result[$key] = $value;
+            }
+        } elseif (isset($metadata->custom) && is_array($metadata->custom)) {
             foreach ($metadata->custom as $key => $value) {
                 $result[$key] = $value;
             }
@@ -552,5 +495,86 @@ class Helpers
             return $lhs === $rhs;
         }
         return $lhs == $rhs;
+    }
+
+    public static function assertDocument(
+        ExtractionResult $result,
+        bool $hasDocument,
+        ?int $minNodeCount = null,
+        ?array $nodeTypesInclude = null,
+        ?bool $hasGroups = null
+    ): void {
+        $document = $result->document ?? null;
+        if ($hasDocument) {
+            Assert::assertNotNull($document, 'Expected document but got null');
+            $nodes = is_array($document) ? $document : ($document->nodes ?? []);
+            Assert::assertNotNull($nodes, 'Expected document.nodes but got null');
+            if ($minNodeCount !== null) {
+                Assert::assertGreaterThanOrEqual(
+                    $minNodeCount,
+                    count($nodes),
+                    sprintf('Expected at least %d nodes, found %d', $minNodeCount, count($nodes))
+                );
+            }
+            if ($nodeTypesInclude !== null && !empty($nodeTypesInclude)) {
+                $foundTypes = [];
+                foreach ($nodes as $node) {
+                    $content = is_object($node) ? ($node->content ?? null) : ($node['content'] ?? null);
+                    if ($content !== null) {
+                        $nodeType = is_object($content) ? ($content->node_type ?? $content->nodeType ?? null) : ($content['node_type'] ?? null);
+                        if ($nodeType !== null) {
+                            $foundTypes[] = $nodeType;
+                        }
+                    }
+                }
+                foreach ($nodeTypesInclude as $type) {
+                    Assert::assertContains(
+                        $type,
+                        $foundTypes,
+                        sprintf("Expected node type '%s' not found in %s", $type, json_encode($foundTypes))
+                    );
+                }
+            }
+            if ($hasGroups !== null) {
+                $hasGroupNodes = false;
+                foreach ($nodes as $node) {
+                    $content = is_object($node) ? ($node->content ?? null) : ($node['content'] ?? null);
+                    if ($content !== null) {
+                        $nodeType = is_object($content) ? ($content->node_type ?? $content->nodeType ?? null) : ($content['node_type'] ?? null);
+                        if ($nodeType === 'group') {
+                            $hasGroupNodes = true;
+                            break;
+                        }
+                    }
+                }
+                Assert::assertEquals($hasGroups, $hasGroupNodes);
+            }
+        } else {
+            Assert::assertNull($document, 'Expected document to be null');
+        }
+    }
+
+    public static function assertOcrElements(
+        ExtractionResult $result,
+        ?bool $hasElements = null,
+        ?bool $elementsHaveGeometry = null,
+        ?bool $elementsHaveConfidence = null,
+        ?int $minCount = null
+    ): void {
+        $ocrElements = $result->ocrElements ?? null;
+        if ($hasElements) {
+            Assert::assertNotNull($ocrElements, 'Expected ocr_elements but got null');
+            Assert::assertIsArray($ocrElements);
+            Assert::assertNotEmpty($ocrElements, 'Expected ocr_elements to be non-empty');
+        }
+        if (is_array($ocrElements)) {
+            if ($minCount !== null) {
+                Assert::assertGreaterThanOrEqual(
+                    $minCount,
+                    count($ocrElements),
+                    sprintf('Expected at least %d ocr_elements, found %d', $minCount, count($ocrElements))
+                );
+            }
+        }
     }
 }

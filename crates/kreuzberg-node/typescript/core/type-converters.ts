@@ -229,6 +229,8 @@ function convertPageContent(rawPage: unknown): PageContent {
 		tables: Array.isArray(page["tables"]) ? (page["tables"] as Table[]) : [],
 		// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
 		images: Array.isArray(page["images"]) ? (page["images"] as unknown[]).map((image) => convertImage(image)) : [],
+		// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+		isBlank: (page["isBlank"] as boolean | null | undefined) ?? null,
 	};
 }
 
@@ -252,6 +254,7 @@ function convertResult(rawResult: unknown): ExtractionResult {
 			images: null,
 			elements: null,
 			pages: null,
+			document: null,
 		};
 	}
 
@@ -275,6 +278,8 @@ function convertResult(rawResult: unknown): ExtractionResult {
 		images: null,
 		elements: null,
 		pages: null,
+		// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+		document: (result["document"] as Record<string, unknown> | null) ?? null,
 	};
 
 	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
@@ -299,6 +304,12 @@ function convertResult(rawResult: unknown): ExtractionResult {
 	const pagesData = result["pages"];
 	if (Array.isArray(pagesData)) {
 		returnObj.pages = (pagesData as unknown[]).map((page) => convertPageContent(page));
+	}
+
+	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+	const ocrElementsData = result["ocrElements"];
+	if (Array.isArray(ocrElementsData)) {
+		returnObj.ocrElements = ocrElementsData as import("../types.js").OcrElement[];
 	}
 
 	return returnObj;

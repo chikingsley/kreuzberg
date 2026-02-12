@@ -1,0 +1,6 @@
+Subject: Test Email Message
+From: M. C. Kurtuluş <muratcan.kurtulus@gmail.com>
+To: M. C. Kurtuluş <muratcan.kurtulus@gmail.com>
+Date: 2024-12-22 09:23:00+01:00
+
+This is the body of the test email message

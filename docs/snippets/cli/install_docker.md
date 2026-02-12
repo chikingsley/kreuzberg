@@ -1,5 +1,4 @@
 ```bash title="Bash"
-docker pull ghcr.io/kreuzberg-dev/kreuzberg:latest
-docker run -v $(pwd):/data ghcr.io/kreuzberg-dev/kreuzberg:latest extract /data/document.pdf
-
+docker pull ghcr.io/kreuzberg-dev/kreuzberg-cli:latest
+docker run -v $(pwd):/data ghcr.io/kreuzberg-dev/kreuzberg-cli:latest extract /data/document.pdf
 ```

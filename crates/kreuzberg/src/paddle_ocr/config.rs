@@ -29,6 +29,7 @@ use std::path::PathBuf;
 ///     .with_table_detection(true);
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct PaddleOcrConfig {
     /// Language code (e.g., "en", "ch", "jpn", "kor", "deu", "fra")
     pub language: String,

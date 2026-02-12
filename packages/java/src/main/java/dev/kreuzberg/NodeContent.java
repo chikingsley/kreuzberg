@@ -75,32 +75,20 @@ public final class NodeContent {
 	 *
 	 * @param nodeType
 	 *            the content type discriminator (must not be null)
-	 * @param title
-	 *            title text (for Title nodes)
+	 * @param text
+	 *            text content, mapped to the appropriate field based on nodeType
 	 * @param headingLevel
 	 *            heading level 1-6 (for Heading nodes)
-	 * @param headingText
-	 *            heading text (for Heading nodes)
-	 * @param paragraphText
-	 *            paragraph text (for Paragraph nodes)
 	 * @param ordered
 	 *            whether list is ordered (for List nodes)
-	 * @param listItemText
-	 *            list item text (for ListItem nodes)
 	 * @param table
 	 *            table grid (for Table nodes)
 	 * @param imageDescription
 	 *            image alt text (for Image nodes)
 	 * @param imageIndex
 	 *            image index (for Image nodes)
-	 * @param codeText
-	 *            code content (for Code nodes)
 	 * @param codeLanguage
 	 *            programming language (for Code nodes)
-	 * @param formulaText
-	 *            formula expression (for Formula nodes)
-	 * @param footnoteText
-	 *            footnote text (for Footnote nodes)
 	 * @param groupLabel
 	 *            group label (for Group nodes)
 	 * @param groupHeadingLevel

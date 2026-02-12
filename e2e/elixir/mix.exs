@@ -2,6 +2,8 @@ defmodule E2E.MixProject do
   use Mix.Project
 
   def project do
+    System.put_env("KREUZBERG_BUILD", "true")
+
     [
       app: :e2e_elixir,
       version: "0.1.0",
@@ -18,7 +20,8 @@ defmodule E2E.MixProject do
 
   defp deps do
     [
-      {:kreuzberg, path: "../../packages/elixir"}
+      {:kreuzberg, path: "../../packages/elixir"},
+      {:rustler, "~> 0.37.0", runtime: false}
     ]
   end
 end

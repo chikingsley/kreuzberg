@@ -235,7 +235,7 @@ final readonly class Kreuzberg
      */
     public static function clearDocumentExtractors(): void
     {
-        \kreuzberg_clear_document_extractors();
+        \kreuzberg_clear_extractors();
     }
 
     /**
@@ -247,7 +247,7 @@ final readonly class Kreuzberg
     public static function listDocumentExtractors(): array
     {
         /** @var array<string> $result */
-        $result = \kreuzberg_list_document_extractors();
+        $result = \kreuzberg_list_extractors();
         return $result;
     }
 
@@ -259,7 +259,7 @@ final readonly class Kreuzberg
      */
     public static function unregisterDocumentExtractor(string $name): void
     {
-        \kreuzberg_unregister_document_extractor($name);
+        \kreuzberg_unregister_extractor($name);
     }
 
     /**

@@ -22,7 +22,7 @@
     <img src="https://img.shields.io/maven-central/v/dev.kreuzberg/kreuzberg?label=Java&color=007ec6" alt="Java">
   </a>
   <a href="https://github.com/kreuzberg-dev/kreuzberg/releases">
-    <img src="https://img.shields.io/github/v/tag/kreuzberg-dev/kreuzberg?label=Go&color=007ec6&filter=v4.2.15" alt="Go">
+    <img src="https://img.shields.io/github/v/tag/kreuzberg-dev/kreuzberg?label=Go&color=007ec6&filter=v4.3.0" alt="Go">
   </a>
   <a href="https://www.nuget.org/packages/Kreuzberg/">
     <img src="https://img.shields.io/nuget/v/Kreuzberg?label=C%23&color=007ec6" alt="C#">
@@ -122,14 +122,14 @@ Complete architecture coverage across all language bindings:
 
 To use embeddings functionality:
 
-1. **Install ONNX Runtime 1.23+**:
+1. **Install ONNX Runtime 1.24+**:
    - Linux: Download from [ONNX Runtime releases](https://github.com/microsoft/onnxruntime/releases) (Debian packages may have older versions)
    - macOS: `brew install onnxruntime`
    - Windows: Download from [ONNX Runtime releases](https://github.com/microsoft/onnxruntime/releases)
 
 2. Use embeddings in your code - see [Embeddings Guide](https://docs.kreuzberg.dev/features/#embeddings)
 
-**Note:** Kreuzberg requires ONNX Runtime version 1.23+ for embeddings. All other Kreuzberg features work without ONNX Runtime.
+**Note:** Kreuzberg requires ONNX Runtime version 1.24+ for embeddings. All other Kreuzberg features work without ONNX Runtime.
 
 ## Supported Formats
 

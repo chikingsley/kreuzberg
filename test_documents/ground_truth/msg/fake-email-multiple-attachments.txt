@@ -1,0 +1,11 @@
+Subject: multiple attachments
+From: "Mallori Harrell" <mallori@unstructured.io>
+To: "Mallori Harrell" <mallori@unstructured.io>
+Date: 2023-04-20 18:28:48.334234+02:00
+
+Here are those documents.
+
+--
+Mallori Harrell
+Unstructured Technologies
+Data Scientist

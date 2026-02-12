@@ -1,21 +1,13 @@
-Grouped images
+# Grouped images
 
-<!-- image -->
+![](media/image3.png)There are 2 pictures grouped together
 
-<!-- image -->
+![Docling Java](media/image5.png){width="1.1597222222222223in" height="1.1597222222222223in"}![Docling](media/image6.png){width="1.16in" height="1.16in"}There are 2 pictures ungrouped, each wrapped "Top and bottom"
 
-There are 2 pictures grouped together
+# Ungrouped images
 
-<!-- image -->
+There are 2 pictures ungrouped, each wrapped "In line with text" in different paragraphs
 
-<!-- image -->
+![Docling](media/image7.png){width="1.16in" height="1.16in"}
 
-There are 2 pictures ungrouped, each wrapped “Top and bottom”
-
-Ungrouped images
-
-There are 2 pictures ungrouped, each wrapped “In line with text” in different paragraphs
-
-<!-- image -->
-
-<!-- image -->
+![Docling](media/image8.png){width="1.16in" height="1.16in"}

@@ -33,6 +33,7 @@ pub struct JsPageContent {
     #[serde(skip)]
     pub images: Vec<JsExtractedImage>,
     pub hierarchy: Option<JsPageHierarchy>,
+    pub is_blank: Option<bool>,
 }
 
 #[napi(object)]
@@ -142,6 +143,8 @@ pub struct JsExtractionResult {
     pub elements: Option<Vec<JsElement>>,
     #[napi(ts_type = "DocumentStructure | null")]
     pub document: Option<serde_json::Value>,
+    #[napi(ts_type = "OcrElement[] | null")]
+    pub ocr_elements: Option<serde_json::Value>,
 }
 
 impl TryFrom<RustExtractionResult> for JsExtractionResult {
@@ -260,6 +263,7 @@ impl TryFrom<RustExtractionResult> for JsExtractionResult {
                     tables: page_tables,
                     images: page_images,
                     hierarchy,
+                    is_blank: page.is_blank,
                 });
             }
             Some(js_pages)
@@ -312,6 +316,17 @@ impl TryFrom<RustExtractionResult> for JsExtractionResult {
                 )
             })?;
 
+        let ocr_elements = val
+            .ocr_elements
+            .map(|elems| serde_json::to_value(&elems))
+            .transpose()
+            .map_err(|e| {
+                Error::new(
+                    Status::GenericFailure,
+                    format!("Failed to serialize ocr_elements: {}", e),
+                )
+            })?;
+
         Ok(JsExtractionResult {
             content: val.content,
             mime_type: val.mime_type.to_string(),
@@ -360,6 +375,7 @@ impl TryFrom<RustExtractionResult> for JsExtractionResult {
             pages,
             elements,
             document,
+            ocr_elements,
         })
     }
 }
@@ -556,7 +572,7 @@ impl TryFrom<JsExtractionResult> for RustExtractionResult {
             }),
             document,
             djot_content: None,
-            ocr_elements: None,
+            ocr_elements: val.ocr_elements.and_then(|v| serde_json::from_value(v).ok()),
         })
     }
 }

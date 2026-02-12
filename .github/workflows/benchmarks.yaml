@@ -18,7 +18,7 @@ env:
   ITERATIONS: "3"
   PDFIUM_VERSION: "7578"
   PDFIUM_STATIC_VERSION: "7442b"
-  ORT_VERSION: "1.23.2"
+  ORT_VERSION: "1.24.1"
   MACOSX_DEPLOYMENT_TARGET: "14.0"
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
@@ -163,15 +163,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -184,6 +175,15 @@ jobs:
           cache-key-prefix: benchmarks-native
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup ONNX Runtime
         uses: ./.github/actions/setup-onnx-runtime
@@ -225,15 +225,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -246,6 +237,15 @@ jobs:
           cache-key-prefix: benchmarks-python
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Python
         uses: ./.github/actions/setup-python-env
@@ -301,15 +301,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -322,6 +313,15 @@ jobs:
           cache-key-prefix: benchmarks-node
           use-sccache: 'false'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Node
         uses: ./.github/actions/setup-node-workspace
@@ -378,15 +378,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -399,6 +390,15 @@ jobs:
           cache-key-prefix: benchmarks-wasm
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Node
         uses: ./.github/actions/setup-node-workspace
@@ -445,15 +445,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -466,6 +457,15 @@ jobs:
           cache-key-prefix: benchmarks-ruby
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -537,15 +537,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -558,6 +549,15 @@ jobs:
           cache-key-prefix: benchmarks-go
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -634,15 +634,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -655,6 +646,15 @@ jobs:
           cache-key-prefix: benchmarks-java
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -723,15 +723,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -744,6 +735,15 @@ jobs:
           cache-key-prefix: benchmarks-csharp
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -810,15 +810,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -831,6 +822,15 @@ jobs:
           cache-key-prefix: benchmarks-elixir
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup Elixir
         uses: erlef/setup-beam@v1
@@ -887,15 +887,6 @@ jobs:
       - name: Free disk space
         run: scripts/ci/benchmarks/free-disk-space.sh
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.artifact-name }}
-          path: target/release
-
-      - name: Restore benchmark binary permissions
-        run: scripts/benchmarks/restore-binary-permissions.sh
-
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
@@ -908,6 +899,15 @@ jobs:
           cache-key-prefix: benchmarks-php
           use-sccache: 'true'
           report-stats: 'true'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact-name }}
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

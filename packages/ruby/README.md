@@ -22,7 +22,7 @@
     <img src="https://img.shields.io/maven-central/v/dev.kreuzberg/kreuzberg?label=Java&color=007ec6" alt="Java">
   </a>
   <a href="https://github.com/kreuzberg-dev/kreuzberg/releases">
-    <img src="https://img.shields.io/github/v/tag/kreuzberg-dev/kreuzberg?label=Go&color=007ec6&filter=v4.0.0" alt="Go">
+    <img src="https://img.shields.io/github/v/tag/kreuzberg-dev/kreuzberg?label=Go&color=007ec6&filter=v4.3.0" alt="Go">
   </a>
   <a href="https://www.nuget.org/packages/Kreuzberg/">
     <img src="https://img.shields.io/nuget/v/Kreuzberg?label=C%23&color=007ec6" alt="C#">
@@ -88,7 +88,7 @@ gem 'kreuzberg'
 
 - **Ruby 3.2.0 or higher** required (including Ruby 4.x)
 - Ruby 4.0+ is fully supported with no code changes required
-- Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.23+ for embeddings support
+- Optional: [ONNX Runtime](https://github.com/microsoft/onnxruntime/releases) version 1.24+ for embeddings support
 - Optional: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for OCR functionality
 
 **Ruby 4.0 Compatibility:** Kreuzberg is fully compatible with Ruby 4.0 (released December 25, 2025) and all Ruby 4.x versions. All tests pass with 100% compatibility. The gem compiles without any breaking changes. Key Ruby 4.0 features like Ruby Box, ZJIT compiler, and Ractor improvements work seamlessly with Kreuzberg.

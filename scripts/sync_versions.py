@@ -534,6 +534,11 @@ def main():
         ),
         (
             repo_root / "crates/kreuzberg/Cargo.toml",
+            r'^(pdfium-render\s*=\s*\{\s*package\s*=\s*"kreuzberg-pdfium-render"\s*,\s*path\s*=\s*"[^"]+"\s*,\s*version\s*=\s*")[^"]+(")',
+            rf"\g<1>{version}\g<2>",
+        ),
+        (
+            repo_root / "crates/kreuzberg/Cargo.toml",
             r'^(kreuzberg-tesseract\s*=\s*\{\s*version\s*=\s*")[^"]+("\s*,\s*optional\s*=\s*true\s*\})',
             rf"\g<1>{version}\g<2>",
         ),
@@ -752,7 +757,7 @@ def main():
         # Docker compose images
         (
             repo_root / "tests/test_apps/docker/docker-compose.yml",
-            r'(image: goldziher/kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(-core)?',
+            r'(image: kreuzberg-dev/kreuzberg:)\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?(-core)?',
             rf'\g<1>{version}\g<2>',
         ),
         # Docs: Installation guide Java Maven/Gradle versions

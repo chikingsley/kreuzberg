@@ -163,6 +163,7 @@ mod tests {
             ],
             images: Vec::new(),
             hierarchy: None,
+            is_blank: None,
         };
 
         let json = serde_json::to_string(&page).unwrap();
@@ -211,6 +212,7 @@ mod tests {
             tables: Vec::new(),
             images: vec![image1, image2],
             hierarchy: None,
+            is_blank: None,
         };
 
         let json = serde_json::to_string(&page).unwrap();
@@ -238,6 +240,7 @@ mod tests {
             tables: vec![Arc::clone(&shared_table)],
             images: Vec::new(),
             hierarchy: None,
+            is_blank: None,
         };
 
         let page2 = PageContent {
@@ -246,6 +249,7 @@ mod tests {
             tables: vec![Arc::clone(&shared_table)],
             images: Vec::new(),
             hierarchy: None,
+            is_blank: None,
         };
 
         assert!(Arc::ptr_eq(&page1.tables[0], &page2.tables[0]));
@@ -267,6 +271,7 @@ mod tests {
             tables: Vec::new(),
             images: Vec::new(),
             hierarchy: None,
+            is_blank: None,
         };
 
         let json = serde_json::to_string(&page).unwrap();

@@ -1,0 +1,5 @@
+From: sender@example.com
+To: Bob <bob@example.com>, Sue <sue@example.com>
+Subject: Example Plain-Text MIME Message
+
+This is a plain-text message.

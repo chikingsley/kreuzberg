@@ -129,6 +129,17 @@ func TestContractConfigImages(t *testing.T) {
 	assertImages(t, result, intPtr(1), nil, nil)
 }
 
+func TestContractConfigKeywords(t *testing.T) {
+	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
+"keywords": {
+	"algorithm": "yake",
+	"max_keywords": 10
+}
+}`))
+	assertExpectedMime(t, result, []string{"application/pdf"})
+	assertMinContentLength(t, result, 10)
+}
+
 func TestContractConfigLanguageDetection(t *testing.T) {
 	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "language_detection": {

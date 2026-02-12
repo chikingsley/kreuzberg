@@ -1,25 +1,63 @@
-Table with rich cells
+## Table with rich cells
 
- Column A Column B
++----------------------------------------+--------------------------------------------------------------------------------------------------+
+| Column A                               | Column B                                                                                         |
++========================================+==================================================================================================+
+| This is a list:                        | This is a formatted list:                                                                        |
+|                                        |                                                                                                  |
+| - A First                              | - B **First**                                                                                    |
+|                                        |                                                                                                  |
+| - A Second                             | - B *Second*                                                                                     |
+|                                        |                                                                                                  |
+| - A Third                              | - B [Third]{.underline}                                                                          |
++----------------------------------------+--------------------------------------------------------------------------------------------------+
+| First Paragraph\                       | This is simple text with **bold**, ~~strikethrough~~ and *italic* formatting with x^2^ and H~2~O |
+| \                                      |                                                                                                  |
+| Second Paragraph                       |                                                                                                  |
+|                                        |                                                                                                  |
+| Third paragraph before a numbered list |                                                                                                  |
+|                                        |                                                                                                  |
+| 1.  Number one                         |                                                                                                  |
+|                                        |                                                                                                  |
+| 2.  Number two                         |                                                                                                  |
+|                                        |                                                                                                  |
+| 3.  Number three                       |                                                                                                  |
++----------------------------------------+--------------------------------------------------------------------------------------------------+
+| This is a paragraph                    |                                                                                                  |
+|                                        |                                                                                                  |
+| This is another paragraph              |                                                                                                  |
++----------------------------------------+--------------------------------------------------------------------------------------------------+
 
- This is a list: - A First - A Second - A Third This is a formatted list: - B First - B Second - B Third
- First Paragraph Second Paragraph Third paragraph before a numbered list 1. Number one 2. Number two 3. Number three This is simple text with bold , ~~strikethrough~~ and italic formatting with x 2 and H 2 O
- This is a paragraph This is another paragraph
-
-Table with nested table
+## Table with nested table
 
 Before table
 
- Column A Column B
++---------------------------------------------------+------------------------------------------------------+
+| Column A                                          | Column B                                             |
++===================================================+======================================================+
+| Simple cell upper left                            | Simple cell with **bold** and *italic* text          |
++---------------------------------------------------+------------------------------------------------------+
+|   ----------------------------------------------- | Rich cell\                                           |
+|   A           B                      C            | A nested table                                       |
+|   ----------- ---------------------- ------------ |                                                      |
+|   *Cell 1*    [Cell 2]{.underline}   **Cell 3**   |   -------------------------------------------------- |
+|                                                   |   A            B              C                      |
+|   ----------------------------------------------- |   ------------ -------------- ---------------------- |
+|                                                   |   ~~Cell 1~~   ***Cell 2***   [Cell 3]{.underline}   |
+|                                                   |                                                      |
+|                                                   |   -------------------------------------------------- |
++---------------------------------------------------+------------------------------------------------------+
 
- Simple cell upper left Simple cell with bold and italic text
- A B C Cell 1 Cell 2 Cell 3 Rich cell A nested table A B C ~~Cell 1~~ Cell 2 Cell 3
+After table with **bold**, [underline]{.underline}, ~~strikethrough~~, and *italic* formatting
 
-After table with bold , underline , ~~strikethrough~~ , and italic formatting
+## Table with pictures
 
-Table with pictures
-
- Column A Column B
-
- Only text <!-- image -->
- Text and picture <!-- image -->
++-----------------------------------------------------------------------+-----------------------------------------------------------------------+
+| Column A                                                              | Column B                                                              |
++=======================================================================+=======================================================================+
+| Only text                                                             | ![Owner avatar](media/image1.png){width="0.3375in" height="0.3375in"} |
++-----------------------------------------------------------------------+-----------------------------------------------------------------------+
+| Text and picture                                                      |                                                                       |
+|                                                                       |                                                                       |
+| ![Owner avatar](media/image1.png){width="0.3375in" height="0.3375in"} |                                                                       |
++-----------------------------------------------------------------------+-----------------------------------------------------------------------+

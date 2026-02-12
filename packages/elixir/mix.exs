@@ -1,7 +1,7 @@
 defmodule Kreuzberg.MixProject do
   use Mix.Project
 
-  @version "4.2.15"
+  @version "4.3.0"
   @source_url "https://github.com/kreuzberg-dev/kreuzberg"
 
   def project do
@@ -58,7 +58,8 @@ defmodule Kreuzberg.MixProject do
     [
       main: "Kreuzberg",
       source_url: @source_url,
-      extras: ["README.md"]
+      extras: ["README.md"],
+      deps: [elixir: "https://hexdocs.pm/elixir/"]
     ]
   end
 
