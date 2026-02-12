@@ -164,6 +164,10 @@ tasks:
     cmds:
       - cmd: bash ../../scripts/ci/php/create-ci-php-ini.sh
         platforms: [linux, darwin, windows]
+      - cmd: rm -rf vendor
+        platforms: [linux, darwin]
+      - cmd: powershell -NoProfile -Command "if (Test-Path vendor) { Remove-Item -Recurse -Force vendor }"
+        platforms: [windows]
       - cmd: composer install --no-progress --prefer-dist
         platforms: [linux, darwin, windows]
       - cmd: php -c php-kreuzberg.ini vendor/bin/phpunit
