@@ -914,3 +914,91 @@ fn test_pymupdf_small_table_baseline() {
         tables.len()
     );
 }
+
+// ############################################################
+//
+//  Benchmark: per-PDF timing for comparison with PyMuPDF
+//
+// ############################################################
+
+#[test]
+fn bench_all_pdfs_timing() {
+    use std::time::Instant;
+
+    let fixtures = [
+        "pdffill-demo.pdf",
+        "issue-140-example.pdf",
+        "issue-336-example.pdf",
+        "issue-466-example.pdf",
+        "issue-53-example.pdf",
+        "table-curves-example.pdf",
+        "senate-expenditures.pdf",
+        "nics-background-checks-2015-11.pdf",
+        "pymupdf-chinese-tables.pdf",
+        "pymupdf-test_2979.pdf",
+        "pymupdf-test_3062.pdf",
+        "pymupdf-strict-yes-no.pdf",
+        "pymupdf-small-table.pdf",
+        "pymupdf-test_3179.pdf",
+        "pymupdf-battery-file-22.pdf",
+        "pymupdf-dotted-gridlines.pdf",
+        "pymupdf-test_4017.pdf",
+        "pymupdf-test-styled-table.pdf",
+        "pymupdf-test-2812.pdf",
+    ];
+
+    println!("\n{:<45} {:>10} {:>8}", "PDF", "Time (ms)", "Tables");
+    println!("{}", "-".repeat(65));
+
+    let mut total_time = std::time::Duration::ZERO;
+    let mut total_tables = 0usize;
+
+    for name in &fixtures {
+        let bytes = load_pdf_bytes(name);
+        let config = ExtractionConfig::default();
+
+        let start = Instant::now();
+        let result = extract_bytes_sync(&bytes, "application/pdf", &config).unwrap();
+        let elapsed = start.elapsed();
+
+        total_time += elapsed;
+        total_tables += result.tables.len();
+        println!(
+            "{:<45} {:>10.1} {:>8}",
+            name,
+            elapsed.as_secs_f64() * 1000.0,
+            result.tables.len()
+        );
+    }
+
+    println!("{}", "-".repeat(65));
+    println!(
+        "{:<45} {:>10.1} {:>8}",
+        "TOTAL",
+        total_time.as_secs_f64() * 1000.0,
+        total_tables
+    );
+
+    // Run 5 iterations for average
+    println!("\n--- 5-iteration average ---");
+    let mut times = Vec::new();
+    for _ in 0..5 {
+        let start = Instant::now();
+        for name in &fixtures {
+            let bytes = load_pdf_bytes(name);
+            let config = ExtractionConfig::default();
+            let _ = extract_bytes_sync(&bytes, "application/pdf", &config);
+        }
+        times.push(start.elapsed());
+    }
+
+    let avg: f64 = times.iter().map(|t| t.as_secs_f64()).sum::<f64>() / times.len() as f64;
+    println!("Average total: {:.1}ms over {} PDFs", avg * 1000.0, fixtures.len());
+    println!(
+        "Per-run times: {:?}",
+        times
+            .iter()
+            .map(|t| format!("{:.1}ms", t.as_secs_f64() * 1000.0))
+            .collect::<Vec<_>>()
+    );
+}
