@@ -275,6 +275,7 @@ pub(super) fn extract_jats_all_in_one(content: &str) -> Result<(JatsMetadataExtr
                                 cells: current_table.clone(),
                                 markdown,
                                 page_number: table_index + 1,
+                                header: None,
                             });
                             table_index += 1;
                             current_table.clear();

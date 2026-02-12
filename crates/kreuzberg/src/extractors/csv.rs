@@ -91,6 +91,7 @@ impl DocumentExtractor for CsvExtractor {
             cells: rows.clone(),
             markdown,
             page_number: 1,
+            header: None,
         };
 
         let row_count = rows.len();

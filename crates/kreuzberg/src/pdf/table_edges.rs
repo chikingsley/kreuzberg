@@ -34,7 +34,7 @@ pub fn extract_edges_from_page(page: &PdfPage, min_length: f64) -> Result<Vec<Ed
     for object in objects.iter() {
         match object.as_path_object() {
             Some(path_obj) => {
-                let path_edges = extract_edges_from_path(&path_obj, page_height)?;
+                let path_edges = extract_edges_from_path(path_obj, page_height)?;
                 edges.extend(path_edges);
             }
             None => continue,
@@ -52,16 +52,25 @@ pub fn extract_edges_from_page(page: &PdfPage, min_length: f64) -> Result<Vec<Ed
 /// Walks through the path segments, tracking the current position as we encounter
 /// MoveTo/LineTo/BezierTo/Close operations. For each line segment, we check if
 /// it's approximately horizontal or vertical, and if so, emit an Edge.
-fn extract_edges_from_path(
-    path_obj: &PdfPagePathObject,
-    page_height: f64,
-) -> Result<Vec<Edge>> {
+///
+/// Edge types are classified by source:
+/// - `LineTo` segments → `EdgeType::Line`
+/// - `BezierTo` segments → `EdgeType::CurveEdge`
+/// - Rectangular paths (MoveTo + 3-4 LineTo forming a rect) → `EdgeType::RectEdge`
+///
+/// This classification enables `LinesStrict` strategy to filter out rect/curve edges.
+fn extract_edges_from_path(path_obj: &PdfPagePathObject, page_height: f64) -> Result<Vec<Edge>> {
     let mut edges = Vec::new();
 
     let segments = path_obj.segments();
     if segments.is_empty() {
         return Ok(edges);
     }
+
+    // Collect all segment data for rectangle detection
+    let mut points: Vec<(f64, f64)> = Vec::new();
+    let mut has_bezier = false;
+    let mut line_count = 0;
 
     let mut current_x: f64 = 0.0;
     let mut current_y: f64 = 0.0;
@@ -71,7 +80,32 @@ fn extract_edges_from_path(
     for segment in segments.iter() {
         let seg_type = segment.segment_type();
         let x = segment.x().value as f64;
-        // Convert PDF coordinates (origin at bottom-left) to top-left origin
+        let y = page_height - segment.y().value as f64;
+
+        match seg_type {
+            PdfPathSegmentType::MoveTo => {
+                points.push((x, y));
+            }
+            PdfPathSegmentType::LineTo => {
+                points.push((x, y));
+                line_count += 1;
+            }
+            PdfPathSegmentType::BezierTo => {
+                points.push((x, y));
+                has_bezier = true;
+            }
+            _ => {}
+        }
+    }
+
+    // Detect rectangular paths: MoveTo + 3-4 LineTo segments, no beziers,
+    // forming an axis-aligned rectangle. These should be classified as RectEdge.
+    let is_rect = !has_bezier && (line_count == 3 || line_count == 4) && is_rectangular_path(&points);
+
+    // Now walk segments again to emit edges with correct types
+    for segment in segments.iter() {
+        let seg_type = segment.segment_type();
+        let x = segment.x().value as f64;
         let y = page_height - segment.y().value as f64;
 
         match seg_type {
@@ -82,17 +116,16 @@ fn extract_edges_from_path(
                 move_y = y;
             }
             PdfPathSegmentType::LineTo => {
-                if let Some(edge) = line_to_edge(current_x, current_y, x, y) {
+                let edge_type = if is_rect { EdgeType::RectEdge } else { EdgeType::Line };
+                if let Some(edge) = line_to_edge(current_x, current_y, x, y, edge_type) {
                     edges.push(edge);
                 }
                 current_x = x;
                 current_y = y;
             }
             PdfPathSegmentType::BezierTo => {
-                // For bezier curves, we check if the start and end points
-                // form a horizontal or vertical line. This handles the common
-                // case of "curves" that are actually straight lines rendered as beziers.
-                if let Some(edge) = line_to_edge(current_x, current_y, x, y) {
+                // Bezier curves → CurveEdge. LinesStrict will filter these out.
+                if let Some(edge) = line_to_edge(current_x, current_y, x, y, EdgeType::CurveEdge) {
                     edges.push(edge);
                 }
                 current_x = x;
@@ -101,9 +134,16 @@ fn extract_edges_from_path(
             _ => {}
         }
 
-        // Handle close path — draw a line back to the move point
+        // Handle close path — inherit type from the path classification
         if segment.is_close() {
-            if let Some(edge) = line_to_edge(current_x, current_y, move_x, move_y) {
+            let edge_type = if is_rect {
+                EdgeType::RectEdge
+            } else if has_bezier {
+                EdgeType::CurveEdge
+            } else {
+                EdgeType::Line
+            };
+            if let Some(edge) = line_to_edge(current_x, current_y, move_x, move_y, edge_type) {
                 edges.push(edge);
             }
             current_x = move_x;
@@ -114,10 +154,32 @@ fn extract_edges_from_path(
     Ok(edges)
 }
 
+/// Check if a sequence of points forms an axis-aligned rectangle.
+///
+/// A rectangular path has 4-5 points where consecutive edges are
+/// alternately horizontal and vertical, forming a closed rectangle.
+fn is_rectangular_path(points: &[(f64, f64)]) -> bool {
+    if points.len() < 4 {
+        return false;
+    }
+
+    // Check first 4 edges (from consecutive point pairs) for axis alignment
+    for i in 0..points.len().min(4) {
+        let j = (i + 1) % points.len();
+        let dx = (points[j].0 - points[i].0).abs();
+        let dy = (points[j].1 - points[i].1).abs();
+        // Each edge must be either horizontal or vertical
+        if dx > ORIENTATION_TOLERANCE && dy > ORIENTATION_TOLERANCE {
+            return false;
+        }
+    }
+    true
+}
+
 /// Convert a line segment to an Edge if it's approximately horizontal or vertical.
 ///
 /// Returns `None` for diagonal lines (which aren't useful for table detection).
-fn line_to_edge(x0: f64, y0: f64, x1: f64, y1: f64) -> Option<Edge> {
+fn line_to_edge(x0: f64, y0: f64, x1: f64, y1: f64, edge_type: EdgeType) -> Option<Edge> {
     let dx = (x1 - x0).abs();
     let dy = (y1 - y0).abs();
 
@@ -125,12 +187,12 @@ fn line_to_edge(x0: f64, y0: f64, x1: f64, y1: f64) -> Option<Edge> {
         // Horizontal line
         let (left, right) = if x0 <= x1 { (x0, x1) } else { (x1, x0) };
         let avg_y = (y0 + y1) / 2.0;
-        Some(Edge::horizontal(left, right, avg_y, EdgeType::Line))
+        Some(Edge::horizontal(left, right, avg_y, edge_type))
     } else if dx <= ORIENTATION_TOLERANCE && dy > 0.0 {
         // Vertical line
         let (top, bottom) = if y0 <= y1 { (y0, y1) } else { (y1, y0) };
         let avg_x = (x0 + x1) / 2.0;
-        Some(Edge::vertical(avg_x, top, bottom, EdgeType::Line))
+        Some(Edge::vertical(avg_x, top, bottom, edge_type))
     } else {
         // Diagonal — skip
         None
@@ -141,10 +203,7 @@ fn line_to_edge(x0: f64, y0: f64, x1: f64, y1: f64) -> Option<Edge> {
 ///
 /// This combines drawn edges with edges inferred from text alignment,
 /// similar to pdfplumber's "text" strategy.
-pub fn words_to_edges_h(
-    words: &[super::table_clustering::PositionedWord],
-    word_threshold: usize,
-) -> Vec<Edge> {
+pub fn words_to_edges_h(words: &[super::table_clustering::PositionedWord], word_threshold: usize) -> Vec<Edge> {
     use super::table_clustering::cluster_list;
 
     if words.is_empty() {
@@ -180,33 +239,18 @@ pub fn words_to_edges_h(
 
     // Find global x range
     let min_x0 = words.iter().map(|w| w.x0).fold(f64::INFINITY, f64::min);
-    let max_x1 = words
-        .iter()
-        .map(|w| w.x1)
-        .fold(f64::NEG_INFINITY, f64::max);
+    let max_x1 = words.iter().map(|w| w.x1).fold(f64::NEG_INFINITY, f64::max);
 
     let mut edges = Vec::new();
     for indices in &large_clusters {
-        let cluster_words: Vec<&super::table_clustering::PositionedWord> =
-            indices.iter().map(|&i| &words[i]).collect();
-        let cluster_top = cluster_words
-            .iter()
-            .map(|w| w.top)
-            .fold(f64::INFINITY, f64::min);
-        let cluster_bottom = cluster_words
-            .iter()
-            .map(|w| w.bottom)
-            .fold(f64::NEG_INFINITY, f64::max);
+        let cluster_words: Vec<&super::table_clustering::PositionedWord> = indices.iter().map(|&i| &words[i]).collect();
+        let cluster_top = cluster_words.iter().map(|w| w.top).fold(f64::INFINITY, f64::min);
+        let cluster_bottom = cluster_words.iter().map(|w| w.bottom).fold(f64::NEG_INFINITY, f64::max);
 
         // Top edge of text row
         edges.push(Edge::horizontal(min_x0, max_x1, cluster_top, EdgeType::Line));
         // Bottom edge of text row
-        edges.push(Edge::horizontal(
-            min_x0,
-            max_x1,
-            cluster_bottom,
-            EdgeType::Line,
-        ));
+        edges.push(Edge::horizontal(min_x0, max_x1, cluster_bottom, EdgeType::Line));
     }
 
     edges
@@ -216,10 +260,7 @@ pub fn words_to_edges_h(
 ///
 /// Finds imaginary vertical lines that connect the left, right, or center
 /// of at least `word_threshold` words.
-pub fn words_to_edges_v(
-    words: &[super::table_clustering::PositionedWord],
-    word_threshold: usize,
-) -> Vec<Edge> {
+pub fn words_to_edges_v(words: &[super::table_clustering::PositionedWord], word_threshold: usize) -> Vec<Edge> {
     use super::table_clustering::cluster_list;
     use super::table_geometry::get_bbox_overlap;
 
@@ -266,19 +307,14 @@ pub fn words_to_edges_v(
     let mut kept_x_values: Vec<f64> = Vec::new();
 
     for (avg_x, indices) in &all_clusters {
-        let min_top = indices
-            .iter()
-            .map(|&i| words[i].top)
-            .fold(f64::INFINITY, f64::min);
+        let min_top = indices.iter().map(|&i| words[i].top).fold(f64::INFINITY, f64::min);
         let max_bottom = indices
             .iter()
             .map(|&i| words[i].bottom)
             .fold(f64::NEG_INFINITY, f64::max);
         let bbox = (*avg_x - 0.5, min_top, *avg_x + 0.5, max_bottom);
 
-        let overlaps = condensed_bboxes
-            .iter()
-            .any(|&cb| get_bbox_overlap(bbox, cb).is_some());
+        let overlaps = condensed_bboxes.iter().any(|&cb| get_bbox_overlap(bbox, cb).is_some());
         if !overlaps {
             condensed_bboxes.push(bbox);
             kept_x_values.push(*avg_x);
@@ -291,20 +327,11 @@ pub fn words_to_edges_v(
 
     kept_x_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let min_top = condensed_bboxes
-        .iter()
-        .map(|b| b.1)
-        .fold(f64::INFINITY, f64::min);
-    let max_bottom = condensed_bboxes
-        .iter()
-        .map(|b| b.3)
-        .fold(f64::NEG_INFINITY, f64::max);
+    let min_top = condensed_bboxes.iter().map(|b| b.1).fold(f64::INFINITY, f64::min);
+    let max_bottom = condensed_bboxes.iter().map(|b| b.3).fold(f64::NEG_INFINITY, f64::max);
 
     // Add right-most edge from the furthest x1
-    let max_x1 = words
-        .iter()
-        .map(|w| w.x1)
-        .fold(f64::NEG_INFINITY, f64::max);
+    let max_x1 = words.iter().map(|w| w.x1).fold(f64::NEG_INFINITY, f64::max);
 
     let mut edges: Vec<Edge> = kept_x_values
         .iter()
@@ -318,22 +345,23 @@ pub fn words_to_edges_v(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::table_geometry::Orientation;
+    use super::*;
 
     #[test]
     fn test_line_to_edge_horizontal() {
-        let edge = line_to_edge(10.0, 50.0, 100.0, 50.0);
+        let edge = line_to_edge(10.0, 50.0, 100.0, 50.0, EdgeType::Line);
         assert!(edge.is_some());
         let e = edge.unwrap();
         assert_eq!(e.orientation, Orientation::Horizontal);
         assert_eq!(e.x0, 10.0);
         assert_eq!(e.x1, 100.0);
+        assert_eq!(e.edge_type, EdgeType::Line);
     }
 
     #[test]
     fn test_line_to_edge_vertical() {
-        let edge = line_to_edge(50.0, 10.0, 50.0, 100.0);
+        let edge = line_to_edge(50.0, 10.0, 50.0, 100.0, EdgeType::Line);
         assert!(edge.is_some());
         let e = edge.unwrap();
         assert_eq!(e.orientation, Orientation::Vertical);
@@ -343,15 +371,43 @@ mod tests {
 
     #[test]
     fn test_line_to_edge_diagonal() {
-        let edge = line_to_edge(10.0, 10.0, 100.0, 100.0);
+        let edge = line_to_edge(10.0, 10.0, 100.0, 100.0, EdgeType::Line);
         assert!(edge.is_none());
     }
 
     #[test]
     fn test_line_to_edge_nearly_horizontal() {
-        let edge = line_to_edge(10.0, 50.0, 100.0, 50.8);
+        let edge = line_to_edge(10.0, 50.0, 100.0, 50.8, EdgeType::Line);
         assert!(edge.is_some());
         assert_eq!(edge.unwrap().orientation, Orientation::Horizontal);
+    }
+
+    #[test]
+    fn test_line_to_edge_preserves_curve_type() {
+        let edge = line_to_edge(10.0, 50.0, 100.0, 50.0, EdgeType::CurveEdge);
+        assert!(edge.is_some());
+        assert_eq!(edge.unwrap().edge_type, EdgeType::CurveEdge);
+    }
+
+    #[test]
+    fn test_line_to_edge_preserves_rect_type() {
+        let edge = line_to_edge(50.0, 10.0, 50.0, 100.0, EdgeType::RectEdge);
+        assert!(edge.is_some());
+        assert_eq!(edge.unwrap().edge_type, EdgeType::RectEdge);
+    }
+
+    #[test]
+    fn test_is_rectangular_path() {
+        // Axis-aligned rectangle: 4 corners
+        let rect_points = vec![(0.0, 0.0), (100.0, 0.0), (100.0, 50.0), (0.0, 50.0)];
+        assert!(is_rectangular_path(&rect_points));
+
+        // Non-rectangular (diagonal edge)
+        let non_rect = vec![(0.0, 0.0), (100.0, 50.0), (100.0, 100.0), (0.0, 50.0)];
+        assert!(!is_rectangular_path(&non_rect));
+
+        // Too few points
+        assert!(!is_rectangular_path(&[(0.0, 0.0), (10.0, 0.0)]));
     }
 
     #[test]

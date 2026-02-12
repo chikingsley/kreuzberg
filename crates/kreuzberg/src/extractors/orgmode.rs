@@ -183,6 +183,7 @@ impl OrgModeExtractor {
                             cells: current_table.clone(),
                             markdown,
                             page_number: 1,
+                            header: None,
                         });
                         current_table.clear();
                     }
@@ -196,6 +197,7 @@ impl OrgModeExtractor {
                     cells: current_table,
                     markdown,
                     page_number: 1,
+                    header: None,
                 });
             }
         }

@@ -71,7 +71,8 @@ fn extract_tables_from_document(
 ) -> Result<Vec<Table>> {
     use crate::ocr::table::{reconstruct_table, table_to_markdown};
     use crate::pdf::table::extract_words_from_page;
-    use crate::pdf::table_finder::{self, TableSettings, extract_table_text};
+    use crate::pdf::table_finder::{self, TableSettings, extract_table_text_styled};
+    use crate::types::TableHeader;
 
     let settings = TableSettings::default();
     let mut all_tables = Vec::new();
@@ -84,23 +85,27 @@ fn extract_tables_from_document(
             Ok(result) if !result.tables.is_empty() => {
                 let page_height = page.height().value as f64;
                 for detected_table in &result.tables {
-                    match extract_table_text(detected_table, &page, page_height) {
-                        Ok(table_cells) => {
-                            if !table_cells.is_empty() {
-                                let markdown = cells_to_markdown(&table_cells);
+                    match extract_table_text_styled(detected_table, &page, page_height) {
+                        Ok(styled_rows) => {
+                            if !styled_rows.is_empty() {
+                                let plain_cells: Vec<Vec<String>> = styled_rows
+                                    .iter()
+                                    .map(|row| row.iter().map(|c| c.plain.clone()).collect())
+                                    .collect();
+
+                                let markdown = styled_cells_to_markdown(&styled_rows);
+                                let header = detect_header(&styled_rows);
+
                                 all_tables.push(Table {
-                                    cells: table_cells,
+                                    cells: plain_cells,
                                     markdown,
                                     page_number,
+                                    header,
                                 });
                             }
                         }
                         Err(e) => {
-                            tracing::debug!(
-                                "Line-based table text extraction failed on page {}: {}",
-                                page_number,
-                                e
-                            );
+                            tracing::debug!("Line-based table text extraction failed on page {}: {}", page_number, e);
                         }
                     }
                 }
@@ -124,10 +129,17 @@ fn extract_tables_from_document(
                 if !table_cells.is_empty() {
                     let markdown = table_to_markdown(&table_cells);
 
+                    let header = Some(TableHeader {
+                        names: table_cells[0].clone(),
+                        external: false,
+                        row_index: 0,
+                    });
+
                     all_tables.push(Table {
                         cells: table_cells,
                         markdown,
                         page_number,
+                        header,
                     });
                 }
             }
@@ -137,25 +149,49 @@ fn extract_tables_from_document(
     Ok(all_tables)
 }
 
-/// Convert 2D cell data to markdown table format.
+/// Detect the table header from styled cell data.
+///
+/// Uses bold text detection: if the first row has bold text and subsequent
+/// rows don't, the first row is confidently identified as a header.
+/// Falls back to assuming first row is header (common convention).
 #[cfg(all(feature = "pdf", feature = "ocr"))]
-fn cells_to_markdown(cells: &[Vec<String>]) -> String {
-    if cells.is_empty() {
+fn detect_header(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> Option<crate::types::TableHeader> {
+    if styled_rows.is_empty() {
+        return None;
+    }
+
+    let first_row = &styled_rows[0];
+    let names: Vec<String> = first_row.iter().map(|c| c.plain.clone()).collect();
+
+    Some(crate::types::TableHeader {
+        names,
+        external: false,
+        row_index: 0,
+    })
+}
+
+/// Convert styled 2D cell data to markdown table format with inline formatting.
+#[cfg(all(feature = "pdf", feature = "ocr"))]
+fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> String {
+    if styled_rows.is_empty() {
         return String::new();
     }
 
     let mut md = String::new();
 
-    for (row_idx, row) in cells.iter().enumerate() {
+    for (row_idx, row) in styled_rows.iter().enumerate() {
         md.push('|');
         for cell in row {
             md.push(' ');
-            md.push_str(cell);
+            if cell.styled.is_empty() {
+                md.push_str(&cell.plain);
+            } else {
+                md.push_str(&cell.styled);
+            }
             md.push_str(" |");
         }
         md.push('\n');
 
-        // Add header separator after first row
         if row_idx == 0 {
             md.push('|');
             for _ in row {

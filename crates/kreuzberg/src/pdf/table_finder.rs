@@ -14,9 +14,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::table_clustering::PositionedWord;
 use super::table_edges::{extract_edges_from_page, words_to_edges_h, words_to_edges_v};
-use super::table_geometry::{
-    Bbox, Edge, EdgeType, Orientation, filter_edges, merge_edges,
-};
+use super::table_geometry::{Bbox, Edge, EdgeType, Orientation, filter_edges, merge_edges};
 
 use super::error::{PdfError, Result};
 use pdfium_render::prelude::*;
@@ -60,6 +58,12 @@ pub struct TableSettings {
     pub explicit_vertical_lines: Vec<f64>,
     /// Explicitly provided horizontal line positions (y-coordinates).
     pub explicit_horizontal_lines: Vec<f64>,
+    /// Explicitly provided rectangular boxes (x0, top, x1, bottom).
+    ///
+    /// Each box is decomposed into 4 edges (top, bottom, left, right) and added
+    /// to the edge set. Useful for manually defining table structure when automatic
+    /// detection fails (e.g., borderless tables).
+    pub explicit_boxes: Vec<Bbox>,
     /// Snap tolerance for aligning nearby edges.
     pub snap_tolerance: f64,
     /// Join tolerance for merging collinear edge segments.
@@ -83,6 +87,7 @@ impl Default for TableSettings {
             horizontal_strategy: TableStrategy::Lines,
             explicit_vertical_lines: Vec::new(),
             explicit_horizontal_lines: Vec::new(),
+            explicit_boxes: Vec::new(),
             snap_tolerance: DEFAULT_SNAP_TOLERANCE,
             join_tolerance: DEFAULT_JOIN_TOLERANCE,
             edge_min_length: DEFAULT_EDGE_MIN_LENGTH,
@@ -122,7 +127,7 @@ impl DetectedTable {
         }
 
         let mut rows = Vec::new();
-        for (_, row_cells) in &by_top {
+        for row_cells in by_top.values() {
             let cell_map: HashMap<u64, Bbox> = row_cells.iter().map(|c| (c.0.to_bits(), *c)).collect();
             let row: Vec<Option<Bbox>> = x_values.iter().map(|x| cell_map.get(&x.to_bits()).copied()).collect();
             rows.push(row);
@@ -160,22 +165,14 @@ pub fn find_tables(
     settings: &TableSettings,
     words: Option<&[PositionedWord]>,
 ) -> Result<TableFinderResult> {
-    let page_bbox = (
-        0.0,
-        0.0,
-        page.width().value as f64,
-        page.height().value as f64,
-    );
+    let page_bbox = (0.0, 0.0, page.width().value as f64, page.height().value as f64);
 
     // Step 1: Collect edges based on strategies
     let edges = collect_edges(page, settings, words, page_bbox)?;
 
     // Step 2: Find intersections
-    let intersections = edges_to_intersections(
-        &edges,
-        settings.intersection_tolerance,
-        settings.intersection_tolerance,
-    );
+    let intersections =
+        edges_to_intersections(&edges, settings.intersection_tolerance, settings.intersection_tolerance);
 
     // Step 3: Find cells from intersections
     let cells = intersections_to_cells(&intersections, &edges);
@@ -187,9 +184,7 @@ pub fn find_tables(
         .map(|cell_group| {
             let bbox = cell_group.iter().fold(
                 (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
-                |(x0, top, x1, bottom), cell| {
-                    (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3))
-                },
+                |(x0, top, x1, bottom), cell| (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3)),
             );
             DetectedTable {
                 cells: cell_group,
@@ -218,17 +213,18 @@ fn collect_edges(
 
     // Vertical edges
     let mut v_edges = match settings.vertical_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Vertical), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Vertical),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_v(w, settings.min_words_vertical)
@@ -243,17 +239,18 @@ fn collect_edges(
 
     // Horizontal edges
     let mut h_edges = match settings.horizontal_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Horizontal), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Horizontal),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_h(w, settings.min_words_horizontal)
@@ -264,6 +261,14 @@ fn collect_edges(
     // Add explicit horizontal lines
     for &y in &settings.explicit_horizontal_lines {
         h_edges.push(Edge::horizontal(page_bbox.0, page_bbox.2, y, EdgeType::Line));
+    }
+
+    // Add explicit boxes (decompose each box into 4 edges)
+    for &(x0, top, x1, bottom) in &settings.explicit_boxes {
+        h_edges.push(Edge::horizontal(x0, x1, top, EdgeType::Line));
+        h_edges.push(Edge::horizontal(x0, x1, bottom, EdgeType::Line));
+        v_edges.push(Edge::vertical(x0, top, bottom, EdgeType::Line));
+        v_edges.push(Edge::vertical(x1, top, bottom, EdgeType::Line));
     }
 
     // Combine and merge
@@ -330,10 +335,7 @@ fn edges_to_intersections(
 ///
 /// A cell is formed when four intersection points form a rectangle,
 /// and each pair of adjacent corners is connected by the same edge.
-fn intersections_to_cells(
-    intersections: &HashMap<(u64, u64), IntersectionEdges>,
-    _edges: &[Edge],
-) -> Vec<Bbox> {
+fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>, _edges: &[Edge]) -> Vec<Bbox> {
     let edge_connects = |p1: (u64, u64), p2: (u64, u64)| -> bool {
         let i1 = match intersections.get(&p1) {
             Some(i) => i,
@@ -453,11 +455,7 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
 
         if current_cells.len() > 1 {
             // Sort top-to-bottom, left-to-right
-            current_cells.sort_by(|a, b| {
-                a.1.partial_cmp(&b.1)
-                    .unwrap()
-                    .then(a.0.partial_cmp(&b.0).unwrap())
-            });
+            current_cells.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap().then(a.0.partial_cmp(&b.0).unwrap()));
             tables.push(current_cells);
         }
     }
@@ -477,75 +475,460 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
     tables
 }
 
+/// Text style flags for a character.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct TextStyle {
+    pub bold: bool,
+    pub italic: bool,
+    pub monospaced: bool,
+    pub strikethrough: bool,
+}
+
+/// A single cell's text content with style information.
+#[derive(Debug, Clone)]
+pub struct StyledCellText {
+    /// Plain text content (no markdown markup).
+    pub plain: String,
+    /// Styled text with markdown inline formatting (bold, italic, monospaced).
+    pub styled: String,
+    /// Whether any character in this cell is bold.
+    pub has_bold: bool,
+}
+
+/// Character with position and style information extracted from PDF.
+struct CharPos {
+    ch: char,
+    mid_x: f64,
+    mid_y: f64,
+    style: TextStyle,
+    /// Approximate line y-coordinate (used for line-break detection).
+    line_y: f64,
+    /// Character bounding box in page coordinates (left, top, right, bottom).
+    /// Used for strikethrough detection.
+    char_bbox: (f64, f64, f64, f64),
+}
+
+/// A thin horizontal line extracted from PDF drawing commands.
+/// Used for strikethrough detection.
+struct StrikethroughLine {
+    x0: f64,
+    x1: f64,
+    y: f64,
+}
+
 /// Extract text content for each cell in a detected table.
 ///
 /// For each cell, find characters whose midpoint falls within the cell bbox
-/// and concatenate them.
-pub fn extract_table_text(
+/// and concatenate them. Returns plain text for backward compatibility.
+pub fn extract_table_text(table: &DetectedTable, page: &PdfPage, page_height: f64) -> Result<Vec<Vec<String>>> {
+    let styled = extract_table_text_styled(table, page, page_height)?;
+    Ok(styled
+        .into_iter()
+        .map(|row| row.into_iter().map(|c| c.plain).collect())
+        .collect())
+}
+
+/// Extract styled text content for each cell in a detected table.
+///
+/// Returns `StyledCellText` with both plain and markdown-formatted versions.
+/// The styled version wraps text spans in `**bold**`, `_italic_`, or `` `monospaced` ``
+/// markers based on the font properties of each character.
+pub fn extract_table_text_styled(
     table: &DetectedTable,
     page: &PdfPage,
     page_height: f64,
-) -> Result<Vec<Vec<String>>> {
+) -> Result<Vec<Vec<StyledCellText>>> {
     let rows = table.rows();
 
     let page_text = page
         .text()
         .map_err(|e| PdfError::TextExtractionFailed(format!("Failed to get page text: {}", e)))?;
 
-    // Pre-collect all character positions
-    struct CharPos {
-        ch: char,
-        mid_x: f64,
-        mid_y: f64,
-    }
+    // Collect thin horizontal lines from page drawing objects for strikethrough detection.
+    let strikethrough_lines = collect_strikethrough_lines(page, page_height);
 
-    let chars_data: Vec<CharPos> = page_text
+    // Pre-collect all character positions with style info
+    let mut chars_data: Vec<CharPos> = page_text
         .chars()
         .iter()
         .filter_map(|pdf_char| {
             let ch = pdf_char.unicode_char()?;
             let bounds = pdf_char.loose_bounds().ok()?;
-            let mid_x = (bounds.left().value as f64 + (bounds.left().value as f64 + bounds.width().value as f64)) / 2.0;
-            let mid_y = page_height - ((bounds.bottom().value as f64 + bounds.top().value as f64) / 2.0);
-            Some(CharPos { ch, mid_x, mid_y })
+            let left = bounds.left().value as f64;
+            let right = left + bounds.width().value as f64;
+            let bottom_y = bounds.bottom().value as f64;
+            let top_y = bounds.top().value as f64;
+            let mid_x = (left + right) / 2.0;
+            let mid_y = page_height - ((bottom_y + top_y) / 2.0);
+            let line_y = page_height - bottom_y;
+
+            // Char bbox in page coordinates (top-left origin)
+            let char_top = page_height - top_y;
+            let char_bottom = page_height - bottom_y;
+            let char_bbox = (left, char_top, right, char_bottom);
+
+            // Extract font style properties
+            let bold = is_char_bold(&pdf_char);
+            let italic = pdf_char.font_is_italic();
+            let monospaced = is_char_monospaced(&pdf_char);
+
+            Some(CharPos {
+                ch,
+                mid_x,
+                mid_y,
+                style: TextStyle {
+                    bold,
+                    italic,
+                    monospaced,
+                    strikethrough: false,
+                },
+                line_y,
+                char_bbox,
+            })
         })
         .collect();
+
+    // Apply strikethrough detection: check if any thin horizontal line
+    // crosses through each character's vertical center
+    if !strikethrough_lines.is_empty() {
+        // First pass: detect strikethrough on non-whitespace characters
+        for char_pos in chars_data.iter_mut() {
+            if char_pos.ch.is_whitespace() {
+                continue;
+            }
+            let (cx0, ctop, cx1, cbottom) = char_pos.char_bbox;
+            let char_height = (cbottom - ctop).abs();
+            if char_height < 0.5 {
+                continue;
+            }
+            let char_center_y = (ctop + cbottom) / 2.0;
+            let tolerance_y = char_height * 0.35;
+
+            for line in &strikethrough_lines {
+                if line.x1 < cx0 || line.x0 > cx1 {
+                    continue;
+                }
+                if (line.y - char_center_y).abs() < tolerance_y {
+                    char_pos.style.strikethrough = true;
+                    break;
+                }
+            }
+        }
+
+        // Second pass: propagate strikethrough to whitespace characters between
+        // strikethrough non-whitespace characters (so "~~word1 word2~~" instead
+        // of "~~word1~~ ~~word2~~")
+        let len = chars_data.len();
+        for i in 0..len {
+            if chars_data[i].ch.is_whitespace() && !chars_data[i].style.strikethrough {
+                // Check if previous non-ws and next non-ws are both strikethrough
+                let prev_st = (0..i)
+                    .rev()
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
+                    .map(|j| chars_data[j].style.strikethrough)
+                    .unwrap_or(false);
+                let next_st = ((i + 1)..len)
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
+                    .map(|j| chars_data[j].style.strikethrough)
+                    .unwrap_or(false);
+                if prev_st && next_st {
+                    chars_data[i].style.strikethrough = true;
+                }
+            }
+        }
+    }
 
     let mut result = Vec::new();
 
     for row in &rows {
-        let mut row_text = Vec::new();
+        let mut row_cells = Vec::new();
         for cell_opt in row {
             match cell_opt {
                 Some(cell) => {
                     let (x0, top, x1, bottom) = *cell;
-                    let mut cell_chars: Vec<(f64, f64, char)> = chars_data
+                    let mut cell_chars: Vec<&CharPos> = chars_data
                         .iter()
-                        .filter(|c| {
-                            c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom
-                        })
-                        .map(|c| (c.mid_y, c.mid_x, c.ch))
+                        .filter(|c| c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom)
                         .collect();
 
                     // Sort by y then x for reading order
                     cell_chars.sort_by(|a, b| {
-                        a.0.partial_cmp(&b.0)
+                        a.mid_y
+                            .partial_cmp(&b.mid_y)
                             .unwrap()
-                            .then(a.1.partial_cmp(&b.1).unwrap())
+                            .then(a.mid_x.partial_cmp(&b.mid_x).unwrap())
                     });
 
-                    let text: String = cell_chars.iter().map(|(_, _, c)| c).collect();
-                    row_text.push(text.trim().to_string());
+                    let plain: String = cell_chars.iter().map(|c| c.ch).collect();
+                    let plain = plain.trim().to_string();
+
+                    let styled = build_styled_text(&cell_chars);
+                    let has_bold = cell_chars.iter().any(|c| c.style.bold);
+
+                    row_cells.push(StyledCellText {
+                        plain,
+                        styled,
+                        has_bold,
+                    });
                 }
                 None => {
-                    row_text.push(String::new());
+                    row_cells.push(StyledCellText {
+                        plain: String::new(),
+                        styled: String::new(),
+                        has_bold: false,
+                    });
                 }
             }
         }
-        result.push(row_text);
+        result.push(row_cells);
     }
 
     Ok(result)
+}
+
+/// Determine if a character is bold based on font weight and font name heuristics.
+fn is_char_bold(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
+    use pdfium_render::prelude::PdfFontWeight;
+
+    // Check font weight (700+ is bold per CSS/PDF spec)
+    if let Some(weight) = pdf_char.font_weight() {
+        match weight {
+            PdfFontWeight::Weight700Bold => return true,
+            PdfFontWeight::Custom(w) if w >= 700 => return true,
+            _ => {}
+        }
+    }
+
+    // Check force-bold flag
+    if pdf_char.font_is_bold_reenforced() {
+        return true;
+    }
+
+    // Fallback: check font name for "Bold"
+    let name = pdf_char.font_name();
+    if name.contains("Bold") || name.contains("bold") || name.contains("BOLD") {
+        return true;
+    }
+
+    false
+}
+
+/// Determine if a character is monospaced based on font descriptor flags and font name.
+fn is_char_monospaced(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
+    // Check the font descriptor fixed-pitch flag
+    if pdf_char.font_is_fixed_pitch() {
+        return true;
+    }
+
+    // Fallback: check font name for common monospaced font families
+    let name = pdf_char.font_name();
+    let name_lower = name.to_lowercase();
+    name_lower.contains("courier")
+        || name_lower.contains("mono")
+        || name_lower.contains("consolas")
+        || name_lower.contains("menlo")
+        || name_lower.contains("inconsolata")
+        || name_lower.contains("source code")
+        || name_lower.contains("fira code")
+        || name_lower.contains("jetbrains")
+        || name_lower.contains("roboto mono")
+        || name_lower.contains("fixed")
+}
+
+/// Collect thin horizontal lines from page drawing objects.
+///
+/// These are candidate strikethrough lines — thin horizontal lines drawn
+/// through text. PDFs render strikethrough by drawing a line across the text,
+/// not as a font property.
+///
+/// Criteria for a strikethrough line:
+/// - Approximately horizontal (y-coordinates nearly equal)
+/// - Very thin (height < 2 PDF points, typically ~0.5pt)
+/// - Minimum length of 3 PDF points (not a dot)
+fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<StrikethroughLine> {
+    let mut lines = Vec::new();
+    let objects = page.objects();
+
+    for object in objects.iter() {
+        if let Some(path_obj) = object.as_path_object() {
+            let segments = path_obj.segments();
+            if segments.is_empty() {
+                continue;
+            }
+
+            let mut current_x: f64 = 0.0;
+            let mut current_y: f64 = 0.0;
+
+            for segment in segments.iter() {
+                let seg_type = segment.segment_type();
+                let x = segment.x().value as f64;
+                let y = page_height - segment.y().value as f64;
+
+                match seg_type {
+                    PdfPathSegmentType::MoveTo => {
+                        current_x = x;
+                        current_y = y;
+                    }
+                    PdfPathSegmentType::LineTo => {
+                        // Check if this is a thin horizontal line
+                        let dy = (y - current_y).abs();
+                        let dx = (x - current_x).abs();
+
+                        if dy < 2.0 && dx >= 3.0 {
+                            // This is a thin horizontal line — candidate for strikethrough
+                            let line_y = (current_y + y) / 2.0;
+                            let (x0, x1) = if current_x < x { (current_x, x) } else { (x, current_x) };
+                            lines.push(StrikethroughLine { x0, x1, y: line_y });
+                        }
+                        current_x = x;
+                        current_y = y;
+                    }
+                    _ => {
+                        current_x = x;
+                        current_y = y;
+                    }
+                }
+            }
+
+            // Also check for thin rectangles (fill operations that create strikethrough)
+            // These appear as rect path objects with very small height
+            if segments.len() >= 4 {
+                let mut xs = Vec::new();
+                let mut ys = Vec::new();
+                for segment in segments.iter() {
+                    xs.push(segment.x().value as f64);
+                    ys.push(page_height - segment.y().value as f64);
+                }
+                if let (Some(&min_x), Some(&max_x), Some(&min_y), Some(&max_y)) = (
+                    xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
+                    xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
+                    ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
+                    ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
+                ) {
+                    let width = max_x - min_x;
+                    let height = max_y - min_y;
+                    // Thin horizontal rectangle: width >> height, height < 2pt
+                    if height < 2.0 && width >= 3.0 && width > height * 3.0 {
+                        let mid_y = (min_y + max_y) / 2.0;
+                        lines.push(StrikethroughLine {
+                            x0: min_x,
+                            x1: max_x,
+                            y: mid_y,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    lines
+}
+
+/// Build styled markdown text from a sequence of positioned, styled characters.
+///
+/// Groups consecutive characters with the same style, then wraps each group
+/// in the appropriate markdown markers. Handles line breaks within cells
+/// by inserting `<br>` tags.
+fn build_styled_text(chars: &[&CharPos]) -> String {
+    if chars.is_empty() {
+        return String::new();
+    }
+
+    // Group chars into style-homogeneous runs, detecting line breaks
+    struct Run {
+        text: String,
+        style: TextStyle,
+    }
+
+    let mut runs: Vec<Run> = Vec::new();
+    let mut current_text = String::new();
+    let mut current_style = chars[0].style;
+    let mut prev_line_y = chars[0].line_y;
+    let line_break_threshold = 5.0; // PDF units
+
+    for &ch in chars {
+        // Detect line break (significant y-coordinate change)
+        let y_diff = (ch.line_y - prev_line_y).abs();
+        if y_diff > line_break_threshold && !current_text.is_empty() {
+            // Flush current run and insert line break marker
+            let trimmed = current_text.trim_end().to_string();
+            if !trimmed.is_empty() {
+                runs.push(Run {
+                    text: trimmed,
+                    style: current_style,
+                });
+            }
+            runs.push(Run {
+                text: "\n".to_string(),
+                style: TextStyle::default(),
+            });
+            current_text = String::new();
+            current_style = ch.style;
+        }
+
+        // Style change: flush current run
+        if ch.style != current_style && !current_text.is_empty() {
+            runs.push(Run {
+                text: current_text.clone(),
+                style: current_style,
+            });
+            current_text = String::new();
+            current_style = ch.style;
+        }
+
+        current_text.push(ch.ch);
+        prev_line_y = ch.line_y;
+    }
+
+    // Flush last run
+    if !current_text.is_empty() {
+        runs.push(Run {
+            text: current_text,
+            style: current_style,
+        });
+    }
+
+    // Build output with markdown formatting
+    let mut output = String::new();
+    for run in &runs {
+        if run.text == "\n" {
+            output.push_str("<br>");
+            continue;
+        }
+
+        let trimmed = run.text.trim();
+        if trimmed.is_empty() {
+            output.push_str(&run.text);
+            continue;
+        }
+
+        // Preserve leading/trailing whitespace outside of markers
+        let leading_ws = &run.text[..run.text.len() - run.text.trim_start().len()];
+        let trailing_ws = &run.text[run.text.trim_end().len()..];
+        let inner = run.text.trim();
+
+        output.push_str(leading_ws);
+
+        // Apply style wrappers (order matches PyMuPDF: strikeout wraps bold wraps italic wraps monospaced)
+        let mut styled = inner.to_string();
+        if run.style.monospaced {
+            styled = format!("`{styled}`");
+        }
+        if run.style.italic {
+            styled = format!("_{styled}_");
+        }
+        if run.style.bold {
+            styled = format!("**{styled}**");
+        }
+        if run.style.strikethrough {
+            styled = format!("~~{styled}~~");
+        }
+
+        output.push_str(&styled);
+        output.push_str(trailing_ws);
+    }
+
+    output.trim().to_string()
 }
 
 #[cfg(test)]
