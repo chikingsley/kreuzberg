@@ -388,6 +388,7 @@ impl OcrBackend for PaddleOcrBackend {
                         cells,
                         markdown: table_markdown,
                         page_number: 1, // Single image = page 1
+                        header: None,
                     });
                 }
             }

@@ -312,6 +312,78 @@ pub fn merge_edges(
     result
 }
 
+/// Check whether two rectangles are neighbors (within snap tolerance).
+///
+/// Two rectangles are considered neighbors if the minimum distance between
+/// any of their corner points is not larger than the snap tolerance.
+/// This is used for joining vector graphics that form table borders.
+pub fn are_neighbors(r1: Bbox, r2: Bbox, snap_x: f64, snap_y: f64) -> bool {
+    // Check if any corner of r1 falls within the extended bounds of r2
+    let check = |r_a: Bbox, r_b: Bbox| -> bool {
+        let x_in_range = |x: f64| r_b.0 - snap_x <= x && x <= r_b.2 + snap_x;
+        let y_in_range = |y: f64| r_b.1 - snap_y <= y && y <= r_b.3 + snap_y;
+
+        // Check all 4 corners of r_a against the extended bounds of r_b
+        (x_in_range(r_a.0) || x_in_range(r_a.2)) && (y_in_range(r_a.1) || y_in_range(r_a.3))
+    };
+
+    check(r1, r2) || check(r2, r1)
+}
+
+/// Join neighboring rectangles into unified bounding regions.
+///
+/// Iteratively merges adjacent rectangles that are within the snap tolerance,
+/// forming larger bounding regions that represent table boundaries.
+/// Only keeps regions that satisfy the provided predicate (e.g., "contains text").
+///
+/// This mirrors PyMuPDF's `clean_graphics` algorithm.
+pub fn join_neighboring_rects<F>(
+    rects: &[Bbox],
+    snap_x: f64,
+    snap_y: f64,
+    keep_predicate: F,
+) -> Vec<Bbox>
+where
+    F: Fn(Bbox) -> bool,
+{
+    if rects.is_empty() {
+        return Vec::new();
+    }
+
+    let mut remaining: Vec<Bbox> = rects.to_vec();
+    let mut result = Vec::new();
+
+    while !remaining.is_empty() {
+        let mut current = remaining.remove(0);
+        let mut changed = true;
+
+        // Keep extending the current rect by absorbing neighbors
+        while changed {
+            changed = false;
+            let mut i = 0;
+            while i < remaining.len() {
+                if are_neighbors(current, remaining[i], snap_x, snap_y) {
+                    // Merge: extend current to include the neighbor
+                    let neighbor = remaining.remove(i);
+                    current.0 = current.0.min(neighbor.0);
+                    current.1 = current.1.min(neighbor.1);
+                    current.2 = current.2.max(neighbor.2);
+                    current.3 = current.3.max(neighbor.3);
+                    changed = true;
+                } else {
+                    i += 1;
+                }
+            }
+        }
+
+        if keep_predicate(current) {
+            result.push(current);
+        }
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -413,5 +485,69 @@ mod tests {
         assert_eq!(joined.len(), 1);
         assert_eq!(joined[0].top, 0.0);
         assert_eq!(joined[0].bottom, 100.0);
+    }
+
+    #[test]
+    fn test_are_neighbors_touching() {
+        // Two rects sharing an edge
+        let r1 = (0.0, 0.0, 50.0, 50.0);
+        let r2 = (50.0, 0.0, 100.0, 50.0);
+        assert!(are_neighbors(r1, r2, 3.0, 3.0));
+    }
+
+    #[test]
+    fn test_are_neighbors_close() {
+        // Two rects with a small gap (within tolerance)
+        let r1 = (0.0, 0.0, 50.0, 50.0);
+        let r2 = (52.0, 0.0, 100.0, 50.0);
+        assert!(are_neighbors(r1, r2, 3.0, 3.0));
+    }
+
+    #[test]
+    fn test_are_neighbors_far_apart() {
+        let r1 = (0.0, 0.0, 50.0, 50.0);
+        let r2 = (200.0, 200.0, 300.0, 300.0);
+        assert!(!are_neighbors(r1, r2, 3.0, 3.0));
+    }
+
+    #[test]
+    fn test_join_neighboring_rects() {
+        let rects = vec![
+            (0.0, 0.0, 50.0, 50.0),
+            (50.0, 0.0, 100.0, 50.0),   // neighbor of first
+            (200.0, 200.0, 300.0, 300.0), // far away
+        ];
+        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
+        assert_eq!(joined.len(), 2);
+        // First two should be merged
+        assert_eq!(joined[0], (0.0, 0.0, 100.0, 50.0));
+        // Third stays alone
+        assert_eq!(joined[1], (200.0, 200.0, 300.0, 300.0));
+    }
+
+    #[test]
+    fn test_join_neighboring_rects_chain() {
+        // Three rects in a chain: A-B-C where A touches B and B touches C
+        let rects = vec![
+            (0.0, 0.0, 50.0, 50.0),
+            (50.0, 0.0, 100.0, 50.0),
+            (100.0, 0.0, 150.0, 50.0),
+        ];
+        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
+        assert_eq!(joined.len(), 1);
+        assert_eq!(joined[0], (0.0, 0.0, 150.0, 50.0));
+    }
+
+    #[test]
+    fn test_join_neighboring_rects_with_predicate() {
+        let rects = vec![
+            (0.0, 0.0, 50.0, 50.0),
+            (50.0, 0.0, 100.0, 50.0),
+        ];
+        // Predicate rejects small rects
+        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |r| {
+            (r.2 - r.0) > 80.0
+        });
+        assert_eq!(joined.len(), 1); // Merged rect is 100 wide, passes predicate
     }
 }

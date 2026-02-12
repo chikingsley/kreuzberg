@@ -198,6 +198,7 @@ async fn test_pipeline_preserves_tables() {
         cells: vec![vec!["A".to_string(), "B".to_string()]],
         markdown: "| A | B |".to_string(),
         page_number: 0,
+        header: None,
     };
 
     let result = ExtractionResult {

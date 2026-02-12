@@ -96,6 +96,7 @@ fn convert_docx_table_to_table(docx_table: &crate::extraction::docx::parser::Tab
         cells,
         markdown,
         page_number: table_index + 1,
+        header: None,
     }
 }
 

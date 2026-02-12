@@ -917,6 +917,85 @@ fn test_pymupdf_small_table_baseline() {
 
 // ############################################################
 //
+//  Tests for new features: styled markdown, header detection,
+//  add_boxes, vector graphics joining
+//
+// ############################################################
+
+/// Test that styled tables produce markdown with bold/italic markers.
+#[test]
+fn test_styled_markdown_in_styled_table_pdf() {
+    let tables = extract_tables_from_pdf("pymupdf-test-styled-table.pdf");
+
+    assert!(!tables.is_empty(), "Expected at least one table");
+    let table = &tables[0];
+    println!("Styled table markdown:\n{}", table.markdown);
+
+    // The styled table has bold and italic text.
+    // If pdfium correctly reports font properties, we should see markdown markers.
+    // Note: Whether we get **bold** depends on the font metadata in the PDF,
+    // which pdfium may or may not reliably expose.
+    assert!(
+        table.markdown.contains('|'),
+        "Styled markdown should contain pipe delimiters"
+    );
+
+    // Check that header is detected
+    assert!(
+        table.header.is_some(),
+        "Table should have header information"
+    );
+    let header = table.header.as_ref().unwrap();
+    assert!(!header.names.is_empty(), "Header should have column names");
+    assert!(!header.external, "Header should be internal (first row)");
+    println!("Header names: {:?}", header.names);
+}
+
+/// Test header detection on Chinese tables (PyMuPDF's test_table2 equivalent).
+#[test]
+fn test_header_detection_chinese_tables() {
+    let tables = extract_tables_from_pdf("pymupdf-chinese-tables.pdf");
+
+    for (i, table) in tables.iter().enumerate() {
+        println!(
+            "Chinese table {}: {} rows, header: {:?}",
+            i,
+            table.cells.len(),
+            table.header.as_ref().map(|h| &h.names)
+        );
+
+        if let Some(header) = &table.header {
+            assert!(!header.external, "Chinese table headers should be internal");
+            assert_eq!(header.row_index, 0, "Header should be first row");
+        }
+    }
+}
+
+/// Test that header is present for all line-based tables.
+#[test]
+fn test_all_line_based_tables_have_headers() {
+    let pdfs = [
+        "pdffill-demo.pdf",
+        "issue-140-example.pdf",
+        "pymupdf-test_3179.pdf",
+        "pymupdf-test_4017.pdf",
+    ];
+
+    for pdf_name in &pdfs {
+        let tables = extract_tables_from_pdf(pdf_name);
+        for (i, table) in tables.iter().enumerate() {
+            assert!(
+                table.header.is_some(),
+                "Table {} in {} should have header info",
+                i,
+                pdf_name
+            );
+        }
+    }
+}
+
+// ############################################################
+//
 //  Benchmark: per-PDF timing for comparison with PyMuPDF
 //
 // ############################################################

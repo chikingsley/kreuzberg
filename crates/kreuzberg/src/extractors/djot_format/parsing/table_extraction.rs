@@ -56,6 +56,7 @@ pub fn extract_tables_from_events(events: &[Event]) -> Vec<Table> {
                         cells,
                         markdown,
                         page_number: idx + 1,
+                        header: None,
                     });
                     table_index += 1;
                 }

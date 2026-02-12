@@ -515,6 +515,7 @@ impl TryFrom<JsExtractionResult> for RustExtractionResult {
                     cells: t.cells,
                     markdown: t.markdown,
                     page_number: t.page_number as usize,
+                    header: None,
                 })
                 .collect(),
             detected_languages: val.detected_languages,

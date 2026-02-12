@@ -11,10 +11,31 @@ use serde::{Deserialize, Serialize};
 pub struct Table {
     /// Table cells as a 2D vector (rows × columns)
     pub cells: Vec<Vec<String>>,
-    /// Markdown representation of the table
+    /// Markdown representation of the table (with inline style formatting)
     pub markdown: String,
     /// Page number where the table was found (1-indexed)
     pub page_number: usize,
+    /// Detected table header information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub header: Option<TableHeader>,
+}
+
+/// Detected table header information.
+///
+/// Identifies which row(s) constitute the table header and provides
+/// metadata about how the header was detected.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
+pub struct TableHeader {
+    /// Column header names extracted from the header row.
+    pub names: Vec<String>,
+    /// Whether the header is external (above the table body, not part of it).
+    ///
+    /// When `false`, the header is the first row of the table.
+    /// When `true`, the header text was found above the table's bounding box.
+    pub external: bool,
+    /// Index of the header row in the `cells` array (0 for first row).
+    pub row_index: usize,
 }
 
 /// Individual table cell with content and optional styling.

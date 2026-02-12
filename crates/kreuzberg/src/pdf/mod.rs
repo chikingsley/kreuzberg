@@ -86,6 +86,8 @@ pub use rendering::{PageRenderOptions, render_page_to_image};
 #[cfg(feature = "pdf")]
 pub use table::extract_words_from_page;
 #[cfg(feature = "pdf")]
-pub use table_finder::{DetectedTable, TableFinderResult, TableSettings, TableStrategy, find_tables};
+pub use table_finder::{DetectedTable, StyledCellText, TableFinderResult, TableSettings, TableStrategy, TextStyle, extract_table_text_styled, find_tables};
+#[cfg(feature = "pdf")]
+pub use table_geometry::{are_neighbors, join_neighboring_rects};
 #[cfg(feature = "pdf")]
 pub use text::extract_text_from_pdf;

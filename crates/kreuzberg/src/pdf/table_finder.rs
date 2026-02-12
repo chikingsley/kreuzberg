@@ -60,6 +60,12 @@ pub struct TableSettings {
     pub explicit_vertical_lines: Vec<f64>,
     /// Explicitly provided horizontal line positions (y-coordinates).
     pub explicit_horizontal_lines: Vec<f64>,
+    /// Explicitly provided rectangular boxes (x0, top, x1, bottom).
+    ///
+    /// Each box is decomposed into 4 edges (top, bottom, left, right) and added
+    /// to the edge set. Useful for manually defining table structure when automatic
+    /// detection fails (e.g., borderless tables).
+    pub explicit_boxes: Vec<Bbox>,
     /// Snap tolerance for aligning nearby edges.
     pub snap_tolerance: f64,
     /// Join tolerance for merging collinear edge segments.
@@ -83,6 +89,7 @@ impl Default for TableSettings {
             horizontal_strategy: TableStrategy::Lines,
             explicit_vertical_lines: Vec::new(),
             explicit_horizontal_lines: Vec::new(),
+            explicit_boxes: Vec::new(),
             snap_tolerance: DEFAULT_SNAP_TOLERANCE,
             join_tolerance: DEFAULT_JOIN_TOLERANCE,
             edge_min_length: DEFAULT_EDGE_MIN_LENGTH,
@@ -264,6 +271,14 @@ fn collect_edges(
     // Add explicit horizontal lines
     for &y in &settings.explicit_horizontal_lines {
         h_edges.push(Edge::horizontal(page_bbox.0, page_bbox.2, y, EdgeType::Line));
+    }
+
+    // Add explicit boxes (decompose each box into 4 edges)
+    for &(x0, top, x1, bottom) in &settings.explicit_boxes {
+        h_edges.push(Edge::horizontal(x0, x1, top, EdgeType::Line));
+        h_edges.push(Edge::horizontal(x0, x1, bottom, EdgeType::Line));
+        v_edges.push(Edge::vertical(x0, top, bottom, EdgeType::Line));
+        v_edges.push(Edge::vertical(x1, top, bottom, EdgeType::Line));
     }
 
     // Combine and merge
@@ -477,28 +492,68 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
     tables
 }
 
+/// Text style flags for a character.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct TextStyle {
+    pub bold: bool,
+    pub italic: bool,
+    pub monospaced: bool,
+}
+
+/// A single cell's text content with style information.
+#[derive(Debug, Clone)]
+pub struct StyledCellText {
+    /// Plain text content (no markdown markup).
+    pub plain: String,
+    /// Styled text with markdown inline formatting (bold, italic, monospaced).
+    pub styled: String,
+    /// Whether any character in this cell is bold.
+    pub has_bold: bool,
+}
+
+/// Character with position and style information extracted from PDF.
+struct CharPos {
+    ch: char,
+    mid_x: f64,
+    mid_y: f64,
+    style: TextStyle,
+    /// Approximate line y-coordinate (used for line-break detection).
+    line_y: f64,
+}
+
 /// Extract text content for each cell in a detected table.
 ///
 /// For each cell, find characters whose midpoint falls within the cell bbox
-/// and concatenate them.
+/// and concatenate them. Returns plain text for backward compatibility.
 pub fn extract_table_text(
     table: &DetectedTable,
     page: &PdfPage,
     page_height: f64,
 ) -> Result<Vec<Vec<String>>> {
+    let styled = extract_table_text_styled(table, page, page_height)?;
+    Ok(styled
+        .into_iter()
+        .map(|row| row.into_iter().map(|c| c.plain).collect())
+        .collect())
+}
+
+/// Extract styled text content for each cell in a detected table.
+///
+/// Returns `StyledCellText` with both plain and markdown-formatted versions.
+/// The styled version wraps text spans in `**bold**`, `_italic_`, or `` `monospaced` ``
+/// markers based on the font properties of each character.
+pub fn extract_table_text_styled(
+    table: &DetectedTable,
+    page: &PdfPage,
+    page_height: f64,
+) -> Result<Vec<Vec<StyledCellText>>> {
     let rows = table.rows();
 
     let page_text = page
         .text()
         .map_err(|e| PdfError::TextExtractionFailed(format!("Failed to get page text: {}", e)))?;
 
-    // Pre-collect all character positions
-    struct CharPos {
-        ch: char,
-        mid_x: f64,
-        mid_y: f64,
-    }
-
+    // Pre-collect all character positions with style info
     let chars_data: Vec<CharPos> = page_text
         .chars()
         .iter()
@@ -506,46 +561,188 @@ pub fn extract_table_text(
             let ch = pdf_char.unicode_char()?;
             let bounds = pdf_char.loose_bounds().ok()?;
             let mid_x = (bounds.left().value as f64 + (bounds.left().value as f64 + bounds.width().value as f64)) / 2.0;
-            let mid_y = page_height - ((bounds.bottom().value as f64 + bounds.top().value as f64) / 2.0);
-            Some(CharPos { ch, mid_x, mid_y })
+            let bottom_y = bounds.bottom().value as f64;
+            let top_y = bounds.top().value as f64;
+            let mid_y = page_height - ((bottom_y + top_y) / 2.0);
+            let line_y = page_height - bottom_y;
+
+            // Extract font style properties
+            let bold = is_char_bold(&pdf_char);
+            let italic = pdf_char.font_is_italic();
+            let monospaced = pdf_char.font_is_fixed_pitch();
+
+            Some(CharPos {
+                ch,
+                mid_x,
+                mid_y,
+                style: TextStyle { bold, italic, monospaced },
+                line_y,
+            })
         })
         .collect();
 
     let mut result = Vec::new();
 
     for row in &rows {
-        let mut row_text = Vec::new();
+        let mut row_cells = Vec::new();
         for cell_opt in row {
             match cell_opt {
                 Some(cell) => {
                     let (x0, top, x1, bottom) = *cell;
-                    let mut cell_chars: Vec<(f64, f64, char)> = chars_data
+                    let mut cell_chars: Vec<&CharPos> = chars_data
                         .iter()
                         .filter(|c| {
                             c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom
                         })
-                        .map(|c| (c.mid_y, c.mid_x, c.ch))
                         .collect();
 
                     // Sort by y then x for reading order
                     cell_chars.sort_by(|a, b| {
-                        a.0.partial_cmp(&b.0)
+                        a.mid_y.partial_cmp(&b.mid_y)
                             .unwrap()
-                            .then(a.1.partial_cmp(&b.1).unwrap())
+                            .then(a.mid_x.partial_cmp(&b.mid_x).unwrap())
                     });
 
-                    let text: String = cell_chars.iter().map(|(_, _, c)| c).collect();
-                    row_text.push(text.trim().to_string());
+                    let plain: String = cell_chars.iter().map(|c| c.ch).collect();
+                    let plain = plain.trim().to_string();
+
+                    let styled = build_styled_text(&cell_chars);
+                    let has_bold = cell_chars.iter().any(|c| c.style.bold);
+
+                    row_cells.push(StyledCellText { plain, styled, has_bold });
                 }
                 None => {
-                    row_text.push(String::new());
+                    row_cells.push(StyledCellText {
+                        plain: String::new(),
+                        styled: String::new(),
+                        has_bold: false,
+                    });
                 }
             }
         }
-        result.push(row_text);
+        result.push(row_cells);
     }
 
     Ok(result)
+}
+
+/// Determine if a character is bold based on font weight and font name heuristics.
+fn is_char_bold(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
+    use pdfium_render::prelude::PdfFontWeight;
+
+    // Check font weight (700+ is bold per CSS/PDF spec)
+    if let Some(weight) = pdf_char.font_weight() {
+        match weight {
+            PdfFontWeight::Weight700Bold => return true,
+            PdfFontWeight::Custom(w) if w >= 700 => return true,
+            _ => {}
+        }
+    }
+
+    // Check force-bold flag
+    if pdf_char.font_is_bold_reenforced() {
+        return true;
+    }
+
+    // Fallback: check font name for "Bold"
+    let name = pdf_char.font_name();
+    if name.contains("Bold") || name.contains("bold") || name.contains("BOLD") {
+        return true;
+    }
+
+    false
+}
+
+/// Build styled markdown text from a sequence of positioned, styled characters.
+///
+/// Groups consecutive characters with the same style, then wraps each group
+/// in the appropriate markdown markers. Handles line breaks within cells
+/// by inserting `<br>` tags.
+fn build_styled_text(chars: &[&CharPos]) -> String {
+    if chars.is_empty() {
+        return String::new();
+    }
+
+    // Group chars into style-homogeneous runs, detecting line breaks
+    struct Run {
+        text: String,
+        style: TextStyle,
+    }
+
+    let mut runs: Vec<Run> = Vec::new();
+    let mut current_text = String::new();
+    let mut current_style = chars[0].style;
+    let mut prev_line_y = chars[0].line_y;
+    let line_break_threshold = 5.0; // PDF units
+
+    for &ch in chars {
+        // Detect line break (significant y-coordinate change)
+        let y_diff = (ch.line_y - prev_line_y).abs();
+        if y_diff > line_break_threshold && !current_text.is_empty() {
+            // Flush current run and insert line break marker
+            let trimmed = current_text.trim_end().to_string();
+            if !trimmed.is_empty() {
+                runs.push(Run { text: trimmed, style: current_style });
+            }
+            runs.push(Run { text: "\n".to_string(), style: TextStyle::default() });
+            current_text = String::new();
+            current_style = ch.style;
+        }
+
+        // Style change: flush current run
+        if ch.style != current_style && !current_text.is_empty() {
+            runs.push(Run { text: current_text.clone(), style: current_style });
+            current_text = String::new();
+            current_style = ch.style;
+        }
+
+        current_text.push(ch.ch);
+        prev_line_y = ch.line_y;
+    }
+
+    // Flush last run
+    if !current_text.is_empty() {
+        runs.push(Run { text: current_text, style: current_style });
+    }
+
+    // Build output with markdown formatting
+    let mut output = String::new();
+    for run in &runs {
+        if run.text == "\n" {
+            output.push_str("<br>");
+            continue;
+        }
+
+        let trimmed = run.text.trim();
+        if trimmed.is_empty() {
+            output.push_str(&run.text);
+            continue;
+        }
+
+        // Preserve leading/trailing whitespace outside of markers
+        let leading_ws = &run.text[..run.text.len() - run.text.trim_start().len()];
+        let trailing_ws = &run.text[run.text.trim_end().len()..];
+        let inner = run.text.trim();
+
+        output.push_str(leading_ws);
+
+        // Apply style wrappers (order: strikeout > bold > italic > monospaced)
+        let mut styled = inner.to_string();
+        if run.style.monospaced {
+            styled = format!("`{styled}`");
+        }
+        if run.style.italic {
+            styled = format!("_{styled}_");
+        }
+        if run.style.bold {
+            styled = format!("**{styled}**");
+        }
+
+        output.push_str(&styled);
+        output.push_str(trailing_ws);
+    }
+
+    output.trim().to_string()
 }
 
 #[cfg(test)]

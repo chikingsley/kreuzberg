@@ -71,6 +71,7 @@ mod tests {
             cells: vec![vec!["A".to_string(), "B".to_string()]],
             markdown: "| A | B |\n|---|---|\n".to_string(),
             page_number: 1,
+            header: None,
         };
 
         let json = serde_json::to_value(&table).unwrap();
@@ -89,6 +90,7 @@ mod tests {
             ],
             markdown: "| X | Y |\n|---|---|\n| 1 | 2 |\n".to_string(),
             page_number: 5,
+            header: None,
         };
 
         let json = serde_json::to_string(&original).unwrap();
@@ -105,6 +107,7 @@ mod tests {
             cells: vec![vec!["shared".to_string()]],
             markdown: "| shared |".to_string(),
             page_number: 1,
+            header: None,
         });
 
         let tables_before = [Arc::clone(&shared_table), Arc::clone(&shared_table)].to_vec();
@@ -120,11 +123,13 @@ mod tests {
                 cells: vec![vec!["A".to_string()]],
                 markdown: "| A |".to_string(),
                 page_number: 1,
+                header: None,
             },
             Table {
                 cells: vec![vec!["B".to_string()]],
                 markdown: "| B |".to_string(),
                 page_number: 2,
+                header: None,
             },
         ];
 
@@ -147,11 +152,13 @@ mod tests {
                     cells: vec![vec!["Table1".to_string()]],
                     markdown: "| Table1 |".to_string(),
                     page_number: 3,
+                    header: None,
                 }),
                 Arc::new(Table {
                     cells: vec![vec!["Table2".to_string()]],
                     markdown: "| Table2 |".to_string(),
                     page_number: 3,
+                    header: None,
                 }),
             ],
             images: Vec::new(),
@@ -222,6 +229,7 @@ mod tests {
             cells: vec![vec!["shared across pages".to_string()]],
             markdown: "| shared across pages |".to_string(),
             page_number: 0,
+            header: None,
         });
 
         let page1 = PageContent {
@@ -275,12 +283,14 @@ mod tests {
             cells: vec![vec!["A".to_string()]],
             markdown: "| A |".to_string(),
             page_number: 1,
+            header: None,
         };
 
         let table2 = Table {
             cells: vec![vec!["B".to_string()]],
             markdown: "| B |".to_string(),
             page_number: 2,
+            header: None,
         };
 
         let json = serde_json::to_string(&vec![table1, table2]).unwrap();
