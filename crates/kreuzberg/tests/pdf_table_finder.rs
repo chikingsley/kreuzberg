@@ -67,51 +67,40 @@ fn test_pdffill_demo_extracts_tables() {
 
     println!("pdffill-demo: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         if !table.cells.is_empty() {
             println!("    First row: {:?}", &table.cells[0]);
         }
     }
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in pdffill-demo.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in pdffill-demo.pdf");
 }
 
 // ============================================================
 // Ported from: test_edges_strict
 // issue-140-example.pdf with lines_strict strategy.
 // pdfplumber asserts last row == ["", "0085648100300", "CENTRAL KMA", ...]
+//
+// BEHAVIORAL DIFFERENCE: pdfplumber uses a different text extraction
+// strategy that produces clean per-column text. Our line-based detection
+// with pdfium text extraction produces different column splits for this
+// PDF due to overlapping text spans. We verify structural correctness.
 // ============================================================
 #[test]
 fn test_edges_strict_issue_140() {
     let tables = extract_tables_from_pdf("issue-140-example.pdf");
-
-    println!("issue-140 (edges_strict): found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
 
     assert!(
         !tables.is_empty(),
         "Expected at least one table in issue-140-example.pdf"
     );
 
-    // Check that the table has meaningful content
+    // All tables should have at least one row
+    for (i, table) in tables.iter().enumerate() {
+        assert!(!table.cells.is_empty(), "Table {} should have at least one row", i);
+    }
+
+    // Verify non-empty text was extracted
     let all_text: String = tables
         .iter()
         .flat_map(|t| t.cells.iter())
@@ -119,19 +108,15 @@ fn test_edges_strict_issue_140() {
         .cloned()
         .collect();
 
-    assert!(
-        !all_text.is_empty(),
-        "Expected non-empty table text in issue-140"
-    );
+    assert!(!all_text.is_empty(), "Expected non-empty table text in issue-140");
 
-    // pdfplumber's assertion: last row should contain UPC data
-    // We check for the presence of key values from the table
-    let has_upc_data = all_text.contains("0085648100300")
-        || all_text.contains("CENTRAL")
-        || all_text.contains("LILYS");
-    if has_upc_data {
-        println!("Found expected UPC data in table cells");
-    }
+    // Verify total rows across all tables (structural integrity)
+    let total_rows: usize = tables.iter().map(|t| t.cells.len()).sum();
+    assert!(
+        total_rows >= 4,
+        "Expected at least 4 total rows across all tables, got {}",
+        total_rows
+    );
 }
 
 // ============================================================
@@ -139,6 +124,10 @@ fn test_edges_strict_issue_140() {
 // issue-140-example.pdf — checks header row and column values.
 // pdfplumber asserts row[0] = ["Line no", "UPC code", "Location", ...]
 // pdfplumber asserts col[1] = ["UPC code", "0085648100305", ...]
+//
+// BEHAVIORAL DIFFERENCE: pdfplumber's text extraction strategy produces
+// clean column-separated text. Our pdfium-based extraction for this PDF
+// produces different column splits. We verify structural properties.
 // ============================================================
 #[test]
 fn test_rows_and_columns_issue_140() {
@@ -156,11 +145,21 @@ fn test_rows_and_columns_issue_140() {
         table.cells.len()
     );
 
-    println!("Header row: {:?}", &table.cells[0]);
+    // Verify header is detected
+    assert!(table.header.is_some(), "Expected header to be detected");
 
-    // Check for header-like content in first row
-    let header_text: String = table.cells[0].join(" ");
-    println!("Header text: {}", header_text);
+    // All rows should have consistent column count
+    let col_count = table.cells[0].len();
+    for (i, row) in table.cells.iter().enumerate() {
+        assert_eq!(
+            row.len(),
+            col_count,
+            "Row {} has {} cols, expected {} (uniform columns)",
+            i,
+            row.len(),
+            col_count
+        );
+    }
 }
 
 // ============================================================
@@ -173,70 +172,46 @@ fn test_explicit_strategy_decimalization() {
 
     // This test verifies the explicit strategy works at all.
     // The actual explicit strategy is tested below at the API level.
-    assert!(
-        !tables.is_empty(),
-        "Expected tables from pdffill-demo.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected tables from pdffill-demo.pdf");
 }
 
 // ============================================================
 // Ported from: test_text_tolerance
 // senate-expenditures.pdf with text strategy.
 // pdfplumber asserts last row contains "DHAW20190070", "09/09/2019", etc.
+//
+// BEHAVIORAL DIFFERENCE: pdfplumber uses "text" strategy (word-position based)
+// for this PDF. We use line-based detection by default. The text strategy is
+// pdfplumber-specific. We verify extraction completes and produces output.
 // ============================================================
 #[test]
 fn test_text_tolerance_senate_expenditures() {
     let tables = extract_tables_from_pdf("senate-expenditures.pdf");
 
-    println!("senate-expenditures: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
-
-    // The senate expenditures PDF should extract some tabular data
-    // (either via line detection or spatial clustering fallback)
-    let all_text: String = tables
-        .iter()
-        .flat_map(|t| t.cells.iter())
-        .flat_map(|row| row.iter())
-        .cloned()
-        .collect();
-
-    println!("Total extracted text length: {}", all_text.len());
+    // Extraction must complete without error (the primary assertion).
+    // Whether tables are found depends on whether the PDF has drawn lines.
+    // The spatial clustering fallback may or may not detect structure.
+    // The primary assertion (from pdfplumber) is that extraction completes
+    // without error. Whether tables are found and populated depends on the
+    // strategy — pdfplumber uses "text" strategy which we don't implement.
 }
 
 // ============================================================
 // Ported from: test_text_layout
 // issue-53-example.pdf with text_layout: True.
 // pdfplumber asserts table[3][0] == "   FY2013   \n   FY2014   "
+//
+// BEHAVIORAL DIFFERENCE: The text_layout option is pdfplumber-specific.
+// It controls whitespace preservation in extracted text. We use pdfium's
+// native text extraction which has its own whitespace handling.
+// We verify the extraction completes and contains fiscal year data.
 // ============================================================
 #[test]
 fn test_text_layout_issue_53() {
     let tables = extract_tables_from_pdf("issue-53-example.pdf");
 
-    println!("issue-53: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
-
-    // This PDF has table-like content that should be detected
-    // The text_layout option is pdfplumber-specific; we verify extraction works
+    // Extraction must complete without error
+    // Check for FY data if tables were found
     let all_text: String = tables
         .iter()
         .flat_map(|t| t.cells.iter())
@@ -244,7 +219,10 @@ fn test_text_layout_issue_53() {
         .cloned()
         .collect();
 
-    println!("Total extracted text length: {}", all_text.len());
+    if !tables.is_empty() {
+        // If we found tables, they should contain non-empty data
+        assert!(!all_text.is_empty(), "Tables found but all cells are empty");
+    }
 }
 
 // ============================================================
@@ -258,12 +236,7 @@ fn test_order_issue_336_multiple_tables() {
 
     println!("issue-336: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
     }
 
     // pdfplumber finds exactly 3 tables
@@ -300,27 +273,17 @@ fn test_order_issue_336_multiple_tables() {
 // issue-466-example.pdf with vertical=lines, horizontal=text.
 // pdfplumber asserts 3 tables, each 4 rows × 3 cols,
 // last row cells all contain "last".
+//
+// BEHAVIORAL DIFFERENCE: pdfplumber uses mixed strategy (vertical=lines,
+// horizontal=text). We use lines for both. Results differ because
+// the horizontal text strategy infers row boundaries from word positions.
+// We verify extraction succeeds and produces some content.
 // ============================================================
 #[test]
 fn test_issue_466_mixed_strategy() {
     let tables = extract_tables_from_pdf("issue-466-example.pdf");
 
-    println!("issue-466: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
-
-    // This PDF tests mixed strategy (lines vertical + text horizontal).
-    // The default pipeline uses "lines" for both, so results may differ
-    // from pdfplumber's mixed strategy test. We verify extraction succeeds.
+    // Extraction must complete without error
     let all_text: String = tables
         .iter()
         .flat_map(|t| t.cells.iter())
@@ -328,7 +291,15 @@ fn test_issue_466_mixed_strategy() {
         .cloned()
         .collect();
 
-    println!("Total extracted text length: {}", all_text.len());
+    // If tables were found, verify they have content
+    if !tables.is_empty() {
+        assert!(!all_text.is_empty(), "Tables found but all cells are empty");
+
+        // All tables should have at least one row
+        for (i, table) in tables.iter().enumerate() {
+            assert!(!table.cells.is_empty(), "Table {} should have at least one row", i);
+        }
+    }
 }
 
 // ============================================================
@@ -342,12 +313,7 @@ fn test_discussion_539_null_value() {
 
     println!("nics-background-checks: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
     }
 
     // The main assertion from pdfplumber is that this doesn't crash.
@@ -364,41 +330,51 @@ fn test_discussion_539_null_value() {
 // table-curves-example.pdf — curves used as table borders.
 // pdfplumber asserts 1 table, t[-2][-2] == "Uncommon".
 // Also asserts lines_strict finds 0 tables (curves aren't strict lines).
+//
+// BEHAVIORAL DIFFERENCE: pdfplumber merges all curve-bordered cells into
+// a single large table. Our detection finds multiple smaller table regions
+// from the same curves. We verify "Uncommon" is present and lines_strict=0.
 // ============================================================
 #[test]
 fn test_table_curves_detection() {
-    let tables = extract_tables_from_pdf("table-curves-example.pdf");
+    use kreuzberg::pdf::{TableSettings, TableStrategy, find_tables};
 
-    println!("table-curves: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
+    let tables = extract_tables_from_pdf("table-curves-example.pdf");
 
     assert!(
         !tables.is_empty(),
         "Expected at least one table in table-curves-example.pdf"
     );
 
-    // pdfplumber asserts t[-2][-2] == "Uncommon"
-    let table = &tables[0];
-    if table.cells.len() >= 2 {
-        let second_to_last_row = &table.cells[table.cells.len() - 2];
-        if second_to_last_row.len() >= 2 {
-            let cell = &second_to_last_row[second_to_last_row.len() - 2];
-            println!("Cell at [-2][-2]: {:?}", cell);
-            if cell.contains("Uncommon") {
-                println!("Matches pdfplumber assertion: cell contains 'Uncommon'");
-            }
-        }
-    }
+    // pdfplumber asserts "Uncommon" appears in the table data
+    let all_text: String = tables
+        .iter()
+        .flat_map(|t| t.cells.iter())
+        .flat_map(|row| row.iter())
+        .cloned()
+        .collect();
+    assert!(
+        all_text.contains("Uncommon"),
+        "Expected 'Uncommon' in table-curves data (matching pdfplumber)"
+    );
+
+    // pdfplumber asserts: lines_strict finds 0 tables (curves are not strict lines)
+    let bytes = load_pdf_bytes("table-curves-example.pdf");
+    let strict_count = {
+        let pdfium = kreuzberg::pdf::pdfium();
+        let doc = pdfium.load_pdf_from_byte_slice(&bytes, None).unwrap();
+        let page = doc.pages().get(0).unwrap();
+        let mut settings = TableSettings::default();
+        settings.vertical_strategy = TableStrategy::LinesStrict;
+        settings.horizontal_strategy = TableStrategy::LinesStrict;
+        find_tables(&page, &settings, None).unwrap().tables.len()
+    }; // pdfium handle dropped
+
+    assert_eq!(
+        strict_count, 0,
+        "LinesStrict should find 0 tables in curve-bordered PDF (matching pdfplumber), got {}",
+        strict_count
+    );
 }
 
 // ============================================================
@@ -434,17 +410,11 @@ fn test_edge_extraction_from_bordered_pdf() {
 
     // issue-140 has a clearly bordered table; line-based detection
     // should find it (not fall back to spatial clustering)
-    assert!(
-        !tables.is_empty(),
-        "Expected tables from bordered PDF"
-    );
+    assert!(!tables.is_empty(), "Expected tables from bordered PDF");
 
     // Verify multiple rows extracted
     let total_rows: usize = tables.iter().map(|t| t.cells.len()).sum();
-    assert!(
-        total_rows >= 2,
-        "Expected at least 2 total rows across all tables"
-    );
+    assert!(total_rows >= 2, "Expected at least 2 total rows across all tables");
 }
 
 // ============================================================
@@ -481,12 +451,7 @@ fn test_all_fixtures_load_without_error() {
         let bytes = load_pdf_bytes(name);
         let config = ExtractionConfig::default();
         let result = extract_bytes_sync(&bytes, "application/pdf", &config);
-        assert!(
-            result.is_ok(),
-            "Failed to extract {}: {}",
-            name,
-            result.err().unwrap()
-        );
+        assert!(result.is_ok(), "Failed to extract {}: {}", name, result.err().unwrap());
         let result = result.unwrap();
         println!(
             "{}: {} tables, text length {}",
@@ -512,41 +477,27 @@ fn test_all_fixtures_load_without_error() {
 fn test_pymupdf_chinese_tables() {
     let tables = extract_tables_from_pdf("pymupdf-chinese-tables.pdf");
 
-    println!("pymupdf chinese-tables: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows x {} cols, page {}",
-            i,
-            table.cells.len(),
-            table.cells.first().map(|r| r.len()).unwrap_or(0),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate().take(3) {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
-
-    // PyMuPDF finds 2 tables on page 1
-    assert!(
-        tables.len() >= 2,
-        "Expected at least 2 tables in chinese-tables.pdf, got {}",
+    // PyMuPDF finds exactly 2 tables on page 1
+    assert_eq!(
+        tables.len(),
+        2,
+        "Expected exactly 2 tables in chinese-tables.pdf (matching PyMuPDF), got {}",
         tables.len()
     );
 
-    // Each table should have meaningful content
-    for (i, table) in tables.iter().take(2).enumerate() {
-        assert!(
-            !table.cells.is_empty(),
-            "Table {} should have rows",
-            i
-        );
-        assert!(
-            table.cells[0].len() >= 2,
-            "Table {} should have at least 2 columns, got {}",
-            i,
-            table.cells[0].len()
-        );
-    }
+    // Table 0: 12 rows x 5 cols
+    assert_eq!(tables[0].cells.len(), 12, "Table 0 should have 12 rows");
+    assert_eq!(tables[0].cells[0].len(), 5, "Table 0 should have 5 columns");
+
+    // Table 1: 5 rows x 5 cols
+    assert_eq!(tables[1].cells.len(), 5, "Table 1 should have 5 rows");
+    assert_eq!(tables[1].cells[0].len(), 5, "Table 1 should have 5 columns");
+
+    // Both tables should contain Chinese text
+    let text0: String = tables[0].cells.iter().flat_map(|r| r.iter()).cloned().collect();
+    let text1: String = tables[1].cells.iter().flat_map(|r| r.iter()).cloned().collect();
+    assert!(!text0.is_empty(), "Table 0 should contain Chinese text");
+    assert!(!text1.is_empty(), "Table 1 should contain Chinese text");
 }
 
 // ============================================================
@@ -554,36 +505,47 @@ fn test_pymupdf_chinese_tables() {
 // test-2812.pdf — 4 pages with rotations 0/90/180/270.
 // PyMuPDF asserts 1 table per page, 8 rows x 5 cols,
 // identical extracted content across all rotations.
+//
+// NOTE: Rotated pages (90/270) swap rows and columns in our
+// detection (8x5 becomes 5x8). PyMuPDF derotates before extraction.
+// We verify: 4 tables, each with 40 total cells, one per page.
 // ============================================================
 #[test]
 fn test_pymupdf_2812_rotation_invariance() {
     let tables = extract_tables_from_pdf("pymupdf-test-2812.pdf");
 
-    println!("pymupdf test-2812: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows x {} cols, page {}",
-            i,
-            table.cells.len(),
-            table.cells.first().map(|r| r.len()).unwrap_or(0),
-            table.page_number
-        );
-    }
-
     // PyMuPDF expects 1 table per page (4 pages)
-    // We should find at least some tables across the rotated pages
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in rotated PDF"
+    assert_eq!(
+        tables.len(),
+        4,
+        "Expected 4 tables (1 per page) in test-2812.pdf, got {}",
+        tables.len()
     );
 
-    // For each table found, verify it has a reasonable structure
+    // Each table should be on a different page
+    let pages: Vec<usize> = tables.iter().map(|t| t.page_number).collect();
+    assert_eq!(pages, vec![1, 2, 3, 4], "Expected tables on pages 1-4, got {:?}", pages);
+
+    // Each table should have 40 total cells (8x5 or 5x8 depending on rotation)
     for (i, table) in tables.iter().enumerate() {
-        assert!(
-            !table.cells.is_empty(),
-            "Table {} (page {}) should have rows",
+        let total_cells: usize = table.cells.iter().map(|row| row.len()).sum();
+        let rows = table.cells.len();
+        let cols = table.cells[0].len();
+        assert_eq!(
+            total_cells,
+            rows * cols,
+            "Table {} (page {}) should have uniform rows",
             i,
             table.page_number
+        );
+        // Must be either 8x5 or 5x8 (rotation-dependent)
+        assert!(
+            (rows == 8 && cols == 5) || (rows == 5 && cols == 8),
+            "Table {} (page {}) should be 8x5 or 5x8, got {}x{}",
+            i,
+            table.page_number,
+            rows,
+            cols
         );
     }
 }
@@ -597,10 +559,7 @@ fn test_pymupdf_2812_rotation_invariance() {
 fn test_pymupdf_2979_uniform_row_lengths() {
     let tables = extract_tables_from_pdf("pymupdf-test_2979.pdf");
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in test_2979.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in test_2979.pdf");
 
     let table = &tables[0];
     println!(
@@ -610,11 +569,7 @@ fn test_pymupdf_2979_uniform_row_lengths() {
     );
 
     // PyMuPDF's key assertion: all rows have the same number of cells
-    let lengths: std::collections::HashSet<usize> = table
-        .cells
-        .iter()
-        .map(|row| row.len())
-        .collect();
+    let lengths: std::collections::HashSet<usize> = table.cells.iter().map(|row| row.len()).collect();
 
     assert_eq!(
         lengths.len(),
@@ -635,17 +590,10 @@ fn test_pymupdf_3062_deterministic_extraction() {
     let tables1 = extract_tables_from_pdf("pymupdf-test_3062.pdf");
     let tables2 = extract_tables_from_pdf("pymupdf-test_3062.pdf");
 
-    assert!(
-        !tables1.is_empty(),
-        "Expected at least one table in test_3062.pdf"
-    );
+    assert!(!tables1.is_empty(), "Expected at least one table in test_3062.pdf");
 
     // PyMuPDF asserts: cells1 == cells0 (deterministic)
-    assert_eq!(
-        tables1.len(),
-        tables2.len(),
-        "Table count should be deterministic"
-    );
+    assert_eq!(tables1.len(), tables2.len(), "Table count should be deterministic");
 
     for (i, (t1, t2)) in tables1.iter().zip(tables2.iter()).enumerate() {
         assert_eq!(
@@ -661,41 +609,70 @@ fn test_pymupdf_3062_deterministic_extraction() {
 // strict-yes-no.pdf — lines_strict strategy finds fewer rows/cols.
 // PyMuPDF asserts: strict row_count < default row_count,
 //                  strict col_count < default col_count.
-// We test that the PDF extracts successfully and has tables.
+// STRICT: uses the table finder API to compare strategies directly.
 // ============================================================
 #[test]
 fn test_pymupdf_strict_lines() {
-    let tables = extract_tables_from_pdf("pymupdf-strict-yes-no.pdf");
+    use kreuzberg::pdf::{TableSettings, TableStrategy, find_tables};
 
-    println!("pymupdf strict-yes-no: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows x {} cols, page {}",
-            i,
-            table.cells.len(),
-            table.cells.first().map(|r| r.len()).unwrap_or(0),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
+    let bytes = load_pdf_bytes("pymupdf-strict-yes-no.pdf");
 
-    // The PDF has a table with borders — we should detect it
+    let (default_rows, default_cols, strict_rows, strict_cols) = {
+        let pdfium = kreuzberg::pdf::pdfium();
+        let doc = pdfium
+            .load_pdf_from_byte_slice(&bytes, None)
+            .expect("Failed to load PDF");
+        let page = doc.pages().get(0).expect("No pages");
+
+        // Default strategy (Lines)
+        let settings = TableSettings::default();
+        let result = find_tables(&page, &settings, None).unwrap();
+        let d_rows = result.tables.first().map(|t| t.rows().len()).unwrap_or(0);
+        let d_cols = result
+            .tables
+            .first()
+            .map(|t| t.rows().first().map(|r| r.len()).unwrap_or(0))
+            .unwrap_or(0);
+
+        // Strict strategy (LinesStrict)
+        let mut strict_settings = TableSettings::default();
+        strict_settings.vertical_strategy = TableStrategy::LinesStrict;
+        strict_settings.horizontal_strategy = TableStrategy::LinesStrict;
+        let strict_result = find_tables(&page, &strict_settings, None).unwrap();
+        let s_rows = strict_result.tables.first().map(|t| t.rows().len()).unwrap_or(0);
+        let s_cols = strict_result
+            .tables
+            .first()
+            .map(|t| t.rows().first().map(|r| r.len()).unwrap_or(0))
+            .unwrap_or(0);
+
+        (d_rows, d_cols, s_rows, s_cols)
+    }; // pdfium handle dropped here
+
+    // PyMuPDF asserts: strict row_count < default row_count
     assert!(
-        !tables.is_empty(),
-        "Expected at least one table in strict-yes-no.pdf"
+        strict_rows < default_rows,
+        "Strict should have fewer rows than default: strict={} vs default={}",
+        strict_rows,
+        default_rows
     );
 
-    // Verify the table has content consistent with PyMuPDF's test
-    // (3-column table with Header1/Header2/Header3)
+    // PyMuPDF asserts: strict col_count < default col_count
+    assert!(
+        strict_cols < default_cols,
+        "Strict should have fewer cols than default: strict={} vs default={}",
+        strict_cols,
+        default_cols
+    );
+
+    // Also verify the table contains expected text (Header/Col content)
+    let tables = extract_tables_from_pdf("pymupdf-strict-yes-no.pdf");
     let all_text: String = tables
         .iter()
         .flat_map(|t| t.cells.iter())
         .flat_map(|row| row.iter())
         .cloned()
         .collect();
-
     assert!(
         all_text.contains("Header") || all_text.contains("Col"),
         "Expected header/column text in strict-yes-no.pdf"
@@ -736,95 +713,89 @@ fn test_pymupdf_3179_multiple_tables() {
 // battery-file-22.pdf — non-table content, 0 tables expected.
 // PyMuPDF asserts: len(tabs.tables) == 0
 // This is a false-positive suppression test.
+//
+// STRICT: Uses the table finder API directly to verify line-based
+// detection correctly finds 0 tables (matching PyMuPDF).
+// NOTE: The full pipeline may find tables via spatial clustering
+// fallback — that's a different code path.
 // ============================================================
 #[test]
 fn test_pymupdf_battery_file_no_tables() {
-    let tables = extract_tables_from_pdf("pymupdf-battery-file-22.pdf");
+    use kreuzberg::pdf::{TableSettings, find_tables};
 
-    println!("pymupdf battery-file-22: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
-    }
+    let bytes = load_pdf_bytes("pymupdf-battery-file-22.pdf");
 
-    // PyMuPDF asserts 0 tables (false-positive suppression).
-    // Note: our spatial clustering fallback may detect some structure
-    // in non-table content. We check that line-based detection doesn't
-    // produce false positives by verifying reasonable behavior.
-    // If tables are found, they should be from the fallback, not spurious.
-    println!(
-        "Battery file: {} tables found (PyMuPDF expects 0)",
-        tables.len()
+    let line_based_count = {
+        let pdfium = kreuzberg::pdf::pdfium();
+        let doc = pdfium
+            .load_pdf_from_byte_slice(&bytes, None)
+            .expect("Failed to load PDF");
+        let page = doc.pages().get(0).expect("No pages");
+
+        // Line-based detection should find 0 tables (matching PyMuPDF)
+        let settings = TableSettings::default();
+        let result = find_tables(&page, &settings, None).unwrap();
+        result.tables.len()
+    }; // pdfium handle dropped here
+
+    // PyMuPDF asserts 0 tables from line-based detection
+    assert_eq!(
+        line_based_count, 0,
+        "Line-based detection should find 0 tables in battery file (matching PyMuPDF), got {}",
+        line_based_count
     );
 }
 
 // ============================================================
 // Ported from: PyMuPDF test_dotted_grid
 // dotted-gridlines.pdf — dotted lines as table borders.
-// PyMuPDF asserts: 3 tables with specific dimensions.
+// PyMuPDF asserts: 3 tables with dimensions (11,12), (25,11), (1,10).
+// STRICT: exact count and dimension match with PyMuPDF.
 // ============================================================
 #[test]
 fn test_pymupdf_dotted_gridlines() {
     let tables = extract_tables_from_pdf("pymupdf-dotted-gridlines.pdf");
 
-    println!("pymupdf dotted-gridlines: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows x {} cols, page {}",
-            i,
-            table.cells.len(),
-            table.cells.first().map(|r| r.len()).unwrap_or(0),
-            table.page_number
-        );
-    }
-
-    // PyMuPDF asserts 3 tables
-    // Dotted gridlines should be recognized as table borders via our
-    // bezier-to-line approximation in table_edges.rs
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in dotted-gridlines.pdf"
+    // PyMuPDF asserts exactly 3 tables
+    assert_eq!(
+        tables.len(),
+        3,
+        "Expected 3 tables in dotted-gridlines.pdf (matching PyMuPDF), got {}",
+        tables.len()
     );
 
-    // If we find exactly 3 tables (matching PyMuPDF), verify dimensions
-    if tables.len() == 3 {
-        println!("Matches PyMuPDF: exactly 3 tables detected");
-        // PyMuPDF expects: (11,12), (25,11), (1,10)
-        // Note: dimensions may differ slightly due to algorithm differences
-    }
+    // PyMuPDF asserts: table 0 = (11 rows, 12 cols)
+    assert_eq!(tables[0].cells.len(), 11, "Table 0 should have 11 rows");
+    assert_eq!(tables[0].cells[0].len(), 12, "Table 0 should have 12 cols");
+
+    // PyMuPDF asserts: table 1 = (25 rows, 11 cols)
+    assert_eq!(tables[1].cells.len(), 25, "Table 1 should have 25 rows");
+    assert_eq!(tables[1].cells[0].len(), 11, "Table 1 should have 11 cols");
+
+    // PyMuPDF asserts: table 2 = (1 row, 10 cols)
+    assert_eq!(tables[2].cells.len(), 1, "Table 2 should have 1 row");
+    assert_eq!(tables[2].cells[0].len(), 10, "Table 2 should have 10 cols");
 }
 
 // ============================================================
 // Ported from: PyMuPDF test_4017
 // test_4017.pdf — complex financial/compliance tables.
 // PyMuPDF asserts exact cell content for last two tables.
+//
+// BEHAVIORAL DIFFERENCE: PyMuPDF finds 2 structured tables with
+// exact content. Our edge detection is more aggressive, finding
+// more table regions (11 tables). We verify the key financial data
+// is present and the first table has the expected structure.
 // ============================================================
 #[test]
 fn test_pymupdf_4017_financial_tables() {
     let tables = extract_tables_from_pdf("pymupdf-test_4017.pdf");
 
-    println!("pymupdf test_4017: found {} tables", tables.len());
-    for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows x {} cols, page {}",
-            i,
-            table.cells.len(),
-            table.cells.first().map(|r| r.len()).unwrap_or(0),
-            table.page_number
-        );
-        for (j, row) in table.cells.iter().enumerate() {
-            println!("    Row {}: {:?}", j, row);
-        }
-    }
+    assert!(!tables.is_empty(), "Expected at least one table in test_4017.pdf");
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in test_4017.pdf"
-    );
+    // First table should have 9 rows x 7 cols
+    assert_eq!(tables[0].cells.len(), 9, "First table should have 9 rows");
+    assert_eq!(tables[0].cells[0].len(), 7, "First table should have 7 cols");
 
     // Check for key financial data that PyMuPDF expects
     let all_text: String = tables
@@ -834,13 +805,19 @@ fn test_pymupdf_4017_financial_tables() {
         .cloned()
         .collect();
 
-    // PyMuPDF's expected data includes these values
-    let has_financial_data = all_text.contains("Overcollateralization")
-        || all_text.contains("PASS")
-        || all_text.contains("Interest Coverage");
-    if has_financial_data {
-        println!("Found expected financial data in test_4017 tables");
-    }
+    // PyMuPDF's expected data includes "PASS" and "OCP CLO" values
+    assert!(
+        all_text.contains("PASS"),
+        "Expected 'PASS' in financial compliance tables\nAll text: {}",
+        &all_text[..all_text.len().min(500)]
+    );
+    assert!(all_text.contains("OCP CLO"), "Expected 'OCP CLO' in financial tables");
+
+    // Verify Deal Summary content is present
+    assert!(
+        all_text.contains("Deal Summary"),
+        "Expected 'Deal Summary' in financial tables"
+    );
 }
 
 // ============================================================
@@ -874,24 +851,21 @@ fn test_pymupdf_md_styles_strict() {
 
     // Bold: **Bold (0,1)**
     assert!(
-        table.markdown.contains("**Bold (0,1)**")
-            || table.markdown.contains("**Bold(0,1)**"),
+        table.markdown.contains("**Bold (0,1)**") || table.markdown.contains("**Bold(0,1)**"),
         "Missing bold markdown: should contain **Bold (0,1)**\nActual:\n{}",
         table.markdown
     );
 
     // Italic: _Italic (2,1)_
     assert!(
-        table.markdown.contains("_Italic (2,1)_")
-            || table.markdown.contains("_Italic(2,1)_"),
+        table.markdown.contains("_Italic (2,1)_") || table.markdown.contains("_Italic(2,1)_"),
         "Missing italic markdown: should contain _Italic (2,1)_\nActual:\n{}",
         table.markdown
     );
 
     // Bold-italic: **_Bold-italic_**
     assert!(
-        table.markdown.contains("**_Bold-italic_**")
-            || table.markdown.contains("**_Bold-italic (2,2)_**"),
+        table.markdown.contains("**_Bold-italic_**") || table.markdown.contains("**_Bold-italic (2,2)_**"),
         "Missing bold-italic markdown: should contain **_Bold-italic_**\nActual:\n{}",
         table.markdown
     );
@@ -928,18 +902,16 @@ fn test_pymupdf_md_styles_strict() {
     );
 }
 
-/// PyMuPDF test_markdown: strict-yes-no.pdf markdown with strikethrough.
+/// PyMuPDF test_markdown: strict-yes-no.pdf markdown output.
 ///
-/// In older mupdf versions, Column 2 has strikethrough text (~~Col21~~).
-/// In newer versions (>= 1.26.3), strikethrough is not detected.
-/// We test for the newer behavior (no strikethrough) plus structural correctness.
+/// Verifies the markdown table structure and content including
+/// multi-line cell handling with <br> tags.
 #[test]
 fn test_pymupdf_markdown_strict() {
     let tables = extract_tables_from_pdf("pymupdf-strict-yes-no.pdf");
 
     assert!(!tables.is_empty(), "Expected at least one table");
     let table = &tables[0];
-    println!("Markdown from strict-yes-no.pdf:\n{}", table.markdown);
 
     // Structural: must have pipe delimiters and header separator
     assert!(table.markdown.contains('|'), "Missing pipe delimiters");
@@ -949,6 +921,18 @@ fn test_pymupdf_markdown_strict() {
     assert!(
         table.markdown.contains("<br>"),
         "Missing <br> for multi-line cells in strict-yes-no.pdf\nActual:\n{}",
+        table.markdown
+    );
+
+    // Content: must contain Header and Col values from the PDF
+    assert!(
+        table.markdown.contains("Header1") || table.markdown.contains("Header"),
+        "Missing Header content in markdown\nActual:\n{}",
+        table.markdown
+    );
+    assert!(
+        table.markdown.contains("Col"),
+        "Missing Col content in markdown\nActual:\n{}",
         table.markdown
     );
 }
@@ -962,7 +946,11 @@ fn test_pymupdf_markdown_strict() {
 fn test_pymupdf_header_detection_strict() {
     let tables = extract_tables_from_pdf("pymupdf-chinese-tables.pdf");
 
-    assert!(tables.len() >= 2, "Expected at least 2 tables in chinese-tables.pdf, got {}", tables.len());
+    assert!(
+        tables.len() >= 2,
+        "Expected at least 2 tables in chinese-tables.pdf, got {}",
+        tables.len()
+    );
 
     // PyMuPDF asserts: tab1.header.external == False
     let tab1 = &tables[0];
@@ -973,10 +961,7 @@ fn test_pymupdf_header_detection_strict() {
     // PyMuPDF asserts: tab1.header.cells == tab1.rows[0].cells
     // Our equivalent: header names should match first row content
     if !tab1.cells.is_empty() {
-        assert_eq!(
-            h1.names, tab1.cells[0],
-            "Table 1 header names should match first row"
-        );
+        assert_eq!(h1.names, tab1.cells[0], "Table 1 header names should match first row");
     }
 
     // PyMuPDF asserts: tab2.header.external == False
@@ -986,10 +971,7 @@ fn test_pymupdf_header_detection_strict() {
     assert!(!h2.external, "Table 2 header should NOT be external");
 
     if !tab2.cells.is_empty() {
-        assert_eq!(
-            h2.names, tab2.cells[0],
-            "Table 2 header names should match first row"
-        );
+        assert_eq!(h2.names, tab2.cells[0], "Table 2 header names should match first row");
     }
 }
 
@@ -1000,7 +982,7 @@ fn test_pymupdf_header_detection_strict() {
 // ============================================================
 #[test]
 fn test_pymupdf_add_lines_strict() {
-    use kreuzberg::pdf::{find_tables, extract_table_text_styled, TableSettings};
+    use kreuzberg::pdf::{TableSettings, extract_table_text_styled, find_tables};
 
     // Scope the pdfium handle to release the global lock before other tests need it
     let bytes = load_pdf_bytes("pymupdf-small-table.pdf");
@@ -1026,7 +1008,11 @@ fn test_pymupdf_add_lines_strict() {
         let (cols, rows) = if !result.tables.is_empty() {
             let page_height = page.height().value as f64;
             let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
-            println!("With add_lines: {} rows x {} cols", styled.len(), styled.first().map(|r| r.len()).unwrap_or(0));
+            println!(
+                "With add_lines: {} rows x {} cols",
+                styled.len(),
+                styled.first().map(|r| r.len()).unwrap_or(0)
+            );
             for (i, row) in styled.iter().enumerate() {
                 let cells: Vec<&str> = row.iter().map(|c| c.plain.as_str()).collect();
                 println!("  Row {}: {:?}", i, cells);
@@ -1046,10 +1032,7 @@ fn test_pymupdf_add_lines_strict() {
     // NOTE: Our edge detection may find a table from existing graphics that
     // PyMuPDF's stricter line-only detection misses. This is a known behavioral
     // difference — log it rather than assert 0.
-    println!(
-        "Without add_lines: {} tables (PyMuPDF expects 0)",
-        no_lines_count
-    );
+    println!("Without add_lines: {} tables (PyMuPDF expects 0)", no_lines_count);
 
     // With add_lines: PyMuPDF asserts 4 columns, 5 rows
     assert_eq!(with_lines_cols, 4, "Expected 4 columns with add_lines");
@@ -1063,7 +1046,7 @@ fn test_pymupdf_add_lines_strict() {
 // ============================================================
 #[test]
 fn test_pymupdf_add_boxes_strict() {
-    use kreuzberg::pdf::{find_tables, extract_table_text_styled, TableSettings};
+    use kreuzberg::pdf::{TableSettings, extract_table_text_styled, find_tables};
 
     let bytes = load_pdf_bytes("pymupdf-small-table.pdf");
 
@@ -1095,13 +1078,18 @@ fn test_pymupdf_add_boxes_strict() {
 
         if !result.tables.is_empty() {
             let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
-            println!("Table: {} rows x {} cols", styled.len(), styled.first().map(|r| r.len()).unwrap_or(0));
+            println!(
+                "Table: {} rows x {} cols",
+                styled.len(),
+                styled.first().map(|r| r.len()).unwrap_or(0)
+            );
             for (i, row) in styled.iter().enumerate() {
                 let cells: Vec<&str> = row.iter().map(|c| c.plain.as_str()).collect();
                 println!("  Row {}: {:?}", i, cells);
             }
 
-            styled.iter()
+            styled
+                .iter()
                 .map(|row| row.iter().map(|c| c.plain.clone()).collect())
                 .collect()
         } else {
@@ -1120,9 +1108,9 @@ fn test_pymupdf_add_boxes_strict() {
 
     for expected_row in &expected {
         for expected_cell in expected_row {
-            let found = plain_cells.iter().any(|row| {
-                row.iter().any(|cell| cell.contains(expected_cell))
-            });
+            let found = plain_cells
+                .iter()
+                .any(|row| row.iter().any(|cell| cell.contains(expected_cell)));
             assert!(
                 found,
                 "Expected cell content '{}' not found in extracted table.\nExtracted: {:?}",
@@ -1142,13 +1130,17 @@ fn test_vector_graphics_joining() {
     // Test that touching/overlapping rects are joined
     let rects = vec![
         (10.0, 10.0, 50.0, 50.0),
-        (50.0, 10.0, 100.0, 50.0),  // touches first
-        (100.0, 10.0, 150.0, 50.0), // touches second
+        (50.0, 10.0, 100.0, 50.0),    // touches first
+        (100.0, 10.0, 150.0, 50.0),   // touches second
         (300.0, 300.0, 400.0, 400.0), // far away
     ];
 
     let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
-    assert_eq!(joined.len(), 2, "Chain of 3 touching rects + 1 isolated should produce 2 groups");
+    assert_eq!(
+        joined.len(),
+        2,
+        "Chain of 3 touching rects + 1 isolated should produce 2 groups"
+    );
 
     // First group: merged chain
     assert_eq!(joined[0], (10.0, 10.0, 150.0, 50.0));
@@ -1157,7 +1149,12 @@ fn test_vector_graphics_joining() {
 
     // Test are_neighbors directly
     assert!(are_neighbors((0.0, 0.0, 10.0, 10.0), (10.0, 0.0, 20.0, 10.0), 1.0, 1.0));
-    assert!(!are_neighbors((0.0, 0.0, 10.0, 10.0), (100.0, 100.0, 200.0, 200.0), 1.0, 1.0));
+    assert!(!are_neighbors(
+        (0.0, 0.0, 10.0, 10.0),
+        (100.0, 100.0, 200.0, 200.0),
+        1.0,
+        1.0
+    ));
 }
 
 // ############################################################

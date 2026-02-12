@@ -14,9 +14,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::table_clustering::PositionedWord;
 use super::table_edges::{extract_edges_from_page, words_to_edges_h, words_to_edges_v};
-use super::table_geometry::{
-    Bbox, Edge, EdgeType, Orientation, filter_edges, merge_edges,
-};
+use super::table_geometry::{Bbox, Edge, EdgeType, Orientation, filter_edges, merge_edges};
 
 use super::error::{PdfError, Result};
 use pdfium_render::prelude::*;
@@ -129,7 +127,7 @@ impl DetectedTable {
         }
 
         let mut rows = Vec::new();
-        for (_, row_cells) in &by_top {
+        for row_cells in by_top.values() {
             let cell_map: HashMap<u64, Bbox> = row_cells.iter().map(|c| (c.0.to_bits(), *c)).collect();
             let row: Vec<Option<Bbox>> = x_values.iter().map(|x| cell_map.get(&x.to_bits()).copied()).collect();
             rows.push(row);
@@ -167,22 +165,14 @@ pub fn find_tables(
     settings: &TableSettings,
     words: Option<&[PositionedWord]>,
 ) -> Result<TableFinderResult> {
-    let page_bbox = (
-        0.0,
-        0.0,
-        page.width().value as f64,
-        page.height().value as f64,
-    );
+    let page_bbox = (0.0, 0.0, page.width().value as f64, page.height().value as f64);
 
     // Step 1: Collect edges based on strategies
     let edges = collect_edges(page, settings, words, page_bbox)?;
 
     // Step 2: Find intersections
-    let intersections = edges_to_intersections(
-        &edges,
-        settings.intersection_tolerance,
-        settings.intersection_tolerance,
-    );
+    let intersections =
+        edges_to_intersections(&edges, settings.intersection_tolerance, settings.intersection_tolerance);
 
     // Step 3: Find cells from intersections
     let cells = intersections_to_cells(&intersections, &edges);
@@ -194,9 +184,7 @@ pub fn find_tables(
         .map(|cell_group| {
             let bbox = cell_group.iter().fold(
                 (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
-                |(x0, top, x1, bottom), cell| {
-                    (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3))
-                },
+                |(x0, top, x1, bottom), cell| (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3)),
             );
             DetectedTable {
                 cells: cell_group,
@@ -225,17 +213,18 @@ fn collect_edges(
 
     // Vertical edges
     let mut v_edges = match settings.vertical_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Vertical), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Vertical),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_v(w, settings.min_words_vertical)
@@ -250,17 +239,18 @@ fn collect_edges(
 
     // Horizontal edges
     let mut h_edges = match settings.horizontal_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Horizontal), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Horizontal),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_h(w, settings.min_words_horizontal)
@@ -345,10 +335,7 @@ fn edges_to_intersections(
 ///
 /// A cell is formed when four intersection points form a rectangle,
 /// and each pair of adjacent corners is connected by the same edge.
-fn intersections_to_cells(
-    intersections: &HashMap<(u64, u64), IntersectionEdges>,
-    _edges: &[Edge],
-) -> Vec<Bbox> {
+fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>, _edges: &[Edge]) -> Vec<Bbox> {
     let edge_connects = |p1: (u64, u64), p2: (u64, u64)| -> bool {
         let i1 = match intersections.get(&p1) {
             Some(i) => i,
@@ -468,11 +455,7 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
 
         if current_cells.len() > 1 {
             // Sort top-to-bottom, left-to-right
-            current_cells.sort_by(|a, b| {
-                a.1.partial_cmp(&b.1)
-                    .unwrap()
-                    .then(a.0.partial_cmp(&b.0).unwrap())
-            });
+            current_cells.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap().then(a.0.partial_cmp(&b.0).unwrap()));
             tables.push(current_cells);
         }
     }
@@ -537,11 +520,7 @@ struct StrikethroughLine {
 ///
 /// For each cell, find characters whose midpoint falls within the cell bbox
 /// and concatenate them. Returns plain text for backward compatibility.
-pub fn extract_table_text(
-    table: &DetectedTable,
-    page: &PdfPage,
-    page_height: f64,
-) -> Result<Vec<Vec<String>>> {
+pub fn extract_table_text(table: &DetectedTable, page: &PdfPage, page_height: f64) -> Result<Vec<Vec<String>>> {
     let styled = extract_table_text_styled(table, page, page_height)?;
     Ok(styled
         .into_iter()
@@ -597,7 +576,12 @@ pub fn extract_table_text_styled(
                 ch,
                 mid_x,
                 mid_y,
-                style: TextStyle { bold, italic, monospaced, strikethrough: false },
+                style: TextStyle {
+                    bold,
+                    italic,
+                    monospaced,
+                    strikethrough: false,
+                },
                 line_y,
                 char_bbox,
             })
@@ -638,10 +622,13 @@ pub fn extract_table_text_styled(
         for i in 0..len {
             if chars_data[i].ch.is_whitespace() && !chars_data[i].style.strikethrough {
                 // Check if previous non-ws and next non-ws are both strikethrough
-                let prev_st = (0..i).rev().find(|&j| !chars_data[j].ch.is_whitespace())
+                let prev_st = (0..i)
+                    .rev()
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
                     .map(|j| chars_data[j].style.strikethrough)
                     .unwrap_or(false);
-                let next_st = ((i + 1)..len).find(|&j| !chars_data[j].ch.is_whitespace())
+                let next_st = ((i + 1)..len)
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
                     .map(|j| chars_data[j].style.strikethrough)
                     .unwrap_or(false);
                 if prev_st && next_st {
@@ -661,14 +648,13 @@ pub fn extract_table_text_styled(
                     let (x0, top, x1, bottom) = *cell;
                     let mut cell_chars: Vec<&CharPos> = chars_data
                         .iter()
-                        .filter(|c| {
-                            c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom
-                        })
+                        .filter(|c| c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom)
                         .collect();
 
                     // Sort by y then x for reading order
                     cell_chars.sort_by(|a, b| {
-                        a.mid_y.partial_cmp(&b.mid_y)
+                        a.mid_y
+                            .partial_cmp(&b.mid_y)
                             .unwrap()
                             .then(a.mid_x.partial_cmp(&b.mid_x).unwrap())
                     });
@@ -679,7 +665,11 @@ pub fn extract_table_text_styled(
                     let styled = build_styled_text(&cell_chars);
                     let has_bold = cell_chars.iter().any(|c| c.style.bold);
 
-                    row_cells.push(StyledCellText { plain, styled, has_bold });
+                    row_cells.push(StyledCellText {
+                        plain,
+                        styled,
+                        has_bold,
+                    });
                 }
                 None => {
                     row_cells.push(StyledCellText {
@@ -787,11 +777,7 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
                         if dy < 2.0 && dx >= 3.0 {
                             // This is a thin horizontal line — candidate for strikethrough
                             let line_y = (current_y + y) / 2.0;
-                            let (x0, x1) = if current_x < x {
-                                (current_x, x)
-                            } else {
-                                (x, current_x)
-                            };
+                            let (x0, x1) = if current_x < x { (current_x, x) } else { (x, current_x) };
                             lines.push(StrikethroughLine { x0, x1, y: line_y });
                         }
                         current_x = x;
@@ -824,7 +810,11 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
                     // Thin horizontal rectangle: width >> height, height < 2pt
                     if height < 2.0 && width >= 3.0 && width > height * 3.0 {
                         let mid_y = (min_y + max_y) / 2.0;
-                        lines.push(StrikethroughLine { x0: min_x, x1: max_x, y: mid_y });
+                        lines.push(StrikethroughLine {
+                            x0: min_x,
+                            x1: max_x,
+                            y: mid_y,
+                        });
                     }
                 }
             }
@@ -863,16 +853,25 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
             // Flush current run and insert line break marker
             let trimmed = current_text.trim_end().to_string();
             if !trimmed.is_empty() {
-                runs.push(Run { text: trimmed, style: current_style });
+                runs.push(Run {
+                    text: trimmed,
+                    style: current_style,
+                });
             }
-            runs.push(Run { text: "\n".to_string(), style: TextStyle::default() });
+            runs.push(Run {
+                text: "\n".to_string(),
+                style: TextStyle::default(),
+            });
             current_text = String::new();
             current_style = ch.style;
         }
 
         // Style change: flush current run
         if ch.style != current_style && !current_text.is_empty() {
-            runs.push(Run { text: current_text.clone(), style: current_style });
+            runs.push(Run {
+                text: current_text.clone(),
+                style: current_style,
+            });
             current_text = String::new();
             current_style = ch.style;
         }
@@ -883,7 +882,10 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
 
     // Flush last run
     if !current_text.is_empty() {
-        runs.push(Run { text: current_text, style: current_style });
+        runs.push(Run {
+            text: current_text,
+            style: current_style,
+        });
     }
 
     // Build output with markdown formatting
