@@ -17,6 +17,7 @@ interface ExtractionOutput {
 	metadata: Record<string, unknown>;
 	_extraction_time_ms: number;
 	_batch_total_ms?: number;
+	_ocr_used: boolean;
 }
 
 function createConfig(ocrEnabled: boolean): ExtractionConfig {
@@ -36,6 +37,7 @@ async function extractAsync(filePath: string, ocrEnabled: boolean): Promise<Extr
 		content: result.content,
 		metadata: result.metadata || {},
 		_extraction_time_ms: durationMs,
+		_ocr_used: ocrEnabled,
 	};
 }
 
@@ -52,6 +54,7 @@ async function extractBatch(filePaths: string[], ocrEnabled: boolean): Promise<E
 		metadata: result.metadata || {},
 		_extraction_time_ms: perFileDurationMs,
 		_batch_total_ms: totalDurationMs,
+		_ocr_used: ocrEnabled,
 	}));
 }
 
@@ -89,7 +92,7 @@ async function runServer(ocrEnabled: boolean): Promise<void> {
 		} catch (err) {
 			const durationMs = performance.now() - start;
 			const error = err as Error;
-			console.log(JSON.stringify({ error: error.message, _extraction_time_ms: durationMs }));
+			console.log(JSON.stringify({ error: error.message, _extraction_time_ms: durationMs, _ocr_used: ocrEnabled }));
 		}
 	}
 }

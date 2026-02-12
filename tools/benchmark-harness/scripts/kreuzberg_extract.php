@@ -49,7 +49,7 @@ function debug_log(string $message): void
 /**
  * Extract a single file synchronously
  */
-function extract_sync(string $filePath, ?ExtractionConfig $config = null): array
+function extract_sync(string $filePath, ?ExtractionConfig $config = null, bool $ocrEnabled = false): array
 {
     debug_log("=== SYNC EXTRACTION START ===");
     debug_log("Input: file_path={$filePath}");
@@ -82,6 +82,7 @@ function extract_sync(string $filePath, ?ExtractionConfig $config = null): array
         'content' => $result->content,
         'metadata' => $result->metadata ?? [],
         '_extraction_time_ms' => $durationMs,
+        '_ocr_used' => $ocrEnabled,
     ];
 
     debug_log("Output JSON size: " . strlen(json_encode($payload)) . " bytes");
@@ -93,7 +94,7 @@ function extract_sync(string $filePath, ?ExtractionConfig $config = null): array
 /**
  * Extract multiple files in batch
  */
-function extract_batch(array $filePaths, ?ExtractionConfig $config = null): array
+function extract_batch(array $filePaths, ?ExtractionConfig $config = null, bool $ocrEnabled = false): array
 {
     debug_log("=== BATCH EXTRACTION START ===");
     debug_log("Input: " . count($filePaths) . " files");
@@ -132,6 +133,7 @@ function extract_batch(array $filePaths, ?ExtractionConfig $config = null): arra
             'metadata' => $result->metadata ?? [],
             '_extraction_time_ms' => $perFileDurationMs,
             '_batch_total_ms' => $totalDurationMs,
+            '_ocr_used' => $ocrEnabled,
         ];
     }
 
@@ -143,7 +145,7 @@ function extract_batch(array $filePaths, ?ExtractionConfig $config = null): arra
 /**
  * Server mode: read paths from stdin, write JSON to stdout
  */
-function run_server(?ExtractionConfig $config = null): void
+function run_server(?ExtractionConfig $config = null, bool $ocrEnabled = false): void
 {
     debug_log("=== SERVER MODE START ===");
 
@@ -173,6 +175,7 @@ function run_server(?ExtractionConfig $config = null): void
                 'content' => $result->content,
                 'metadata' => $result->metadata ?? [],
                 '_extraction_time_ms' => $durationMs,
+                '_ocr_used' => $ocrEnabled,
             ];
 
             echo json_encode($payload, JSON_THROW_ON_ERROR) . "\n";
@@ -181,6 +184,7 @@ function run_server(?ExtractionConfig $config = null): void
             $errorPayload = [
                 'error' => $e->getMessage(),
                 '_extraction_time_ms' => 0,
+                '_ocr_used' => $ocrEnabled,
             ];
             echo json_encode($errorPayload, JSON_THROW_ON_ERROR) . "\n";
             fflush(STDOUT);
@@ -237,7 +241,7 @@ function main(): void
         switch ($mode) {
             case 'server':
                 debug_log("Executing server mode");
-                run_server($config);
+                run_server($config, $ocrEnabled);
                 break;
 
             case 'sync':
@@ -246,7 +250,7 @@ function main(): void
                     exit(1);
                 }
                 debug_log("Executing sync mode with file: {$filePaths[0]}");
-                $payload = extract_sync($filePaths[0], $config);
+                $payload = extract_sync($filePaths[0], $config, $ocrEnabled);
                 $output = json_encode($payload, JSON_THROW_ON_ERROR);
                 debug_log("Output JSON: {$output}");
                 echo $output;
@@ -259,7 +263,7 @@ function main(): void
                 }
                 debug_log("Executing batch mode with " . count($filePaths) . " files");
 
-                $results = extract_batch($filePaths, $config);
+                $results = extract_batch($filePaths, $config, $ocrEnabled);
 
                 if (count($filePaths) === 1) {
                     $output = json_encode($results[0], JSON_THROW_ON_ERROR);

@@ -366,14 +366,21 @@ impl FrameworkAdapter for NativeAdapter {
 
                 let file_extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_string();
 
-                // Check if this specific extraction had an error
-                let (success, error_message) = if extraction_result.metadata.error.is_some() {
+                // Check if this specific extraction had an error or empty content
+                let (success, error_message, error_kind) = if extraction_result.metadata.error.is_some() {
                     (
                         false,
                         extraction_result.metadata.error.as_ref().map(|e| e.message.clone()),
+                        ErrorKind::FrameworkError,
+                    )
+                } else if extraction_result.content.trim().is_empty() {
+                    (
+                        false,
+                        Some("Framework returned empty content".to_string()),
+                        ErrorKind::EmptyContent,
                     )
                 } else {
-                    (true, None)
+                    (true, None, ErrorKind::None)
                 };
 
                 // Amortize batch memory proportionally by file size
@@ -389,11 +396,7 @@ impl FrameworkAdapter for NativeAdapter {
                     file_size,
                     success,
                     error_message,
-                    error_kind: if success {
-                        ErrorKind::None
-                    } else {
-                        ErrorKind::HarnessError
-                    },
+                    error_kind,
                     duration: extraction_duration,
                     extraction_duration: Some(extraction_duration),
                     subprocess_overhead: Some(Duration::ZERO), // No subprocess for native Rust

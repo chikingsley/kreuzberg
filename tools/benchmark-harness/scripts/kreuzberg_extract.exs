@@ -44,7 +44,7 @@ defmodule KreuzbergExtract do
   @doc """
   Extract a single file synchronously.
   """
-  def extract_sync(file_path, config \\ %{}) do
+  def extract_sync(file_path, config \\ %{}, ocr_enabled \\ false) do
     debug_log("=== SYNC EXTRACTION START ===")
     debug_log("Input: file_path=#{file_path}")
     debug_log("File exists: #{File.exists?(file_path)}")
@@ -78,7 +78,8 @@ defmodule KreuzbergExtract do
         payload = %{
           "content" => extraction_result.content,
           "metadata" => struct_to_map(extraction_result.metadata),
-          "_extraction_time_ms" => duration_ms
+          "_extraction_time_ms" => duration_ms,
+          "_ocr_used" => ocr_enabled
         }
 
         json_size = payload |> Jason.encode!() |> byte_size()
@@ -95,7 +96,7 @@ defmodule KreuzbergExtract do
   @doc """
   Extract multiple files in batch mode.
   """
-  def extract_batch(file_paths, config \\ %{}) do
+  def extract_batch(file_paths, config \\ %{}, ocr_enabled \\ false) do
     debug_log("=== BATCH EXTRACTION START ===")
     debug_log("Input: #{length(file_paths)} files")
 
@@ -144,7 +145,8 @@ defmodule KreuzbergExtract do
               "content" => extraction_result.content,
               "metadata" => struct_to_map(extraction_result.metadata),
               "_extraction_time_ms" => per_file_duration_ms,
-              "_batch_total_ms" => total_duration_ms
+              "_batch_total_ms" => total_duration_ms,
+              "_ocr_used" => ocr_enabled
             }
           end)
 
@@ -160,7 +162,7 @@ defmodule KreuzbergExtract do
   @doc """
   Server mode: read paths from stdin, write JSON to stdout.
   """
-  def run_server(config \\ %{}) do
+  def run_server(config \\ %{}, ocr_enabled \\ false) do
     debug_log("=== SERVER MODE START ===")
 
     # Signal readiness after BEAM VM + NIF initialization
@@ -173,7 +175,7 @@ defmodule KreuzbergExtract do
       debug_log("Processing file: #{file_path}")
 
       try do
-        case extract_sync(file_path, config) do
+        case extract_sync(file_path, config, ocr_enabled) do
           {:ok, payload} ->
             json = Jason.encode!(payload)
             IO.write(json)
@@ -182,7 +184,8 @@ defmodule KreuzbergExtract do
           {:error, reason} ->
             error_payload = %{
               "error" => inspect(reason),
-              "_extraction_time_ms" => 0
+              "_extraction_time_ms" => 0,
+              "_ocr_used" => ocr_enabled
             }
 
             json = Jason.encode!(error_payload)
@@ -193,7 +196,8 @@ defmodule KreuzbergExtract do
         e ->
           error_payload = %{
             "error" => inspect(e),
-            "_extraction_time_ms" => 0
+            "_extraction_time_ms" => 0,
+            "_ocr_used" => ocr_enabled
           }
 
           json = Jason.encode!(error_payload)
@@ -246,7 +250,7 @@ defmodule KreuzbergExtract do
         case mode do
           "server" ->
             debug_log("Executing server mode")
-            run_server(config)
+            run_server(config, ocr_enabled)
 
           "sync" ->
             if length(file_paths) != 1 do
@@ -256,7 +260,7 @@ defmodule KreuzbergExtract do
 
             debug_log("Executing sync mode with file: #{hd(file_paths)}")
 
-            case extract_sync(hd(file_paths), config) do
+            case extract_sync(hd(file_paths), config, ocr_enabled) do
               {:ok, payload} ->
                 json = Jason.encode!(payload)
                 debug_log("Output JSON: #{json}")
@@ -275,7 +279,7 @@ defmodule KreuzbergExtract do
 
             debug_log("Executing batch mode with #{length(file_paths)} files")
 
-            case extract_batch(file_paths, config) do
+            case extract_batch(file_paths, config, ocr_enabled) do
               {:ok, results} ->
                 json =
                   if length(file_paths) == 1 do

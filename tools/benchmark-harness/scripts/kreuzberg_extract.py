@@ -39,6 +39,7 @@ def extract_sync(file_path: str, ocr_enabled: bool) -> dict[str, Any]:
         "content": result.content,
         "metadata": result.metadata or {},
         "_extraction_time_ms": duration_ms,
+        "_ocr_used": ocr_enabled,
     }
 
 
@@ -57,6 +58,7 @@ async def extract_async(file_path: str, ocr_enabled: bool) -> dict[str, Any]:
         "content": result.content,
         "metadata": result.metadata or {},
         "_extraction_time_ms": duration_ms,
+        "_ocr_used": ocr_enabled,
     }
 
 
@@ -79,6 +81,7 @@ def extract_batch_sync(file_paths: list[str], ocr_enabled: bool) -> list[dict[st
             "metadata": result.metadata or {},
             "_extraction_time_ms": per_file_duration_ms,
             "_batch_total_ms": total_duration_ms,
+            "_ocr_used": ocr_enabled,
         }
         for result in results
     ]
@@ -98,7 +101,7 @@ def run_server(ocr_enabled: bool) -> None:
             print(json.dumps(payload), flush=True)
         except Exception as e:
             duration_ms = (time.perf_counter() - start) * 1000.0
-            print(json.dumps({"error": str(e), "_extraction_time_ms": duration_ms}), flush=True)
+            print(json.dumps({"error": str(e), "_extraction_time_ms": duration_ms, "_ocr_used": ocr_enabled}), flush=True)
 
 
 def main() -> None:

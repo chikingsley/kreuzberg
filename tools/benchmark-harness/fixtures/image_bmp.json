@@ -1,12 +1,12 @@
 {
   "document": "../../../test_documents/images/bmp_24.bmp",
   "file_type": "bmp",
-  "file_size": 120054,
+  "file_size": 480054,
   "expected_frameworks": [
     "kreuzberg"
   ],
   "metadata": {
-    "description": "24-bit BMP image file for format coverage testing",
+    "description": "24-bit BMP image with 'Hello World' text for OCR testing",
     "category": "image",
     "size_class": "small"
   }
