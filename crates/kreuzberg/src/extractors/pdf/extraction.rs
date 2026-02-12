@@ -51,82 +51,35 @@ pub(crate) fn extract_all_from_document(
     let (native_text, boundaries, page_contents, pdf_metadata) =
         crate::pdf::text::extract_text_and_metadata_from_pdf_document(document, Some(config))?;
 
-    let tables = extract_tables_from_document(document, &pdf_metadata, config)?;
+    let tables = extract_tables_from_document(document, &pdf_metadata)?;
 
     Ok((pdf_metadata, native_text, tables, page_contents, boundaries))
 }
 
-/// Extract tables from PDF document using edge-intersection detection.
+/// Extract tables from PDF document using native text positions.
 ///
-/// This function uses a two-pass approach:
-/// 1. **Line-based detection** (pdfplumber algorithm): Extract drawn edges from PDF
-///    path objects (lines, rects, curves) and find tables via intersection analysis.
-///    Supports multiple tables per page.
-/// 2. **Fallback to spatial clustering**: If no line-based tables are found, falls back
-///    to the existing HocrWord-based spatial clustering approach.
+/// This function converts PDF character positions to HocrWord format,
+/// then uses the existing table reconstruction logic to detect tables.
+///
+/// Uses the shared PdfDocument reference (wrapped in Arc<RwLock<>> for thread-safety).
 #[cfg(all(feature = "pdf", feature = "ocr"))]
 fn extract_tables_from_document(
     document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
-    config: &ExtractionConfig,
 ) -> Result<Vec<Table>> {
     use crate::ocr::table::{reconstruct_table, table_to_markdown};
     use crate::pdf::table::extract_words_from_page;
-    use crate::pdf::table_clustering::PositionedWord;
-    use crate::pdf::table_finder::{self, TableStrategy, extract_table_text_styled};
+    use crate::pdf::table_finder::{self, TableSettings, extract_table_text_styled};
     use crate::types::TableHeader;
 
-    let table_config = config
-        .pdf_options
-        .as_ref()
-        .and_then(|pdf_options| pdf_options.table_detection.as_ref())
-        .cloned()
-        .unwrap_or_default();
-
-    if !table_config.enabled {
-        return Ok(Vec::new());
-    }
-
-    let settings = table_config.to_table_settings();
-    let fallback_column_threshold = table_config.fallback_column_threshold;
-    let fallback_row_threshold_ratio = table_config.fallback_row_threshold_ratio;
-    let uses_text_strategy = matches!(settings.vertical_strategy, TableStrategy::Text)
-        || matches!(settings.horizontal_strategy, TableStrategy::Text);
-
+    let settings = TableSettings::default();
     let mut all_tables = Vec::new();
 
     for (page_index, page) in document.pages().iter().enumerate() {
         let page_number = page_index + 1;
-        let page_words = match extract_words_from_page(&page, 0.0) {
-            Ok(words) => Some(words),
-            Err(e) => {
-                tracing::debug!(
-                    "Failed to extract PDF words on page {} for table detection fallback: {}",
-                    page_number,
-                    e
-                );
-                None
-            }
-        };
-        let positioned_words = if uses_text_strategy {
-            page_words.as_ref().map(|words| {
-                words
-                    .iter()
-                    .map(|word| PositionedWord {
-                        text: word.text.clone(),
-                        x0: word.left as f64,
-                        x1: (word.left + word.width) as f64,
-                        top: word.top as f64,
-                        bottom: (word.top + word.height) as f64,
-                    })
-                    .collect::<Vec<_>>()
-            })
-        } else {
-            None
-        };
 
         // Try line-based detection first
-        match table_finder::find_tables(&page, &settings, positioned_words.as_deref()) {
+        match table_finder::find_tables(&page, &settings, None) {
             Ok(result) if !result.tables.is_empty() => {
                 let page_height = page.height().value as f64;
                 for detected_table in &result.tables {
@@ -150,22 +103,30 @@ fn extract_tables_from_document(
                             }
                         }
                         Err(e) => {
-                            tracing::debug!("Line-based table text extraction failed on page {}: {}", page_number, e);
+                            tracing::debug!(
+                                "Line-based table text extraction failed on page {}: {}",
+                                page_number,
+                                e
+                            );
                         }
                     }
                 }
             }
             Ok(_) | Err(_) => {
                 // Fallback: spatial clustering (existing approach)
-                let Some(words) = page_words.as_ref() else {
-                    continue;
+                let words = match extract_words_from_page(&page, 0.0) {
+                    Ok(w) => w,
+                    Err(_) => continue,
                 };
 
                 if words.is_empty() {
                     continue;
                 }
 
-                let table_cells = reconstruct_table(words, fallback_column_threshold, fallback_row_threshold_ratio);
+                let column_threshold = 50;
+                let row_threshold_ratio = 0.5;
+
+                let table_cells = reconstruct_table(&words, column_threshold, row_threshold_ratio);
 
                 if !table_cells.is_empty() {
                     let markdown = table_to_markdown(&table_cells);
@@ -196,7 +157,9 @@ fn extract_tables_from_document(
 /// rows don't, the first row is confidently identified as a header.
 /// Falls back to assuming first row is header (common convention).
 #[cfg(all(feature = "pdf", feature = "ocr"))]
-fn detect_header(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> Option<crate::types::TableHeader> {
+fn detect_header(
+    styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>],
+) -> Option<crate::types::TableHeader> {
     if styled_rows.is_empty() {
         return None;
     }
@@ -213,7 +176,9 @@ fn detect_header(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) 
 
 /// Convert styled 2D cell data to markdown table format with inline formatting.
 #[cfg(all(feature = "pdf", feature = "ocr"))]
-fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> String {
+fn styled_cells_to_markdown(
+    styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>],
+) -> String {
     if styled_rows.is_empty() {
         return String::new();
     }
@@ -250,7 +215,6 @@ fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledC
 fn extract_tables_from_document(
     _document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
-    _config: &ExtractionConfig,
 ) -> Result<Vec<crate::types::Table>> {
     Ok(vec![])
 }
