@@ -56,12 +56,14 @@ pub(crate) fn extract_all_from_document(
     Ok((pdf_metadata, native_text, tables, page_contents, boundaries))
 }
 
-/// Extract tables from PDF document using native text positions.
+/// Extract tables from PDF document using edge-intersection detection.
 ///
-/// This function converts PDF character positions to HocrWord format,
-/// then uses the existing table reconstruction logic to detect tables.
-///
-/// Uses the shared PdfDocument reference (wrapped in Arc<RwLock<>> for thread-safety).
+/// This function uses a two-pass approach:
+/// 1. **Line-based detection** (pdfplumber algorithm): Extract drawn edges from PDF
+///    path objects (lines, rects, curves) and find tables via intersection analysis.
+///    Supports multiple tables per page.
+/// 2. **Fallback to spatial clustering**: If no line-based tables are found, falls back
+///    to the existing HocrWord-based spatial clustering approach.
 #[cfg(all(feature = "pdf", feature = "ocr"))]
 fn extract_tables_from_document(
     document: &PdfDocument,
@@ -69,33 +71,101 @@ fn extract_tables_from_document(
 ) -> Result<Vec<Table>> {
     use crate::ocr::table::{reconstruct_table, table_to_markdown};
     use crate::pdf::table::extract_words_from_page;
+    use crate::pdf::table_finder::{self, TableSettings, extract_table_text};
 
+    let settings = TableSettings::default();
     let mut all_tables = Vec::new();
 
     for (page_index, page) in document.pages().iter().enumerate() {
-        let words = extract_words_from_page(&page, 0.0)?;
+        let page_number = page_index + 1;
 
-        if words.is_empty() {
-            continue;
-        }
+        // Try line-based detection first
+        match table_finder::find_tables(&page, &settings, None) {
+            Ok(result) if !result.tables.is_empty() => {
+                let page_height = page.height().value as f64;
+                for detected_table in &result.tables {
+                    match extract_table_text(detected_table, &page, page_height) {
+                        Ok(table_cells) => {
+                            if !table_cells.is_empty() {
+                                let markdown = cells_to_markdown(&table_cells);
+                                all_tables.push(Table {
+                                    cells: table_cells,
+                                    markdown,
+                                    page_number,
+                                });
+                            }
+                        }
+                        Err(e) => {
+                            tracing::debug!(
+                                "Line-based table text extraction failed on page {}: {}",
+                                page_number,
+                                e
+                            );
+                        }
+                    }
+                }
+            }
+            Ok(_) | Err(_) => {
+                // Fallback: spatial clustering (existing approach)
+                let words = match extract_words_from_page(&page, 0.0) {
+                    Ok(w) => w,
+                    Err(_) => continue,
+                };
 
-        let column_threshold = 50;
-        let row_threshold_ratio = 0.5;
+                if words.is_empty() {
+                    continue;
+                }
 
-        let table_cells = reconstruct_table(&words, column_threshold, row_threshold_ratio);
+                let column_threshold = 50;
+                let row_threshold_ratio = 0.5;
 
-        if !table_cells.is_empty() {
-            let markdown = table_to_markdown(&table_cells);
+                let table_cells = reconstruct_table(&words, column_threshold, row_threshold_ratio);
 
-            all_tables.push(Table {
-                cells: table_cells,
-                markdown,
-                page_number: page_index + 1,
-            });
+                if !table_cells.is_empty() {
+                    let markdown = table_to_markdown(&table_cells);
+
+                    all_tables.push(Table {
+                        cells: table_cells,
+                        markdown,
+                        page_number,
+                    });
+                }
+            }
         }
     }
 
     Ok(all_tables)
+}
+
+/// Convert 2D cell data to markdown table format.
+#[cfg(all(feature = "pdf", feature = "ocr"))]
+fn cells_to_markdown(cells: &[Vec<String>]) -> String {
+    if cells.is_empty() {
+        return String::new();
+    }
+
+    let mut md = String::new();
+
+    for (row_idx, row) in cells.iter().enumerate() {
+        md.push('|');
+        for cell in row {
+            md.push(' ');
+            md.push_str(cell);
+            md.push_str(" |");
+        }
+        md.push('\n');
+
+        // Add header separator after first row
+        if row_idx == 0 {
+            md.push('|');
+            for _ in row {
+                md.push_str(" --- |");
+            }
+            md.push('\n');
+        }
+    }
+
+    md
 }
 
 /// Fallback for when OCR feature is not enabled - returns empty tables.
