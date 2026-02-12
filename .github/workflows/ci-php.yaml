@@ -68,7 +68,7 @@ env:
 jobs:
   build-php-extension:
     name: PHP Build (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     timeout-minutes: 180
     strategy:
       fail-fast: true
@@ -119,7 +119,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: "8.3"
           extensions: ffi
           tools: composer
 
@@ -208,7 +208,7 @@ jobs:
 
   test-php:
     name: PHP Tests (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     needs: build-php-extension
     timeout-minutes: 180
     strategy:
@@ -248,7 +248,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: "8.3"
           extensions: ffi
           tools: composer
 

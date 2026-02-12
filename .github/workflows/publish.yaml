@@ -2486,8 +2486,21 @@ jobs:
         working-directory: packages/elixir
         run: mix docs
 
+      - name: Re-check Hex.pm before publish
+        id: recheck
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 60 \
+            "https://hex.pm/api/packages/kreuzberg/releases/${{ needs.prepare.outputs.version }}")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Package kreuzberg@${{ needs.prepare.outputs.version }} already exists on Hex.pm — skipping publish"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to Hex.pm
-        if: ${{ needs.prepare.outputs.dry_run != 'true' }}
+        if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.recheck.outputs.exists != 'true' }}
         working-directory: packages/elixir
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
@@ -2496,6 +2509,10 @@ jobs:
       - name: Hex.pm dry-run summary
         if: ${{ needs.prepare.outputs.dry_run == 'true' }}
         run: echo "Dry run requested; Hex.pm publish skipped." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Hex.pm already published summary
+        if: ${{ steps.recheck.outputs.exists == 'true' }}
+        run: echo "Package kreuzberg@${{ needs.prepare.outputs.version }} already published on Hex.pm — skipped." >> "$GITHUB_STEP_SUMMARY"
 
   publish-pypi:
     name: Publish Python packages to PyPI

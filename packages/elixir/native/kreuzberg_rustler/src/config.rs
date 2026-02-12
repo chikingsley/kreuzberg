@@ -157,11 +157,18 @@ pub fn parse_extraction_config(_env: Env, options: Term) -> Result<kreuzberg::co
 
         // Integer fields - validated as integers, handled by serde deserialization
         if integer_fields.contains(&field_name) {
+            // Check if value is nil (allowed for optional integer fields)
+            if let Ok(atom_str) = value.atom_to_string()
+                && atom_str == "nil"
+            {
+                continue;
+            }
+
             match value.decode::<u64>() {
                 Ok(_) => {}
                 Err(_) => {
                     return Err(format!(
-                        "Invalid configuration: field '{}' must be an integer, got: {}",
+                        "Invalid configuration: field '{}' must be a positive integer or nil, got: {}",
                         field_name,
                         describe_term_type(*value)
                     ));

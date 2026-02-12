@@ -58,7 +58,8 @@ defmodule Kreuzberg.MixProject do
     [
       main: "Kreuzberg",
       source_url: @source_url,
-      extras: ["README.md"]
+      extras: ["README.md"],
+      deps: [elixir: "https://hexdocs.pm/elixir/"]
     ]
   end
 

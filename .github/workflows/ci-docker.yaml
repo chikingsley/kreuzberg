@@ -19,7 +19,7 @@ on:
       - 'Cargo.lock'
       - '.cargo/config.toml'
       - 'scripts/ci/docker/**'
-      - 'scripts/test_docker*.sh'
+      - 'scripts/ci/docker/test_docker.py'
   pull_request:
     branches: [main]
     paths:
@@ -35,7 +35,7 @@ on:
       - 'Cargo.lock'
       - '.cargo/config.toml'
       - 'scripts/ci/docker/**'
-      - 'scripts/test_docker*.sh'
+      - 'scripts/ci/docker/test_docker.py'
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -57,7 +57,7 @@ env:
 jobs:
   test-docker:
     name: Build and Test Docker Image (${{ matrix.variant }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -168,7 +168,7 @@ jobs:
 
   test-docker-cli:
     name: Build and Test Docker CLI Image
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:

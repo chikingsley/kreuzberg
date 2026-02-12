@@ -74,7 +74,7 @@ env:
 jobs:
   rust-unit:
     name: Rust Unit Tests (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     permissions:
@@ -169,7 +169,7 @@ jobs:
 
   rust-e2e:
     name: Rust E2E Tests
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -237,7 +237,7 @@ jobs:
 
   test-system-pdfium:
     name: Test System PDFium (${{ matrix.os }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     permissions:
@@ -308,6 +308,9 @@ jobs:
         shell: bash
         env:
           PKG_CONFIG_PATH: "${{ matrix.os == 'macos-latest' && '/usr/local/lib/pkgconfig' || '' }}"
+          LD_LIBRARY_PATH: "/usr/local/lib:${{ env.LD_LIBRARY_PATH || '' }}"
+          DYLD_LIBRARY_PATH: "/usr/local/lib:${{ env.DYLD_LIBRARY_PATH || '' }}"
+          DYLD_FALLBACK_LIBRARY_PATH: "/usr/local/lib:${{ env.DYLD_FALLBACK_LIBRARY_PATH || '' }}"
 
       - name: Verify no bundled pdfium in library
         run: scripts/ci/rust/verify-no-bundled-pdfium.sh
@@ -329,7 +332,7 @@ jobs:
 
   build-and-smoke-cli:
     name: CLI Build + Smoke (${{ matrix.target }})
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     timeout-minutes: 180
     permissions:
       contents: read
