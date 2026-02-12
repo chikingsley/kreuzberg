@@ -24,6 +24,7 @@ type payload struct {
 	Metadata         map[string]any `json:"metadata"`
 	ExtractionTimeMs float64        `json:"_extraction_time_ms"`
 	BatchTotalTimeMs float64        `json:"_batch_total_ms,omitempty"`
+	OcrUsed          bool           `json:"_ocr_used"`
 }
 
 func main() {
@@ -126,7 +127,7 @@ func runServer(ocrEnabled bool) {
 		absPath, err := filepath.Abs(filePath)
 		if err != nil {
 			debug("Failed to resolve path %s: %v", filePath, err)
-			mustEncodeError(err)
+			mustEncodeError(err, ocrEnabled)
 			continue
 		}
 
@@ -134,7 +135,7 @@ func runServer(ocrEnabled bool) {
 		result, err := kz.ExtractFileSync(absPath, config)
 		if err != nil {
 			debug("Extraction failed for %s: %v", absPath, err)
-			mustEncodeError(err)
+			mustEncodeError(err, ocrEnabled)
 			continue
 		}
 
@@ -142,7 +143,7 @@ func runServer(ocrEnabled bool) {
 		meta, err := metadataMap(result.Metadata)
 		if err != nil {
 			debug("metadataMap failed: %v", err)
-			mustEncodeError(err)
+			mustEncodeError(err, ocrEnabled)
 			continue
 		}
 
@@ -150,6 +151,7 @@ func runServer(ocrEnabled bool) {
 			Content:          result.Content,
 			Metadata:         meta,
 			ExtractionTimeMs: elapsed,
+			OcrUsed:          ocrEnabled,
 		}
 		mustEncodeNoNewline(p)
 		fmt.Println()
@@ -189,6 +191,7 @@ func extractSync(path string, ocrEnabled bool) (*payload, error) {
 		Content:          result.Content,
 		Metadata:         meta,
 		ExtractionTimeMs: elapsed,
+		OcrUsed:          ocrEnabled,
 	}, nil
 }
 
@@ -225,6 +228,7 @@ func extractBatch(paths []string, ocrEnabled bool) (any, error) {
 			Metadata:         meta,
 			ExtractionTimeMs: totalMs,
 			BatchTotalTimeMs: totalMs,
+			OcrUsed:          ocrEnabled,
 		}, nil
 	}
 
@@ -243,6 +247,7 @@ func extractBatch(paths []string, ocrEnabled bool) (any, error) {
 			Metadata:         meta,
 			ExtractionTimeMs: perMs,
 			BatchTotalTimeMs: totalMs,
+			OcrUsed:          ocrEnabled,
 		})
 	}
 	return out, nil
@@ -289,10 +294,11 @@ func mustEncodeNoNewline(value any) {
 	}
 }
 
-func mustEncodeError(err error) {
+func mustEncodeError(err error, ocrEnabled bool) {
 	errorMap := map[string]interface{}{
-		"error":                 err.Error(),
+		"error":               err.Error(),
 		"_extraction_time_ms": 0,
+		"_ocr_used":           ocrEnabled,
 	}
 	data, marshalErr := json.Marshal(errorMap)
 	if marshalErr != nil {

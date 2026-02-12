@@ -79,7 +79,8 @@ def extract_sync(file_path, config = {})
   payload = {
     content: result.content,
     metadata: result.metadata || {},
-    _extraction_time_ms: duration_ms
+    _extraction_time_ms: duration_ms,
+    _ocr_used: config.dig(:ocr, :enabled) || false
   }
 
   debug_log "Output JSON size: #{JSON.generate(payload).bytesize} bytes"
@@ -124,7 +125,8 @@ def extract_batch(file_paths, config = {})
       content: result.content,
       metadata: result.metadata || {},
       _extraction_time_ms: per_file_duration_ms,
-      _batch_total_ms: total_duration_ms
+      _batch_total_ms: total_duration_ms,
+      _ocr_used: config.dig(:ocr, :enabled) || false
     }
   end
 
@@ -162,7 +164,8 @@ def extract_server(ocr_enabled)
       payload = {
         content: result.content,
         metadata: result.metadata || {},
-        _extraction_time_ms: duration_ms
+        _extraction_time_ms: duration_ms,
+        _ocr_used: ocr_enabled
       }
 
       puts JSON.generate(payload)
@@ -170,7 +173,8 @@ def extract_server(ocr_enabled)
     rescue StandardError => e
       error_payload = {
         error: e.message,
-        _extraction_time_ms: 0
+        _extraction_time_ms: 0,
+        _ocr_used: ocr_enabled
       }
       puts JSON.generate(error_payload)
       $stdout.flush
