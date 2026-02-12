@@ -534,6 +534,7 @@ mod tests {
             ],
             markdown: "| Col1 | Col2 |\n|------|------|\n| A1 | A2 |\n| B1 | B2 |".to_string(),
             page_number: 1,
+            header: None,
         };
 
         let chunk = Chunk {

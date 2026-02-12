@@ -63,6 +63,7 @@ fn parse_markdown_tables(markdown: &str) -> Vec<Table> {
                 cells,
                 markdown: markdown_table,
                 page_number: table_index + 1,
+                header: None,
             });
             table_index += 1;
             i = end_idx;

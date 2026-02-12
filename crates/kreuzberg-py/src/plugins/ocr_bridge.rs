@@ -543,6 +543,7 @@ fn extract_tables(obj: &Bound<'_, PyAny>) -> Result<Vec<kreuzberg::types::Table>
             cells,
             markdown,
             page_number,
+            header: None,
         });
     }
 

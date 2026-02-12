@@ -325,6 +325,7 @@ mod tests {
                 ],
                 page_number: 1,
                 markdown: "| Col1 | Col2 |\n|------|------|\n| A    | B    |".to_string(),
+                header: None,
             }],
             detected_languages: None,
             chunks: None,

@@ -136,6 +136,7 @@ impl MarkdownExtractor {
                             cells,
                             markdown,
                             page_number: idx + 1,
+                            header: None,
                         });
                         table_index += 1;
                     }

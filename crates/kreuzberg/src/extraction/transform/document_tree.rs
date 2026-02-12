@@ -682,6 +682,7 @@ mod tests {
                 ],
                 markdown: "| Name | Age |\n|---|---|\n| Alice | 30 |".to_string(),
                 page_number: 1,
+                header: None,
             }],
             ..test_result("Some content")
         };
