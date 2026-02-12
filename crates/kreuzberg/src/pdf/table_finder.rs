@@ -498,6 +498,7 @@ pub struct TextStyle {
     pub bold: bool,
     pub italic: bool,
     pub monospaced: bool,
+    pub strikethrough: bool,
 }
 
 /// A single cell's text content with style information.
@@ -519,6 +520,17 @@ struct CharPos {
     style: TextStyle,
     /// Approximate line y-coordinate (used for line-break detection).
     line_y: f64,
+    /// Character bounding box in page coordinates (left, top, right, bottom).
+    /// Used for strikethrough detection.
+    char_bbox: (f64, f64, f64, f64),
+}
+
+/// A thin horizontal line extracted from PDF drawing commands.
+/// Used for strikethrough detection.
+struct StrikethroughLine {
+    x0: f64,
+    x1: f64,
+    y: f64,
 }
 
 /// Extract text content for each cell in a detected table.
@@ -553,33 +565,91 @@ pub fn extract_table_text_styled(
         .text()
         .map_err(|e| PdfError::TextExtractionFailed(format!("Failed to get page text: {}", e)))?;
 
+    // Collect thin horizontal lines from page drawing objects for strikethrough detection.
+    let strikethrough_lines = collect_strikethrough_lines(page, page_height);
+
     // Pre-collect all character positions with style info
-    let chars_data: Vec<CharPos> = page_text
+    let mut chars_data: Vec<CharPos> = page_text
         .chars()
         .iter()
         .filter_map(|pdf_char| {
             let ch = pdf_char.unicode_char()?;
             let bounds = pdf_char.loose_bounds().ok()?;
-            let mid_x = (bounds.left().value as f64 + (bounds.left().value as f64 + bounds.width().value as f64)) / 2.0;
+            let left = bounds.left().value as f64;
+            let right = left + bounds.width().value as f64;
             let bottom_y = bounds.bottom().value as f64;
             let top_y = bounds.top().value as f64;
+            let mid_x = (left + right) / 2.0;
             let mid_y = page_height - ((bottom_y + top_y) / 2.0);
             let line_y = page_height - bottom_y;
+
+            // Char bbox in page coordinates (top-left origin)
+            let char_top = page_height - top_y;
+            let char_bottom = page_height - bottom_y;
+            let char_bbox = (left, char_top, right, char_bottom);
 
             // Extract font style properties
             let bold = is_char_bold(&pdf_char);
             let italic = pdf_char.font_is_italic();
-            let monospaced = pdf_char.font_is_fixed_pitch();
+            let monospaced = is_char_monospaced(&pdf_char);
 
             Some(CharPos {
                 ch,
                 mid_x,
                 mid_y,
-                style: TextStyle { bold, italic, monospaced },
+                style: TextStyle { bold, italic, monospaced, strikethrough: false },
                 line_y,
+                char_bbox,
             })
         })
         .collect();
+
+    // Apply strikethrough detection: check if any thin horizontal line
+    // crosses through each character's vertical center
+    if !strikethrough_lines.is_empty() {
+        // First pass: detect strikethrough on non-whitespace characters
+        for char_pos in chars_data.iter_mut() {
+            if char_pos.ch.is_whitespace() {
+                continue;
+            }
+            let (cx0, ctop, cx1, cbottom) = char_pos.char_bbox;
+            let char_height = (cbottom - ctop).abs();
+            if char_height < 0.5 {
+                continue;
+            }
+            let char_center_y = (ctop + cbottom) / 2.0;
+            let tolerance_y = char_height * 0.35;
+
+            for line in &strikethrough_lines {
+                if line.x1 < cx0 || line.x0 > cx1 {
+                    continue;
+                }
+                if (line.y - char_center_y).abs() < tolerance_y {
+                    char_pos.style.strikethrough = true;
+                    break;
+                }
+            }
+        }
+
+        // Second pass: propagate strikethrough to whitespace characters between
+        // strikethrough non-whitespace characters (so "~~word1 word2~~" instead
+        // of "~~word1~~ ~~word2~~")
+        let len = chars_data.len();
+        for i in 0..len {
+            if chars_data[i].ch.is_whitespace() && !chars_data[i].style.strikethrough {
+                // Check if previous non-ws and next non-ws are both strikethrough
+                let prev_st = (0..i).rev().find(|&j| !chars_data[j].ch.is_whitespace())
+                    .map(|j| chars_data[j].style.strikethrough)
+                    .unwrap_or(false);
+                let next_st = ((i + 1)..len).find(|&j| !chars_data[j].ch.is_whitespace())
+                    .map(|j| chars_data[j].style.strikethrough)
+                    .unwrap_or(false);
+                if prev_st && next_st {
+                    chars_data[i].style.strikethrough = true;
+                }
+            }
+        }
+    }
 
     let mut result = Vec::new();
 
@@ -651,6 +721,117 @@ fn is_char_bold(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
     }
 
     false
+}
+
+/// Determine if a character is monospaced based on font descriptor flags and font name.
+fn is_char_monospaced(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
+    // Check the font descriptor fixed-pitch flag
+    if pdf_char.font_is_fixed_pitch() {
+        return true;
+    }
+
+    // Fallback: check font name for common monospaced font families
+    let name = pdf_char.font_name();
+    let name_lower = name.to_lowercase();
+    name_lower.contains("courier")
+        || name_lower.contains("mono")
+        || name_lower.contains("consolas")
+        || name_lower.contains("menlo")
+        || name_lower.contains("inconsolata")
+        || name_lower.contains("source code")
+        || name_lower.contains("fira code")
+        || name_lower.contains("jetbrains")
+        || name_lower.contains("roboto mono")
+        || name_lower.contains("fixed")
+}
+
+/// Collect thin horizontal lines from page drawing objects.
+///
+/// These are candidate strikethrough lines — thin horizontal lines drawn
+/// through text. PDFs render strikethrough by drawing a line across the text,
+/// not as a font property.
+///
+/// Criteria for a strikethrough line:
+/// - Approximately horizontal (y-coordinates nearly equal)
+/// - Very thin (height < 2 PDF points, typically ~0.5pt)
+/// - Minimum length of 3 PDF points (not a dot)
+fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<StrikethroughLine> {
+    let mut lines = Vec::new();
+    let objects = page.objects();
+
+    for object in objects.iter() {
+        if let Some(path_obj) = object.as_path_object() {
+            let segments = path_obj.segments();
+            if segments.is_empty() {
+                continue;
+            }
+
+            let mut current_x: f64 = 0.0;
+            let mut current_y: f64 = 0.0;
+
+            for segment in segments.iter() {
+                let seg_type = segment.segment_type();
+                let x = segment.x().value as f64;
+                let y = page_height - segment.y().value as f64;
+
+                match seg_type {
+                    PdfPathSegmentType::MoveTo => {
+                        current_x = x;
+                        current_y = y;
+                    }
+                    PdfPathSegmentType::LineTo => {
+                        // Check if this is a thin horizontal line
+                        let dy = (y - current_y).abs();
+                        let dx = (x - current_x).abs();
+
+                        if dy < 2.0 && dx >= 3.0 {
+                            // This is a thin horizontal line — candidate for strikethrough
+                            let line_y = (current_y + y) / 2.0;
+                            let (x0, x1) = if current_x < x {
+                                (current_x, x)
+                            } else {
+                                (x, current_x)
+                            };
+                            lines.push(StrikethroughLine { x0, x1, y: line_y });
+                        }
+                        current_x = x;
+                        current_y = y;
+                    }
+                    _ => {
+                        current_x = x;
+                        current_y = y;
+                    }
+                }
+            }
+
+            // Also check for thin rectangles (fill operations that create strikethrough)
+            // These appear as rect path objects with very small height
+            if segments.len() >= 4 {
+                let mut xs = Vec::new();
+                let mut ys = Vec::new();
+                for segment in segments.iter() {
+                    xs.push(segment.x().value as f64);
+                    ys.push(page_height - segment.y().value as f64);
+                }
+                if let (Some(&min_x), Some(&max_x), Some(&min_y), Some(&max_y)) = (
+                    xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
+                    xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
+                    ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
+                    ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
+                ) {
+                    let width = max_x - min_x;
+                    let height = max_y - min_y;
+                    // Thin horizontal rectangle: width >> height, height < 2pt
+                    if height < 2.0 && width >= 3.0 && width > height * 3.0 {
+                        let mid_y = (min_y + max_y) / 2.0;
+                        lines.push(StrikethroughLine { x0: min_x, x1: max_x, y: mid_y });
+                    }
+                }
+            }
+        }
+    }
+
+    lines
 }
 
 /// Build styled markdown text from a sequence of positioned, styled characters.
@@ -726,7 +907,7 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
 
         output.push_str(leading_ws);
 
-        // Apply style wrappers (order: strikeout > bold > italic > monospaced)
+        // Apply style wrappers (order matches PyMuPDF: strikeout wraps bold wraps italic wraps monospaced)
         let mut styled = inner.to_string();
         if run.style.monospaced {
             styled = format!("`{styled}`");
@@ -736,6 +917,9 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
         }
         if run.style.bold {
             styled = format!("**{styled}**");
+        }
+        if run.style.strikethrough {
+            styled = format!("~~{styled}~~");
         }
 
         output.push_str(&styled);
