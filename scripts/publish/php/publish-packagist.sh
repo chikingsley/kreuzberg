@@ -33,14 +33,15 @@ if [[ -n "$PACKAGIST_API_TOKEN" ]]; then
     --retry 3 \
     --retry-delay 5 \
     --request POST \
-    "https://packagist.org/api/update-package?username=kreuzberg-dev&apiToken=${PACKAGIST_API_TOKEN}" \
+    "https://packagist.org/api/update-package?username=Goldziher&apiToken=${PACKAGIST_API_TOKEN}" \
     --data "{\"repository\": {\"url\": \"https://github.com/kreuzberg-dev/kreuzberg\"}}" \
     --header "Content-Type: application/json" 2>&1 || echo '{"status":"error"}')
 
   if echo "$UPDATE_RESPONSE" | jq -e '.status == "success"' >/dev/null 2>&1; then
     echo "::notice::✓ Packagist update triggered successfully"
   else
-    echo "::warning::Failed to trigger Packagist update via API, falling back to webhook"
+    echo "::warning::Failed to trigger Packagist update via API: ${UPDATE_RESPONSE}"
+    echo "::warning::Falling back to webhook"
   fi
 fi
 
