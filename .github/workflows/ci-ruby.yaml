@@ -148,10 +148,6 @@ jobs:
           bundler-cache: false
           working-directory: packages/ruby
 
-      - name: Install Bundler
-        shell: bash
-        run: scripts/ci/ruby/install-bundler.sh
-
       - name: Set BUNDLE_GEMFILE (Unix)
         if: runner.os != 'Windows'
         shell: bash
@@ -550,10 +546,6 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: false
           working-directory: packages/ruby
-
-      - name: Install Bundler
-        shell: bash
-        run: scripts/ci/ruby/install-bundler.sh
 
       - name: Set BUNDLE_GEMFILE (Unix)
         if: runner.os != 'Windows'
