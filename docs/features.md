@@ -255,7 +255,7 @@ Extract keywords and key phrases from documents.
 KeywordConfig(
     algorithm=KeywordAlgorithm.Yake,
     max_keywords=10,
-    ngram_size=3
+    ngram_range=(1,3)
 )
 ```
 
