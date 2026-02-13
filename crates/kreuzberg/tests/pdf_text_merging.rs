@@ -24,6 +24,10 @@ use pdfium_render::prelude::*;
 /// - Position order is preserved
 #[test]
 fn test_extract_chars_basic() {
+    if helpers::skip_if_missing("pdf/tiny.pdf") {
+        return;
+    }
+
     let pdf_path = get_test_file_path("pdf/tiny.pdf");
 
     // Load PDF
@@ -57,6 +61,10 @@ fn test_extract_chars_basic() {
 /// - Y-coordinates generally decrease as we move down the page
 #[test]
 fn test_extract_chars_preserves_order() {
+    if helpers::skip_if_missing("pdf/tiny.pdf") {
+        return;
+    }
+
     let pdf_path = get_test_file_path("pdf/tiny.pdf");
 
     // Load PDF
