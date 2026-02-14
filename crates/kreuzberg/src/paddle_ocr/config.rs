@@ -252,6 +252,28 @@ pub enum PaddleLanguage {
     German,
     /// French
     French,
+    /// Latin script (covers most European languages)
+    Latin,
+    /// Arabic
+    Arabic,
+    /// Cyrillic (Russian and related)
+    Cyrillic,
+    /// Devanagari (Hindi and related)
+    Devanagari,
+    /// Tamil
+    Tamil,
+    /// Telugu
+    Telugu,
+    /// Kannada
+    Kannada,
+    /// Traditional Chinese
+    TraditionalChinese,
+    /// Thai
+    Thai,
+    /// Greek
+    Greek,
+    /// East Slavic (Russian, Ukrainian, Belarusian)
+    EastSlavic,
 }
 
 impl PaddleLanguage {
@@ -277,6 +299,17 @@ impl PaddleLanguage {
             Self::Korean => "kor",
             Self::German => "deu",
             Self::French => "fra",
+            Self::Latin => "latin",
+            Self::Arabic => "arabic",
+            Self::Cyrillic => "cyrillic",
+            Self::Devanagari => "devanagari",
+            Self::Tamil => "ta",
+            Self::Telugu => "te",
+            Self::Kannada => "ka",
+            Self::TraditionalChinese => "chinese_cht",
+            Self::Thai => "thai",
+            Self::Greek => "greek",
+            Self::EastSlavic => "eslav",
         }
     }
 
@@ -307,6 +340,17 @@ impl PaddleLanguage {
             "kor" => Some(Self::Korean),
             "deu" => Some(Self::German),
             "fra" => Some(Self::French),
+            "latin" => Some(Self::Latin),
+            "arabic" => Some(Self::Arabic),
+            "cyrillic" => Some(Self::Cyrillic),
+            "devanagari" => Some(Self::Devanagari),
+            "ta" => Some(Self::Tamil),
+            "te" => Some(Self::Telugu),
+            "ka" => Some(Self::Kannada),
+            "chinese_cht" => Some(Self::TraditionalChinese),
+            "thai" => Some(Self::Thai),
+            "greek" => Some(Self::Greek),
+            "eslav" => Some(Self::EastSlavic),
             _ => None,
         }
     }
@@ -321,6 +365,17 @@ impl std::fmt::Display for PaddleLanguage {
             Self::Korean => write!(f, "Korean"),
             Self::German => write!(f, "German"),
             Self::French => write!(f, "French"),
+            Self::Latin => write!(f, "Latin"),
+            Self::Arabic => write!(f, "Arabic"),
+            Self::Cyrillic => write!(f, "Cyrillic"),
+            Self::Devanagari => write!(f, "Devanagari"),
+            Self::Tamil => write!(f, "Tamil"),
+            Self::Telugu => write!(f, "Telugu"),
+            Self::Kannada => write!(f, "Kannada"),
+            Self::TraditionalChinese => write!(f, "Traditional Chinese"),
+            Self::Thai => write!(f, "Thai"),
+            Self::Greek => write!(f, "Greek"),
+            Self::EastSlavic => write!(f, "East Slavic"),
         }
     }
 }

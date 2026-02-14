@@ -2,13 +2,18 @@
 //!
 //! This module implements the `OcrBackend` trait for PaddleOCR using ONNX Runtime.
 //! PaddleOCR provides excellent recognition quality, especially for CJK languages.
+//!
+//! The backend maintains a pool of OCR engines keyed by script family.
+//! Each family gets its own lazily-initialized engine with the appropriate
+//! recognition model and character dictionary.
 
 use ahash::AHashMap;
 use async_trait::async_trait;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::panic::catch_unwind;
 use std::path::Path;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 
 use crate::Result;
 use crate::core::config::OcrConfig;
@@ -18,35 +23,28 @@ use crate::plugins::{OcrBackend, OcrBackendType, Plugin};
 use crate::types::{ExtractionResult, FormatMetadata, Metadata, OcrElement, OcrMetadata, Table};
 
 use super::config::PaddleOcrConfig;
-use super::model_manager::{ModelManager, ModelPaths};
-use super::{is_language_supported, map_language_code};
+use super::model_manager::{ModelManager, SharedModelPaths};
+use super::{is_language_supported, language_to_script_family, map_language_code};
 
 use kreuzberg_paddle_ocr::OcrLite;
 
 /// PaddleOCR backend using ONNX Runtime.
 ///
-/// This backend provides high-quality OCR using PaddlePaddle's PP-OCR models
-/// converted to ONNX format and run via ONNX Runtime.
-///
-/// # Advantages over Tesseract
-///
-/// - Superior CJK (Chinese, Japanese, Korean) recognition
-/// - Better handling of complex layouts
-/// - Faster inference on modern hardware
-///
-/// # Requirements
-///
-/// - ONNX Runtime (provided via `ort` crate)
-/// - Model files (auto-downloaded on first use)
+/// Maintains a pool of OCR engines keyed by script family. Each family has its own
+/// recognition model and character dictionary, while detection and classification
+/// models are shared across all families.
 ///
 /// # Thread Safety
 ///
 /// The backend is `Send + Sync` and can be used across threads safely via `Arc`.
+/// Each engine in the pool has its own mutex, so concurrent OCR on different
+/// script families does not block.
 pub struct PaddleOcrBackend {
     config: Arc<PaddleOcrConfig>,
-    model_paths: Arc<Mutex<Option<ModelPaths>>>,
-    /// Lazily initialized OcrLite engine (Mutex for interior mutability as detect() takes &mut self)
-    ocr_engine: Arc<Mutex<Option<OcrLite>>>,
+    model_manager: ModelManager,
+    shared_paths: Mutex<Option<SharedModelPaths>>,
+    /// Per-script-family OCR engines, lazily initialized.
+    engine_pool: Mutex<HashMap<String, Arc<Mutex<OcrLite>>>>,
 }
 
 impl PaddleOcrBackend {
@@ -57,108 +55,106 @@ impl PaddleOcrBackend {
 
     /// Create a new PaddleOCR backend with custom configuration.
     pub fn with_config(config: PaddleOcrConfig) -> Result<Self> {
+        let cache_dir = config.resolve_cache_dir();
         Ok(Self {
             config: Arc::new(config),
-            model_paths: Arc::new(Mutex::new(None)),
-            ocr_engine: Arc::new(Mutex::new(None)),
+            model_manager: ModelManager::new(cache_dir),
+            shared_paths: Mutex::new(None),
+            engine_pool: Mutex::new(HashMap::new()),
         })
     }
 
-    /// Get or initialize model paths.
-    ///
-    /// Lazily downloads and initializes models on first use.
-    fn get_or_init_models(&self) -> Result<MutexGuard<'_, Option<ModelPaths>>> {
-        let mut paths = self.model_paths.lock().map_err(|e| crate::KreuzbergError::Plugin {
-            message: format!("Failed to acquire model paths lock: {}", e),
+    /// Get or initialize shared model paths (det + cls).
+    fn get_or_init_shared_paths(&self) -> Result<SharedModelPaths> {
+        let mut paths = self.shared_paths.lock().map_err(|e| crate::KreuzbergError::Plugin {
+            message: format!("Failed to acquire shared paths lock: {e}"),
             plugin_name: "paddle-ocr".to_string(),
         })?;
 
-        if paths.is_none() {
-            let cache_dir = self.config.resolve_cache_dir();
-            let manager = ModelManager::new(cache_dir);
-            let model_paths = manager.ensure_models_exist()?;
-            *paths = Some(model_paths);
+        if let Some(ref p) = *paths {
+            return Ok(p.clone());
         }
 
-        Ok(paths)
+        let shared = self.model_manager.ensure_shared_models()?;
+        *paths = Some(shared.clone());
+        Ok(shared)
     }
 
-    /// Get or initialize the OCR engine with loaded models.
+    /// Get or create an OCR engine for the given script family.
     ///
-    /// Returns a guard to the initialized OcrLite engine.
-    fn get_or_init_engine(&self) -> Result<MutexGuard<'_, Option<OcrLite>>> {
-        // First ensure models are available
-        let model_paths = {
-            let paths_guard = self.get_or_init_models()?;
-            paths_guard.clone().ok_or_else(|| crate::KreuzbergError::Ocr {
-                message: "Model paths not initialized".to_string(),
-                source: None,
-            })?
-        };
-
-        let mut engine_guard = self.ocr_engine.lock().map_err(|e| crate::KreuzbergError::Plugin {
-            message: format!("Failed to acquire OCR engine lock: {}", e),
-            plugin_name: "paddle-ocr".to_string(),
-        })?;
-
-        if engine_guard.is_none() {
-            crate::ort_discovery::ensure_ort_available();
-
-            tracing::info!("Initializing PaddleOCR engine with models");
-
-            let mut ocr_lite = OcrLite::new();
-
-            // Get ONNX model file paths from the model directories
-            let det_model_path = Self::find_onnx_model(&model_paths.det_model)?;
-            let cls_model_path = Self::find_onnx_model(&model_paths.cls_model)?;
-            let rec_model_path = Self::find_onnx_model(&model_paths.rec_model)?;
-
-            // Initialize models with default number of threads (uses all available cores)
-            let num_threads = num_cpus::get().min(4); // Cap at 4 threads for OCR
-
-            let dict_path = model_paths
-                .dict_file
-                .to_str()
-                .ok_or_else(|| crate::KreuzbergError::Ocr {
-                    message: "Invalid dictionary file path".to_string(),
-                    source: None,
-                })?;
-
-            // Use init_models_with_dict to load character dictionary from file.
-            // The ort crate cannot read custom metadata from PaddlePaddle PIR-mode ONNX models,
-            // so we provide the dictionary as a separate file.
-            ocr_lite
-                .init_models_with_dict(
-                    det_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
-                        message: "Invalid detection model path".to_string(),
-                        source: None,
-                    })?,
-                    cls_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
-                        message: "Invalid classification model path".to_string(),
-                        source: None,
-                    })?,
-                    rec_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
-                        message: "Invalid recognition model path".to_string(),
-                        source: None,
-                    })?,
-                    dict_path,
-                    num_threads,
-                )
-                .map_err(|e| crate::KreuzbergError::Ocr {
-                    message: format!("Failed to initialize PaddleOCR models: {}", e),
-                    source: None,
-                })?;
-
-            tracing::info!("PaddleOCR engine initialized successfully");
-            *engine_guard = Some(ocr_lite);
+    /// Returns an `Arc<Mutex<OcrLite>>` for the requested family. If the engine
+    /// doesn't exist yet, it will be created with the family's recognition model
+    /// and character dictionary.
+    fn get_or_init_engine_for_family(&self, family: &str) -> Result<Arc<Mutex<OcrLite>>> {
+        // Fast path: check if engine already exists
+        {
+            let pool = self.engine_pool.lock().map_err(|e| crate::KreuzbergError::Plugin {
+                message: format!("Failed to acquire engine pool lock: {e}"),
+                plugin_name: "paddle-ocr".to_string(),
+            })?;
+            if let Some(engine) = pool.get(family) {
+                return Ok(Arc::clone(engine));
+            }
         }
 
-        Ok(engine_guard)
+        // Slow path: create new engine
+        let shared = self.get_or_init_shared_paths()?;
+        let rec_paths = self.model_manager.ensure_rec_model(family)?;
+
+        crate::ort_discovery::ensure_ort_available();
+
+        tracing::info!(family, "Initializing PaddleOCR engine");
+
+        let mut ocr_lite = OcrLite::new();
+
+        let det_model_path = Self::find_onnx_model(&shared.det_model)?;
+        let cls_model_path = Self::find_onnx_model(&shared.cls_model)?;
+        let rec_model_path = Self::find_onnx_model(&rec_paths.rec_model)?;
+
+        let num_threads = num_cpus::get().min(4);
+
+        let dict_path = rec_paths.dict_file.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+            message: "Invalid dictionary file path".to_string(),
+            source: None,
+        })?;
+
+        ocr_lite
+            .init_models_with_dict(
+                det_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                    message: "Invalid detection model path".to_string(),
+                    source: None,
+                })?,
+                cls_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                    message: "Invalid classification model path".to_string(),
+                    source: None,
+                })?,
+                rec_model_path.to_str().ok_or_else(|| crate::KreuzbergError::Ocr {
+                    message: "Invalid recognition model path".to_string(),
+                    source: None,
+                })?,
+                dict_path,
+                num_threads,
+            )
+            .map_err(|e| crate::KreuzbergError::Ocr {
+                message: format!("Failed to initialize PaddleOCR models for {family}: {e}"),
+                source: None,
+            })?;
+
+        tracing::info!(family, "PaddleOCR engine initialized successfully");
+
+        let engine = Arc::new(Mutex::new(ocr_lite));
+
+        // Insert into pool
+        let mut pool = self.engine_pool.lock().map_err(|e| crate::KreuzbergError::Plugin {
+            message: format!("Failed to acquire engine pool lock: {e}"),
+            plugin_name: "paddle-ocr".to_string(),
+        })?;
+        pool.insert(family.to_string(), Arc::clone(&engine));
+
+        Ok(engine)
     }
 
     /// Find the ONNX model file within a model directory.
-    ///
-    /// First checks for model.onnx (standard name), then searches for any .onnx file.
     fn find_onnx_model(model_dir: &std::path::Path) -> Result<std::path::PathBuf> {
         if !model_dir.exists() {
             return Err(crate::KreuzbergError::Ocr {
@@ -167,13 +163,11 @@ impl PaddleOcrBackend {
             });
         }
 
-        // First check for standard model.onnx file
         let standard_path = model_dir.join("model.onnx");
         if standard_path.exists() {
             return Ok(standard_path);
         }
 
-        // Fall back to searching for any .onnx file
         let entries = std::fs::read_dir(model_dir).map_err(|e| crate::KreuzbergError::Ocr {
             message: format!("Failed to read model directory {:?}: {}", model_dir, e),
             source: None,
@@ -196,45 +190,22 @@ impl PaddleOcrBackend {
         })
     }
 
-    /// Perform OCR on image bytes.
-    ///
-    /// Uses `tokio::task::spawn_blocking` to run the CPU-intensive OCR operation
-    /// without blocking the async runtime.
-    ///
-    /// Returns a tuple of (text_content, ocr_elements) where elements preserve
-    /// full spatial and confidence information from PaddleOCR.
-    ///
-    /// # Arguments
-    ///
-    /// * `image_bytes` - Raw image bytes (PNG, JPEG, BMP, etc.)
-    /// * `_language` - Language hint (currently unused, reserved for future multi-model support)
-    /// * `effective_config` - The resolved PaddleOcrConfig to use for this inference
+    /// Perform OCR on image bytes using the appropriate script family engine.
     async fn do_ocr(
         &self,
         image_bytes: &[u8],
-        _language: &str,
+        language: &str,
         effective_config: Arc<PaddleOcrConfig>,
     ) -> Result<(String, Vec<OcrElement>)> {
-        // Ensure OCR engine is initialized (this also initializes models)
-        {
-            let engine = self.get_or_init_engine()?;
-            if engine.is_none() {
-                return Err(crate::KreuzbergError::Ocr {
-                    message: "Failed to initialize PaddleOCR engine".to_string(),
-                    source: None,
-                });
-            }
-        } // MutexGuard dropped here
+        let family = language_to_script_family(language);
+        let engine = self.get_or_init_engine_for_family(family)?;
 
         let image_bytes_owned = image_bytes.to_vec();
-        let ocr_engine = Arc::clone(&self.ocr_engine);
         let config = effective_config;
 
-        // Run OCR in blocking task to avoid blocking the async runtime
         let text_blocks = tokio::task::spawn_blocking(move || {
-            // Use catch_unwind to handle potential panics from ONNX Runtime
             catch_unwind(std::panic::AssertUnwindSafe(|| {
-                Self::perform_ocr(&image_bytes_owned, &ocr_engine, &config)
+                Self::perform_ocr(&image_bytes_owned, &engine, &config)
             }))
             .map_err(|_| crate::KreuzbergError::Plugin {
                 message: "PaddleOCR inference panicked (ONNX Runtime error)".to_string(),
@@ -247,16 +218,13 @@ impl PaddleOcrBackend {
             plugin_name: "paddle-ocr".to_string(),
         })??;
 
-        // Convert TextBlocks to unified OcrElements, preserving all spatial data
-        // Note: text_block_to_element returns Result, so we need to collect and handle errors
         let ocr_elements: Result<Vec<OcrElement>> = text_blocks
             .iter()
-            .map(|block| text_block_to_element(block, 1)) // page_number = 1 for single images
+            .map(|block| text_block_to_element(block, 1))
             .collect();
 
         let ocr_elements = ocr_elements?;
 
-        // Collect text from all blocks
         let text = text_blocks
             .iter()
             .map(|block| block.text.as_str())
@@ -267,25 +235,11 @@ impl PaddleOcrBackend {
     }
 
     /// Perform actual OCR inference (runs in blocking context).
-    ///
-    /// This function decodes image bytes, runs OCR detection and recognition,
-    /// and returns TextBlocks with full spatial and confidence information.
-    ///
-    /// # Arguments
-    ///
-    /// * `image_bytes` - Raw image bytes (PNG, JPEG, BMP, etc.)
-    /// * `ocr_engine` - Mutex-protected OcrLite engine
-    /// * `config` - PaddleOCR configuration with detection parameters
-    ///
-    /// # Returns
-    ///
-    /// Vector of TextBlocks containing recognized text with bounding boxes and confidence scores.
     fn perform_ocr(
         image_bytes: &[u8],
-        ocr_engine: &Arc<Mutex<Option<OcrLite>>>,
+        ocr_engine: &Arc<Mutex<OcrLite>>,
         config: &PaddleOcrConfig,
     ) -> Result<Vec<kreuzberg_paddle_ocr::TextBlock>> {
-        // 1. Decode image bytes to RGB8
         let img = image::load_from_memory(image_bytes)
             .map_err(|e| crate::KreuzbergError::Ocr {
                 message: format!("Failed to decode image: {}", e),
@@ -293,26 +247,11 @@ impl PaddleOcrBackend {
             })?
             .to_rgb8();
 
-        // 2. Acquire lock on OCR engine
         let mut engine_guard = ocr_engine.lock().map_err(|e| crate::KreuzbergError::Plugin {
             message: format!("Failed to acquire OCR engine lock: {}", e),
             plugin_name: "paddle-ocr".to_string(),
         })?;
 
-        let ocr_lite = engine_guard.as_mut().ok_or_else(|| crate::KreuzbergError::Ocr {
-            message: "OCR engine not initialized".to_string(),
-            source: None,
-        })?;
-
-        // 3. Run OCR detection and recognition
-        // Map config parameters to OcrLite.detect() arguments:
-        // - padding: 50 (default, improves edge detection)
-        // - max_side_len: config.det_limit_side_len
-        // - box_score_thresh: config.det_db_thresh
-        // - box_thresh: config.det_db_box_thresh
-        // - un_clip_ratio: config.det_db_unclip_ratio
-        // - do_angle: config.use_angle_cls
-        // - most_angle: false (use individual angle per region)
         let padding = 50u32;
         let max_side_len = config.det_limit_side_len;
         let box_score_thresh = config.det_db_thresh;
@@ -321,7 +260,7 @@ impl PaddleOcrBackend {
         let do_angle = config.use_angle_cls;
         let most_angle = false;
 
-        let result = ocr_lite
+        let result = engine_guard
             .detect(
                 &img,
                 padding,
@@ -356,12 +295,10 @@ impl Plugin for PaddleOcrBackend {
     }
 
     fn initialize(&self) -> Result<()> {
-        // Lazy initialization - actual init happens on first use
         Ok(())
     }
 
     fn shutdown(&self) -> Result<()> {
-        // ONNX Runtime handles cleanup automatically
         Ok(())
     }
 }
@@ -377,8 +314,6 @@ impl OcrBackend for PaddleOcrBackend {
             });
         }
 
-        // Resolve effective PaddleOcrConfig: override from OcrConfig.paddle_ocr_config if present,
-        // otherwise fall back to the backend's default config.
         let effective_config: Arc<PaddleOcrConfig> = if let Some(ref paddle_json) = config.paddle_ocr_config {
             let overridden: PaddleOcrConfig =
                 serde_json::from_value(paddle_json.clone()).map_err(|e| crate::KreuzbergError::Validation {
@@ -390,28 +325,23 @@ impl OcrBackend for PaddleOcrBackend {
             Arc::clone(&self.config)
         };
 
-        // Map language code to PaddleOCR language identifier
+        // Map language code to PaddleOCR language, then use it for engine selection
         let paddle_lang = map_language_code(&config.language).unwrap_or("en");
 
-        // Perform OCR - returns both text and structured elements
         let (text, ocr_elements) = self
             .do_ocr(image_bytes, paddle_lang, Arc::clone(&effective_config))
             .await?;
 
-        // Attempt table detection if enabled and we have elements
+        // Table detection
         let mut tables: Vec<Table> = vec![];
         let mut table_count = 0;
         let mut table_rows: Option<usize> = None;
         let mut table_cols: Option<usize> = None;
 
         if effective_config.enable_table_detection && !ocr_elements.is_empty() {
-            // Convert OCR elements to HocrWords for table reconstruction
-            // Using 0.3 as minimum confidence threshold (matches typical Tesseract defaults)
             let words = elements_to_hocr_words(&ocr_elements, 0.3);
 
             if !words.is_empty() {
-                // Reconstruct table using default thresholds
-                // column_threshold: 20 pixels, row_threshold_ratio: 0.5
                 let cells = reconstruct_table(&words, 20, 0.5);
 
                 if !cells.is_empty() {
@@ -419,7 +349,6 @@ impl OcrBackend for PaddleOcrBackend {
                     table_rows = Some(cells.len());
                     table_cols = cells.first().map(|row| row.len());
 
-                    // Convert to markdown format
                     let table_markdown = table_to_markdown(&cells);
 
                     tables.push(Table {
@@ -432,14 +361,13 @@ impl OcrBackend for PaddleOcrBackend {
             }
         }
 
-        // Build metadata
         let mut additional = AHashMap::new();
         additional.insert(Cow::Borrowed("backend"), serde_json::json!("paddle-ocr"));
 
         let metadata = Metadata {
             format: Some(FormatMetadata::Ocr(OcrMetadata {
                 language: config.language.clone(),
-                psm: 3, // PSM_AUTO (default)
+                psm: 3,
                 output_format: "text".to_string(),
                 table_count,
                 table_rows,
@@ -449,7 +377,6 @@ impl OcrBackend for PaddleOcrBackend {
             ..Default::default()
         };
 
-        // Include OCR elements only when element_config requests them
         let include_elements = config.element_config.as_ref().is_some_and(|ec| ec.include_elements);
 
         let ocr_elements_opt = if include_elements && !ocr_elements.is_empty() {
@@ -475,14 +402,11 @@ impl OcrBackend for PaddleOcrBackend {
     }
 
     async fn process_file(&self, path: &Path, config: &OcrConfig) -> Result<ExtractionResult> {
-        // Read file and delegate to process_image
         let bytes = tokio::fs::read(path).await?;
-
         self.process_image(&bytes, config).await
     }
 
     fn supports_language(&self, lang: &str) -> bool {
-        // Check both direct support and language mapping
         is_language_supported(lang) || map_language_code(lang).is_some()
     }
 
@@ -495,16 +419,12 @@ impl OcrBackend for PaddleOcrBackend {
     }
 
     fn supports_table_detection(&self) -> bool {
-        // Table detection is enabled via config when OCR elements
-        // can be converted to HocrWords for table reconstruction
         self.config.enable_table_detection
     }
 }
 
 impl Default for PaddleOcrBackend {
     fn default() -> Self {
-        // PaddleOcrBackend::new() cannot fail, so unwrap is safe here.
-        // The only failures would be from Mutex poisoning, which is extremely rare.
         Self::with_config(PaddleOcrConfig::default())
             .unwrap_or_else(|e| panic!("Failed to create default PaddleOcrBackend: {}", e))
     }
@@ -531,57 +451,52 @@ mod tests {
     fn test_paddle_ocr_language_support_direct() {
         let backend = PaddleOcrBackend::new().unwrap();
 
-        // Direct PaddleOCR language codes
-        assert!(
-            backend.supports_language("ch"),
-            "Chinese (Simplified) should be supported"
-        );
-        assert!(backend.supports_language("en"), "English should be supported");
-        assert!(backend.supports_language("japan"), "Japanese should be supported");
-        assert!(backend.supports_language("korean"), "Korean should be supported");
-        assert!(backend.supports_language("french"), "French should be supported");
+        assert!(backend.supports_language("ch"));
+        assert!(backend.supports_language("en"));
+        assert!(backend.supports_language("japan"));
+        assert!(backend.supports_language("korean"));
+        assert!(backend.supports_language("french"));
+        assert!(backend.supports_language("thai"));
+        assert!(backend.supports_language("greek"));
     }
 
     #[test]
     fn test_paddle_ocr_language_support_mapped() {
         let backend = PaddleOcrBackend::new().unwrap();
 
-        // Mapped from Kreuzberg/Tesseract codes
-        assert!(backend.supports_language("chi_sim"), "chi_sim should map to ch");
-        assert!(backend.supports_language("eng"), "eng should map to en");
-        assert!(backend.supports_language("jpn"), "jpn should map to japan");
-        assert!(backend.supports_language("kor"), "kor should map to korean");
-        assert!(backend.supports_language("fra"), "fra should map to french");
-        assert!(backend.supports_language("zho"), "zho should map to ch");
+        assert!(backend.supports_language("chi_sim"));
+        assert!(backend.supports_language("eng"));
+        assert!(backend.supports_language("jpn"));
+        assert!(backend.supports_language("kor"));
+        assert!(backend.supports_language("fra"));
+        assert!(backend.supports_language("zho"));
+        assert!(backend.supports_language("tha"));
+        assert!(backend.supports_language("ell"));
+        assert!(backend.supports_language("rus"));
     }
 
     #[test]
     fn test_paddle_ocr_language_unsupported() {
         let backend = PaddleOcrBackend::new().unwrap();
 
-        // Unsupported language codes
-        assert!(!backend.supports_language("xyz"), "xyz should not be supported");
-        assert!(!backend.supports_language("invalid"), "invalid should not be supported");
+        assert!(!backend.supports_language("xyz"));
+        assert!(!backend.supports_language("invalid"));
     }
 
     #[test]
     fn test_paddle_ocr_plugin_interface() {
         let backend = PaddleOcrBackend::new().unwrap();
 
-        assert_eq!(backend.name(), "paddle-ocr", "Name should be 'paddle-ocr'");
-        assert!(!backend.version().is_empty(), "Version should not be empty");
-        assert!(backend.initialize().is_ok(), "Initialize should succeed");
-        assert!(backend.shutdown().is_ok(), "Shutdown should succeed");
+        assert_eq!(backend.name(), "paddle-ocr");
+        assert!(!backend.version().is_empty());
+        assert!(backend.initialize().is_ok());
+        assert!(backend.shutdown().is_ok());
     }
 
     #[test]
     fn test_paddle_ocr_backend_type() {
         let backend = PaddleOcrBackend::new().unwrap();
-        assert_eq!(
-            backend.backend_type(),
-            OcrBackendType::PaddleOCR,
-            "Backend type should be PaddleOCR"
-        );
+        assert_eq!(backend.backend_type(), OcrBackendType::PaddleOCR);
     }
 
     #[test]
@@ -589,15 +504,16 @@ mod tests {
         let backend = PaddleOcrBackend::new().unwrap();
         let languages = backend.supported_languages();
 
-        assert!(!languages.is_empty(), "Should have supported languages");
-        assert!(languages.contains(&"ch".to_string()), "Should contain 'ch'");
-        assert!(languages.contains(&"en".to_string()), "Should contain 'en'");
+        assert!(!languages.is_empty());
+        assert!(languages.contains(&"ch".to_string()));
+        assert!(languages.contains(&"en".to_string()));
+        assert!(languages.contains(&"thai".to_string()));
+        assert!(languages.contains(&"greek".to_string()));
     }
 
     #[test]
     fn test_paddle_ocr_table_detection_disabled_by_default() {
         let backend = PaddleOcrBackend::new().unwrap();
-        // Table detection is disabled by default in PaddleOcrConfig
         assert!(!backend.supports_table_detection());
     }
 
@@ -605,7 +521,6 @@ mod tests {
     fn test_paddle_ocr_table_detection_enabled() {
         let config = PaddleOcrConfig::default().with_table_detection(true);
         let backend = PaddleOcrBackend::with_config(config).unwrap();
-        // Table detection is enabled when configured
         assert!(backend.supports_table_detection());
     }
 

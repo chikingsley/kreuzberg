@@ -42,11 +42,12 @@ mod model_manager;
 
 pub use backend::PaddleOcrBackend;
 pub use config::{PaddleLanguage, PaddleOcrConfig};
-pub use model_manager::{CacheStats, ModelManager, ModelPaths};
+pub use model_manager::{CacheStats, ModelManager, ModelPaths, RecModelPaths, SharedModelPaths};
 
 /// Supported languages for PaddleOCR.
 ///
-/// PaddleOCR supports 14 optimized language models.
+/// PaddleOCR supports 16 optimized language models covering 106+ languages
+/// via 12 script-family recognition models (PP-OCRv5 and PP-OCRv3).
 pub const SUPPORTED_LANGUAGES: &[&str] = &[
     "ch",          // Chinese (Simplified)
     "en",          // English
@@ -62,11 +63,53 @@ pub const SUPPORTED_LANGUAGES: &[&str] = &[
     "arabic",      // Arabic
     "cyrillic",    // Cyrillic script languages
     "devanagari",  // Devanagari script languages
+    "thai",        // Thai
+    "greek",       // Greek
 ];
 
 /// Check if a language code is supported by PaddleOCR.
 pub fn is_language_supported(lang: &str) -> bool {
     SUPPORTED_LANGUAGES.contains(&lang)
+}
+
+/// Map a PaddleOCR language code to its script family.
+///
+/// Script families group languages that share a single recognition model.
+/// For example, French, German, and Spanish all use the `latin` rec model.
+/// Chinese simplified, traditional, and Japanese share the `chinese` rec model.
+///
+/// # Script Families (12)
+///
+/// | Family | PP-OCR Version | Languages |
+/// |---|---|---|
+/// | `english` | v5 | English |
+/// | `chinese` | v5 server | Chinese (simplified+traditional), Japanese |
+/// | `latin` | v5 | French, German, Spanish, Italian, 40+ more |
+/// | `korean` | v5 | Korean |
+/// | `eslav` | v5 | Russian, Ukrainian, Belarusian |
+/// | `thai` | v5 | Thai |
+/// | `greek` | v5 | Greek |
+/// | `arabic` | v3 | Arabic, Persian, Urdu |
+/// | `devanagari` | v3 | Hindi, Marathi, Nepali, 10+ more |
+/// | `tamil` | v3 | Tamil |
+/// | `telugu` | v3 | Telugu |
+/// | `kannada` | v3 | Kannada |
+pub fn language_to_script_family(paddle_lang: &str) -> &'static str {
+    match paddle_lang {
+        "en" => "english",
+        "ch" | "japan" | "chinese_cht" => "chinese",
+        "korean" => "korean",
+        "french" | "german" | "latin" => "latin",
+        "arabic" => "arabic",
+        "cyrillic" => "eslav",
+        "devanagari" => "devanagari",
+        "ta" => "tamil",
+        "te" => "telugu",
+        "ka" => "kannada",
+        "thai" => "thai",
+        "greek" => "greek",
+        _ => "english",
+    }
 }
 
 /// Map Kreuzberg language codes to PaddleOCR language codes.
@@ -84,11 +127,16 @@ pub fn map_language_code(kreuzberg_code: &str) -> Option<&'static str> {
         "te" | "tel" | "telugu" => Some("te"),
         "ka" | "kan" | "kannada" => Some("ka"),
         "ar" | "ara" | "arabic" => Some("arabic"),
-        "ru" | "rus" | "russian" => Some("cyrillic"),
+        "ru" | "rus" | "russian" | "uk" | "ukr" | "ukrainian" | "be" | "bel" | "belarusian" => Some("cyrillic"),
         "hi" | "hin" | "hindi" => Some("devanagari"),
+        "th" | "tha" | "thai" => Some("thai"),
+        "el" | "ell" | "greek" => Some("greek"),
         // Latin script fallback for European languages
         "es" | "spa" | "spanish" | "it" | "ita" | "italian" | "pt" | "por" | "portuguese" | "nl" | "nld" | "dutch"
-        | "pl" | "pol" | "polish" => Some("latin"),
+        | "pl" | "pol" | "polish" | "sv" | "swe" | "swedish" | "da" | "dan" | "danish" | "no" | "nor" | "norwegian"
+        | "fi" | "fin" | "finnish" | "cs" | "ces" | "czech" | "sk" | "slk" | "slovak" | "hr" | "hrv" | "croatian"
+        | "hu" | "hun" | "hungarian" | "ro" | "ron" | "romanian" | "tr" | "tur" | "turkish" | "id" | "ind"
+        | "indonesian" | "ms" | "msa" | "malay" | "vi" | "vie" | "vietnamese" => Some("latin"),
         _ => None,
     }
 }

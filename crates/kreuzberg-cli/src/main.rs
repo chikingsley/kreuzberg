@@ -118,6 +118,10 @@ enum Commands {
         #[arg(long)]
         ocr_backend: Option<String>,
 
+        /// OCR language code. Tesseract: ISO 639-3 (eng, fra, deu). PaddleOCR: flexible (en, ch, french, korean).
+        #[arg(long)]
+        ocr_language: Option<String>,
+
         /// Force OCR even if text extraction succeeds (overrides config file)
         #[arg(long)]
         force_ocr: Option<bool>,
@@ -194,6 +198,10 @@ enum Commands {
         /// OCR backend to use when --ocr is enabled (tesseract, paddle-ocr, easyocr)
         #[arg(long)]
         ocr_backend: Option<String>,
+
+        /// OCR language code. Tesseract: ISO 639-3 (eng, fra, deu). PaddleOCR: flexible (en, ch, french, korean).
+        #[arg(long)]
+        ocr_language: Option<String>,
 
         /// Force OCR even if text extraction succeeds (overrides config file)
         #[arg(long)]
@@ -501,6 +509,7 @@ fn main() -> Result<()> {
             format,
             ocr,
             ocr_backend,
+            ocr_language,
             force_ocr,
             no_cache,
             chunk,
@@ -539,6 +548,7 @@ fn main() -> Result<()> {
                 &mut config,
                 ocr,
                 ocr_backend.as_deref(),
+                ocr_language.as_deref(),
                 force_ocr,
                 no_cache,
                 chunk,
@@ -561,6 +571,7 @@ fn main() -> Result<()> {
             format,
             ocr,
             ocr_backend,
+            ocr_language,
             force_ocr,
             no_cache,
             quality,
@@ -594,6 +605,7 @@ fn main() -> Result<()> {
                 &mut config,
                 ocr,
                 ocr_backend.as_deref(),
+                ocr_language.as_deref(),
                 force_ocr,
                 no_cache,
                 None,

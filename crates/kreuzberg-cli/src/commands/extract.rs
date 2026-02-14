@@ -87,6 +87,7 @@ pub fn apply_extraction_overrides(
     config: &mut ExtractionConfig,
     ocr: Option<bool>,
     ocr_backend: Option<&str>,
+    ocr_language: Option<&str>,
     force_ocr: Option<bool>,
     no_cache: Option<bool>,
     chunk: Option<bool>,
@@ -99,17 +100,24 @@ pub fn apply_extraction_overrides(
 ) {
     if let Some(ocr_flag) = ocr {
         if ocr_flag {
-            let (backend, language) = match ocr_backend {
-                Some("paddle-ocr") => ("paddle-ocr", "en"),
-                Some("easyocr") => ("easyocr", "en"),
-                _ => ("tesseract", "eng"),
+            let backend = match ocr_backend {
+                Some("paddle-ocr") => "paddle-ocr",
+                Some("easyocr") => "easyocr",
+                _ => "tesseract",
+            };
+            let language = match ocr_language {
+                Some(lang) => lang.to_string(),
+                None => match backend {
+                    "paddle-ocr" | "easyocr" => "en".to_string(),
+                    _ => "eng".to_string(),
+                },
             };
             // Preserve existing paddle_ocr_config and element_config from config file/inline JSON
             let existing_paddle_config = config.ocr.as_ref().and_then(|o| o.paddle_ocr_config.clone());
             let existing_element_config = config.ocr.as_ref().and_then(|o| o.element_config.clone());
             config.ocr = Some(OcrConfig {
                 backend: backend.to_string(),
-                language: language.to_string(),
+                language,
                 tesseract_config: None,
                 output_format: None,
                 paddle_ocr_config: existing_paddle_config,
@@ -117,6 +125,15 @@ pub fn apply_extraction_overrides(
             });
         } else {
             config.ocr = None;
+        }
+    }
+
+    // Override language on existing OCR config when --ocr-language is used without --ocr
+    if ocr.is_none() {
+        if let Some(lang) = ocr_language {
+            if let Some(ref mut existing_ocr) = config.ocr {
+                existing_ocr.language = lang.to_string();
+            }
         }
     }
     if let Some(force_ocr_flag) = force_ocr {
@@ -173,5 +190,202 @@ pub fn apply_extraction_overrides(
 
     if let Some(content_fmt) = final_output_format {
         config.output_format = content_fmt.into();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use kreuzberg::ExtractionConfig;
+
+    #[test]
+    fn test_ocr_default_language_tesseract() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(true),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "tesseract");
+        assert_eq!(ocr.language, "eng");
+    }
+
+    #[test]
+    fn test_ocr_default_language_paddleocr() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(true),
+            Some("paddle-ocr"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "paddle-ocr");
+        assert_eq!(ocr.language, "en");
+    }
+
+    #[test]
+    fn test_ocr_default_language_easyocr() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(true),
+            Some("easyocr"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "easyocr");
+        assert_eq!(ocr.language, "en");
+    }
+
+    #[test]
+    fn test_ocr_language_override_tesseract() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(true),
+            None,
+            Some("fra"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "tesseract");
+        assert_eq!(ocr.language, "fra");
+    }
+
+    #[test]
+    fn test_ocr_language_override_paddleocr() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(true),
+            Some("paddle-ocr"),
+            Some("ch"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "paddle-ocr");
+        assert_eq!(ocr.language, "ch");
+    }
+
+    #[test]
+    fn test_ocr_language_without_ocr_flag_no_existing_config() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            None,
+            None,
+            Some("deu"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        // No OCR config exists, so --ocr-language alone doesn't create one
+        assert!(config.ocr.is_none());
+    }
+
+    #[test]
+    fn test_ocr_language_without_ocr_flag_existing_config() {
+        let mut config = ExtractionConfig {
+            ocr: Some(OcrConfig {
+                backend: "tesseract".to_string(),
+                language: "eng".to_string(),
+                tesseract_config: None,
+                output_format: None,
+                paddle_ocr_config: None,
+                element_config: None,
+            }),
+            ..Default::default()
+        };
+        apply_extraction_overrides(
+            &mut config,
+            None,
+            None,
+            Some("deu"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let ocr = config.ocr.unwrap();
+        assert_eq!(ocr.backend, "tesseract");
+        assert_eq!(ocr.language, "deu");
+    }
+
+    #[test]
+    fn test_ocr_disabled_ignores_language() {
+        let mut config = ExtractionConfig::default();
+        apply_extraction_overrides(
+            &mut config,
+            Some(false),
+            None,
+            Some("fra"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        assert!(config.ocr.is_none());
     }
 }
