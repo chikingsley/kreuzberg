@@ -29,17 +29,17 @@ async fn test_docx_full_metadata_extraction() {
     );
 
     assert_eq!(
-        result.metadata.additional.get("created_by").and_then(|v| v.as_str()),
+        result.metadata.created_by.as_deref(),
         Some("Christoph Auer"),
         "Should have correct creator"
     );
     assert_eq!(
-        result.metadata.additional.get("modified_by").and_then(|v| v.as_str()),
+        result.metadata.modified_by.as_deref(),
         Some("Maxim Lysak"),
         "Should have correct last modified by"
     );
     assert_eq!(
-        result.metadata.additional.get("created_at").and_then(|v| v.as_str()),
+        result.metadata.created_at.as_deref(),
         Some("2024-10-09T12:43:00Z"),
         "Should have correct creation date"
     );
@@ -231,19 +231,19 @@ async fn test_docx_keywords_extraction() {
     assert_eq!(keywords[3], "metadata", "Fourth keyword should be 'metadata'");
     assert_eq!(keywords[4], "test", "Fifth keyword should be 'test'");
 
-    // Verify other metadata was also extracted
+    // Verify other metadata was also extracted via typed fields
     assert_eq!(
-        result.metadata.additional.get("created_by").and_then(|v| v.as_str()),
+        result.metadata.created_by.as_deref(),
         Some("Test Author"),
         "Should have correct creator"
     );
     assert_eq!(
-        result.metadata.additional.get("title").and_then(|v| v.as_str()),
+        result.metadata.title.as_deref(),
         Some("Test Document"),
         "Should have correct title"
     );
     assert_eq!(
-        result.metadata.additional.get("subject").and_then(|v| v.as_str()),
+        result.metadata.subject.as_deref(),
         Some("Testing keyword extraction"),
         "Should have correct subject"
     );

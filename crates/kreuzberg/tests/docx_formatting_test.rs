@@ -137,24 +137,24 @@ async fn test_docx_heading_hierarchy() {
     assert_non_empty_content(&result);
     let content = &result.content;
 
-    // Heading1 → ## (Title takes #)
+    // Heading1 → # (outline_level 0 maps to h1, same as standard converters)
     assert!(
-        content.contains("## Section 1"),
-        "Heading1 should be rendered as ##. Got:\n{}",
+        content.contains("# Section 1"),
+        "Heading1 should be rendered as #. Got:\n{}",
         content
     );
 
-    // Heading2 → ###
+    // Heading2 → ##
     assert!(
-        content.contains("### Section 1.1"),
-        "Heading2 should be rendered as ###. Got:\n{}",
+        content.contains("## Section 1.1"),
+        "Heading2 should be rendered as ##. Got:\n{}",
         content
     );
 
-    // Heading3 → ####
+    // Heading3 → ###
     assert!(
-        content.contains("#### Section 1.2.3"),
-        "Heading3 should be rendered as ####. Got:\n{}",
+        content.contains("### Section 1.2.3"),
+        "Heading3 should be rendered as ###. Got:\n{}",
         content
     );
 }

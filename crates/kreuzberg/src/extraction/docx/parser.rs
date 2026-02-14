@@ -29,7 +29,6 @@ pub enum DocumentElement {
 pub struct Document {
     pub paragraphs: Vec<Paragraph>,
     pub tables: Vec<Table>,
-    pub lists: Vec<ListItem>,
     pub headers: Vec<HeaderFooter>,
     pub footers: Vec<HeaderFooter>,
     pub footnotes: Vec<Note>,
@@ -86,14 +85,6 @@ pub struct TableCell {
     pub properties: Option<super::table::CellProperties>,
 }
 
-#[derive(Debug, Clone)]
-pub struct ListItem {
-    pub level: u32,
-    pub list_type: ListType,
-    pub number: Option<String>,
-    pub text: String,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ListType {
     Bullet,
@@ -123,7 +114,7 @@ pub struct Note {
     pub paragraphs: Vec<Paragraph>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NoteType {
     Footnote,
     Endnote,
@@ -167,8 +158,8 @@ fn get_val_attr_string(e: &BytesStart) -> Option<String> {
     None
 }
 
-/// Map heading style name to markdown heading level.
-fn heading_level_from_style(style: &str) -> Option<u8> {
+/// Map heading style name to markdown heading level (fallback for docs without styles.xml).
+fn heading_level_from_style_name(style: &str) -> Option<u8> {
     match style {
         "Title" => Some(1),
         s if s.starts_with("Heading") || s.starts_with("heading") => {
@@ -190,6 +181,53 @@ fn heading_level_from_style(style: &str) -> Option<u8> {
 impl Document {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Ensure output ends with a blank line (double newline).
+    fn ensure_blank_line(output: &mut String) {
+        if !output.is_empty() && !output.ends_with("\n\n") {
+            if output.ends_with('\n') {
+                output.push('\n');
+            } else {
+                output.push_str("\n\n");
+            }
+        }
+    }
+
+    /// Resolve heading level for a paragraph style using the StyleCatalog.
+    ///
+    /// Walks the style inheritance chain to find `outline_level`.
+    /// Falls back to string-matching on style name/ID if no StyleCatalog is available.
+    /// Returns 1-6 (markdown heading levels).
+    pub fn resolve_heading_level(&self, style_id: &str) -> Option<u8> {
+        if let Some(ref catalog) = self.style_catalog {
+            // Walk inheritance chain looking for outline_level
+            let mut current_id = Some(style_id);
+            let mut visited = 0;
+            while let Some(id) = current_id {
+                if visited > 20 {
+                    break; // prevent infinite loops
+                }
+                visited += 1;
+                if let Some(style_def) = catalog.styles.get(id) {
+                    if let Some(level) = style_def.paragraph_properties.outline_level {
+                        // outline_level 0 = h1, 1 = h2, ..., clamped to 6
+                        return Some((level + 1).min(6));
+                    }
+                    // Check style name for "Title" pattern
+                    if let Some(ref name) = style_def.name
+                        && (name == "Title" || name == "title")
+                    {
+                        return Some(1);
+                    }
+                    current_id = style_def.based_on.as_deref();
+                } else {
+                    break;
+                }
+            }
+        }
+        // Fallback: string-match on style ID
+        heading_level_from_style_name(style_id)
     }
 
     pub fn extract_text(&self) -> String {
@@ -222,42 +260,81 @@ impl Document {
         text
     }
 
+    /// Render header/footer content as markdown text.
+    fn header_footer_to_markdown(hf: &HeaderFooter) -> String {
+        let mut parts = Vec::new();
+        for para in &hf.paragraphs {
+            let text = para.runs_to_markdown();
+            if !text.is_empty() {
+                parts.push(text);
+            }
+        }
+        parts.join("\n")
+    }
+
     /// Render the document as markdown.
     pub fn to_markdown(&self) -> String {
+        use std::fmt::Write;
+
         let mut output = String::new();
         let mut list_counters: HashMap<(i64, i64), usize> = HashMap::new();
         let mut prev_was_list = false;
+
+        // Prepend headers (if any non-empty)
+        for header in &self.headers {
+            let header_text = Self::header_footer_to_markdown(header);
+            if !header_text.is_empty() {
+                output.push_str(&header_text);
+                output.push_str("\n\n---\n\n");
+            }
+        }
 
         // Use elements ordering if populated, otherwise fall back to paragraphs-only
         if !self.elements.is_empty() {
             for element in &self.elements {
                 match element {
                     DocumentElement::Paragraph(idx) => {
-                        let paragraph = &self.paragraphs[*idx];
+                        let Some(paragraph) = self.paragraphs.get(*idx) else {
+                            continue;
+                        };
                         self.append_paragraph_markdown(paragraph, &mut output, &mut list_counters, &mut prev_was_list);
                     }
                     DocumentElement::Table(idx) => {
-                        let table = &self.tables[*idx];
+                        let Some(table) = self.tables.get(*idx) else { continue };
                         // Ensure blank line separation before table
-                        if !output.is_empty() && !output.ends_with("\n\n") {
-                            if output.ends_with('\n') {
-                                output.push('\n');
-                            } else {
-                                output.push_str("\n\n");
-                            }
-                        }
+                        Self::ensure_blank_line(&mut output);
                         output.push_str(&table.to_markdown());
                         prev_was_list = false;
                     }
-                    DocumentElement::Drawing(_idx) => {
-                        // Drawing objects are metadata-only; they don't contribute to markdown text output.
-                        // They are accessible via Document::drawings for consumers that need image/shape data.
+                    DocumentElement::Drawing(idx) => {
+                        let Some(drawing) = self.drawings.get(*idx) else {
+                            continue;
+                        };
+                        let alt = drawing
+                            .doc_properties
+                            .as_ref()
+                            .and_then(|dp| dp.description.as_deref())
+                            .unwrap_or("");
+                        // Ensure blank line separation before image
+                        Self::ensure_blank_line(&mut output);
+                        let _ = writeln!(output, "![{}](image_{})", alt, idx);
+                        prev_was_list = false;
                     }
                 }
             }
         } else {
             for paragraph in &self.paragraphs {
                 self.append_paragraph_markdown(paragraph, &mut output, &mut list_counters, &mut prev_was_list);
+            }
+        }
+
+        // Append footers (if any non-empty)
+        for footer in &self.footers {
+            let footer_text = Self::header_footer_to_markdown(footer);
+            if !footer_text.is_empty() {
+                Self::ensure_blank_line(&mut output);
+                output.push_str("---\n\n");
+                output.push_str(&footer_text);
             }
         }
 
@@ -272,7 +349,7 @@ impl Document {
                     .collect::<Vec<_>>()
                     .join(" ");
                 if !note_text.is_empty() {
-                    output.push_str(&format!("[^{}]: {}\n", note.id, note_text));
+                    let _ = writeln!(output, "[^{}]: {}", note.id, note_text);
                 }
             }
         }
@@ -288,12 +365,19 @@ impl Document {
                     .collect::<Vec<_>>()
                     .join(" ");
                 if !note_text.is_empty() {
-                    output.push_str(&format!("[^{}]: {}\n", note.id, note_text));
+                    let _ = writeln!(output, "[^{}]: {}", note.id, note_text);
                 }
             }
         }
 
-        output.trim().to_string()
+        // Trim output in-place
+        let trimmed_end = output.trim_end().len();
+        output.truncate(trimmed_end);
+        let trimmed_start = output.len() - output.trim_start().len();
+        if trimmed_start > 0 {
+            output.drain(..trimmed_start);
+        }
+        output
     }
 
     /// Helper: append a paragraph's markdown to output, managing list transitions.
@@ -304,29 +388,21 @@ impl Document {
         list_counters: &mut HashMap<(i64, i64), usize>,
         prev_was_list: &mut bool,
     ) {
-        let para_text = paragraph.to_text();
         let is_list = paragraph.numbering_id.is_some();
 
         // Add blank line before list block when transitioning from non-list
-        if is_list && !*prev_was_list && !output.is_empty() && !output.ends_with("\n\n") {
-            if output.ends_with('\n') {
-                output.push('\n');
-            } else {
-                output.push_str("\n\n");
-            }
+        if is_list && !*prev_was_list {
+            Self::ensure_blank_line(output);
         }
 
         // Add blank line after list block when transitioning to non-list
-        if !is_list && *prev_was_list && !output.is_empty() && !output.ends_with("\n\n") {
-            if output.ends_with('\n') {
-                output.push('\n');
-            } else {
-                output.push_str("\n\n");
-            }
+        if !is_list && *prev_was_list {
+            Self::ensure_blank_line(output);
         }
 
-        let md = paragraph.to_markdown(&self.numbering_defs, list_counters);
-        if md.is_empty() && para_text.is_empty() {
+        let heading_level = paragraph.style.as_deref().and_then(|s| self.resolve_heading_level(s));
+        let md = paragraph.to_markdown(&self.numbering_defs, list_counters, heading_level);
+        if md.is_empty() {
             *prev_was_list = is_list;
             return;
         }
@@ -339,13 +415,7 @@ impl Document {
             output.push_str(&md);
         } else {
             // Non-list paragraphs separated by blank lines
-            if !output.is_empty() && !output.ends_with("\n\n") {
-                if output.ends_with('\n') {
-                    output.push('\n');
-                } else {
-                    output.push_str("\n\n");
-                }
-            }
+            Self::ensure_blank_line(output);
             output.push_str(&md);
         }
 
@@ -382,17 +452,19 @@ impl Paragraph {
     }
 
     /// Render as markdown with heading/list context.
+    ///
+    /// If `heading_level` is provided (resolved via `Document::resolve_heading_level`),
+    /// it takes precedence over style name matching.
     pub fn to_markdown(
         &self,
         numbering_defs: &HashMap<(i64, i64), ListType>,
         list_counters: &mut HashMap<(i64, i64), usize>,
+        heading_level: Option<u8>,
     ) -> String {
         let inline = self.runs_to_markdown();
 
-        // Check for heading style
-        if let Some(ref style) = self.style
-            && let Some(level) = heading_level_from_style(style)
-        {
+        // Check for heading level (resolved from StyleCatalog or style name fallback)
+        if let Some(level) = heading_level {
             let hashes = "#".repeat(level as usize);
             return format!("{} {}", hashes, inline);
         }
@@ -438,27 +510,56 @@ impl Run {
             return String::new();
         }
 
-        let mut formatted = self.text.clone();
+        let extra = (if self.bold && self.italic {
+            6
+        } else if self.bold || self.italic {
+            4
+        } else {
+            0
+        }) + (if self.strikethrough { 4 } else { 0 })
+            + (if self.underline { 7 } else { 0 })
+            + self.hyperlink_url.as_ref().map_or(0, |u| u.len() + 4);
+        let mut out = String::with_capacity(self.text.len() + extra);
 
-        // Apply formatting: innermost first
-        if self.bold && self.italic {
-            formatted = format!("***{}***", formatted);
-        } else if self.bold {
-            formatted = format!("**{}**", formatted);
-        } else if self.italic {
-            formatted = format!("*{}*", formatted);
+        if self.hyperlink_url.is_some() {
+            out.push('[');
         }
-
+        if self.underline {
+            out.push_str("<u>");
+        }
         if self.strikethrough {
-            formatted = format!("~~{}~~", formatted);
+            out.push_str("~~");
+        }
+        if self.bold && self.italic {
+            out.push_str("***");
+        } else if self.bold {
+            out.push_str("**");
+        } else if self.italic {
+            out.push('*');
         }
 
-        // Hyperlink wraps everything
+        out.push_str(&self.text);
+
+        if self.bold && self.italic {
+            out.push_str("***");
+        } else if self.bold {
+            out.push_str("**");
+        } else if self.italic {
+            out.push('*');
+        }
+        if self.strikethrough {
+            out.push_str("~~");
+        }
+        if self.underline {
+            out.push_str("</u>");
+        }
         if let Some(ref url) = self.hyperlink_url {
-            formatted = format!("[{}]({})", formatted, url);
+            out.push_str("](");
+            out.push_str(url);
+            out.push(')');
         }
 
-        formatted
+        out
     }
 }
 
@@ -468,29 +569,50 @@ impl Table {
     }
 
     /// Render this table as a markdown table.
+    ///
+    /// Uses table row and cell properties to improve formatting:
+    /// - Respects `RowProperties.is_header` to identify header rows
+    /// - Handles `CellProperties.grid_span` to account for merged cells
+    ///
+    /// If no explicit header row is marked, treats the first row as the header.
     pub fn to_markdown(&self) -> String {
         if self.rows.is_empty() {
             return String::new();
         }
 
-        let cells: Vec<Vec<String>> = self
-            .rows
-            .iter()
-            .map(|row| {
-                row.cells
-                    .iter()
-                    .map(|cell| {
-                        cell.paragraphs
-                            .iter()
-                            .map(|para| para.runs_to_markdown())
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                            .trim()
-                            .to_string()
-                    })
-                    .collect()
-            })
-            .collect();
+        // Build cells, accounting for grid_span (horizontal cell merging)
+        let mut cells: Vec<Vec<String>> = Vec::new();
+        for row in &self.rows {
+            let mut row_cells = Vec::new();
+            for cell in &row.cells {
+                // Cells with v_merge=Continue are continuations of a vertically merged cell above;
+                // render them as empty in the markdown table.
+                let is_vmerge_continue = cell
+                    .properties
+                    .as_ref()
+                    .is_some_and(|p| matches!(p.v_merge, Some(super::table::VerticalMerge::Continue)));
+
+                let cell_text = if is_vmerge_continue {
+                    String::new()
+                } else {
+                    cell.paragraphs
+                        .iter()
+                        .map(|para| para.runs_to_markdown())
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                        .trim()
+                        .to_string()
+                };
+                row_cells.push(cell_text);
+
+                // Add empty cells for grid_span > 1 (horizontal merging)
+                let span = cell.properties.as_ref().and_then(|p| p.grid_span).unwrap_or(1);
+                for _ in 1..span {
+                    row_cells.push(String::new());
+                }
+            }
+            cells.push(row_cells);
+        }
 
         if cells.is_empty() {
             return String::new();
@@ -509,33 +631,18 @@ impl Table {
             }
         }
 
+        // Determine which row is the header.
+        // Prefer explicitly marked header rows; fall back to first row if none found.
+        let header_row_index = self
+            .rows
+            .iter()
+            .position(|row| row.properties.as_ref().map(|p| p.is_header).unwrap_or(false))
+            .unwrap_or(0); // Default to first row if no explicit header found
+
         let mut md = String::new();
 
-        // Header row
-        if let Some(header) = cells.first() {
-            md.push('|');
-            for (i, cell) in header.iter().enumerate() {
-                let width = col_widths.get(i).copied().unwrap_or(3);
-                md.push_str(&format!(" {:width$} |", cell, width = width));
-            }
-            // Pad missing columns
-            for i in header.len()..num_cols {
-                let width = col_widths.get(i).copied().unwrap_or(3);
-                md.push_str(&format!(" {:width$} |", "", width = width));
-            }
-            md.push('\n');
-
-            // Separator row
-            md.push('|');
-            for i in 0..num_cols {
-                let width = col_widths.get(i).copied().unwrap_or(3);
-                md.push_str(&format!(" {} |", "-".repeat(width)));
-            }
-            md.push('\n');
-        }
-
-        // Data rows
-        for row in cells.iter().skip(1) {
+        // Render rows
+        for (row_idx, row) in cells.iter().enumerate() {
             md.push('|');
             for (i, cell) in row.iter().enumerate() {
                 let width = col_widths.get(i).copied().unwrap_or(3);
@@ -547,40 +654,19 @@ impl Table {
                 md.push_str(&format!(" {:width$} |", "", width = width));
             }
             md.push('\n');
+
+            // Insert separator after header row
+            if row_idx == header_row_index {
+                md.push('|');
+                for i in 0..num_cols {
+                    let width = col_widths.get(i).copied().unwrap_or(3);
+                    md.push_str(&format!(" {} |", "-".repeat(width)));
+                }
+                md.push('\n');
+            }
         }
 
         md.trim_end().to_string()
-    }
-}
-
-impl HeaderFooter {
-    pub fn extract_text(&self) -> String {
-        let mut text = String::new();
-
-        for paragraph in &self.paragraphs {
-            let para_text = paragraph.to_text();
-            if !para_text.is_empty() {
-                text.push_str(&para_text);
-                text.push('\n');
-            }
-        }
-
-        for table in &self.tables {
-            for row in &table.rows {
-                for cell in &row.cells {
-                    for paragraph in &cell.paragraphs {
-                        let para_text = paragraph.to_text();
-                        if !para_text.is_empty() {
-                            text.push_str(&para_text);
-                            text.push('\t');
-                        }
-                    }
-                }
-                text.push('\n');
-            }
-        }
-
-        text
     }
 }
 
@@ -762,7 +848,6 @@ impl<R: Read + Seek> DocxParser<R> {
 
         if let Ok(numbering_xml) = self.read_file("word/numbering.xml") {
             let numbering_defs = self.parse_numbering(&numbering_xml)?;
-            self.process_lists(&mut document, &numbering_defs);
             document.numbering_defs = numbering_defs;
         }
 
@@ -950,6 +1035,21 @@ impl<R: Read + Seek> DocxParser<R> {
                     b"w:pStyle" | b"w:ilvl" | b"w:numId" => {
                         apply_paragraph_property(e, &mut table_stack, &mut current_paragraph);
                     }
+                    b"w:footnoteReference" | b"w:endnoteReference" => {
+                        // Insert inline footnote/endnote reference marker [^N]
+                        if let Some(ref mut run) = current_run {
+                            for attr in e.attributes().flatten() {
+                                if attr.key.as_ref() == b"w:id"
+                                    && let Ok(id) = std::str::from_utf8(&attr.value)
+                                {
+                                    // Skip separator references (id 0 and 1)
+                                    if id != "0" && id != "1" {
+                                        run.text.push_str(&format!("[^{}]", id));
+                                    }
+                                }
+                            }
+                        }
+                    }
                     b"w:sectPr" => {
                         // Self-closing <w:sectPr/> (empty section properties)
                         document.sections.push(super::section::SectionProperties::default());
@@ -982,7 +1082,7 @@ impl<R: Read + Seek> DocxParser<R> {
                 },
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
-                        let text = e.decode()?.into_owned();
+                        let text = e.decode()?;
                         run.text.push_str(&text);
                     }
                 }
@@ -1187,24 +1287,6 @@ impl<R: Read + Seek> DocxParser<R> {
         Ok(numbering_defs)
     }
 
-    fn process_lists(&self, document: &mut Document, numbering_defs: &HashMap<(i64, i64), ListType>) {
-        for paragraph in &document.paragraphs {
-            if let (Some(num_id), Some(level)) = (paragraph.numbering_id, paragraph.numbering_level) {
-                let key = (num_id, level);
-                let list_type = numbering_defs.get(&key).copied().unwrap_or(ListType::Bullet);
-
-                let list_item = ListItem {
-                    level: level as u32,
-                    list_type,
-                    number: None,
-                    text: paragraph.to_text(),
-                };
-
-                document.lists.push(list_item);
-            }
-        }
-    }
-
     fn parse_headers_footers(&mut self, document: &mut Document) -> Result<(), DocxParseError> {
         for i in 1..=3 {
             let header_path = format!("word/header{}.xml", i);
@@ -1277,7 +1359,7 @@ impl<R: Read + Seek> DocxParser<R> {
                 },
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
-                        let text = e.decode()?.into_owned();
+                        let text = e.decode()?;
                         run.text.push_str(&text);
                     }
                 }
@@ -1328,7 +1410,7 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                         current_note = Some(Note {
                             id,
-                            note_type: note_type.clone(),
+                            note_type,
                             paragraphs: Vec::new(),
                         });
                     }
@@ -1362,7 +1444,7 @@ impl<R: Read + Seek> DocxParser<R> {
                 },
                 Ok(Event::Text(e)) => {
                     if in_text && let Some(ref mut run) = current_run {
-                        let text = e.decode()?.into_owned();
+                        let text = e.decode()?;
                         run.text.push_str(&text);
                     }
                 }
@@ -1383,9 +1465,11 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     b"w:footnote" | b"w:endnote" => {
+                        // Filter separator/continuation separator notes (id -1, 0, 1)
                         if let Some(note) = current_note.take()
                             && note.id != "-1"
                             && note.id != "0"
+                            && note.id != "1"
                         {
                             notes.push(note);
                         }
@@ -1573,7 +1657,7 @@ mod tests {
         para.add_run(Run::new("My Title".to_string()));
         let defs = HashMap::new();
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "# My Title");
+        assert_eq!(para.to_markdown(&defs, &mut counters, Some(1)), "# My Title");
     }
 
     #[test]
@@ -1583,7 +1667,7 @@ mod tests {
         para.add_run(Run::new("Section".to_string()));
         let defs = HashMap::new();
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "## Section");
+        assert_eq!(para.to_markdown(&defs, &mut counters, Some(2)), "## Section");
     }
 
     #[test]
@@ -1593,7 +1677,7 @@ mod tests {
         para.add_run(Run::new("Subsection".to_string()));
         let defs = HashMap::new();
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "### Subsection");
+        assert_eq!(para.to_markdown(&defs, &mut counters, Some(3)), "### Subsection");
     }
 
     #[test]
@@ -1605,7 +1689,7 @@ mod tests {
         let mut defs = HashMap::new();
         defs.insert((1, 0), ListType::Bullet);
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "- Item");
+        assert_eq!(para.to_markdown(&defs, &mut counters, None), "- Item");
     }
 
     #[test]
@@ -1617,7 +1701,7 @@ mod tests {
         let mut defs = HashMap::new();
         defs.insert((2, 0), ListType::Numbered);
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "1. Item");
+        assert_eq!(para.to_markdown(&defs, &mut counters, None), "1. Item");
     }
 
     #[test]
@@ -1629,17 +1713,224 @@ mod tests {
         let mut defs = HashMap::new();
         defs.insert((1, 1), ListType::Bullet);
         let mut counters = HashMap::new();
-        assert_eq!(para.to_markdown(&defs, &mut counters), "  - Nested");
+        assert_eq!(para.to_markdown(&defs, &mut counters, None), "  - Nested");
     }
 
     #[test]
-    fn test_heading_level_from_style() {
-        assert_eq!(heading_level_from_style("Title"), Some(1));
-        assert_eq!(heading_level_from_style("Heading1"), Some(2));
-        assert_eq!(heading_level_from_style("Heading2"), Some(3));
-        assert_eq!(heading_level_from_style("Heading3"), Some(4));
-        assert_eq!(heading_level_from_style("Heading6"), Some(6)); // clamped to max markdown level
-        assert_eq!(heading_level_from_style("Normal"), None);
+    fn test_heading_level_from_style_name() {
+        assert_eq!(heading_level_from_style_name("Title"), Some(1));
+        assert_eq!(heading_level_from_style_name("Heading1"), Some(2));
+        assert_eq!(heading_level_from_style_name("Heading2"), Some(3));
+        assert_eq!(heading_level_from_style_name("Heading3"), Some(4));
+        assert_eq!(heading_level_from_style_name("Heading6"), Some(6)); // clamped to max markdown level
+        assert_eq!(heading_level_from_style_name("Normal"), None);
+    }
+
+    #[test]
+    fn test_resolve_heading_level_with_style_catalog() {
+        use super::super::styles::{ParagraphProperties, StyleCatalog, StyleDefinition, StyleType};
+
+        let mut doc = Document::new();
+        let mut catalog = StyleCatalog::default();
+
+        // Style with outline_level = 2 (should become h3)
+        catalog.styles.insert(
+            "CustomHeading".to_string(),
+            StyleDefinition {
+                id: "CustomHeading".to_string(),
+                name: Some("Custom Heading".to_string()),
+                style_type: StyleType::Paragraph,
+                based_on: None,
+                next_style: None,
+                is_default: false,
+                paragraph_properties: ParagraphProperties {
+                    outline_level: Some(2),
+                    ..Default::default()
+                },
+                run_properties: Default::default(),
+            },
+        );
+
+        doc.style_catalog = Some(catalog);
+        assert_eq!(doc.resolve_heading_level("CustomHeading"), Some(3));
+    }
+
+    #[test]
+    fn test_resolve_heading_level_inheritance_chain() {
+        use super::super::styles::{ParagraphProperties, StyleCatalog, StyleDefinition, StyleType};
+
+        let mut doc = Document::new();
+        let mut catalog = StyleCatalog::default();
+
+        // Parent has outline_level
+        catalog.styles.insert(
+            "ParentStyle".to_string(),
+            StyleDefinition {
+                id: "ParentStyle".to_string(),
+                name: Some("Parent".to_string()),
+                style_type: StyleType::Paragraph,
+                based_on: None,
+                next_style: None,
+                is_default: false,
+                paragraph_properties: ParagraphProperties {
+                    outline_level: Some(0),
+                    ..Default::default()
+                },
+                run_properties: Default::default(),
+            },
+        );
+
+        // Child inherits from parent
+        catalog.styles.insert(
+            "ChildStyle".to_string(),
+            StyleDefinition {
+                id: "ChildStyle".to_string(),
+                name: Some("Child".to_string()),
+                style_type: StyleType::Paragraph,
+                based_on: Some("ParentStyle".to_string()),
+                next_style: None,
+                is_default: false,
+                paragraph_properties: ParagraphProperties::default(),
+                run_properties: Default::default(),
+            },
+        );
+
+        doc.style_catalog = Some(catalog);
+        // Child resolves to parent's outline_level 0 → h1
+        assert_eq!(doc.resolve_heading_level("ChildStyle"), Some(1));
+    }
+
+    #[test]
+    fn test_underline_rendering() {
+        let mut run = Run::new("underlined text".to_string());
+        run.underline = true;
+        assert_eq!(run.to_markdown(), "<u>underlined text</u>");
+    }
+
+    #[test]
+    fn test_underline_combined_with_bold_italic() {
+        let mut run = Run::new("styled".to_string());
+        run.bold = true;
+        run.italic = true;
+        run.underline = true;
+        let md = run.to_markdown();
+        assert!(md.contains("<u>"));
+        assert!(md.contains("</u>"));
+        assert!(md.contains("**"));
+        assert!(md.contains("*"));
+    }
+
+    #[test]
+    fn test_header_footer_in_markdown() {
+        let mut doc = Document::new();
+
+        // Add a header
+        let mut header = HeaderFooter::default();
+        let mut para = Paragraph::new();
+        para.add_run(Run::new("Header Text".to_string()));
+        header.paragraphs.push(para);
+        doc.headers.push(header);
+
+        // Add body content
+        let mut body_para = Paragraph::new();
+        body_para.add_run(Run::new("Body content".to_string()));
+        let idx = doc.paragraphs.len();
+        doc.paragraphs.push(body_para);
+        doc.elements.push(DocumentElement::Paragraph(idx));
+
+        // Add a footer
+        let mut footer = HeaderFooter::default();
+        let mut footer_para = Paragraph::new();
+        footer_para.add_run(Run::new("Footer Text".to_string()));
+        footer.paragraphs.push(footer_para);
+        doc.footers.push(footer);
+
+        let md = doc.to_markdown();
+        assert!(md.contains("Header Text"), "Should contain header text");
+        assert!(md.contains("Body content"), "Should contain body content");
+        assert!(md.contains("Footer Text"), "Should contain footer text");
+        assert!(md.contains("---"), "Should contain separator");
+        // Header should be before body
+        let header_pos = md.find("Header Text").unwrap();
+        let body_pos = md.find("Body content").unwrap();
+        let footer_pos = md.find("Footer Text").unwrap();
+        assert!(header_pos < body_pos, "Header before body");
+        assert!(body_pos < footer_pos, "Body before footer");
+    }
+
+    #[test]
+    fn test_footnote_reference_in_parsing() {
+        // Simulate parsing a paragraph with a footnote reference
+        let xml = r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:body>
+                <w:p>
+                    <w:r>
+                        <w:t>See note</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:footnoteReference w:id="2"/>
+                    </w:r>
+                </w:p>
+            </w:body>
+        </w:document>"#;
+
+        let parser_struct = DocxParser {
+            archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
+            relationships: HashMap::new(),
+            styles: None,
+            theme: None,
+        };
+        let mut document = Document::new();
+        parser_struct.parse_document_xml(xml, &mut document).unwrap();
+
+        assert_eq!(document.paragraphs.len(), 1);
+        // The second run should contain the footnote reference marker
+        let full_text = document.paragraphs[0].to_text();
+        assert!(
+            full_text.contains("[^2]"),
+            "Should contain footnote reference [^2], got: {}",
+            full_text
+        );
+    }
+
+    #[test]
+    fn test_separator_footnotes_filtered() {
+        // Separator footnotes (id 0 and 1) should be excluded
+        let xml = r#"<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:footnote w:id="0">
+                <w:p><w:r><w:t>separator</w:t></w:r></w:p>
+            </w:footnote>
+            <w:footnote w:id="1">
+                <w:p><w:r><w:t>continuation</w:t></w:r></w:p>
+            </w:footnote>
+            <w:footnote w:id="2">
+                <w:p><w:r><w:t>Actual footnote</w:t></w:r></w:p>
+            </w:footnote>
+        </w:footnotes>"#;
+
+        let parser_struct = DocxParser {
+            archive: zip::ZipArchive::new(std::io::Cursor::new(create_minimal_zip())).unwrap(),
+            relationships: HashMap::new(),
+            styles: None,
+            theme: None,
+        };
+        let mut notes = Vec::new();
+        parser_struct.parse_notes(xml, &mut notes, NoteType::Footnote).unwrap();
+
+        assert_eq!(notes.len(), 1, "Only actual footnote should remain");
+        assert_eq!(notes[0].id, "2");
+    }
+
+    // Helper to create a minimal valid ZIP for parser construction in tests
+    fn create_minimal_zip() -> Vec<u8> {
+        use std::io::Write;
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options: zip::write::FileOptions<()> = zip::write::FileOptions::default();
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(b"<w:document/>").unwrap();
+        zip.finish().unwrap().into_inner()
     }
 
     #[test]
@@ -2000,6 +2291,118 @@ mod tests {
         assert_eq!(
             cell10_props.v_merge,
             Some(crate::extraction::docx::table::VerticalMerge::Restart)
+        );
+    }
+
+    #[test]
+    fn test_table_with_explicit_header_row_renders_correctly() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:tbl>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:p><w:r><w:t>Name</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>Age</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:p><w:r><w:t>Alice</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>30</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>"#;
+
+        let bytes = create_test_docx(xml);
+        let doc = parse_document(&bytes).expect("parse should succeed");
+
+        assert_eq!(doc.tables.len(), 1);
+        let table = &doc.tables[0];
+
+        // Verify first row is marked as header
+        let row0_props = table.rows[0]
+            .properties
+            .as_ref()
+            .expect("first row should have properties");
+        assert!(row0_props.is_header, "First row should be marked as header");
+
+        // Verify markdown rendering has separator after header row
+        let markdown = table.to_markdown();
+        let lines: Vec<&str> = markdown.lines().collect();
+
+        // Should have at least 3 lines: header, separator, data row
+        assert!(
+            lines.len() >= 3,
+            "Table should have at least 3 lines, got: {}",
+            markdown
+        );
+
+        // Line 1 should be separator (all dashes)
+        assert!(
+            lines[1].contains("---"),
+            "Second line should be separator, got: {}",
+            lines[1]
+        );
+    }
+
+    #[test]
+    fn test_table_with_merged_cells_expands_columns() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:tbl>
+      <w:tr>
+        <w:tc>
+          <w:p><w:r><w:t>A</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>B</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:gridSpan w:val="2"/>
+          </w:tcPr>
+          <w:p><w:r><w:t>Merged</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>"#;
+
+        let bytes = create_test_docx(xml);
+        let doc = parse_document(&bytes).expect("parse should succeed");
+
+        assert_eq!(doc.tables.len(), 1);
+        let table = &doc.tables[0];
+
+        // Verify second row cell has grid_span=2
+        let merged_cell = &table.rows[1].cells[0];
+        let cell_props = merged_cell.properties.as_ref().expect("cell should have properties");
+        assert_eq!(cell_props.grid_span, Some(2), "Cell should have grid_span=2");
+
+        // Verify markdown rendering produces equal number of columns
+        let markdown = table.to_markdown();
+        let lines: Vec<&str> = markdown.lines().collect();
+
+        // Both rows should have same number of pipe characters (column count)
+        let pipes_row0 = lines[0].matches('|').count();
+        let pipes_row1 = lines[2].matches('|').count(); // After separator
+
+        assert_eq!(
+            pipes_row0, pipes_row1,
+            "All rows should have same column count in markdown"
         );
     }
 }

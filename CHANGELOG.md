@@ -64,7 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Table formatting metadata**: Vertical merge (`v_merge`) handled correctly, `grid_span` for horizontal merging, `is_header` row detection.
 - **Drawing image placeholders**: `![alt](image_N)` placeholders in markdown output for embedded images.
 
-
 #### DOCX Extractor Performance & Code Quality
 - **Eliminated 3x code duplication**: Extracted `parse_docx_core()` helper to deduplicate parsing logic across tokio/non-tokio cfg branches.
 - **Removed unnecessary clones**: Metadata structs (core/app/custom properties) borrowed then moved instead of cloned; drawings and image relationships only cloned when image extraction is enabled.
@@ -81,7 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LaTeX zero-arg command handling**: Added explicit skip list for 35 zero-argument commands (`\par`, `\noindent`, `\centering`, size commands, etc.). The catch-all handler no longer consumes the next `{...}` group as an argument, preventing silent text loss for unknown zero-arg commands.
 - **Structured data `is_text_field` false positives**: Changed from `.contains()` substring matching to exact equality on the leaf field name. Previously, "width" matched because it contains "id"; "valid" matched because it contains "id". Now only exact leaf name matches are considered.
 - **XML dead code in `Event::End` handler**: Removed unused variable allocation and discarded comparison (`let _ = popped == name_owned`), replaced with simple `element_stack.pop()`.
-
 ### Removed
 - **Dead code cleanup**: Removed unused `Document.lists` field, `ListItem` struct, `process_lists()` method, and `HeaderFooter::extract_text()` method.
 

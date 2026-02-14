@@ -618,14 +618,39 @@ async fn test_rtf_word_sample_matches_docx_metadata_and_content() {
         "RTF content should include the same body text as DOCX"
     );
 
-    for key in ["created_by", "modified_by", "created_at", "revision"] {
-        assert_eq!(
-            rtf_result.metadata.additional.get(key).and_then(|v| v.as_str()),
-            docx_result.metadata.additional.get(key).and_then(|v| v.as_str()),
-            "Metadata field {} should align with DOCX",
-            key
-        );
-    }
+    // Compare typed metadata fields (DOCX uses typed fields, RTF uses additional map)
+    assert_eq!(
+        rtf_result
+            .metadata
+            .additional
+            .get("created_by")
+            .and_then(|v| v.as_str()),
+        docx_result.metadata.created_by.as_deref(),
+        "Metadata field created_by should align with DOCX"
+    );
+    assert_eq!(
+        rtf_result
+            .metadata
+            .additional
+            .get("modified_by")
+            .and_then(|v| v.as_str()),
+        docx_result.metadata.modified_by.as_deref(),
+        "Metadata field modified_by should align with DOCX"
+    );
+    assert_eq!(
+        rtf_result
+            .metadata
+            .additional
+            .get("created_at")
+            .and_then(|v| v.as_str()),
+        docx_result.metadata.created_at.as_deref(),
+        "Metadata field created_at should align with DOCX"
+    );
+    assert_eq!(
+        rtf_result.metadata.additional.get("revision").and_then(|v| v.as_str()),
+        docx_result.metadata.additional.get("revision").and_then(|v| v.as_str()),
+        "Metadata field revision should align with DOCX"
+    );
 
     for (key, expected) in [
         ("page_count", 2),
