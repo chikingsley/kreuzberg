@@ -144,7 +144,7 @@ impl PaddleOcrBackend {
 
         let engine = Arc::new(Mutex::new(ocr_lite));
 
-        // Insert into pool (with double-check for concurrent initialization)
+        // Insert into pool
         let mut pool = self.engine_pool.lock().map_err(|e| crate::KreuzbergError::Plugin {
             message: format!("Failed to acquire engine pool lock: {e}"),
             plugin_name: "paddle-ocr".to_string(),

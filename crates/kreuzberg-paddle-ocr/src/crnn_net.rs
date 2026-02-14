@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{base_net::BaseNet, ocr_error::OcrError, ocr_result::TextLine, ocr_utils::OcrUtils};
 
-const CRNN_DST_HEIGHT: u32 = 48;
+const CRNN_DST_HEIGHT: u32 = 32;
 const MEAN_VALUES: [f32; 3] = [127.5, 127.5, 127.5];
 const NORM_VALUES: [f32; 3] = [1.0 / 127.5, 1.0 / 127.5, 1.0 / 127.5];
 
