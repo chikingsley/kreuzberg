@@ -6,12 +6,32 @@
 //! Page break detection is best-effort, detecting only explicit page breaks (`<w:br w:type="page"/>`)
 //! in the document XML. This does not account for automatic pagination based on content reflowing.
 
+pub mod drawing;
 pub mod parser;
+pub mod section;
+pub mod styles;
+pub mod table;
+pub mod theme;
 
 use crate::error::{KreuzbergError, Result};
 use crate::extraction::capacity;
 use crate::types::PageBoundary;
 use std::io::Cursor;
+
+// --- DOCX Constants ---
+
+/// Maximum uncompressed size per file in a DOCX archive (100 MB).
+pub const MAX_UNCOMPRESSED_FILE_SIZE: u64 = 100 * 1024 * 1024;
+/// Maximum number of entries in a DOCX ZIP archive.
+pub const MAX_ZIP_ENTRIES: usize = 10_000;
+/// Maximum total uncompressed size of all files in a DOCX archive (500 MB).
+pub const MAX_TOTAL_UNCOMPRESSED_SIZE: u64 = 500 * 1024 * 1024;
+/// Maximum image file size for extraction (100 MB).
+pub const MAX_IMAGE_FILE_SIZE: u64 = 100 * 1024 * 1024;
+/// EMUs (English Metric Units) per inch.
+pub const EMUS_PER_INCH: i64 = 914_400;
+/// EMUs per pixel at 96 DPI.
+pub const EMUS_PER_PIXEL_96DPI: i64 = 9_525;
 
 /// Extract text from DOCX bytes.
 pub fn extract_text(bytes: &[u8]) -> Result<String> {

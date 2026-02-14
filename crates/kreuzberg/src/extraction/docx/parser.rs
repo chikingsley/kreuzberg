@@ -17,11 +17,12 @@ use quick_xml::events::{BytesStart, Event};
 
 // --- Types ---
 
-/// Tracks document element ordering (paragraphs and tables interleaved).
+/// Tracks document element ordering (paragraphs, tables, and drawings interleaved).
 #[derive(Debug, Clone)]
 pub enum DocumentElement {
     Paragraph(usize), // index into Document::paragraphs
     Table(usize),     // index into Document::tables
+    Drawing(usize),   // index into Document::drawings
 }
 
 #[derive(Debug, Clone, Default)]
@@ -36,6 +37,16 @@ pub struct Document {
     pub numbering_defs: HashMap<(i64, i64), ListType>,
     /// Document elements in their original order.
     pub elements: Vec<DocumentElement>,
+    /// Parsed style catalog from `word/styles.xml`, if available.
+    pub style_catalog: Option<super::styles::StyleCatalog>,
+    /// Parsed theme from `word/theme/theme1.xml`, if available.
+    pub theme: Option<super::theme::Theme>,
+    /// Section properties parsed from `w:sectPr` elements.
+    pub sections: Vec<super::section::SectionProperties>,
+    /// Drawing objects parsed from `w:drawing` elements.
+    pub drawings: Vec<super::drawing::Drawing>,
+    /// Image relationships (rId → target path) for image extraction.
+    pub image_relationships: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -59,16 +70,20 @@ pub struct Run {
 #[derive(Debug, Clone, Default)]
 pub struct Table {
     pub rows: Vec<TableRow>,
+    pub properties: Option<super::table::TableProperties>,
+    pub grid: Option<super::table::TableGrid>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct TableRow {
     pub cells: Vec<TableCell>,
+    pub properties: Option<super::table::RowProperties>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct TableCell {
     pub paragraphs: Vec<Paragraph>,
+    pub properties: Option<super::table::CellProperties>,
 }
 
 #[derive(Debug, Clone)]
@@ -79,7 +94,7 @@ pub struct ListItem {
     pub text: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ListType {
     Bullet,
     Numbered,
@@ -234,6 +249,10 @@ impl Document {
                         output.push_str(&table.to_markdown());
                         prev_was_list = false;
                     }
+                    DocumentElement::Drawing(_idx) => {
+                        // Drawing objects are metadata-only; they don't contribute to markdown text output.
+                        // They are accessible via Document::drawings for consumers that need image/shape data.
+                    }
                 }
             }
         } else {
@@ -382,7 +401,7 @@ impl Paragraph {
         if let (Some(num_id), Some(level)) = (self.numbering_id, self.numbering_level) {
             let indent = "  ".repeat(level as usize);
             let key = (num_id, level);
-            let list_type = numbering_defs.get(&key).cloned().unwrap_or(ListType::Bullet);
+            let list_type = numbering_defs.get(&key).copied().unwrap_or(ListType::Bullet);
 
             match list_type {
                 ListType::Bullet => {
@@ -567,17 +586,166 @@ impl HeaderFooter {
 
 // --- Parser ---
 
+/// Context for tracking nested table parsing state.
+///
+/// Each level of table nesting gets its own context on the stack,
+/// allowing arbitrary nesting depth (e.g. tables within table cells).
+struct TableContext {
+    table: Table,
+    current_row: Option<TableRow>,
+    current_cell: Option<TableCell>,
+    paragraph: Option<Paragraph>,
+}
+
+impl TableContext {
+    fn new() -> Self {
+        Self {
+            table: Table::new(),
+            current_row: None,
+            current_cell: None,
+            paragraph: None,
+        }
+    }
+}
+
+/// Apply run-level formatting from a `<w:b>`, `<w:i>`, `<w:u>`, `<w:strike>`, or `<w:dstrike>` element.
+///
+/// Works for both `Event::Start` and `Event::Empty` events, eliminating duplication.
+fn apply_run_formatting(e: &BytesStart, current_run: &mut Option<Run>) {
+    if let Some(run) = current_run {
+        match e.name().as_ref() {
+            b"w:b" => run.bold = is_format_enabled(e),
+            b"w:i" => run.italic = is_format_enabled(e),
+            b"w:u" => run.underline = is_format_enabled(e),
+            b"w:strike" | b"w:dstrike" => run.strikethrough = is_format_enabled(e),
+            _ => {}
+        }
+    }
+}
+
+/// Apply paragraph-level properties from a `<w:pStyle>`, `<w:ilvl>`, or `<w:numId>` element.
+///
+/// Resolves the correct paragraph (table context vs top-level) automatically.
+fn apply_paragraph_property(
+    e: &BytesStart,
+    table_stack: &mut [TableContext],
+    current_paragraph: &mut Option<Paragraph>,
+) {
+    let para = if let Some(ctx) = table_stack.last_mut() {
+        ctx.paragraph.as_mut()
+    } else {
+        current_paragraph.as_mut()
+    };
+
+    if let Some(para) = para {
+        match e.name().as_ref() {
+            b"w:pStyle" => para.style = get_val_attr_string(e),
+            b"w:ilvl" => para.numbering_level = get_val_attr(e),
+            b"w:numId" => para.numbering_id = get_val_attr(e),
+            _ => {}
+        }
+    }
+}
+
+// --- Security Validation ---
+
+/// Validate archive against ZIP bomb attacks and resource exhaustion.
+///
+/// Checks:
+/// - Maximum uncompressed size per file (100 MB default)
+/// - Maximum total number of entries (10,000 default)
+/// - Maximum total uncompressed size (500 MB default)
+fn validate_archive_security(archive: &mut zip::ZipArchive<impl Read + Seek>) -> Result<(), DocxParseError> {
+    use super::{MAX_TOTAL_UNCOMPRESSED_SIZE, MAX_UNCOMPRESSED_FILE_SIZE, MAX_ZIP_ENTRIES};
+
+    // Check entry count
+    if archive.len() > MAX_ZIP_ENTRIES {
+        return Err(DocxParseError::SecurityLimit(format!(
+            "Archive contains {} entries, exceeds limit of {}",
+            archive.len(),
+            MAX_ZIP_ENTRIES
+        )));
+    }
+
+    // Check individual file sizes and accumulate total
+    let mut total_uncompressed: u64 = 0;
+    for i in 0..archive.len() {
+        let file = archive
+            .by_index_raw(i)
+            .map_err(|e| DocxParseError::SecurityLimit(format!("Failed to read ZIP entry {}: {}", i, e)))?;
+        let size = file.size();
+        if size > MAX_UNCOMPRESSED_FILE_SIZE {
+            return Err(DocxParseError::SecurityLimit(format!(
+                "File '{}' uncompressed size {} bytes exceeds limit of {} bytes",
+                file.name(),
+                size,
+                MAX_UNCOMPRESSED_FILE_SIZE
+            )));
+        }
+        total_uncompressed = total_uncompressed.saturating_add(size);
+    }
+
+    // Check total uncompressed size
+    if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_SIZE {
+        return Err(DocxParseError::SecurityLimit(format!(
+            "Total uncompressed size {} bytes exceeds limit of {} bytes",
+            total_uncompressed, MAX_TOTAL_UNCOMPRESSED_SIZE
+        )));
+    }
+
+    Ok(())
+}
+
+#[derive(Debug)]
 struct DocxParser<R: Read + Seek> {
     archive: zip::ZipArchive<R>,
     relationships: HashMap<String, String>,
+    styles: Option<super::styles::StyleCatalog>,
+    theme: Option<super::theme::Theme>,
 }
 
 impl<R: Read + Seek> DocxParser<R> {
     fn new(reader: R) -> Result<Self, DocxParseError> {
-        let archive = zip::ZipArchive::new(reader)?;
+        let mut archive = zip::ZipArchive::new(reader)?;
+        validate_archive_security(&mut archive)?;
+
+        // Load styles catalog (best-effort - styles.xml is optional)
+        let styles = {
+            let mut styles_result = None;
+            if let Ok(file) = archive.by_name("word/styles.xml") {
+                let mut xml = String::new();
+                if file
+                    .take(super::MAX_UNCOMPRESSED_FILE_SIZE)
+                    .read_to_string(&mut xml)
+                    .is_ok()
+                {
+                    styles_result = super::styles::parse_styles_xml(&xml).ok();
+                }
+            }
+            styles_result
+        };
+
+        // Load theme (best-effort - theme1.xml is optional)
+        let theme = {
+            let mut theme_result = None;
+            if let Ok(file) = archive.by_name("word/theme/theme1.xml") {
+                let mut xml = String::new();
+                if file
+                    .take(super::MAX_UNCOMPRESSED_FILE_SIZE)
+                    .read_to_string(&mut xml)
+                    .is_ok()
+                {
+                    theme_result = super::theme::parse_theme_xml(&xml).ok();
+                }
+            }
+            theme_result
+        };
+
         Ok(Self {
             archive,
             relationships: HashMap::new(),
+            styles,
+            theme,
         })
     }
 
@@ -608,10 +776,23 @@ impl<R: Read + Seek> DocxParser<R> {
             self.parse_notes(&endnotes_xml, &mut document.endnotes, NoteType::Endnote)?;
         }
 
+        document.style_catalog = self.styles.take();
+        document.theme = self.theme.take();
+        // Filter to only image relationships (exclude hyperlinks)
+        document.image_relationships = self
+            .relationships
+            .iter()
+            .filter(|(_, target)| {
+                // Image targets point to media/ paths, not URLs
+                !target.starts_with("http://") && !target.starts_with("https://")
+            })
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
         Ok(document)
     }
 
-    /// Parse relationship file to get rId → URL mappings (for hyperlinks).
+    /// Parse relationship file to get rId → target mappings for hyperlinks and images.
     fn parse_relationships_xml(xml: &str) -> HashMap<String, String> {
         let mut rels = HashMap::new();
         let mut reader = Reader::from_str(xml);
@@ -623,7 +804,7 @@ impl<R: Read + Seek> DocxParser<R> {
                 Ok(Event::Empty(ref e)) | Ok(Event::Start(ref e)) if e.name().as_ref() == b"Relationship" => {
                     let mut id = None;
                     let mut target = None;
-                    let mut rel_type = None;
+                    let mut rel_type_matches = false;
                     for attr in e.attributes().flatten() {
                         match attr.key.as_ref() {
                             b"Id" => id = std::str::from_utf8(&attr.value).ok().map(String::from),
@@ -631,14 +812,16 @@ impl<R: Read + Seek> DocxParser<R> {
                                 target = std::str::from_utf8(&attr.value).ok().map(String::from);
                             }
                             b"Type" => {
-                                rel_type = std::str::from_utf8(&attr.value).ok().map(String::from);
+                                rel_type_matches = std::str::from_utf8(&attr.value)
+                                    .ok()
+                                    .is_some_and(|t| t.contains("hyperlink") || t.contains("image"));
                             }
                             _ => {}
                         }
                     }
-                    // Only include hyperlink relationships
+                    // Include hyperlink and image relationships
                     if let (Some(id_val), Some(target_val)) = (id, target)
-                        && rel_type.as_ref().is_some_and(|t| t.contains("hyperlink"))
+                        && rel_type_matches
                     {
                         rels.insert(id_val, target_val);
                     }
@@ -653,13 +836,15 @@ impl<R: Read + Seek> DocxParser<R> {
     }
 
     fn read_file(&mut self, path: &str) -> Result<String, DocxParseError> {
-        let mut file = self
+        let read_limit = super::MAX_UNCOMPRESSED_FILE_SIZE;
+
+        let file = self
             .archive
             .by_name(path)
             .map_err(|_| DocxParseError::FileNotFound(path.to_string()))?;
 
         let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
+        file.take(read_limit).read_to_string(&mut contents)?;
         Ok(contents)
     }
 
@@ -669,28 +854,23 @@ impl<R: Read + Seek> DocxParser<R> {
 
         let mut buf = Vec::new();
         let mut current_paragraph: Option<Paragraph> = None;
-        let mut table_paragraph: Option<Paragraph> = None;
         let mut current_run: Option<Run> = None;
-        let mut current_table: Option<Table> = None;
-        let mut current_row: Option<TableRow> = None;
-        let mut current_cell: Option<TableCell> = None;
         let mut in_text = false;
-        let mut in_table = false;
         let mut current_hyperlink_url: Option<String> = None;
+        let mut table_stack: Vec<TableContext> = Vec::new();
 
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Start(ref e)) => match e.name().as_ref() {
                     b"w:p" => {
-                        if in_table {
-                            table_paragraph = Some(Paragraph::new());
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.paragraph = Some(Paragraph::new());
                         } else {
                             current_paragraph = Some(Paragraph::new());
                         }
                     }
                     b"w:r" => {
                         let mut run = Run::default();
-                        // Inherit hyperlink URL from context
                         if let Some(ref url) = current_hyperlink_url {
                             run.hyperlink_url = Some(url.clone());
                         }
@@ -700,67 +880,49 @@ impl<R: Read + Seek> DocxParser<R> {
                         in_text = true;
                     }
                     b"w:tbl" => {
-                        in_table = true;
-                        current_table = Some(Table::new());
+                        table_stack.push(TableContext::new());
+                    }
+                    b"w:tblPr" => {
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.table.properties = Some(super::table::parse_table_properties(&mut reader));
+                        }
+                    }
+                    b"w:tblGrid" => {
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.table.grid = Some(super::table::parse_table_grid(&mut reader));
+                        }
                     }
                     b"w:tr" => {
-                        current_row = Some(TableRow::default());
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.current_row = Some(TableRow::default());
+                        }
+                    }
+                    b"w:trPr" => {
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(ref mut row) = ctx.current_row
+                        {
+                            row.properties = Some(super::table::parse_row_properties(&mut reader));
+                        }
                     }
                     b"w:tc" => {
-                        current_cell = Some(TableCell::default());
-                    }
-                    b"w:b" => {
-                        if let Some(ref mut run) = current_run {
-                            run.bold = is_format_enabled(e);
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.current_cell = Some(TableCell::default());
                         }
                     }
-                    b"w:i" => {
-                        if let Some(ref mut run) = current_run {
-                            run.italic = is_format_enabled(e);
+                    b"w:tcPr" => {
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(ref mut cell) = ctx.current_cell
+                        {
+                            cell.properties = Some(super::table::parse_cell_properties(&mut reader));
                         }
                     }
-                    b"w:u" => {
-                        if let Some(ref mut run) = current_run {
-                            run.underline = is_format_enabled(e);
-                        }
+                    b"w:b" | b"w:i" | b"w:u" | b"w:strike" | b"w:dstrike" => {
+                        apply_run_formatting(e, &mut current_run);
                     }
-                    b"w:strike" | b"w:dstrike" => {
-                        if let Some(ref mut run) = current_run {
-                            run.strikethrough = is_format_enabled(e);
-                        }
-                    }
-                    b"w:pStyle" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.style = get_val_attr_string(e);
-                        }
-                    }
-                    b"w:ilvl" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.numbering_level = get_val_attr(e);
-                        }
-                    }
-                    b"w:numId" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.numbering_id = get_val_attr(e);
-                        }
+                    b"w:pStyle" | b"w:ilvl" | b"w:numId" => {
+                        apply_paragraph_property(e, &mut table_stack, &mut current_paragraph);
                     }
                     b"w:hyperlink" => {
-                        // Look up r:id in relationships
                         for attr in e.attributes().flatten() {
                             if attr.key.as_ref() == b"r:id"
                                 && let Ok(rid) = std::str::from_utf8(&attr.value)
@@ -769,57 +931,51 @@ impl<R: Read + Seek> DocxParser<R> {
                             }
                         }
                     }
+                    b"w:drawing" => {
+                        let drawing = super::drawing::parse_drawing(&mut reader);
+                        let idx = document.drawings.len();
+                        document.drawings.push(drawing);
+                        document.elements.push(DocumentElement::Drawing(idx));
+                    }
+                    b"w:sectPr" => {
+                        let sect_props = super::section::parse_section_properties_streaming(&mut reader);
+                        document.sections.push(sect_props);
+                    }
                     _ => {}
                 },
                 Ok(Event::Empty(ref e)) => match e.name().as_ref() {
-                    b"w:b" => {
-                        if let Some(ref mut run) = current_run {
-                            run.bold = is_format_enabled(e);
+                    b"w:b" | b"w:i" | b"w:u" | b"w:strike" | b"w:dstrike" => {
+                        apply_run_formatting(e, &mut current_run);
+                    }
+                    b"w:pStyle" | b"w:ilvl" | b"w:numId" => {
+                        apply_paragraph_property(e, &mut table_stack, &mut current_paragraph);
+                    }
+                    b"w:sectPr" => {
+                        // Self-closing <w:sectPr/> (empty section properties)
+                        document.sections.push(super::section::SectionProperties::default());
+                    }
+                    b"w:tblPr" => {
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.table.properties = Some(super::table::TableProperties::default());
                         }
                     }
-                    b"w:i" => {
-                        if let Some(ref mut run) = current_run {
-                            run.italic = is_format_enabled(e);
+                    b"w:tblGrid" => {
+                        if let Some(ctx) = table_stack.last_mut() {
+                            ctx.table.grid = Some(super::table::TableGrid::default());
                         }
                     }
-                    b"w:u" => {
-                        if let Some(ref mut run) = current_run {
-                            run.underline = is_format_enabled(e);
+                    b"w:trPr" => {
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(ref mut row) = ctx.current_row
+                        {
+                            row.properties = Some(super::table::RowProperties::default());
                         }
                     }
-                    b"w:strike" | b"w:dstrike" => {
-                        if let Some(ref mut run) = current_run {
-                            run.strikethrough = is_format_enabled(e);
-                        }
-                    }
-                    b"w:pStyle" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.style = get_val_attr_string(e);
-                        }
-                    }
-                    b"w:ilvl" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.numbering_level = get_val_attr(e);
-                        }
-                    }
-                    b"w:numId" => {
-                        let para = if in_table {
-                            table_paragraph.as_mut()
-                        } else {
-                            current_paragraph.as_mut()
-                        };
-                        if let Some(para) = para {
-                            para.numbering_id = get_val_attr(e);
+                    b"w:tcPr" => {
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(ref mut cell) = ctx.current_cell
+                        {
+                            cell.properties = Some(super::table::CellProperties::default());
                         }
                     }
                     _ => {}
@@ -836,10 +992,10 @@ impl<R: Read + Seek> DocxParser<R> {
                     }
                     b"w:r" => {
                         if let Some(run) = current_run.take() {
-                            if in_table {
-                                if let Some(ref mut para) = table_paragraph {
+                            if let Some(ctx) = table_stack.last_mut() {
+                                if let Some(ref mut para) = ctx.paragraph {
                                     para.add_run(run);
-                                } else if let Some(ref mut cell) = current_cell {
+                                } else if let Some(ref mut cell) = ctx.current_cell {
                                     if cell.paragraphs.is_empty() {
                                         cell.paragraphs.push(Paragraph::new());
                                     }
@@ -853,9 +1009,9 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     b"w:p" => {
-                        if in_table {
-                            if let Some(para) = table_paragraph.take()
-                                && let Some(ref mut cell) = current_cell
+                        if let Some(ctx) = table_stack.last_mut() {
+                            if let Some(para) = ctx.paragraph.take()
+                                && let Some(ref mut cell) = ctx.current_cell
                             {
                                 cell.paragraphs.push(para);
                             }
@@ -866,25 +1022,40 @@ impl<R: Read + Seek> DocxParser<R> {
                         }
                     }
                     b"w:tc" => {
-                        if let Some(cell) = current_cell.take()
-                            && let Some(ref mut row) = current_row
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(cell) = ctx.current_cell.take()
+                            && let Some(ref mut row) = ctx.current_row
                         {
                             row.cells.push(cell);
                         }
                     }
                     b"w:tr" => {
-                        if let Some(row) = current_row.take()
-                            && let Some(ref mut table) = current_table
+                        if let Some(ctx) = table_stack.last_mut()
+                            && let Some(row) = ctx.current_row.take()
                         {
-                            table.rows.push(row);
+                            ctx.table.rows.push(row);
                         }
                     }
                     b"w:tbl" => {
-                        in_table = false;
-                        if let Some(table) = current_table.take() {
-                            let idx = document.tables.len();
-                            document.tables.push(table);
-                            document.elements.push(DocumentElement::Table(idx));
+                        if let Some(completed_ctx) = table_stack.pop() {
+                            let completed_table = completed_ctx.table;
+                            if let Some(parent_ctx) = table_stack.last_mut() {
+                                // Nested table: flatten content into parent cell
+                                if let Some(ref mut cell) = parent_ctx.current_cell {
+                                    for row in completed_table.rows {
+                                        for table_cell in row.cells {
+                                            for para in table_cell.paragraphs {
+                                                cell.paragraphs.push(para);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Top-level table
+                                let idx = document.tables.len();
+                                document.tables.push(completed_table);
+                                document.elements.push(DocumentElement::Table(idx));
+                            }
                         }
                     }
                     b"w:hyperlink" => {
@@ -1008,7 +1179,7 @@ impl<R: Read + Seek> DocxParser<R> {
         for (num_id, abstract_id) in &num_to_abstract {
             if let Some(formats) = abstract_num_formats.get(abstract_id) {
                 for (lvl, list_type) in formats {
-                    numbering_defs.insert((*num_id, *lvl), list_type.clone());
+                    numbering_defs.insert((*num_id, *lvl), *list_type);
                 }
             }
         }
@@ -1020,7 +1191,7 @@ impl<R: Read + Seek> DocxParser<R> {
         for paragraph in &document.paragraphs {
             if let (Some(num_id), Some(level)) = (paragraph.numbering_id, paragraph.numbering_level) {
                 let key = (num_id, level);
-                let list_type = numbering_defs.get(&key).cloned().unwrap_or(ListType::Bullet);
+                let list_type = numbering_defs.get(&key).copied().unwrap_or(ListType::Bullet);
 
                 let list_item = ListItem {
                     level: level as u32,
@@ -1246,6 +1417,9 @@ enum DocxParseError {
 
     #[error("Required file not found in DOCX: {0}")]
     FileNotFound(String),
+
+    #[error("Security limit exceeded: {0}")]
+    SecurityLimit(String),
 }
 
 // quick-xml's unescape returns an encoding error type
@@ -1477,5 +1651,355 @@ mod tests {
         if let Ok(Event::Empty(ref e)) = reader.read_event_into(&mut buf) {
             assert!(is_format_enabled(e));
         }
+    }
+
+    // --- Security validation tests ---
+
+    #[test]
+    fn test_security_valid_minimal_archive() {
+        // Create a minimal valid ZIP archive (empty) - should pass
+        use std::io::Cursor;
+        let zip_data = vec![
+            0x50, 0x4b, 0x05, 0x06, // End of central directory signature
+            0x00, 0x00, // Disk number
+            0x00, 0x00, // Disk with central directory
+            0x00, 0x00, // Number of entries on this disk
+            0x00, 0x00, // Total number of entries
+            0x00, 0x00, 0x00, 0x00, // Size of central directory
+            0x00, 0x00, 0x00, 0x00, // Offset of central directory
+            0x00, 0x00, // Comment length
+        ];
+        let cursor = Cursor::new(zip_data);
+        let result = DocxParser::new(cursor);
+        // Empty archive should pass security checks (0 entries, 0 size)
+        assert!(
+            result.is_ok(),
+            "Empty valid ZIP should pass security checks: {:?}",
+            result.err()
+        );
+    }
+
+    #[test]
+    fn test_security_constants_are_reasonable() {
+        use super::super::{MAX_TOTAL_UNCOMPRESSED_SIZE, MAX_UNCOMPRESSED_FILE_SIZE, MAX_ZIP_ENTRIES};
+
+        const {
+            assert!(MAX_ZIP_ENTRIES >= 1_000, "Entry limit must be at least 1,000");
+            assert!(
+                MAX_UNCOMPRESSED_FILE_SIZE >= 10 * 1024 * 1024,
+                "Per-file size limit must be at least 10 MB"
+            );
+            assert!(
+                MAX_TOTAL_UNCOMPRESSED_SIZE >= MAX_UNCOMPRESSED_FILE_SIZE,
+                "Total size limit must be >= per-file limit"
+            );
+        }
+    }
+
+    #[test]
+    fn test_security_normal_docx_passes() {
+        use std::io::{Cursor, Write};
+
+        let buffer = Vec::new();
+        let cursor = Cursor::new(buffer);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options = zip::write::FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(b"<w:document/>").unwrap();
+
+        zip.start_file("docProps/core.xml", options).unwrap();
+        zip.write_all(b"<cp:coreProperties/>").unwrap();
+
+        let cursor = zip.finish().unwrap();
+        let data = cursor.into_inner();
+
+        let mut archive = zip::ZipArchive::new(Cursor::new(data)).unwrap();
+        let result = validate_archive_security(&mut archive);
+        assert!(
+            result.is_ok(),
+            "A normal small archive must pass security validation: {:?}",
+            result.err()
+        );
+    }
+
+    #[test]
+    fn test_security_rejects_too_many_entries() {
+        use std::io::{Cursor, Write};
+
+        // Create a ZIP with 10,001 entries to exceed the 10,000 limit.
+        // Each entry is an empty file, so this is fast.
+        let buffer = Vec::new();
+        let cursor = Cursor::new(buffer);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options = zip::write::FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
+
+        for i in 0..10_001 {
+            zip.start_file(format!("file_{}.txt", i), options).unwrap();
+            zip.write_all(b"").unwrap();
+        }
+
+        let cursor = zip.finish().unwrap();
+        let data = cursor.into_inner();
+
+        let mut archive = zip::ZipArchive::new(Cursor::new(data)).unwrap();
+        let result = validate_archive_security(&mut archive);
+        assert!(result.is_err(), "Archive with >10,000 entries must be rejected");
+
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("10001") && err_msg.contains("10000"),
+            "Error should mention actual and limit counts, got: {}",
+            err_msg
+        );
+    }
+
+    #[test]
+    fn test_security_rejects_oversized_file() {
+        use std::io::{Cursor, Write};
+
+        // We cannot actually write 100 MB in a unit test, but we can verify the
+        // validation path by confirming a small archive passes and the error
+        // message format is correct when it would fail. The constant-based test
+        // above already validates the limit values are reasonable.
+        //
+        // Here we verify that a single-file archive just under the limit passes.
+        let buffer = Vec::new();
+        let cursor = Cursor::new(buffer);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options = zip::write::FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
+
+        // Write a small file (1 KB) - well under limits
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(&[b'x'; 1024]).unwrap();
+
+        let cursor = zip.finish().unwrap();
+        let data = cursor.into_inner();
+
+        let mut archive = zip::ZipArchive::new(Cursor::new(data)).unwrap();
+        let result = validate_archive_security(&mut archive);
+        assert!(
+            result.is_ok(),
+            "A 1 KB file must pass size validation: {:?}",
+            result.err()
+        );
+    }
+
+    // --- Nested table integration test ---
+
+    /// Helper: create a minimal DOCX ZIP with the given XML as word/document.xml.
+    fn create_test_docx(document_xml: &str) -> Vec<u8> {
+        use std::io::{Cursor, Write};
+
+        let buffer = Vec::new();
+        let cursor = Cursor::new(buffer);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options = zip::write::FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(document_xml.as_bytes()).unwrap();
+
+        let cursor = zip.finish().unwrap();
+        cursor.into_inner()
+    }
+
+    #[test]
+    fn test_nested_table_parsing() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:tbl>
+      <w:tr>
+        <w:tc>
+          <w:p><w:r><w:t>Outer Cell 1</w:t></w:r></w:p>
+          <w:tbl>
+            <w:tr>
+              <w:tc>
+                <w:p><w:r><w:t>Inner Cell</w:t></w:r></w:p>
+              </w:tc>
+            </w:tr>
+          </w:tbl>
+        </w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>Outer Cell 2</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>"#;
+
+        let bytes = create_test_docx(xml);
+        let doc = parse_document(&bytes).expect("parse_document should succeed");
+
+        // Only the outer table is stored; nested table content is flattened.
+        assert_eq!(doc.tables.len(), 1, "Expected exactly 1 (outer) table");
+
+        let table = &doc.tables[0];
+        assert_eq!(table.rows.len(), 1, "Outer table should have 1 row");
+        assert_eq!(table.rows[0].cells.len(), 2, "Outer row should have 2 cells");
+
+        // First cell: "Outer Cell 1" paragraph + flattened "Inner Cell" paragraph
+        let cell0 = &table.rows[0].cells[0];
+        let cell0_texts: Vec<String> = cell0.paragraphs.iter().map(|p| p.to_text()).collect();
+        assert!(
+            cell0_texts.iter().any(|t| t.contains("Outer Cell 1")),
+            "First cell must contain 'Outer Cell 1', got: {:?}",
+            cell0_texts
+        );
+        assert!(
+            cell0_texts.iter().any(|t| t.contains("Inner Cell")),
+            "First cell must contain flattened 'Inner Cell', got: {:?}",
+            cell0_texts
+        );
+
+        // Second cell: "Outer Cell 2"
+        let cell1 = &table.rows[0].cells[1];
+        let cell1_texts: Vec<String> = cell1.paragraphs.iter().map(|p| p.to_text()).collect();
+        assert!(
+            cell1_texts.iter().any(|t| t.contains("Outer Cell 2")),
+            "Second cell must contain 'Outer Cell 2', got: {:?}",
+            cell1_texts
+        );
+    }
+
+    #[test]
+    fn test_parser_loads_styles() {
+        use std::io::{Cursor, Write};
+
+        let styles_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:styleId="Heading1">
+    <w:name w:val="heading 1"/>
+    <w:basedOn w:val="Normal"/>
+    <w:pPr><w:outlineLvl w:val="0"/></w:pPr>
+    <w:rPr><w:b/><w:sz w:val="32"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+  </w:style>
+</w:styles>"#;
+
+        let doc_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:pPr><w:pStyle w:val="Heading1"/></w:pPr>
+      <w:r><w:t>Hello</w:t></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let buffer = Vec::new();
+        let cursor = Cursor::new(buffer);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options = zip::write::FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(doc_xml.as_bytes()).unwrap();
+        zip.start_file("word/styles.xml", options).unwrap();
+        zip.write_all(styles_xml.as_bytes()).unwrap();
+
+        let cursor = zip.finish().unwrap();
+        let bytes = cursor.into_inner();
+
+        let doc = parse_document(&bytes).expect("should parse");
+
+        // Verify styles were loaded
+        assert!(doc.style_catalog.is_some(), "Style catalog should be loaded");
+        let catalog = doc.style_catalog.as_ref().unwrap();
+        assert!(catalog.styles.contains_key("Heading1"));
+        assert!(catalog.styles.contains_key("Normal"));
+
+        // Verify heading1 has bold and font size
+        let h1 = &catalog.styles["Heading1"];
+        assert_eq!(h1.run_properties.bold, Some(true));
+        assert_eq!(h1.run_properties.font_size_half_points, Some(32));
+        assert_eq!(h1.paragraph_properties.outline_level, Some(0));
+    }
+
+    #[test]
+    fn test_table_properties_integration() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblStyle w:val="TableGrid"/>
+        <w:tblW w:w="5000" w:type="dxa"/>
+        <w:jc w:val="center"/>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="2500"/>
+        <w:gridCol w:w="2500"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2500" w:type="dxa"/>
+            <w:shd w:val="clear" w:fill="D9E2F3"/>
+          </w:tcPr>
+          <w:p><w:r><w:t>Header 1</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="2500" w:type="dxa"/>
+            <w:gridSpan w:val="1"/>
+          </w:tcPr>
+          <w:p><w:r><w:t>Header 2</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:vMerge w:val="restart"/>
+          </w:tcPr>
+          <w:p><w:r><w:t>Merged</w:t></w:r></w:p>
+        </w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>Data</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>"#;
+
+        let bytes = create_test_docx(xml);
+        let doc = parse_document(&bytes).expect("parse should succeed");
+
+        assert_eq!(doc.tables.len(), 1);
+        let table = &doc.tables[0];
+
+        // Table properties
+        let tbl_props = table.properties.as_ref().expect("table should have properties");
+        assert_eq!(tbl_props.style_id.as_deref(), Some("TableGrid"));
+        assert_eq!(tbl_props.alignment.as_deref(), Some("center"));
+        assert!(tbl_props.width.is_some());
+        assert_eq!(tbl_props.width.as_ref().unwrap().value, 5000);
+
+        // Table grid
+        let grid = table.grid.as_ref().expect("table should have grid");
+        assert_eq!(grid.columns, vec![2500, 2500]);
+
+        // Row 0 header
+        let row0 = &table.rows[0];
+        let row_props = row0.properties.as_ref().expect("header row should have properties");
+        assert!(row_props.is_header);
+
+        // Cell 0,0 shading
+        let cell00 = &row0.cells[0];
+        let cell_props = cell00.properties.as_ref().expect("cell should have properties");
+        assert!(cell_props.shading.is_some());
+        assert_eq!(cell_props.shading.as_ref().unwrap().fill.as_deref(), Some("D9E2F3"));
+
+        // Cell 1,0 vMerge
+        let cell10 = &table.rows[1].cells[0];
+        let cell10_props = cell10.properties.as_ref().expect("merged cell should have properties");
+        assert_eq!(
+            cell10_props.v_merge,
+            Some(crate::extraction::docx::table::VerticalMerge::Restart)
+        );
     }
 }

@@ -10,7 +10,7 @@ use zip::ZipArchive;
 /// Application properties from docProps/app.xml for DOCX
 ///
 /// Contains Word-specific document statistics and metadata.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DocxAppProperties {
     /// Application name (e.g., "Microsoft Office Word")
     pub application: Option<String>,
@@ -49,7 +49,7 @@ pub struct DocxAppProperties {
 /// Application properties from docProps/app.xml for XLSX
 ///
 /// Contains Excel-specific document metadata.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct XlsxAppProperties {
     /// Application name (e.g., "Microsoft Excel")
     pub application: Option<String>,
@@ -74,7 +74,7 @@ pub struct XlsxAppProperties {
 /// Application properties from docProps/app.xml for PPTX
 ///
 /// Contains PowerPoint-specific document metadata.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PptxAppProperties {
     /// Application name (e.g., "Microsoft Office PowerPoint")
     pub application: Option<String>,

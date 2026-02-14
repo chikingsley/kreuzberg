@@ -8,12 +8,17 @@ use crate::Result;
 use crate::core::config::ExtractionConfig;
 use crate::extraction::{cells_to_markdown, office_metadata};
 use crate::plugins::{DocumentExtractor, Plugin};
+use crate::types::ExtractedImage;
 #[cfg(feature = "tokio-runtime")]
 use crate::types::PageBoundary;
-use crate::types::{ExtractionResult, Metadata, PageInfo, PageStructure, PageUnitType, Table};
+use crate::types::{
+    DocxMetadata, ExtractionResult, FormatMetadata, Metadata, PageInfo, PageStructure, PageUnitType, Table,
+};
 use ahash::AHashMap;
 use async_trait::async_trait;
+use bytes::Bytes;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::io::Cursor;
 
 /// High-performance DOCX extractor.
@@ -103,7 +108,7 @@ fn convert_docx_table_to_table(docx_table: &crate::extraction::docx::parser::Tab
 #[async_trait]
 impl DocumentExtractor for DocxExtractor {
     #[cfg_attr(feature = "otel", tracing::instrument(
-        skip(self, content, _config),
+        skip(self, content, config),
         fields(
             extractor.name = self.name(),
             content.size_bytes = content.len(),
@@ -113,15 +118,15 @@ impl DocumentExtractor for DocxExtractor {
         &self,
         content: &[u8],
         mime_type: &str,
-        _config: &ExtractionConfig,
+        config: &ExtractionConfig,
     ) -> Result<ExtractionResult> {
-        let (text, tables, page_boundaries) = {
+        let (text, tables, page_boundaries, drawings, image_rels) = {
             #[cfg(feature = "tokio-runtime")]
             if crate::core::batch_mode::is_batch_mode() {
                 let content_owned = content.to_vec();
                 let span = tracing::Span::current();
                 tokio::task::spawn_blocking(
-                    move || -> crate::error::Result<(String, Vec<Table>, Option<Vec<PageBoundary>>)> {
+                    move || -> crate::error::Result<(String, Vec<Table>, Option<Vec<PageBoundary>>, Vec<crate::extraction::docx::drawing::Drawing>, HashMap<String, String>)> {
                         let _guard = span.entered();
                         let doc = crate::extraction::docx::parser::parse_document(&content_owned)?;
 
@@ -135,8 +140,10 @@ impl DocumentExtractor for DocxExtractor {
                             .collect();
 
                         let page_boundaries = crate::extraction::docx::detect_page_breaks_from_docx(&content_owned)?;
+                        let drawings = doc.drawings;
+                        let image_rels = doc.image_relationships;
 
-                        Ok((text, tables, page_boundaries))
+                        Ok((text, tables, page_boundaries, drawings, image_rels))
                     },
                 )
                 .await
@@ -154,8 +161,10 @@ impl DocumentExtractor for DocxExtractor {
                     .collect();
 
                 let page_boundaries = crate::extraction::docx::detect_page_breaks_from_docx(content)?;
+                let drawings = doc.drawings.clone();
+                let image_rels = doc.image_relationships.clone();
 
-                (text, tables, page_boundaries)
+                (text, tables, page_boundaries, drawings, image_rels)
             }
 
             #[cfg(not(feature = "tokio-runtime"))]
@@ -172,8 +181,10 @@ impl DocumentExtractor for DocxExtractor {
                     .collect();
 
                 let page_boundaries = crate::extraction::docx::detect_page_breaks_from_docx(content)?;
+                let drawings = doc.drawings.clone();
+                let image_rels = doc.image_relationships.clone();
 
-                (text, tables, page_boundaries)
+                (text, tables, page_boundaries, drawings, image_rels)
             }
         };
 
@@ -209,8 +220,12 @@ impl DocumentExtractor for DocxExtractor {
 
         let mut metadata_map = AHashMap::new();
         let mut parsed_keywords: Option<Vec<String>> = None;
+        let mut docx_core_properties = None;
+        let mut docx_app_properties = None;
+        let mut docx_custom_properties: Option<HashMap<String, serde_json::Value>> = None;
 
         if let Ok(core) = office_metadata::extract_core_properties(&mut archive) {
+            docx_core_properties = Some(core.clone());
             if let Some(title) = core.title {
                 metadata_map.insert(Cow::Borrowed("title"), serde_json::Value::String(title));
             }
@@ -264,6 +279,7 @@ impl DocumentExtractor for DocxExtractor {
         }
 
         if let Ok(app) = office_metadata::extract_docx_app_properties(&mut archive) {
+            docx_app_properties = Some(app.clone());
             if let Some(pages) = app.pages {
                 metadata_map.insert(Cow::Borrowed("page_count"), serde_json::Value::Number(pages.into()));
             }
@@ -303,6 +319,7 @@ impl DocumentExtractor for DocxExtractor {
         }
 
         if let Ok(custom) = office_metadata::extract_custom_properties(&mut archive) {
+            docx_custom_properties = Some(custom.clone());
             for (key, value) in custom {
                 metadata_map.insert(Cow::Owned(format!("custom_{}", key)), value);
             }
@@ -332,12 +349,74 @@ impl DocumentExtractor for DocxExtractor {
             None
         };
 
+        // Extract images from drawings if configured
+        let extracted_images = if config.images.as_ref().is_some_and(|i| i.extract_images) {
+            let mut images = Vec::new();
+            for (idx, drawing) in drawings.iter().enumerate() {
+                if let Some(ref rid) = drawing.image_ref
+                    && let Some(target) = image_rels.get(rid)
+                {
+                    // Reject path traversal attempts within the archive
+                    if target.contains("..") {
+                        continue;
+                    }
+                    let zip_path = if let Some(stripped) = target.strip_prefix('/') {
+                        stripped.to_string()
+                    } else {
+                        format!("word/{}", target)
+                    };
+                    if let Ok(mut file) = archive.by_name(&zip_path) {
+                        if file.size() > crate::extraction::docx::MAX_IMAGE_FILE_SIZE {
+                            continue;
+                        }
+                        let mut data = Vec::with_capacity(file.size() as usize);
+                        if std::io::Read::read_to_end(&mut file, &mut data).is_ok() {
+                            let format = crate::extraction::image_format::detect_image_format(&data);
+                            let emus_per_px = crate::extraction::docx::EMUS_PER_PIXEL_96DPI;
+                            let (width, height) = drawing
+                                .extent
+                                .as_ref()
+                                .map(|e| {
+                                    (
+                                        Some(u32::try_from(e.cx.max(0) / emus_per_px).unwrap_or(0)),
+                                        Some(u32::try_from(e.cy.max(0) / emus_per_px).unwrap_or(0)),
+                                    )
+                                })
+                                .unwrap_or((None, None));
+                            let description = drawing.doc_properties.as_ref().and_then(|dp| dp.description.clone());
+                            images.push(ExtractedImage {
+                                data: Bytes::from(data),
+                                format,
+                                image_index: idx,
+                                page_number: None,
+                                width,
+                                height,
+                                colorspace: None,
+                                bits_per_component: None,
+                                is_mask: false,
+                                description,
+                                ocr_result: None,
+                            });
+                        }
+                    }
+                }
+            }
+            images
+        } else {
+            Vec::new()
+        };
+
         Ok(ExtractionResult {
             content: text,
             mime_type: mime_type.to_string().into(),
             metadata: Metadata {
                 pages: page_structure,
                 keywords: parsed_keywords,
+                format: Some(FormatMetadata::Docx(Box::new(DocxMetadata {
+                    core_properties: docx_core_properties,
+                    app_properties: docx_app_properties,
+                    custom_properties: docx_custom_properties,
+                }))),
                 additional: metadata_map,
                 ..Default::default()
             },
@@ -345,7 +424,7 @@ impl DocumentExtractor for DocxExtractor {
             tables,
             detected_languages: None,
             chunks: None,
-            images: Some(vec![]),
+            images: Some(extracted_images),
             djot_content: None,
             elements: None,
             ocr_elements: None,

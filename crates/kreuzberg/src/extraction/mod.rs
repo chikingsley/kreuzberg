@@ -35,6 +35,12 @@ pub mod docx;
 pub mod office_metadata;
 
 #[cfg(feature = "office")]
+pub mod ooxml_constants;
+
+#[cfg(feature = "office")]
+pub mod image_format;
+
+#[cfg(feature = "office")]
 pub mod ppt;
 
 #[cfg(feature = "office")]

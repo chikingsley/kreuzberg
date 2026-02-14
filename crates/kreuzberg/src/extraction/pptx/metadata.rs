@@ -21,6 +21,8 @@ use serde_json::Value;
 
 use super::container::PptxContainer;
 
+use crate::extraction::ooxml_constants::DRAWINGML_NAMESPACE;
+
 /// Extract comprehensive metadata from PPTX using office_metadata module
 pub(super) fn extract_metadata<R: Read + Seek>(archive: &mut ZipArchive<R>) -> PptxMetadata {
     #[cfg(feature = "office")]
@@ -146,10 +148,8 @@ fn extract_notes_text(notes_xml: &[u8]) -> Result<String> {
         .map_err(|e| crate::error::KreuzbergError::parsing(format!("Failed to parse notes XML: {}", e)))?;
 
     let mut text_parts = Vec::with_capacity(16);
-    const DRAWINGML_NS: &str = "http://schemas.openxmlformats.org/drawingml/2006/main";
-
     for node in doc.descendants() {
-        if node.has_tag_name((DRAWINGML_NS, "t"))
+        if node.has_tag_name((DRAWINGML_NAMESPACE, "t"))
             && let Some(text) = node.text()
         {
             text_parts.push(text);

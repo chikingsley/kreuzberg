@@ -53,6 +53,8 @@ mod additional_serde {
 pub enum FormatMetadata {
     #[cfg(feature = "pdf")]
     Pdf(PdfMetadata),
+    #[cfg(feature = "office")]
+    Docx(Box<DocxMetadata>),
     Excel(ExcelMetadata),
     Email(EmailMetadata),
     Pptx(PptxMetadata),
@@ -625,4 +627,42 @@ pub struct PptxMetadata {
     pub slide_count: usize,
     /// Names of slides (if available)
     pub slide_names: Vec<String>,
+}
+
+/// Word document metadata.
+///
+/// Extracted from DOCX files using shared Office Open XML metadata extraction.
+/// Integrates with `office_metadata` module for core/app/custom properties.
+#[cfg(feature = "office")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
+pub struct DocxMetadata {
+    /// Core properties from docProps/core.xml (Dublin Core metadata)
+    ///
+    /// Contains title, creator, subject, keywords, dates, etc.
+    /// Shared format across DOCX/PPTX/XLSX documents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "api", schema(value_type = Option<Object>))]
+    pub core_properties: Option<crate::extraction::office_metadata::CoreProperties>,
+
+    /// Application properties from docProps/app.xml (Word-specific statistics)
+    ///
+    /// Contains word count, page count, paragraph count, editing time, etc.
+    /// DOCX-specific variant of Office application properties.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "api", schema(value_type = Option<Object>))]
+    pub app_properties: Option<crate::extraction::office_metadata::DocxAppProperties>,
+
+    /// Custom properties from docProps/custom.xml (user-defined properties)
+    ///
+    /// Contains key-value pairs defined by users or applications.
+    /// Values can be strings, numbers, booleans, or dates.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_properties: Option<HashMap<String, serde_json::Value>>,
+    // Future Week 1-21 additions (commented out for now):
+    // style_catalog: OnceCell<Arc<StyleCatalog>>,       // Week 1-2: Style resolution
+    // theme: OnceCell<Arc<Theme>>,                      // Week 5: Theme colors
+    // numbering_catalog: OnceCell<Arc<NumberingCatalog>>, // Week 12-13: Numbering
+    // sections: Vec<SectionProperties>,                 // Week 3-4: Section properties
+    // document_settings: DocumentSettings,              // Week 11: Settings.xml
 }
