@@ -9,6 +9,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **PaddleOCR recognition height mismatch (#390)**: Changed `CRNN_DST_HEIGHT` from 32 to 48 pixels to match PP-OCRv4/v5 model input shape `[batch, 3, 48, width]`. The previous value caused ONNX Runtime dimension errors on all platforms.
+
+### Changed
+
+- **Docker full image: pre-download all PaddleOCR models**: Replaced broken single-language model download with all 12 recognition script families (english, chinese, latin, korean, eslav, thai, greek, arabic, devanagari, tamil, telugu, kannada) plus dictionaries. Fixed incorrect HuggingFace URLs and cache paths. Added retry logic with backoff for transient HuggingFace 502 errors.
+- **Docker test suite: PaddleOCR verification**: Added `test_paddle_ocr_extraction` to the full variant Docker tests to verify pre-loaded models work end-to-end.
+
+---
+
+## [4.3.3] - 2026-02-14
+
+### Added
+
+#### Centralized Image OCR Processing
+- **Shared `process_images_with_ocr` function**: Extracted duplicated OCR processing logic from DOCX and PPTX extractors into `extraction::image_ocr` module, providing a single shared implementation for all document extractors.
+
+#### Jupyter Notebook Image Extraction
+- **Base64 image decoding**: Jupyter extractor now decodes embedded base64 image data (PNG, JPEG, GIF, WebP) from notebook cell outputs into `ExtractedImage` structs instead of emitting placeholder text.
+- **OCR on notebook images**: Extracted images are processed with OCR when configured, using the centralized `process_images_with_ocr` function.
+- **SVG handling**: SVG images in notebook outputs are handled as text content (not sent to raster OCR).
+
+#### Markdown Data URI Image Extraction
+- **Data URI image decoding**: Markdown extractor now decodes `data:image/...;base64,...` URIs into `ExtractedImage` structs with proper format detection (PNG, JPEG, GIF, WebP).
+- **OCR on embedded images**: Decoded data URI images are processed with OCR when configured.
+- **HTTP URLs preserved as text**: Non-data URIs (HTTP/HTTPS) are kept as `[Image: url]` text markers without attempting network access or filesystem traversal.
+
+#### PaddleOCR Multi-Language Support (#388)
+- **106+ language support via 12 script families**: PaddleOCR recognition models now cover english, chinese (simplified+traditional+japanese), latin, korean, east slavic (cyrillic), thai, greek, arabic, devanagari, tamil, telugu, and kannada script families.
+- **Per-family recognition model architecture**: Shared detection/classification models with per-family recognition models and dictionaries, downloaded on demand from HuggingFace (`Kreuzberg/paddleocr-onnx-models`).
+- **Engine pool for concurrent multi-language OCR**: Replaced single-engine architecture with a per-family engine pool (`HashMap<String, Arc<Mutex<OcrLite>>>`), enabling concurrent OCR across different languages.
+- **Backend-agnostic `--ocr-language` CLI flag**: Works with all OCR backends (tesseract, paddle-ocr, easyocr). Tesseract expects ISO 639-3 codes (eng, fra, deu); PaddleOCR accepts flexible codes (en, ch, french, korean) via `map_language_code()`.
+- **SHA256 checksum verification**: All model downloads verified against embedded checksums for integrity.
+
+### Changed
+
+#### PaddleOCR Engine Internals
+- **CrnnNet recognition height**: Changed to 32 pixels (later found to be incorrect for PP-OCRv4/v5 models; fixed in next release).
+- **Model manager split**: `MODELS` constant replaced with `SHARED_MODELS` (det+cls) and `REC_MODELS` (12 families), with new cache layout `rec/{family}/model.onnx`.
+- **Language code mapping expanded**: `map_language_code()` now handles Thai, Greek, East Slavic, and additional Latin-script languages.
+
+#### DOCX Full Extraction Pipeline (#387)
+- **DocumentStructure generation**: Builds hierarchical document tree with heading-based sections, paragraphs, lists, tables, images, headers/footers, and footnotes/endnotes when `include_document_structure = true`.
+- **Pages field population**: Splits extracted text into per-page `PageContent` entries using detected page break boundaries, with tables and images assigned to correct pages.
+- **OCR on embedded images**: Runs secondary OCR on extracted DOCX images when OCR is configured, following the PPTX pattern.
+- **Image extraction with page assignment**: Drawing image placeholders in markdown output enable byte-position-based page number assignment for extracted images.
+- **Typed metadata fields**: `title`, `subject`, `authors`, `created_by`, `modified_by`, `created_at`, `modified_at`, `language`, and `keywords` are now populated as first-class `Metadata` fields instead of only appearing in the `additional` map.
+- **FormatMetadata::Docx**: Structured format metadata with `core_properties`, `app_properties`, and `custom_properties` available via `metadata.format`.
+- **Style-based heading detection**: Uses `StyleCatalog` with `outline_level` and inheritance chain walking for accurate heading level resolution, with string-matching fallback.
+- **Headers, footers, and footnote references**: Headers/footers included in markdown with `---` separators; `[^N]` inline footnote/endnote references rendered in text.
+- **Markdown formatting**: Bold (`**`), italic (`*`), underline (`<u>`), strikethrough (`~~`), and hyperlinks rendered as markdown.
+- **Table formatting metadata**: Vertical merge (`v_merge`) handled correctly, `grid_span` for horizontal merging, `is_header` row detection.
+- **Drawing image placeholders**: `![alt](image_N)` placeholders in markdown output for embedded images.
+
+
+#### DOCX Extractor Performance & Code Quality
+- **Eliminated 3x code duplication**: Extracted `parse_docx_core()` helper to deduplicate parsing logic across tokio/non-tokio cfg branches.
+- **Removed unnecessary clones**: Metadata structs (core/app/custom properties) borrowed then moved instead of cloned; drawings and image relationships only cloned when image extraction is enabled.
+- **Optimized Run::to_markdown()**: Single-pass string builder with pre-calculated capacity replaces clone + repeated `format!` calls on the hot path.
+- **In-place output trimming**: `to_markdown()` trims in-place instead of allocating a new String via `trim().to_string()`.
+- **Removed `into_owned()` on XML text decode**: Uses `Cow` directly from `e.decode()` instead of forcing heap allocation.
+- **`write!`/`writeln!` for string building**: Footnote definitions and image placeholders use `write!` to avoid intermediate String allocations.
+- **Safe element indexing**: `to_markdown()` uses `.get()` with `else { continue }` instead of direct indexing to prevent potential panics.
+- **Deduplicated document structure code**: Header/footer loops and footnote/endnote loops consolidated using iterators.
+
+### Fixed
+
+#### Extraction Quality Improvements
+- **LaTeX zero-arg command handling**: Added explicit skip list for 35 zero-argument commands (`\par`, `\noindent`, `\centering`, size commands, etc.). The catch-all handler no longer consumes the next `{...}` group as an argument, preventing silent text loss for unknown zero-arg commands.
+- **Structured data `is_text_field` false positives**: Changed from `.contains()` substring matching to exact equality on the leaf field name. Previously, "width" matched because it contains "id"; "valid" matched because it contains "id". Now only exact leaf name matches are considered.
+- **XML dead code in `Event::End` handler**: Removed unused variable allocation and discarded comparison (`let _ = popped == name_owned`), replaced with simple `element_stack.pop()`.
+
+### Removed
+- **Dead code cleanup**: Removed unused `Document.lists` field, `ListItem` struct, `process_lists()` method, and `HeaderFooter::extract_text()` method.
+
+---
+
+## [4.3.2] - 2026-02-13
+
+### Fixed
+
+#### PHP 8.4 Requirement Update
+- **Updated PHP requirement to 8.4+**: All PHP composer.json files, CI workflows, and documentation now require PHP 8.4+ to support PHPUnit 13.0. This fixes CI validation and PHP workflow failures caused by PHPUnit 13.0 requiring PHP 8.4.1+.
+
+#### Elixir Publishing Workflow
+- **Fixed macOS ARM64 build timeout**: Increased timeout from 180 to 300 minutes (5 hours) for macOS ARM64 Elixir native library builds. The previous timeout caused incomplete builds and prevented Elixir v4.3.1 from being published to Hex.pm.
+
 ---
 
 ## [4.3.1] - 2026-02-12
