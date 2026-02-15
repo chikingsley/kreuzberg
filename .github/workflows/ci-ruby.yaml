@@ -386,6 +386,29 @@ jobs:
           $cargoHome = $env:CARGO_HOME
           Write-Host "CARGO_HOME: $cargoHome"
 
+      - name: Clean Ruby build artifacts (fix stale cargo cache)
+        shell: bash
+        run: |
+          echo "=== Cleaning stale Ruby build artifacts ==="
+          cd packages/ruby
+
+          # Remove the tmp directory which contains stale cargo fingerprints
+          if [ -d "tmp" ]; then
+            echo "Removing stale tmp directory..."
+            rm -rf tmp
+            echo "✓ Cleaned tmp/"
+          fi
+
+          # Also clean any cached compilation artifacts
+          if [ -d ".bundle" ]; then
+            echo "Cleaning bundle cache..."
+            rm -rf .bundle/bundle
+            echo "✓ Cleaned .bundle/bundle"
+          fi
+
+          echo "Cleanup complete"
+          echo ""
+
       - name: Build Ruby gem
         shell: bash
         run: |
