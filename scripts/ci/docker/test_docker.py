@@ -293,6 +293,24 @@ def test_ocr_extraction(t: TestRunner) -> None:
         t.fail_test("OCR extraction", "Output too short or OCR failed")
 
 
+def test_paddle_ocr_extraction(t: TestRunner) -> None:
+    t.start("PaddleOCR extraction (pre-loaded models)")
+    name = t.container_name()
+    r = subprocess.run(
+        ["docker", "run", "--rm", "--name", name, "--memory", "2g",
+         "-v", f"{TEST_DOCS_DIR}:/data:ro",
+         t.image, "extract", "/data/images/ocr_image.jpg",
+         "--ocr", "true", "--ocr-backend", "paddle-ocr"],
+        capture_output=True, text=True, timeout=120,
+    )
+    out = (r.stdout + r.stderr).strip()
+    t.debug(f"PaddleOCR extraction output (first 200 chars): {out[:200]}")
+    if r.returncode == 0 and len(out) > 10:
+        t.pass_test()
+    else:
+        t.fail_test("PaddleOCR extraction", f"Exit code: {r.returncode}, output length: {len(out)}")
+
+
 def test_doc_extraction(t: TestRunner) -> None:
     t.start("Legacy DOC extraction (native OLE/CFB)")
     name = t.container_name()
@@ -663,6 +681,7 @@ def run_core_full_tests(t: TestRunner) -> None:
 
     if t.variant == "full":
         test_doc_extraction(t)
+        test_paddle_ocr_extraction(t)
 
     test_api_health(t)
     test_api_extract(t)
