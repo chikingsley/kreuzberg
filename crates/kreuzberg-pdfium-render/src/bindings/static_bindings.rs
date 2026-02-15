@@ -2021,6 +2021,12 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
 
     #[inline]
     #[allow(non_snake_case)]
+    fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
+        unsafe { crate::bindgen::FPDFAnnot_SetFormFieldFlags(form, annot, flags) }
+    }
+
+    #[inline]
+    #[allow(non_snake_case)]
     fn FPDFAnnot_GetFormFieldAtPoint(
         &self,
         form: FPDF_FORMHANDLE,
@@ -2118,6 +2124,19 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
         feature = "pdfium_6569",
         feature = "pdfium_6555",
     ))]
+    #[inline]
+    #[allow(non_snake_case)]
+    fn FPDFAnnot_SetFontColor(
+        &self,
+        form: FPDF_FORMHANDLE,
+        annot: FPDF_ANNOTATION,
+        R: c_uint,
+        G: c_uint,
+        B: c_uint,
+    ) -> FPDF_BOOL {
+        unsafe { crate::bindgen::FPDFAnnot_SetFontColor(form, annot, R, G, B) }
+    }
+
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAnnot_GetFontColor(
@@ -3636,6 +3655,12 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
 
     #[inline]
     #[allow(non_snake_case)]
+    fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
+        unsafe { crate::bindgen::FPDFPage_InsertObjectAtIndex(page, page_object, index) }
+    }
+
+    #[inline]
+    #[allow(non_snake_case)]
     fn FPDFPage_RemoveObject(&self, page: FPDF_PAGE, page_obj: FPDF_PAGEOBJECT) -> FPDF_BOOL {
         unsafe { crate::bindgen::FPDFPage_RemoveObject(page, page_obj) }
     }
@@ -4929,6 +4954,17 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
     }
 
     #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
+    #[inline]
+    #[allow(non_snake_case)]
+    fn FPDFAttachment_GetSubtype(
+        &self,
+        attachment: FPDF_ATTACHMENT,
+        buffer: *mut FPDF_WCHAR,
+        buflen: c_ulong,
+    ) -> c_ulong {
+        unsafe { crate::bindgen::FPDFAttachment_GetSubtype(attachment, buffer, buflen) }
+    }
+
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAttachment_GetSubtype(
