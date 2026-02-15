@@ -250,6 +250,10 @@ impl OcrBackend for TesseractBackend {
             ocr_elements: ocr_result.ocr_elements,
             djot_content: None,
             document: None,
+            #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
+            extracted_keywords: None,
+            quality_score: None,
+            processing_warnings: Vec::new(),
         })
     }
 
@@ -327,6 +331,10 @@ impl OcrBackend for TesseractBackend {
             ocr_elements: None,
             djot_content: None,
             document: None,
+            #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
+            extracted_keywords: None,
+            quality_score: None,
+            processing_warnings: Vec::new(),
         })
     }
 
