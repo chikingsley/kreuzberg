@@ -7,407 +7,7 @@ mod bindgen {
     #![allow(non_snake_case)]
     #![allow(dead_code)]
 
-    // Select the Pdfium FPDF_* API version to use based on crate feature flags.
-    // When multiple pdfium version features are enabled simultaneously (Cargo features
-    // are additive), only the highest version is included.
-
-    #[cfg(feature = "pdfium_future")]
-    include!("bindgen/pdfium_future.rs");
-
-    #[cfg(all(feature = "pdfium_7543", not(feature = "pdfium_future")))]
-    include!("bindgen/pdfium_7543.rs");
-
-    #[cfg(all(
-        feature = "pdfium_7350",
-        not(any(feature = "pdfium_future", feature = "pdfium_7543"))
-    ))]
-    include!("bindgen/pdfium_7350.rs");
-
-    #[cfg(all(
-        feature = "pdfium_7215",
-        not(any(feature = "pdfium_future", feature = "pdfium_7543", feature = "pdfium_7350"))
-    ))]
-    include!("bindgen/pdfium_7215.rs");
-
-    #[cfg(all(
-        feature = "pdfium_7123",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215"
-        ))
-    ))]
-    include!("bindgen/pdfium_7123.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6996",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123"
-        ))
-    ))]
-    include!("bindgen/pdfium_6996.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6721",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996"
-        ))
-    ))]
-    include!("bindgen/pdfium_6721.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6666",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721"
-        ))
-    ))]
-    include!("bindgen/pdfium_6666.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6611",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666"
-        ))
-    ))]
-    include!("bindgen/pdfium_6611.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6569",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611"
-        ))
-    ))]
-    include!("bindgen/pdfium_6569.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6555",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569"
-        ))
-    ))]
-    include!("bindgen/pdfium_6555.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6490",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555"
-        ))
-    ))]
-    include!("bindgen/pdfium_6490.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6406",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490"
-        ))
-    ))]
-    include!("bindgen/pdfium_6406.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6337",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406"
-        ))
-    ))]
-    include!("bindgen/pdfium_6337.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6295",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337"
-        ))
-    ))]
-    include!("bindgen/pdfium_6295.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6259",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295"
-        ))
-    ))]
-    include!("bindgen/pdfium_6259.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6164",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259"
-        ))
-    ))]
-    include!("bindgen/pdfium_6164.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6124",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164"
-        ))
-    ))]
-    include!("bindgen/pdfium_6124.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6110",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164",
-            feature = "pdfium_6124"
-        ))
-    ))]
-    include!("bindgen/pdfium_6110.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6084",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164",
-            feature = "pdfium_6124",
-            feature = "pdfium_6110"
-        ))
-    ))]
-    include!("bindgen/pdfium_6084.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6043",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164",
-            feature = "pdfium_6124",
-            feature = "pdfium_6110",
-            feature = "pdfium_6084"
-        ))
-    ))]
-    include!("bindgen/pdfium_6043.rs");
-
-    #[cfg(all(
-        feature = "pdfium_6015",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164",
-            feature = "pdfium_6124",
-            feature = "pdfium_6110",
-            feature = "pdfium_6084",
-            feature = "pdfium_6043"
-        ))
-    ))]
-    include!("bindgen/pdfium_6015.rs");
-
-    #[cfg(all(
-        feature = "pdfium_5961",
-        not(any(
-            feature = "pdfium_future",
-            feature = "pdfium_7543",
-            feature = "pdfium_7350",
-            feature = "pdfium_7215",
-            feature = "pdfium_7123",
-            feature = "pdfium_6996",
-            feature = "pdfium_6721",
-            feature = "pdfium_6666",
-            feature = "pdfium_6611",
-            feature = "pdfium_6569",
-            feature = "pdfium_6555",
-            feature = "pdfium_6490",
-            feature = "pdfium_6406",
-            feature = "pdfium_6337",
-            feature = "pdfium_6295",
-            feature = "pdfium_6259",
-            feature = "pdfium_6164",
-            feature = "pdfium_6124",
-            feature = "pdfium_6110",
-            feature = "pdfium_6084",
-            feature = "pdfium_6043",
-            feature = "pdfium_6015"
-        ))
-    ))]
-    include!("bindgen/pdfium_5961.rs");
+    include!("bindgen/pdfium_7678.rs");
 
     pub(crate) type size_t = usize;
 }
@@ -528,14 +128,12 @@ pub mod prelude {
 mod tests {
     use crate::prelude::*;
     use crate::utils::test::test_bind_to_pdfium;
-    #[cfg(not(feature = "static"))]
     use image_025::ImageFormat;
     use std::fs::File;
-    #[cfg(not(feature = "static"))]
     use std::path::Path;
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_readme_example() -> Result<(), PdfiumError> {
         // Runs the code in the main example at the top of README.md.
 
@@ -575,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_dynamic_bindings() -> Result<(), PdfiumError> {
         let pdfium = Pdfium::default();
 
@@ -602,7 +200,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "static")]
+    #[cfg(pdfium_use_static)]
     fn test_static_bindings() {
         // Simply checks that the static bindings contain no compilation errors.
 
@@ -636,7 +234,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_custom_font_paths_with_text_rendering() -> Result<(), PdfiumError> {
         // Use system font paths that exist on Ubuntu CI
         let config = PdfiumConfig::new().set_user_font_paths(vec!["/usr/share/fonts/truetype/".to_string()]);
@@ -676,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_empty_font_paths() -> Result<(), PdfiumError> {
         let config = PdfiumConfig::new(); // No custom paths
 
@@ -696,7 +294,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_font_paths_with_null_bytes() -> Result<(), PdfiumError> {
         // Path with null byte should be safely ignored
         let config = PdfiumConfig::new().set_user_font_paths(vec![
@@ -721,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_font_paths_nonexistent() -> Result<(), PdfiumError> {
         // Non-existent paths should not crash Pdfium
         let config = PdfiumConfig::new().set_user_font_paths(vec![
@@ -746,7 +344,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "static"))]
+    #[cfg(not(pdfium_use_static))]
     fn test_default_config_uses_simple_initialization() -> Result<(), PdfiumError> {
         // Test that default config (no font paths, no font provider) uses FPDF_InitLibrary()
         // rather than FPDF_InitLibraryWithConfig() to avoid potential overhead.
