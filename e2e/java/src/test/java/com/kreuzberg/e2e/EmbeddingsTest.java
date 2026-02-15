@@ -30,7 +30,7 @@ public class EmbeddingsTest {
 
     @Test
     public void embeddingAsync() throws Exception {
-        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"preset\":\"balanced\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
+        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"name\":\"balanced\",\"type\":\"preset\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
         Path documentPath = E2EHelpers.resolveDocument("pdf/fake_memo.pdf");
 
         if (true && !Files.exists(documentPath)) {
@@ -64,7 +64,7 @@ public class EmbeddingsTest {
 
     @Test
     public void embeddingBalancedPreset() throws Exception {
-        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"preset\":\"balanced\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
+        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"name\":\"balanced\",\"type\":\"preset\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
         E2EHelpers.runFixture(
             "embedding_balanced_preset",
             "pdf/fake_memo.pdf",
@@ -100,7 +100,7 @@ public class EmbeddingsTest {
 
     @Test
     public void embeddingFastPreset() throws Exception {
-        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"preset\":\"fast\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
+        JsonNode config = MAPPER.readTree("{\"chunking\":{\"embedding\":{\"model\":{\"name\":\"fast\",\"type\":\"preset\"},\"normalize\":true},\"max_chars\":500,\"max_overlap\":50}}");
         E2EHelpers.runFixture(
             "embedding_fast_preset",
             "pdf/fake_memo.pdf",

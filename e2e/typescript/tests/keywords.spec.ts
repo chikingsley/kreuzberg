@@ -25,7 +25,7 @@ describe("keywords fixtures", () => {
 			try {
 				result = extractFileSync(documentPath, null, config);
 			} catch (error) {
-				if (shouldSkipFixture(error, "keywords_rake", ["keywords"], undefined)) {
+				if (shouldSkipFixture(error, "keywords_rake", ["keywords-rake"], undefined)) {
 					return;
 				}
 				throw error;
@@ -53,7 +53,7 @@ describe("keywords fixtures", () => {
 			try {
 				result = extractFileSync(documentPath, null, config);
 			} catch (error) {
-				if (shouldSkipFixture(error, "keywords_yake", ["keywords"], undefined)) {
+				if (shouldSkipFixture(error, "keywords_yake", ["keywords-yake"], undefined)) {
 					return;
 				}
 				throw error;

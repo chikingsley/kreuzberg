@@ -17,7 +17,7 @@ namespace Kreuzberg.E2E.TokenReduction
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/fake_memo.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/fake_memo.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/fake_memo.pdf", true);
-            var config = TestHelpers.BuildConfig("{\"token_reduction\":{\"level\":\"medium\"}}");
+            var config = TestHelpers.BuildConfig("{\"token_reduction\":{\"mode\":\"moderate\"}}");
 
             var result = KreuzbergClient.ExtractFileSync(documentPath, config);
             TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });
@@ -31,7 +31,7 @@ namespace Kreuzberg.E2E.TokenReduction
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/fake_memo.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/fake_memo.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/fake_memo.pdf", true);
-            var config = TestHelpers.BuildConfig("{\"chunking\":{\"max_chars\":500,\"max_overlap\":50},\"token_reduction\":{\"level\":\"medium\"}}");
+            var config = TestHelpers.BuildConfig("{\"chunking\":{\"max_chars\":500,\"max_overlap\":50},\"token_reduction\":{\"mode\":\"moderate\"}}");
 
             var result = KreuzbergClient.ExtractFileSync(documentPath, config);
             TestHelpers.AssertExpectedMime(result, new[] { "application/pdf" });

@@ -440,20 +440,20 @@ pub mod assertions {
         min_count: Option<usize>,
         max_count: Option<usize>,
     ) {
+        // Keywords are stored in metadata.additional["keywords"] as an array of Keyword objects
+        let keywords_opt = result.metadata.additional.get("keywords").and_then(|v| v.as_array());
+
         if let Some(true) = has_keywords {
-            let keywords = result
-                .metadata
-                .keywords
-                .as_ref()
-                .expect("Expected keywords but got None");
+            let keywords = keywords_opt.expect("Expected keywords but got None");
             assert!(!keywords.is_empty(), "Expected non-empty keywords list");
         }
         if let Some(false) = has_keywords
-            && let Some(keywords) = result.metadata.keywords.as_ref()
+            && keywords_opt.is_some()
         {
+            let keywords = keywords_opt.unwrap();
             assert!(keywords.is_empty(), "Expected no keywords but found {}", keywords.len());
         }
-        if let Some(keywords) = result.metadata.keywords.as_ref() {
+        if let Some(keywords) = keywords_opt {
             if let Some(min) = min_count {
                 assert!(
                     keywords.len() >= min,

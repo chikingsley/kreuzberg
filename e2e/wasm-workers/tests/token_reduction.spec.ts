@@ -16,7 +16,7 @@ describe("token_reduction", () => {
 			return;
 		}
 
-		const config = buildConfig({ token_reduction: { level: "medium" } });
+		const config = buildConfig({ token_reduction: { mode: "moderate" } });
 		let result: ExtractionResult | null = null;
 		try {
 			result = await extractBytes(documentBytes, "application/octet-stream", config);
@@ -41,7 +41,10 @@ describe("token_reduction", () => {
 			return;
 		}
 
-		const config = buildConfig({ chunking: { max_chars: 500, max_overlap: 50 }, token_reduction: { level: "medium" } });
+		const config = buildConfig({
+			chunking: { max_chars: 500, max_overlap: 50 },
+			token_reduction: { mode: "moderate" },
+		});
 		let result: ExtractionResult | null = null;
 		try {
 			result = await extractBytes(documentBytes, "application/octet-stream", config);

@@ -10,7 +10,7 @@
 		"input_type": "file",
 		"config": {
 			"token_reduction": {
-				"level": "medium"
+				"mode": "moderate"
 			}
 		}
 	},

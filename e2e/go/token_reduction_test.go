@@ -8,7 +8,7 @@ import "testing"
 func TestTokenReductionTokenReductionBasic(t *testing.T) {
 	result := runExtraction(t, "pdf/fake_memo.pdf", []byte(`{
 "token_reduction": {
-	"level": "medium"
+	"mode": "moderate"
 }
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})
@@ -23,7 +23,7 @@ func TestTokenReductionTokenReductionWithChunking(t *testing.T) {
 	"max_overlap": 50
 },
 "token_reduction": {
-	"level": "medium"
+	"mode": "moderate"
 }
 }`))
 	assertExpectedMime(t, result, []string{"application/pdf"})

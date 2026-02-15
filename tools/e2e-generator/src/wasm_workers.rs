@@ -462,7 +462,8 @@ export const assertions = {
     },
 
     assertKeywords(result: ExtractionResult, hasKeywords?: boolean | null, minCount?: number | null, maxCount?: number | null): void {
-        const keywords = (result as unknown as PlainRecord).keywords as unknown[] | undefined;
+        const metadata = isPlainRecord(result.metadata) ? (result.metadata as PlainRecord) : undefined;
+        const keywords = metadata?.keywords as unknown[] | undefined;
         if (typeof hasKeywords === "boolean") {
             const keywordsExist = Array.isArray(keywords) && keywords.length > 0;
             expect(keywordsExist).toBe(hasKeywords);

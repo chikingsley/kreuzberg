@@ -14,7 +14,7 @@ defmodule E2E.KeywordsTest do
              "keywords_rake",
              "pdf/fake_memo.pdf",
              %{keywords: %{algorithm: "rake", max_keywords: 10}},
-             requirements: ["keywords"],
+             requirements: ["keywords-rake"],
              notes: nil,
              skip_if_missing: true
            ) do
@@ -37,7 +37,7 @@ defmodule E2E.KeywordsTest do
              "keywords_yake",
              "pdf/fake_memo.pdf",
              %{keywords: %{algorithm: "yake", max_keywords: 10}},
-             requirements: ["keywords"],
+             requirements: ["keywords-yake"],
              notes: nil,
              skip_if_missing: true
            ) do

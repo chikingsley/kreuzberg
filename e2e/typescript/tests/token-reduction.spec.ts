@@ -20,7 +20,7 @@ describe("token_reduction fixtures", () => {
 				console.warn("Skipping token_reduction_basic: missing document at", documentPath);
 				return;
 			}
-			const config = buildConfig({ token_reduction: { level: "medium" } });
+			const config = buildConfig({ token_reduction: { mode: "moderate" } });
 			let result: ExtractionResult | null = null;
 			try {
 				result = extractFileSync(documentPath, null, config);
@@ -50,7 +50,7 @@ describe("token_reduction fixtures", () => {
 			}
 			const config = buildConfig({
 				chunking: { max_chars: 500, max_overlap: 50 },
-				token_reduction: { level: "medium" },
+				token_reduction: { mode: "moderate" },
 			});
 			let result: ExtractionResult | null = null;
 			try {

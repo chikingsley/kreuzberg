@@ -20,7 +20,7 @@ def test_token_reduction_basic() -> None:
     if not document_path.exists():
         pytest.skip(f"Skipping token_reduction_basic: missing document at {document_path}")
 
-    config = helpers.build_config({"token_reduction": {"level": "medium"}})
+    config = helpers.build_config({"token_reduction": {"mode": "moderate"}})
 
     result = extract_file_sync(document_path, None, config)
 
@@ -37,7 +37,7 @@ def test_token_reduction_with_chunking() -> None:
         pytest.skip(f"Skipping token_reduction_with_chunking: missing document at {document_path}")
 
     config = helpers.build_config(
-        {"chunking": {"max_chars": 500, "max_overlap": 50}, "token_reduction": {"level": "medium"}}
+        {"chunking": {"max_chars": 500, "max_overlap": 50}, "token_reduction": {"mode": "moderate"}}
     )
 
     result = extract_file_sync(document_path, None, config)

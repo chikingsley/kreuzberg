@@ -35,7 +35,7 @@ public class KeywordsTest {
             "keywords_rake",
             "pdf/fake_memo.pdf",
             config,
-            Arrays.asList("keywords"),
+            Arrays.asList("keywords-rake"),
             null,
             true,
             result -> {
@@ -53,7 +53,7 @@ public class KeywordsTest {
             "keywords_yake",
             "pdf/fake_memo.pdf",
             config,
-            Arrays.asList("keywords"),
+            Arrays.asList("keywords-yake"),
             null,
             true,
             result -> {

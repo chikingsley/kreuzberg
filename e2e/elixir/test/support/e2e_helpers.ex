@@ -511,7 +511,7 @@ defmodule E2E.Helpers do
   end
 
   def assert_keywords(result, opts) do
-    keywords = result.keywords || []
+    keywords = result.metadata.keywords || []
     keywords_len = length(keywords)
 
     if is_boolean(opts[:has_keywords]) do

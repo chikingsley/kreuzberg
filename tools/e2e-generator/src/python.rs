@@ -20,6 +20,8 @@ import pytest
 
 from kreuzberg import (
     ChunkingConfig,
+    EmbeddingConfig,
+    EmbeddingModelType,
     ExtractionConfig,
     ImageExtractionConfig,
     KeywordAlgorithm,
@@ -43,6 +45,32 @@ def resolve_document(relative: str) -> Path:
     return _TEST_DOCUMENTS / relative
 
 
+def _build_chunking(chunking_data: dict[str, Any]) -> ChunkingConfig:
+    """Convert a chunking dict with nested embedding to ChunkingConfig."""
+    cd = dict(chunking_data)
+    if "embedding" in cd and isinstance(cd["embedding"], dict):
+        emb = dict(cd["embedding"])
+        model = None
+        if "model" in emb and isinstance(emb["model"], dict):
+            m = emb["model"]
+            if m.get("type") == "preset":
+                model = EmbeddingModelType.preset(m.get("name", "balanced"))
+            del emb["model"]
+        if model is not None:
+            emb["model"] = model
+        cd["embedding"] = EmbeddingConfig(**emb)
+    return ChunkingConfig(**cd)
+
+
+def _build_keywords(keywords_data: dict[str, Any]) -> KeywordConfig:
+    """Convert a keywords dict to KeywordConfig."""
+    kw = dict(keywords_data)
+    if "algorithm" in kw:
+        algo_map = {"yake": KeywordAlgorithm.Yake, "rake": KeywordAlgorithm.Rake}
+        kw["algorithm"] = algo_map.get(kw["algorithm"], KeywordAlgorithm.Yake)
+    return KeywordConfig(**kw)
+
+
 def build_config(config: dict[str, Any] | None) -> ExtractionConfig:
     """Construct an ExtractionConfig from a plain dictionary."""
 
@@ -59,7 +87,7 @@ def build_config(config: dict[str, Any] | None) -> ExtractionConfig:
         kwargs["ocr"] = OcrConfig(**ocr_data)
 
     if (chunking_data := config.get("chunking")) is not None:
-        kwargs["chunking"] = ChunkingConfig(**chunking_data)
+        kwargs["chunking"] = _build_chunking(chunking_data)
 
     if (images_data := config.get("images")) is not None:
         kwargs["images"] = ImageExtractionConfig(**images_data)
@@ -74,11 +102,7 @@ def build_config(config: dict[str, Any] | None) -> ExtractionConfig:
         kwargs["language_detection"] = LanguageDetectionConfig(**language_detection)
 
     if (keywords_data := config.get("keywords")) is not None:
-        kw = dict(keywords_data)
-        if "algorithm" in kw:
-            algo_map = {"yake": KeywordAlgorithm.Yake, "rake": KeywordAlgorithm.Rake}
-            kw["algorithm"] = algo_map.get(kw["algorithm"], KeywordAlgorithm.Yake)
-        kwargs["keywords"] = KeywordConfig(**kw)
+        kwargs["keywords"] = _build_keywords(keywords_data)
 
     if (postprocessor := config.get("postprocessor")) is not None:
         kwargs["postprocessor"] = PostProcessorConfig(**postprocessor)
@@ -462,7 +486,7 @@ def assert_keywords(
     min_count: int | None = None,
     max_count: int | None = None,
 ) -> None:
-    keywords = result.keywords if hasattr(result, "keywords") else None
+    keywords = result.metadata.get("keywords") if isinstance(getattr(result, "metadata", None), dict) else None
     if has_keywords is True:
         if keywords is None:
             pytest.fail("Expected keywords but got None")
@@ -470,9 +494,8 @@ def assert_keywords(
             pytest.fail(f"Expected keywords list, got {type(keywords)}")
         if len(keywords) == 0:
             pytest.fail("Expected non-empty keywords list")
-    if has_keywords is False:
-        if keywords is not None and len(keywords) > 0:
-            pytest.fail(f"Expected no keywords but found {len(keywords)}")
+    if has_keywords is False and keywords is not None and len(keywords) > 0:
+        pytest.fail(f"Expected no keywords but found {len(keywords)}")
     if keywords is not None and isinstance(keywords, (list, tuple)):
         if min_count is not None and len(keywords) < min_count:
             pytest.fail(f"Expected >= {min_count} keywords, found {len(keywords)}")

@@ -338,7 +338,7 @@ module E2ERuby
     end
 
     def self.assert_keywords(result, has_keywords: nil, min_count: nil, max_count: nil)
-      keywords = result.keywords if result.respond_to?(:keywords)
+      keywords = result.metadata.keywords if result.metadata.respond_to?(:keywords)
       if has_keywords == true
         expect(keywords).not_to be_nil
         expect(keywords).to be_a(Array)

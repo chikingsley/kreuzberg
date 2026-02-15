@@ -14,7 +14,8 @@
 				"max_overlap": 50,
 				"embedding": {
 					"model": {
-						"preset": "balanced"
+						"type": "preset",
+						"name": "balanced"
 					},
 					"normalize": true
 				}

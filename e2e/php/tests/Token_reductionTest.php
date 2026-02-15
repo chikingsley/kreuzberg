@@ -25,7 +25,7 @@ class Token_reductionTest extends TestCase
             $this->markTestSkipped('Skipping token_reduction_basic: missing document at ' . $documentPath);
         }
 
-        $config = Helpers::buildConfig(['token_reduction' => ['level' => 'medium']]);
+        $config = Helpers::buildConfig(['token_reduction' => ['mode' => 'moderate']]);
 
         $kreuzberg = new Kreuzberg($config);
         $result = $kreuzberg->extractFile($documentPath);
@@ -45,7 +45,7 @@ class Token_reductionTest extends TestCase
             $this->markTestSkipped('Skipping token_reduction_with_chunking: missing document at ' . $documentPath);
         }
 
-        $config = Helpers::buildConfig(['chunking' => ['max_chars' => 500, 'max_overlap' => 50], 'token_reduction' => ['level' => 'medium']]);
+        $config = Helpers::buildConfig(['chunking' => ['max_chars' => 500, 'max_overlap' => 50], 'token_reduction' => ['mode' => 'moderate']]);
 
         $kreuzberg = new Kreuzberg($config);
         $result = $kreuzberg->extractFile($documentPath);

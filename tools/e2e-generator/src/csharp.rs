@@ -689,7 +689,7 @@ public static class TestHelpers
         int? minCount,
         int? maxCount)
     {
-        var keywords = result.Keywords;
+        var keywords = result.Metadata?.Keywords;
         if (hasKeywords == true)
         {
             if (keywords is null || keywords.Count == 0)

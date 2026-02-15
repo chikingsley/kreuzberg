@@ -14,7 +14,7 @@ RSpec.describe 'keywords fixtures' do
       'keywords_rake',
       'pdf/fake_memo.pdf',
       { keywords: { algorithm: 'rake', max_keywords: 10 } },
-      requirements: %w[keywords],
+      requirements: %w[keywords-rake],
       notes: nil,
       skip_if_missing: true
     ) do |result|
@@ -32,7 +32,7 @@ RSpec.describe 'keywords fixtures' do
       'keywords_yake',
       'pdf/fake_memo.pdf',
       { keywords: { algorithm: 'yake', max_keywords: 10 } },
-      requirements: %w[keywords],
+      requirements: %w[keywords-yake],
       notes: nil,
       skip_if_missing: true
     ) do |result|

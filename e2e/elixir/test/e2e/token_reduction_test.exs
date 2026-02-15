@@ -13,7 +13,7 @@ defmodule E2E.TokenReductionTest do
       case E2E.Helpers.run_fixture(
              "token_reduction_basic",
              "pdf/fake_memo.pdf",
-             %{token_reduction: %{level: "medium"}},
+             %{token_reduction: %{mode: "moderate"}},
              requirements: [],
              notes: nil,
              skip_if_missing: true
@@ -36,7 +36,7 @@ defmodule E2E.TokenReductionTest do
       case E2E.Helpers.run_fixture(
              "token_reduction_with_chunking",
              "pdf/fake_memo.pdf",
-             %{chunking: %{max_chars: 500, max_overlap: 50}, token_reduction: %{level: "medium"}},
+             %{chunking: %{max_chars: 500, max_overlap: 50}, token_reduction: %{mode: "moderate"}},
              requirements: [],
              notes: nil,
              skip_if_missing: true

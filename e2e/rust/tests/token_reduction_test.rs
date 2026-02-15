@@ -21,7 +21,7 @@ fn test_token_reduction_basic() {
     let config: ExtractionConfig = serde_json::from_str(
         r#"{
   "token_reduction": {
-    "level": "medium"
+    "mode": "moderate"
   }
 }"#,
     )
@@ -56,7 +56,7 @@ fn test_token_reduction_with_chunking() {
     "max_overlap": 50
   },
   "token_reduction": {
-    "level": "medium"
+    "mode": "moderate"
   }
 }"#,
     )

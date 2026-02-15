@@ -10,7 +10,8 @@ func TestEmbeddingsEmbeddingAsync(t *testing.T) {
 "chunking": {
 	"embedding": {
 	"model": {
-		"preset": "balanced"
+		"name": "balanced",
+		"type": "preset"
 	},
 	"normalize": true
 	},
@@ -28,7 +29,8 @@ func TestEmbeddingsEmbeddingBalancedPreset(t *testing.T) {
 "chunking": {
 	"embedding": {
 	"model": {
-		"preset": "balanced"
+		"name": "balanced",
+		"type": "preset"
 	},
 	"normalize": true
 	},
@@ -58,7 +60,8 @@ func TestEmbeddingsEmbeddingFastPreset(t *testing.T) {
 "chunking": {
 	"embedding": {
 	"model": {
-		"preset": "fast"
+		"name": "fast",
+		"type": "preset"
 	},
 	"normalize": true
 	},

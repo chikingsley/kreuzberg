@@ -11,7 +11,7 @@ await initWasm();
 
 Deno.test("token_reduction_basic", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("pdf/fake_memo.pdf");
-	const config = buildConfig({ token_reduction: { level: "medium" } });
+	const config = buildConfig({ token_reduction: { mode: "moderate" } });
 	let result: ExtractionResult | null = null;
 	try {
 		// Sync file extraction - WASM uses extractBytes with pre-read bytes
@@ -32,7 +32,7 @@ Deno.test("token_reduction_basic", { permissions: { read: true } }, async () => 
 
 Deno.test("token_reduction_with_chunking", { permissions: { read: true } }, async () => {
 	const documentBytes = await resolveDocument("pdf/fake_memo.pdf");
-	const config = buildConfig({ chunking: { max_chars: 500, max_overlap: 50 }, token_reduction: { level: "medium" } });
+	const config = buildConfig({ chunking: { max_chars: 500, max_overlap: 50 }, token_reduction: { mode: "moderate" } });
 	let result: ExtractionResult | null = null;
 	try {
 		// Sync file extraction - WASM uses extractBytes with pre-read bytes

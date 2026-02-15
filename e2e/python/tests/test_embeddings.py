@@ -25,7 +25,7 @@ async def test_embedding_async() -> None:
     config = helpers.build_config(
         {
             "chunking": {
-                "embedding": {"model": {"preset": "balanced"}, "normalize": True},
+                "embedding": {"model": {"name": "balanced", "type": "preset"}, "normalize": True},
                 "max_chars": 500,
                 "max_overlap": 50,
             }
@@ -49,7 +49,7 @@ def test_embedding_balanced_preset() -> None:
     config = helpers.build_config(
         {
             "chunking": {
-                "embedding": {"model": {"preset": "balanced"}, "normalize": True},
+                "embedding": {"model": {"name": "balanced", "type": "preset"}, "normalize": True},
                 "max_chars": 500,
                 "max_overlap": 50,
             }
@@ -89,7 +89,7 @@ def test_embedding_fast_preset() -> None:
     config = helpers.build_config(
         {
             "chunking": {
-                "embedding": {"model": {"preset": "fast"}, "normalize": True},
+                "embedding": {"model": {"name": "fast", "type": "preset"}, "normalize": True},
                 "max_chars": 500,
                 "max_overlap": 50,
             }

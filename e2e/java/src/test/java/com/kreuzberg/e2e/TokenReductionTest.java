@@ -30,7 +30,7 @@ public class TokenReductionTest {
 
     @Test
     public void tokenReductionBasic() throws Exception {
-        JsonNode config = MAPPER.readTree("{\"token_reduction\":{\"level\":\"medium\"}}");
+        JsonNode config = MAPPER.readTree("{\"token_reduction\":{\"mode\":\"moderate\"}}");
         E2EHelpers.runFixture(
             "token_reduction_basic",
             "pdf/fake_memo.pdf",
@@ -48,7 +48,7 @@ public class TokenReductionTest {
 
     @Test
     public void tokenReductionWithChunking() throws Exception {
-        JsonNode config = MAPPER.readTree("{\"chunking\":{\"max_chars\":500,\"max_overlap\":50},\"token_reduction\":{\"level\":\"medium\"}}");
+        JsonNode config = MAPPER.readTree("{\"chunking\":{\"max_chars\":500,\"max_overlap\":50},\"token_reduction\":{\"mode\":\"moderate\"}}");
         E2EHelpers.runFixture(
             "token_reduction_with_chunking",
             "pdf/fake_memo.pdf",

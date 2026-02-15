@@ -24,7 +24,8 @@ async fn test_embedding_async() {
   "chunking": {
     "embedding": {
       "model": {
-        "preset": "balanced"
+        "name": "balanced",
+        "type": "preset"
       },
       "normalize": true
     },
@@ -73,7 +74,8 @@ fn test_embedding_balanced_preset() {
   "chunking": {
     "embedding": {
       "model": {
-        "preset": "balanced"
+        "name": "balanced",
+        "type": "preset"
       },
       "normalize": true
     },
@@ -157,7 +159,8 @@ fn test_embedding_fast_preset() {
   "chunking": {
     "embedding": {
       "model": {
-        "preset": "fast"
+        "name": "fast",
+        "type": "preset"
       },
       "normalize": true
     },
