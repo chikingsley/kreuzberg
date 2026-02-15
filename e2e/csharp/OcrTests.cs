@@ -13,6 +13,7 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrImageHelloWorld()
         {
+            TestHelpers.SkipIfFeatureUnavailable("tesseract");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/test_hello_world.png");
             TestHelpers.SkipIfOfficeTestOnWindows("images/test_hello_world.png");
             var documentPath = TestHelpers.EnsureDocument("images/test_hello_world.png", true);
@@ -27,6 +28,7 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrImageNoText()
         {
+            TestHelpers.SkipIfFeatureUnavailable("tesseract");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/flower_no_text.jpg");
             TestHelpers.SkipIfOfficeTestOnWindows("images/flower_no_text.jpg");
             var documentPath = TestHelpers.EnsureDocument("images/flower_no_text.jpg", true);
@@ -40,7 +42,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleConfidenceFilter()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/ocr_image.jpg");
             TestHelpers.SkipIfOfficeTestOnWindows("images/ocr_image.jpg");
             var documentPath = TestHelpers.EnsureDocument("images/ocr_image.jpg", true);
@@ -54,7 +57,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleImageChinese()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/chi_sim_image.jpeg");
             TestHelpers.SkipIfOfficeTestOnWindows("images/chi_sim_image.jpeg");
             var documentPath = TestHelpers.EnsureDocument("images/chi_sim_image.jpeg", true);
@@ -68,7 +72,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleImageEnglish()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/test_hello_world.png");
             TestHelpers.SkipIfOfficeTestOnWindows("images/test_hello_world.png");
             var documentPath = TestHelpers.EnsureDocument("images/test_hello_world.png", true);
@@ -83,7 +88,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleMarkdown()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/test_hello_world.png");
             TestHelpers.SkipIfOfficeTestOnWindows("images/test_hello_world.png");
             var documentPath = TestHelpers.EnsureDocument("images/test_hello_world.png", true);
@@ -98,7 +104,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddlePdfScanned()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/ocr_test.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/ocr_test.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/ocr_test.pdf", true);
@@ -113,7 +120,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleStructured()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/test_hello_world.png");
             TestHelpers.SkipIfOfficeTestOnWindows("images/test_hello_world.png");
             var documentPath = TestHelpers.EnsureDocument("images/test_hello_world.png", true);
@@ -128,7 +136,8 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPaddleTableDetection()
         {
-            TestHelpers.SkipIfPaddleOcrUnavailable();
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
+            TestHelpers.SkipIfFeatureUnavailable("paddle-ocr");
             TestHelpers.SkipIfLegacyOfficeDisabled("images/simple_table.png");
             TestHelpers.SkipIfOfficeTestOnWindows("images/simple_table.png");
             var documentPath = TestHelpers.EnsureDocument("images/simple_table.png", true);
@@ -143,6 +152,7 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPdfImageOnlyGerman()
         {
+            TestHelpers.SkipIfFeatureUnavailable("tesseract");
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/image_only_german_pdf.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/image_only_german_pdf.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/image_only_german_pdf.pdf", true);
@@ -158,6 +168,7 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPdfRotated90()
         {
+            TestHelpers.SkipIfFeatureUnavailable("tesseract");
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/ocr_test_rotated_90.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/ocr_test_rotated_90.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/ocr_test_rotated_90.pdf", true);
@@ -171,6 +182,7 @@ namespace Kreuzberg.E2E.Ocr {
         [SkippableFact]
         public void OcrPdfTesseract()
         {
+            TestHelpers.SkipIfFeatureUnavailable("tesseract");
             TestHelpers.SkipIfLegacyOfficeDisabled("pdf/ocr_test.pdf");
             TestHelpers.SkipIfOfficeTestOnWindows("pdf/ocr_test.pdf");
             var documentPath = TestHelpers.EnsureDocument("pdf/ocr_test.pdf", true);
