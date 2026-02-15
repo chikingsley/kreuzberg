@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **PaddleOCR recognition height mismatch (#390)**: Changed `CRNN_DST_HEIGHT` from 32 to 48 pixels to match PP-OCRv4/v5 model input shape `[batch, 3, 48, width]`. The previous value caused ONNX Runtime dimension errors on all platforms.
+- **Go binding: `ChunkingConfig` missing `Embedding` field**: Added `Embedding *EmbeddingConfig` to Go's `ChunkingConfig` struct to match the Rust canonical type. Previously, embedding configuration nested inside chunking was silently dropped during JSON round-trip, causing embedding-enabled extractions to run without embeddings.
 
 ### Changed
 
