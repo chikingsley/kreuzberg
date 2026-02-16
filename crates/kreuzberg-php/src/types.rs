@@ -107,6 +107,12 @@ pub struct ExtractionResult {
     /// Extracted keywords
     pub keywords: Option<Vec<Keyword>>,
 
+    /// Extracted keywords with algorithm metadata
+    pub extracted_keywords: Option<Vec<Keyword>>,
+
+    /// Quality score
+    pub quality_score: Option<f64>,
+
     /// Structured Djot content (when output_format='djot')
     djot_content_json: Option<String>,
 
@@ -238,6 +244,35 @@ impl ExtractionResult {
                     let value: serde_json::Value =
                         serde_json::from_str(json).map_err(|e| format!("Failed to parse ocr_elements: {}", e))?;
                     Ok(Some(json_value_to_php(&value)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "extractedKeywords" | "extracted_keywords" => {
+                if let Some(keywords) = &self.extracted_keywords {
+                    use ext_php_rs::boxed::ZBox;
+                    use ext_php_rs::types::ZendObject;
+
+                    // Convert keywords to PHP array of objects (stdClass)
+                    let mut php_keywords = Vec::new();
+                    for kw in keywords {
+                        // Create a proper PHP object with text, score, and algorithm properties
+                        let mut kw_obj = ZendObject::new_stdclass();
+                        kw_obj.set_property("text", kw.text.as_str().into_zval(false)?)?;
+                        kw_obj.set_property("score", kw.score.into_zval(false)?)?;
+                        if let Some(algo) = &kw.algorithm {
+                            kw_obj.set_property("algorithm", algo.as_str().into_zval(false)?)?;
+                        }
+                        php_keywords.push(kw_obj.into_zval(false)?);
+                    }
+                    Ok(Some(php_keywords.into_zval(false)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "qualityScore" | "quality_score" => {
+                if let Some(score) = self.quality_score {
+                    Ok(Some(score.into_zval(false)?))
                 } else {
                     Ok(None)
                 }
@@ -405,6 +440,18 @@ impl ExtractionResult {
             None
         };
 
+        let extracted_keywords = result.extracted_keywords.as_ref().map(|kws| {
+            kws.iter()
+                .map(|kw| Keyword {
+                    text: kw.text.clone(),
+                    score: kw.score,
+                    algorithm: Some(format!("{:?}", kw.algorithm).to_lowercase()),
+                })
+                .collect::<Vec<_>>()
+        });
+
+        let quality_score = result.quality_score;
+
         // Add error metadata if present (for batch operations)
         if let Some(error) = &result.metadata.error {
             let error_json = serde_json::to_value(error).map_err(|e| format!("Failed to serialize error: {}", e))?;
@@ -499,6 +546,8 @@ impl ExtractionResult {
             chunks,
             pages,
             keywords,
+            extracted_keywords,
+            quality_score,
             djot_content_json,
             elements_json,
             document_json,
