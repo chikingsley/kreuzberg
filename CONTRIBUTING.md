@@ -445,17 +445,27 @@ Supported linters vary by language. Check `task -h lint` for details.
 
 ### Pre-commit Hooks
 
-The project includes pre-commit hooks configuration (`.pre-commit-config.yaml`). To use it:
+The project includes hook configuration in `.pre-commit-config.yaml` and uses `prek` (Rust pre-commit implementation). To use it:
 
 ```bash
-# Install pre-commit hooks (requires pre-commit to be installed)
-pre-commit install
+# Install prek (one-time)
+uv tool install prek
+
+# Install git hooks (pre-commit + commit-msg)
+prek install --hook-type pre-commit --hook-type commit-msg
+
+# Optionally pre-create hook environments
+prek install-hooks
 
 # Run hooks on all files
-pre-commit run --all-files
+prek run --all-files
 
-# Run specific hooks
-pre-commit run rust-fmt --all-files
+# Run a specific hook
+prek run clippy --all-files
+
+# Task wrappers
+task hooks:install
+task hooks:run
 ```
 
 ## Testing

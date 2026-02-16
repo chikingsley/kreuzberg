@@ -107,7 +107,7 @@ tasks:
       - task: node:build:release
       - cmd: cd crates/kreuzberg-node && npm pack
       - task: rust:cli:build
-      - echo "Artifacts: target/wheels/*.whl, crates/kreuzberg-node/*.tgz, target/release/kreuzberg"
+      - cmd: 'echo "Artifacts: target/wheels/*.whl, crates/kreuzberg-node/*.tgz, target/release/kreuzberg"'
 
   build:
     desc: Build core libraries and language bindings
@@ -139,6 +139,17 @@ tasks:
     desc: Run all linting and formatting checks via prek
     cmds:
       - task: lint
+
+  hooks:install:
+    desc: Install git hooks for pre-commit and commit-msg via prek
+    cmds:
+      - prek install --hook-type pre-commit --hook-type commit-msg
+      - prek install-hooks
+
+  hooks:run:
+    desc: Run all configured hooks on all files
+    cmds:
+      - prek run --all-files
 
   update:
     desc: Update all dependencies to latest versions
