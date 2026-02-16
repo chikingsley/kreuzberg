@@ -69,7 +69,8 @@ impl Table {
                 if i > 0 {
                     csv.push(',');
                 }
-                if cell.contains(',') || cell.contains('"') || cell.contains('\n') {
+                let needs_quoting = cell.contains(',') || cell.contains('"') || cell.contains('\n');
+                if needs_quoting {
                     csv.push('"');
                     csv.push_str(&cell.replace('"', "\"\""));
                     csv.push('"');

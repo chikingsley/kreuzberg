@@ -3,7 +3,7 @@
 //! Ported from pdfplumber's `utils/geometry.py`. Provides bounding box operations,
 //! edge manipulation, and spatial snapping for table border detection.
 
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 /// A bounding box: (x0, top, x1, bottom).
 pub type Bbox = (f64, f64, f64, f64);
@@ -114,20 +114,9 @@ pub fn rect_to_edges(x0: f64, top: f64, x1: f64, bottom: f64) -> Vec<Edge> {
 
 /// Merge multiple bounding boxes into the smallest containing bbox.
 pub fn merge_bboxes(bboxes: &[Bbox]) -> Option<Bbox> {
-    if bboxes.is_empty() {
-        return None;
-    }
-    let mut x0 = f64::INFINITY;
-    let mut top = f64::INFINITY;
-    let mut x1 = f64::NEG_INFINITY;
-    let mut bottom = f64::NEG_INFINITY;
-    for &(bx0, btop, bx1, bbottom) in bboxes {
-        x0 = x0.min(bx0);
-        top = top.min(btop);
-        x1 = x1.max(bx1);
-        bottom = bottom.max(bbottom);
-    }
-    Some((x0, top, x1, bottom))
+    bboxes.iter().copied().reduce(|(x0, top, x1, bottom), (bx0, btop, bx1, bbottom)| {
+        (x0.min(bx0), top.min(btop), x1.max(bx1), bottom.max(bbottom))
+    })
 }
 
 /// Check if two bounding boxes overlap. Returns the overlap bbox if they do.
@@ -155,10 +144,9 @@ pub fn filter_edges(
     edges
         .iter()
         .filter(|e| {
-            let orient_ok = orientation.is_none() || Some(e.orientation) == orientation;
-            let type_ok = edge_type.is_none() || Some(e.edge_type) == edge_type;
-            let len_ok = e.length() >= min_length;
-            orient_ok && type_ok && len_ok
+            orientation.is_none_or(|o| e.orientation == o)
+                && edge_type.is_none_or(|t| e.edge_type == t)
+                && e.length() >= min_length
         })
         .cloned()
         .collect()
@@ -284,24 +272,17 @@ pub fn merge_edges(
     };
 
     // Group edges by (orientation, primary_coord) and join each group
-    let mut groups: std::collections::BTreeMap<(u8, u64), Vec<Edge>> = std::collections::BTreeMap::new();
+    let mut groups: BTreeMap<(u8, u64), Vec<Edge>> = BTreeMap::new();
 
     for edge in &edges {
-        let orient_key = match edge.orientation {
-            Orientation::Horizontal => 0u8,
-            Orientation::Vertical => 1u8,
-        };
+        let orient_key = edge.orientation == Orientation::Vertical;
         let coord_key = edge.primary_coord().to_bits();
-        groups.entry((orient_key, coord_key)).or_default().push(edge.clone());
+        groups.entry((orient_key as u8, coord_key)).or_default().push(edge.clone());
     }
 
     let mut result = Vec::new();
     for ((orient_key, _), group) in &groups {
-        let tolerance = if *orient_key == 0 {
-            join_x_tolerance
-        } else {
-            join_y_tolerance
-        };
+        let tolerance = if *orient_key == 0 { join_x_tolerance } else { join_y_tolerance };
         result.extend(join_edge_group(group, tolerance));
     }
 

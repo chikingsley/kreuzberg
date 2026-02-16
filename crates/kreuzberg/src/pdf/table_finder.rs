@@ -187,7 +187,7 @@ impl DetectedTable {
         }
 
         let mut rows = Vec::new();
-        for (_, row_cells) in &by_top {
+        for row_cells in by_top.values() {
             let cell_map: HashMap<u64, Bbox> = row_cells.iter().map(|c| (c.0.to_bits(), *c)).collect();
             let row: Vec<Option<Bbox>> = x_values.iter().map(|x| cell_map.get(&x.to_bits()).copied()).collect();
             rows.push(row);
@@ -221,8 +221,7 @@ pub fn find_table(
     words: Option<&[PositionedWord]>,
     edges: Option<&[Edge]>,
 ) -> Result<Option<DetectedTable>> {
-    let result = find_tables(page, settings, words, edges)?;
-    Ok(result.tables.into_iter().max_by_key(|t| t.cells.len()))
+    find_tables(page, settings, words, edges).map(|r| r.tables.into_iter().max_by_key(|t| t.cells.len()))
 }
 
 /// Result of table finding on a page.
@@ -262,15 +261,15 @@ pub fn find_tables(
     let page_bbox = (0.0, 0.0, page.width().value as f64, page.height().value as f64);
 
     // Early return for degenerate clip regions
-    if let Some(clip) = settings.clip {
-        if clip.0 >= clip.2 || clip.1 >= clip.3 {
-            return Ok(TableFinderResult {
-                edges: Vec::new(),
-                intersections: HashMap::new(),
-                cells: Vec::new(),
-                tables: Vec::new(),
-            });
-        }
+    if let Some(clip) = settings.clip
+        && (clip.0 >= clip.2 || clip.1 >= clip.3)
+    {
+        return Ok(TableFinderResult {
+            edges: Vec::new(),
+            intersections: HashMap::new(),
+            cells: Vec::new(),
+            tables: Vec::new(),
+        });
     }
 
     // Step 1: Use pre-extracted edges if provided, otherwise collect from page
@@ -405,10 +404,9 @@ fn collect_edges(
     let all_edges = filter_edges(&all_edges, None, None, settings.edge_min_length);
 
     // Apply clip region if specified
-    if let Some(clip) = settings.clip {
-        Ok(clip_edges(all_edges, clip))
-    } else {
-        Ok(all_edges)
+    match settings.clip {
+        Some(clip) => Ok(clip_edges(all_edges, clip)),
+        None => Ok(all_edges),
     }
 }
 
@@ -443,7 +441,7 @@ fn edges_to_intersections(
                 && v.x0 <= (h.x1 + x_tolerance)
             {
                 let vertex = (v.x0.to_bits(), h.top.to_bits());
-                let entry = intersections.entry(vertex).or_insert_with(|| IntersectionEdges {
+                let entry = intersections.entry(vertex).or_insert(IntersectionEdges {
                     vertical: Vec::new(),
                     horizontal: Vec::new(),
                 });
@@ -462,13 +460,8 @@ fn edges_to_intersections(
 /// and each pair of adjacent corners is connected by the same edge.
 fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>, _edges: &[Edge]) -> Vec<Bbox> {
     let edge_connects = |p1: (u64, u64), p2: (u64, u64)| -> bool {
-        let i1 = match intersections.get(&p1) {
-            Some(i) => i,
-            None => return false,
-        };
-        let i2 = match intersections.get(&p2) {
-            Some(i) => i,
-            None => return false,
+        let (Some(i1), Some(i2)) = (intersections.get(&p1), intersections.get(&p2)) else {
+            return false;
         };
 
         // Same x → check shared vertical edges
@@ -556,21 +549,13 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
 
             remaining.retain(|cell| {
                 let corners = bbox_corners(*cell);
-                if current_cells.is_empty() {
-                    // Start with the first cell
+                let should_include =
+                    current_cells.is_empty() || corners.iter().any(|c| current_corners.contains(c));
+                if should_include {
                     current_corners.extend(corners.iter());
                     current_cells.push(*cell);
-                    false // Remove from remaining
-                } else {
-                    let shared = corners.iter().any(|c| current_corners.contains(c));
-                    if shared {
-                        current_corners.extend(corners.iter());
-                        current_cells.push(*cell);
-                        false // Remove from remaining
-                    } else {
-                        true // Keep in remaining
-                    }
                 }
+                !should_include
             });
 
             if current_cells.len() == initial_count {
@@ -646,11 +631,8 @@ struct StrikethroughLine {
 /// For each cell, find characters whose midpoint falls within the cell bbox
 /// and concatenate them. Returns plain text for backward compatibility.
 pub fn extract_table_text(table: &DetectedTable, page: &PdfPage, page_height: f64) -> Result<Vec<Vec<String>>> {
-    let styled = extract_table_text_styled(table, page, page_height, None)?;
-    Ok(styled
-        .into_iter()
-        .map(|row| row.into_iter().map(|c| c.plain).collect())
-        .collect())
+    extract_table_text_styled(table, page, page_height, None)
+        .map(|rows| rows.into_iter().map(|row| row.into_iter().map(|c| c.plain).collect()).collect())
 }
 
 /// Extract styled text content for each cell in a detected table.
@@ -838,12 +820,8 @@ fn is_char_bold(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
     use pdfium_render::prelude::PdfFontWeight;
 
     // Check font weight (700+ is bold per CSS/PDF spec)
-    if let Some(weight) = pdf_char.font_weight() {
-        match weight {
-            PdfFontWeight::Weight700Bold => return true,
-            PdfFontWeight::Custom(w) if w >= 700 => return true,
-            _ => {}
-        }
+    if let Some(PdfFontWeight::Weight700Bold | PdfFontWeight::Custom(700..)) = pdf_char.font_weight() {
+        return true;
     }
 
     // Check force-bold flag
@@ -853,11 +831,8 @@ fn is_char_bold(pdf_char: &pdfium_render::prelude::PdfPageTextChar) -> bool {
 
     // Fallback: check font name for "Bold"
     let name = pdf_char.font_name();
-    if name.contains("Bold") || name.contains("bold") || name.contains("BOLD") {
-        return true;
-    }
-
-    false
+    let name_lower = name.to_lowercase();
+    name_lower.contains("bold")
 }
 
 /// Determine if a character is monospaced based on font descriptor flags and font name.
@@ -911,58 +886,42 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
                 let x = segment.x().value as f64;
                 let y = page_height - segment.y().value as f64;
 
-                match seg_type {
-                    PdfPathSegmentType::MoveTo => {
-                        current_x = x;
-                        current_y = y;
-                    }
-                    PdfPathSegmentType::LineTo => {
-                        // Check if this is a thin horizontal line
-                        let dy = (y - current_y).abs();
-                        let dx = (x - current_x).abs();
+                if seg_type == PdfPathSegmentType::LineTo {
+                    // Check if this is a thin horizontal line
+                    let dy = (y - current_y).abs();
+                    let dx = (x - current_x).abs();
 
-                        if dy < 2.0 && dx >= 3.0 {
-                            // This is a thin horizontal line — candidate for strikethrough
-                            let line_y = (current_y + y) / 2.0;
-                            let (x0, x1) = if current_x < x { (current_x, x) } else { (x, current_x) };
-                            lines.push(StrikethroughLine { x0, x1, y: line_y });
-                        }
-                        current_x = x;
-                        current_y = y;
-                    }
-                    _ => {
-                        current_x = x;
-                        current_y = y;
+                    if dy < 2.0 && dx >= 3.0 {
+                        let line_y = (current_y + y) / 2.0;
+                        let (x0, x1) = if current_x < x { (current_x, x) } else { (x, current_x) };
+                        lines.push(StrikethroughLine { x0, x1, y: line_y });
                     }
                 }
+                current_x = x;
+                current_y = y;
             }
 
             // Also check for thin rectangles (fill operations that create strikethrough)
             // These appear as rect path objects with very small height
             if segments.len() >= 4 {
-                let mut xs = Vec::new();
-                let mut ys = Vec::new();
-                for segment in segments.iter() {
-                    xs.push(segment.x().value as f64);
-                    ys.push(page_height - segment.y().value as f64);
-                }
-                if let (Some(&min_x), Some(&max_x), Some(&min_y), Some(&max_y)) = (
-                    xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
-                    xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
-                    ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()),
-                    ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()),
-                ) {
-                    let width = max_x - min_x;
-                    let height = max_y - min_y;
-                    // Thin horizontal rectangle: width >> height, height < 2pt
-                    if height < 2.0 && width >= 3.0 && width > height * 3.0 {
-                        let mid_y = (min_y + max_y) / 2.0;
-                        lines.push(StrikethroughLine {
-                            x0: min_x,
-                            x1: max_x,
-                            y: mid_y,
-                        });
-                    }
+                let (min_x, max_x, min_y, max_y) = segments.iter().fold(
+                    (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY, f64::NEG_INFINITY),
+                    |(min_x, max_x, min_y, max_y), seg| {
+                        let x = seg.x().value as f64;
+                        let y = page_height - seg.y().value as f64;
+                        (min_x.min(x), max_x.max(x), min_y.min(y), max_y.max(y))
+                    },
+                );
+                let width = max_x - min_x;
+                let height = max_y - min_y;
+                // Thin horizontal rectangle: width >> height, height < 2pt
+                if height < 2.0 && width >= 3.0 && width > height * 3.0 {
+                    let mid_y = (min_y + max_y) / 2.0;
+                    lines.push(StrikethroughLine {
+                        x0: min_x,
+                        x1: max_x,
+                        y: mid_y,
+                    });
                 }
             }
         }
@@ -997,7 +956,7 @@ fn build_styled_text(chars: &[&CharPos], line_break_threshold: f64) -> String {
         let y_diff = (ch.line_y - prev_line_y).abs();
         if y_diff > line_break_threshold && !current_text.is_empty() {
             // Flush current run and insert line break marker
-            let trimmed = current_text.trim_end().to_string();
+            let trimmed = std::mem::take(&mut current_text).trim_end().to_string();
             if !trimmed.is_empty() {
                 runs.push(Run {
                     text: trimmed,
@@ -1008,17 +967,15 @@ fn build_styled_text(chars: &[&CharPos], line_break_threshold: f64) -> String {
                 text: "\n".to_string(),
                 style: TextStyle::default(),
             });
-            current_text = String::new();
             current_style = ch.style;
         }
 
         // Style change: flush current run
         if ch.style != current_style && !current_text.is_empty() {
             runs.push(Run {
-                text: current_text.clone(),
+                text: std::mem::take(&mut current_text),
                 style: current_style,
             });
-            current_text = String::new();
             current_style = ch.style;
         }
 

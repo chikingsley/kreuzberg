@@ -32,20 +32,14 @@ pub struct PdfConfig {
 
 /// Table detection strategy exposed in configuration.
 #[cfg(feature = "pdf")]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum PdfTableStrategy {
+    #[default]
     Lines,
     LinesStrict,
     Text,
     Explicit,
-}
-
-#[cfg(feature = "pdf")]
-impl Default for PdfTableStrategy {
-    fn default() -> Self {
-        Self::Lines
-    }
 }
 
 /// PDF table detection configuration.
