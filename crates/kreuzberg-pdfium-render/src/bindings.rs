@@ -4104,7 +4104,6 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     #[allow(non_snake_case)]
     fn FPDFAnnot_GetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION) -> c_int;
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     /// Sets the form field flags for an interactive form annotation.
     ///
     ///   `form`         -   the handle to the form fill module, returned by
@@ -4273,7 +4272,6 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     #[allow(non_snake_case)]
     fn FPDFAnnot_GetFontSize(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, value: *mut c_float) -> FPDF_BOOL;
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     /// Experimental API.
     /// Set the text color of an annotation.
     ///
@@ -7251,7 +7249,6 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
     #[allow(non_snake_case)]
     fn FPDFPage_InsertObject(&self, page: FPDF_PAGE, page_obj: FPDF_PAGEOBJECT);
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     /// Inserts `page_object` into `page` at the specified `index`.
     ///
     ///    `page`        - handle to a page
@@ -9431,7 +9428,6 @@ pub trait PdfiumLibraryBindings: Send + Sync + Drop {
         out_buflen: *mut c_ulong,
     ) -> FPDF_BOOL;
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     /// Get the MIME type (Subtype) of the embedded file `attachment`. `buffer` is
     /// only modified if `buflen` is longer than the length of the MIME type string.
     /// If the Subtype is not found or if there is no file stream, an empty string

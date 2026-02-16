@@ -14,8 +14,11 @@
     "@kreuzberg/test-utils": "workspace:*",
     "@kreuzberg/wasm": "workspace:*",
     "@vitest/runner": "~3.2.4",
+    "@vitest/spy": "~3.2.4",
     "@vitest/snapshot": "~3.2.4",
+    "@vitest/utils": "~3.2.4",
     "@vitest/ui": "~3.2.4",
+    "@vitest/mocker": "~3.2.4",
     "vitest": "~3.2.4"
   },
   "version": "4.3.1"
