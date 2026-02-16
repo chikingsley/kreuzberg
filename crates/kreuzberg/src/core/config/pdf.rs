@@ -41,6 +41,7 @@ pub enum PdfTableStrategy {
     Explicit,
 }
 
+#[cfg(feature = "pdf")]
 impl Default for PdfTableStrategy {
     fn default() -> Self {
         Self::Lines
