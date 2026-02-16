@@ -105,7 +105,7 @@ tasks:
       - task: node:build:release
       - cmd: cd crates/kreuzberg-node && npm pack
       - task: rust:cli:build
-      - echo "Artifacts: target/wheels/*.whl, crates/kreuzberg-node/*.tgz, target/release/kreuzberg"
+      - cmd: 'echo "Artifacts: target/wheels/*.whl, crates/kreuzberg-node/*.tgz, target/release/kreuzberg"'
 
   build:
     desc: Build core libraries and language bindings
