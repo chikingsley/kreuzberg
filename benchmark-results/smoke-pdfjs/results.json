@@ -1,0 +1,234 @@
+[
+  {
+    "framework": "pdfjs",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/chelsea_pdta.pdf",
+    "file_size": 2944560,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 111529167
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 110943833
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 585334
+    },
+    "metrics": {
+      "peak_memory_bytes": 345473024,
+      "avg_cpu_percent": 0.0071432899683713915,
+      "throughput_bytes_per_sec": 26540997.551436678,
+      "p50_memory_bytes": 342016000,
+      "p95_memory_bytes": 344637440,
+      "p99_memory_bytes": 344637440
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 236349417
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 9968929,
+        "package_bytes": 9968929,
+        "system_deps_bytes": 0,
+        "method": "npm_package",
+        "description": "Mozilla PDF.js extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pdfjs",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/issue-336-example.pdf",
+    "file_size": 650330,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 36469542
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 32630084
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 3839458
+    },
+    "metrics": {
+      "peak_memory_bytes": 354729984,
+      "avg_cpu_percent": 0.005440999815861384,
+      "throughput_bytes_per_sec": 19930380.810542814,
+      "p50_memory_bytes": 352141312,
+      "p95_memory_bytes": 352141312,
+      "p99_memory_bytes": 352141312
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 236349417
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 9968929,
+        "package_bytes": 9968929,
+        "system_deps_bytes": 0,
+        "method": "npm_package",
+        "description": "Mozilla PDF.js extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pdfjs",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/mcid_example.pdf",
+    "file_size": 24694,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 3443875
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 3179208
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 264667
+    },
+    "metrics": {
+      "peak_memory_bytes": 355303424,
+      "avg_cpu_percent": 0.006026149913668633,
+      "throughput_bytes_per_sec": 7767343.31317737,
+      "p50_memory_bytes": 355254272,
+      "p95_memory_bytes": 355254272,
+      "p99_memory_bytes": 355254272
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 236349417
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 9968929,
+        "package_bytes": 9968929,
+        "system_deps_bytes": 0,
+        "method": "npm_package",
+        "description": "Mozilla PDF.js extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pdfjs",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/word365_structure.pdf",
+    "file_size": 99253,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 13513000
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 8203750
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 5309250
+    },
+    "metrics": {
+      "peak_memory_bytes": 355450880,
+      "avg_cpu_percent": 0.005303116639455159,
+      "throughput_bytes_per_sec": 12098491.543501448,
+      "p50_memory_bytes": 355336192,
+      "p95_memory_bytes": 355336192,
+      "p99_memory_bytes": 355336192
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 236349417
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 9968929,
+        "package_bytes": 9968929,
+        "system_deps_bytes": 0,
+        "method": "npm_package",
+        "description": "Mozilla PDF.js extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  }
+]

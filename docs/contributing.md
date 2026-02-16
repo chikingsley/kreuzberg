@@ -173,7 +173,7 @@ sudo apt-get install build-essential
 2. **Make changes** with small, focused commits. Code should compile on all supported platforms.
 3. **Run tests/lint** for the areas you touched:
    - `task lint` – cross-language linters (cargo clippy, Ruff, Rubocop, Biome/Oxlint, Mypy).
-   - `task dev:test` – full test matrix (Rust + Python + Ruby + TypeScript + Go + Java + C#).
+   - `task test:all` – full test matrix (Rust + Python + Ruby + TypeScript + Go + Java + C# + PHP + Elixir + WASM).
    - Language-specific shortcuts: `task python:test`, `task typescript:test`, `task ruby:test`, `task rust:test`, `task go:test`, `task java:test`, `task csharp:test`.
 4. **Write/Update docs** when adding features. User-facing content lives under `docs/` and must be referenced in `mkdocs.yaml`.
 5. **Ensure conventional commits** (`feat: ...`, `fix: ...`, `docs: ...`). The pre-commit hook checks commit messages.
@@ -200,7 +200,7 @@ sudo apt-get install build-essential
 Before opening a PR, verify:
 
 - [ ] `task lint` passes.
-- [ ] Targeted tests or `task dev:test` pass.
+- [ ] Targeted tests or `task test:all` pass.
 - [ ] Docs and changelog entries are updated (if applicable).
 - [ ] New files include appropriate licenses/headers where required.
 - [ ] Commit messages follow Conventional Commits.

@@ -24,46 +24,48 @@ priority: critical
 | `task go:test:ci` | Go tests (CI mode with enhanced debugging) |
 | `task python:test` | Python tests |
 | `task python:test:ci` | Python tests with coverage |
-| `task typescript:test` | TypeScript tests |
+| `task node:test` | Node/TypeScript tests |
 | `task java:test` | Java tests |
 | `task ruby:test` | Ruby tests |
 | `task csharp:test` | C# tests |
 | `task php:test` | PHP tests |
 | `task elixir:test` | Elixir tests |
+| `task wasm:test` | WASM tests |
 
-All language task definitions are in `.task/languages/<lang>.yml` with corresponding scripts in `scripts/<lang>/test.sh`.
+All language task definitions are in `.task/languages/<lang>.yml`. Some languages run through helper scripts (for example `scripts/go/test.sh`, `scripts/csharp/test.sh`), and others run test commands directly from the taskfile.
 
 ## ONNX Runtime Setup
 
-Embedding tests require ONNX Runtime. Set `ORT_LIB_LOCATION` to the library directory:
+Embedding tests require ONNX Runtime. Use `ORT_DYLIB_PATH` for the shared library path (used by most language tests). `ORT_LIB_LOCATION` is used by `setup_onnx_paths()` in shell helpers.
 
 | Platform | Install | Path |
 |----------|---------|------|
 | macOS (Apple Silicon) | `brew install onnxruntime` | `/opt/homebrew/opt/onnxruntime/lib` |
 | macOS (Intel) | `brew install onnxruntime` | `/usr/local/opt/onnxruntime/lib` |
 | Linux | Download from GitHub releases | `/path/to/onnxruntime-linux-x64-<version>/lib` (also add to `LD_LIBRARY_PATH`) |
-| Windows | Download binaries | Set `ORT_LIB_LOCATION` and add to `PATH` |
+| Windows | Download binaries | Set `ORT_DYLIB_PATH` (or `ORT_LIB_LOCATION`) and add runtime location to `PATH` |
 | CI | `.github/actions/setup-onnx-runtime` | Automatic (sets `ORT_LIB_LOCATION`, `ORT_DYLIB_PATH`, library search paths) |
 
-If `ORT_LIB_LOCATION` is not set, tests fail with: `libonnxruntime.dylib: cannot open shared object file`
+If ONNX runtime env vars are missing, tests may fail with: `libonnxruntime.dylib: cannot open shared object file`
 
 ## Test Execution Workflow
 
 ```
 task <lang>:test
-  -> scripts/<lang>/test.sh
-    -> source scripts/lib/common.sh
-    -> source scripts/lib/library-paths.sh
-      -> setup_go_paths()    # CGO flags, PKG_CONFIG_PATH, platform lib paths
-      -> setup_pdfium_paths() # PDFium library location
-      -> setup_onnx_paths()  # ONNX Runtime if ORT_LIB_LOCATION set
-    -> run tests with fully configured environment
+  -> .task/languages/<lang>.yml
+    -> (optional) scripts/<lang>/test.sh
+      -> source scripts/lib/common.sh
+      -> source scripts/lib/library-paths.sh
+        -> setup_go_paths()    # CGO flags, PKG_CONFIG_PATH, platform lib paths
+        -> setup_pdfium_paths() # PDFium library location
+        -> setup_onnx_paths()  # ONNX Runtime if ORT_LIB_LOCATION set
+    -> run tests with configured environment
 ```
 
 ### Required Build Order
 1. `cargo build --release --package kreuzberg-ffi` (Rust FFI library)
 2. PDFium runtime (auto-downloaded by test scripts)
-3. Set `ORT_LIB_LOCATION` if testing embeddings
+3. Set `ORT_DYLIB_PATH` (or `ORT_LIB_LOCATION`) if testing embeddings
 4. `task <lang>:test`
 
 ## Key Debugging Patterns
@@ -81,7 +83,7 @@ ls target/release/libkreuzberg_ffi.{dylib,so,dll}
 
 ### 3. Verify ONNX Runtime
 ```bash
-echo $ORT_LIB_LOCATION && ls $ORT_LIB_LOCATION/libonnxruntime*
+echo "${ORT_DYLIB_PATH:-$ORT_LIB_LOCATION}"
 ```
 
 ## Common Failure Patterns
@@ -89,7 +91,7 @@ echo $ORT_LIB_LOCATION && ls $ORT_LIB_LOCATION/libonnxruntime*
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `Package 'kreuzberg-ffi' not found` | PKG_CONFIG_PATH not set | Use `task go:test` (auto-sets), or `export PKG_CONFIG_PATH=$PWD/crates/kreuzberg-ffi:$PKG_CONFIG_PATH` |
-| `libonnxruntime.dylib: cannot open` | ORT_LIB_LOCATION not set | Set `ORT_LIB_LOCATION` per platform table above |
+| `libonnxruntime.dylib: cannot open` | ONNX runtime env var not set | Set `ORT_DYLIB_PATH` (or `ORT_LIB_LOCATION`) per platform table above |
 | `undefined reference to kreuzberg_extract_file_sync` | FFI library not built or not in path | `cargo build --release --package kreuzberg-ffi` then verify `DYLD_LIBRARY_PATH` |
 | Segmentation fault | Version mismatch, threading issue | Set `RUST_BACKTRACE=full`, run single test with `-run TestName -v`, check `-race` flag |
 
@@ -97,7 +99,7 @@ echo $ORT_LIB_LOCATION && ls $ORT_LIB_LOCATION/libonnxruntime*
 
 - **Go**: FFI calls serialized via `sync.Mutex` in `packages/go/v4/ffi.go` (PDFium is not thread-safe)
 - **Python**: Uses `@pytest.mark.asyncio` and `pytest-asyncio` for async isolation
-- **TypeScript**: Jest worker threads for parallel execution with FFI bindings
+- **TypeScript/Node**: Vitest-based execution for binding/smoke suites
 
 ## CI vs Local
 
@@ -110,7 +112,7 @@ echo $ORT_LIB_LOCATION && ls $ORT_LIB_LOCATION/libonnxruntime*
 
 Before running tests:
 - [ ] Built FFI library (`cargo build --release --package kreuzberg-ffi`)
-- [ ] Set `ORT_LIB_LOCATION` if testing embeddings
+- [ ] Set `ORT_DYLIB_PATH` (or `ORT_LIB_LOCATION`) if testing embeddings
 - [ ] Using `task <language>:test` (NOT direct test commands)
 
 When tests fail in CI:

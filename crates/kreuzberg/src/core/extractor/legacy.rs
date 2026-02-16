@@ -29,7 +29,7 @@ pub(super) fn extract_bytes_sync_impl(
     config: Option<&crate::core::config::ExtractionConfig>,
 ) -> crate::Result<crate::types::ExtractionResult> {
     use crate::KreuzbergError;
-    use crate::core::extractor::helpers::get_extractor;
+    use crate::core::extractor::helpers::get_extractors;
     use crate::core::mime;
 
     let cfg = config.cloned().unwrap_or_default();
@@ -45,18 +45,51 @@ pub(super) fn extract_bytes_sync_impl(
 
     crate::extractors::ensure_initialized()?;
 
-    let extractor = get_extractor(&validated_mime)?;
+    let extractors = get_extractors(&validated_mime)?;
+    let mut failures = Vec::new();
+    let mut last_error = None;
 
-    let sync_extractor = extractor.as_sync_extractor().ok_or_else(|| {
-        KreuzbergError::UnsupportedFormat(format!(
-            "Extractor for '{}' does not support synchronous extraction",
-            validated_mime
-        ))
-    })?;
+    for extractor in extractors {
+        let extractor_name = extractor.name().to_string();
+        let sync_extractor = match extractor.as_sync_extractor() {
+            Some(sync_extractor) => sync_extractor,
+            None => {
+                failures.push(format!(
+                    "{}: extractor does not support synchronous extraction",
+                    extractor_name
+                ));
+                continue;
+            }
+        };
 
-    let mut result = sync_extractor.extract_sync(content, &validated_mime, &cfg)?;
+        match sync_extractor.extract_sync(content, &validated_mime, &cfg) {
+            Ok(mut result) => {
+                result = crate::core::pipeline::run_pipeline_sync(result, &cfg)?;
+                return Ok(result);
+            }
+            Err(err) => {
+                if matches!(&err, KreuzbergError::Io(_) | KreuzbergError::LockPoisoned(_)) {
+                    return Err(err);
+                }
+                let error_message = err.to_string();
+                failures.push(format!("{}: {}", extractor_name, error_message));
+                last_error = Some(err);
+            }
+        }
+    }
 
-    result = crate::core::pipeline::run_pipeline_sync(result, &cfg)?;
+    tracing::debug!(
+        "All synchronous extractors failed for MIME '{}'. Attempts: {}",
+        validated_mime,
+        failures.join(" | ")
+    );
 
-    Ok(result)
+    match last_error {
+        Some(err) => Err(err),
+        None => Err(KreuzbergError::parsing(format!(
+            "All synchronous extractors failed for MIME '{}'. Attempts: {}",
+            validated_mime,
+            failures.join(" | ")
+        ))),
+    }
 }

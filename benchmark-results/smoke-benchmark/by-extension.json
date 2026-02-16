@@ -1,0 +1,60 @@
+{
+  "by_extension": {
+    "pdf": {
+      "total_files": 1,
+      "framework_stats": {
+        "pdfplumber": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 65.86479100000001,
+          "median_duration_ms": 65.86479100000001,
+          "p95_duration_ms": 65.86479100000001,
+          "avg_extraction_duration_ms": 34.166541,
+          "median_extraction_duration_ms": 34.166541,
+          "p95_extraction_duration_ms": 34.166541,
+          "avg_throughput_mbps": 0.3914355860606434,
+          "avg_peak_memory_mb": 201.998336
+        },
+        "kreuzberg-rust": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 2.962375,
+          "median_duration_ms": 2.962375,
+          "p95_duration_ms": 2.962375,
+          "avg_extraction_duration_ms": 2.961708,
+          "median_extraction_duration_ms": 2.961708,
+          "p95_extraction_duration_ms": 2.961708,
+          "avg_throughput_mbps": 4.514620870078907,
+          "avg_peak_memory_mb": 184.795136
+        },
+        "pymupdf4llm": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 1323.800792,
+          "median_duration_ms": 1323.800792,
+          "p95_duration_ms": 1323.800792,
+          "avg_extraction_duration_ms": 1269.793041,
+          "median_extraction_duration_ms": 1269.793041,
+          "p95_extraction_duration_ms": 1269.793041,
+          "avg_throughput_mbps": 0.01053242502374054,
+          "avg_peak_memory_mb": 745.930752
+        }
+      }
+    }
+  }
+}

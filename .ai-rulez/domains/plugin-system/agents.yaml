@@ -4,7 +4,7 @@ agents:
     role: Design and maintain the plugin architecture framework
     context:
       - Source: crates/kreuzberg/src/plugins/mod.rs
-      - Source: crates/kreuzberg/src/plugins/extractor.rs
+      - Source: crates/kreuzberg/src/plugins/extractor/trait.rs
       - Key concepts:
           - Base Plugin trait and lifecycle
           - Type-specific plugin traits (Extractor, OcrBackend, PostProcessor, Validator)
@@ -48,7 +48,7 @@ agents:
   - name: extractor-plugin-manager
     role: Manage DocumentExtractor plugin lifecycle and selection
     context:
-      - Source: crates/kreuzberg/src/plugins/extractor.rs
+      - Source: crates/kreuzberg/src/plugins/extractor/trait.rs
       - Key concepts:
           - DocumentExtractor trait for custom formats
           - MIME type support declaration
@@ -73,7 +73,7 @@ agents:
   - name: ocr-backend-manager
     role: Manage OCR backend plugin lifecycle and selection
     context:
-      - Source: crates/kreuzberg-py/src/plugins.rs
+      - Source: crates/kreuzberg-py/src/plugins/mod.rs
       - Key concepts:
           - OcrBackend trait for alternative OCR engines
           - Language support capabilities
@@ -141,7 +141,7 @@ agents:
   - name: python-ffi-specialist
     role: Maintain Python-Rust FFI for plugin support
     context:
-      - Source: crates/kreuzberg-py/src/plugins.rs
+      - Source: crates/kreuzberg-py/src/plugins/mod.rs
       - Key concepts:
           - PyO3 FFI bridge
           - GIL management patterns

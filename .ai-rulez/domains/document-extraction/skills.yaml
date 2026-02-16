@@ -4,7 +4,7 @@ skills:
     context: Document extraction from file paths
     key_source_files:
       - crates/kreuzberg-py/src/core.rs (extract_file, batch_extract_files)
-      - crates/kreuzberg/src/core/extractor.rs (extract_file, extract_bytes)
+      - crates/kreuzberg/src/core/extractor/mod.rs (extract_file, extract_bytes)
     master_concepts:
       - Async extraction entry point
       - File reading and MIME detection
@@ -31,7 +31,7 @@ skills:
     context: Concurrent extraction of multiple documents
     key_source_files:
       - crates/kreuzberg-py/src/core.rs (batch_extract_files, batch_extract_bytes)
-      - crates/kreuzberg/src/utils.rs (estimate_pool_size)
+      - crates/kreuzberg/src/utils/pool_sizing.rs (estimate_pool_size)
     master_concepts:
       - Concurrent execution with configurable pool size
       - Per-document error handling
@@ -137,7 +137,7 @@ skills:
   - name: configuration-management
     context: Control extraction behavior through ExtractionConfig
     key_source_files:
-      - crates/kreuzberg-py/src/config.rs
+      - crates/kreuzberg-py/src/config/mod.rs
     master_concepts:
       - Config structure and hierarchy
       - Per-extractor config sections

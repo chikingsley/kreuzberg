@@ -32,7 +32,7 @@ Manages OCR for document images and embedded images. Provides pluggable backend 
 
 ## Core Components
 
-### OCR Processor (`ocr/processor.rs`)
+### OCR Processor (`ocr/processor/mod.rs`)
 - `OcrProcessor::new()` - Initialize with optional cache config
 - `process_image()` - Single image with TesseractConfig
 - `batch_process_images()` - Concurrent batch processing
@@ -80,13 +80,13 @@ See: `crates/kreuzberg/src/ocr/types.rs` (TesseractConfig: languages, PSMMode, O
 7. **Return** -> Text and table results to document extraction pipeline
 
 ### Embedded Image Handling
-Documents with embedded images (scanned PDFs, Office docs): images extracted, OCR'd, results incorporated into main content. See: `crates/kreuzberg/src/core/result.rs` (ExtractedImage: image_data, extracted_text, position, confidence)
+Documents with embedded images (scanned PDFs, Office docs): images extracted, OCR'd, results incorporated into main content. See: `crates/kreuzberg/src/types/extraction.rs` (ExtractedImage: image_data, extracted_text, position, confidence)
 
 ### Configuration Integration
-See: `crates/kreuzberg/src/core/config.rs` (OcrConfig: enabled, default_languages, cache_enabled, preprocessing, backend_priority)
+See: `crates/kreuzberg/src/core/config/mod.rs` (OcrConfig: enabled, default_languages, cache_enabled, preprocessing, backend_priority)
 
 ### Python Plugin Interface
-See: `crates/kreuzberg-py/src/plugins.rs` (PythonOcrBackend wraps Py<PyAny> with cached name/languages)
+See: `crates/kreuzberg-py/src/plugins/mod.rs` (PythonOcrBackend wraps Py<PyAny> with cached name/languages)
 - GIL management for safe Python-Rust FFI
 - Async execution via tokio::task::spawn_blocking
 - Python exception handling with error translation

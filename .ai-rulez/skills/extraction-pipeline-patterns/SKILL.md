@@ -9,11 +9,11 @@ priority: critical
 
 ## Core Pipeline Architecture
 
-The extraction pipeline (`crates/kreuzberg/src/core/pipeline.rs`, `crates/kreuzberg/src/extraction/`) orchestrates:
+The extraction pipeline (`crates/kreuzberg/src/core/pipeline/mod.rs`, `crates/kreuzberg/src/extraction/`) orchestrates:
 1. **Format Detection** - MIME type inference + extension validation -> select appropriate extractor
 2. **Intelligent Extraction** - Route to format-specific extractors (PDF, DOCX, Excel, HTML, images, archives, etc.)
 3. **Fallback Strategies** - Password-protected PDFs, OCR for images, nested archive handling, corrupted file recovery
-4. **Post-Processing Pipeline** - Validators, quality processing, chunking, custom hooks (see `core/pipeline.rs`)
+4. **Post-Processing Pipeline** - Validators, quality processing, chunking, custom hooks (see `core/pipeline/mod.rs`)
 
 ## Format Detection Strategy
 
@@ -36,12 +36,12 @@ match (magic_bytes(content), extension) {
 
 | Category | Extractors | Key Modules |
 |----------|-----------|------------|
-| **Office** | DOCX, XLSX, XLSM, XLSB, XLS, PPTX, ODP, ODS | `extraction/{docx,excel,pptx}.rs` |
+| **Office** | DOCX, XLSX, XLSM, XLSB, XLS, PPTX, ODP, ODS | `extraction/docx/mod.rs`, `extraction/excel.rs`, `extraction/pptx/mod.rs` |
 | **PDF** | Standard + encrypted, password attempts | `pdf/` subdirectory (13 files) |
 | **Images** | PNG, JPG, TIFF, WebP, JP2, SVG (OCR-enabled) | `extraction/image.rs` + `ocr/` |
-| **Web** | HTML, XHTML, XML, SVG (DOM parsing) | `extraction/html.rs` (67KB - complex table handling) |
+| **Web** | HTML, XHTML, XML, SVG (DOM parsing) | `extraction/html/mod.rs` |
 | **Email** | EML, MSG (headers, body, attachments, threading) | `extraction/email.rs` |
-| **Archives** | ZIP, TAR, GZ, 7Z (recursive extraction) | `extraction/archive.rs` (31KB) |
+| **Archives** | ZIP, TAR, GZ, 7Z (recursive extraction) | `extraction/archive/mod.rs` |
 | **Markdown** | MD, TXT, RST, Org Mode, RTF | `extraction/markdown.rs` |
 | **Academic** | LaTeX, BibTeX, JATS, Jupyter, DocBook | `extraction/{structured,xml}.rs` |
 
@@ -69,9 +69,9 @@ run_pipeline(result, config)  // post-processing always runs
 
 ## Configuration Integration
 
-**Location**: `crates/kreuzberg/src/core/config.rs`, `crates/kreuzberg/src/core/config_validation.rs`
+**Location**: `crates/kreuzberg/src/core/config/mod.rs`, `crates/kreuzberg/src/core/config_validation/mod.rs`
 
-`ExtractionConfig` holds format-specific configs (`pdf`, `image`, `html`, `office`), fallback orchestration (`fallback`), and post-processing (`postprocessor`, `chunking`, `keywords`). See struct definition in `config.rs`.
+`ExtractionConfig` holds format-specific configs (`pdf`, `image`, `html`, `office`), fallback orchestration (`fallback`), and post-processing (`postprocessor`, `chunking`, `keywords`). See struct definition in `core/config/mod.rs`.
 
 ## Plugin System Integration
 

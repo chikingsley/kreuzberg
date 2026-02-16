@@ -1,0 +1,234 @@
+[
+  {
+    "framework": "pypdfium2",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/chelsea_pdta.pdf",
+    "file_size": 2944560,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 69141167
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 62032042
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 7109125
+    },
+    "metrics": {
+      "peak_memory_bytes": 77873152,
+      "avg_cpu_percent": 0.005774608378609022,
+      "throughput_bytes_per_sec": 47468371.26528899,
+      "p50_memory_bytes": 68665344,
+      "p95_memory_bytes": 74858496,
+      "p99_memory_bytes": 74858496
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 295346042
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 351588,
+        "package_bytes": 351588,
+        "system_deps_bytes": 0,
+        "method": "pip_package",
+        "description": "pypdfium2 PDF extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pypdfium2",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/issue-336-example.pdf",
+    "file_size": 650330,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 23467917
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 21220875
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 2247042
+    },
+    "metrics": {
+      "peak_memory_bytes": 60260352,
+      "avg_cpu_percent": 0.004408350090185802,
+      "throughput_bytes_per_sec": 30645767.43418921,
+      "p50_memory_bytes": 60243968,
+      "p95_memory_bytes": 60243968,
+      "p99_memory_bytes": 60243968
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 295346042
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 351588,
+        "package_bytes": 351588,
+        "system_deps_bytes": 0,
+        "method": "pip_package",
+        "description": "pypdfium2 PDF extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pypdfium2",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/mcid_example.pdf",
+    "file_size": 24694,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 6415875
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 4214292
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 2201583
+    },
+    "metrics": {
+      "peak_memory_bytes": 45531136,
+      "avg_cpu_percent": 0.0037517499178647993,
+      "throughput_bytes_per_sec": 5859584.480619758,
+      "p50_memory_bytes": 45498368,
+      "p95_memory_bytes": 45498368,
+      "p99_memory_bytes": 45498368
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 295346042
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 351588,
+        "package_bytes": 351588,
+        "system_deps_bytes": 0,
+        "method": "pip_package",
+        "description": "pypdfium2 PDF extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pypdfium2",
+    "file_path": "tools/benchmark-harness/fixtures/pdf/../../../../test_documents/vendored/pdfplumber/pdf/word365_structure.pdf",
+    "file_size": 99253,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 16520208
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 14445209
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 2074999
+    },
+    "metrics": {
+      "peak_memory_bytes": 59392000,
+      "avg_cpu_percent": 0.004780299961566925,
+      "throughput_bytes_per_sec": 6870997.851259888,
+      "p50_memory_bytes": 59375616,
+      "p95_memory_bytes": 59375616,
+      "p99_memory_bytes": 59375616
+    },
+    "quality": null,
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 295346042
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 351588,
+        "package_bytes": 351588,
+        "system_deps_bytes": 0,
+        "method": "pip_package",
+        "description": "pypdfium2 PDF extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  }
+]

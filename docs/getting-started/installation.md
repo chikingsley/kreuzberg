@@ -404,7 +404,34 @@ To work on the repository itself:
 ```bash title="Terminal"
 task setup      # Install all dependencies (Python, Node.js, Ruby, Rust)
 task lint       # Run linters across all languages
-task dev:test   # Execute full test suite (Rust, Python, Ruby, TypeScript)
+task test:all   # Execute full test suite (Rust, Python, Ruby, TypeScript, Go, Java, C#, PHP, Elixir, WASM)
+```
+
+### Local Source Install (No Publishing)
+
+Use this when you want to run your local fork on your machine/server without publishing to registries:
+
+```bash title="Terminal"
+task local:install
+```
+
+Build local distributable artifacts (wheel/tarball/CLI binary):
+
+```bash title="Terminal"
+task local:package
+```
+
+Install those artifacts into other local projects:
+
+```bash title="Terminal"
+# Python (from local wheel)
+uv pip install /path/to/kreuzberg/target/wheels/*.whl
+
+# Node.js / Bun (from local tarball)
+pnpm add /path/to/kreuzberg/crates/kreuzberg-node/*.tgz
+
+# CLI (already built in target/release)
+/path/to/kreuzberg/target/release/kreuzberg --help
 ```
 
 See [Contributing](../contributing.md) for branch naming, coding conventions, and test expectations.

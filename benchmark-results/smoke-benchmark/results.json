@@ -1,0 +1,173 @@
+[
+  {
+    "framework": "kreuzberg-rust",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/fake_memo.pdf",
+    "file_size": 13374,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 2962375
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 2961708
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 0
+    },
+    "metrics": {
+      "peak_memory_bytes": 184795136,
+      "avg_cpu_percent": 0.0,
+      "throughput_bytes_per_sec": 4514620.870078906,
+      "p50_memory_bytes": 184795136,
+      "p95_memory_bytes": 184795136,
+      "p99_memory_bytes": 184795136
+    },
+    "quality": {
+      "f1_score_text": 1.0,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 1.0
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 59405250
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 151274296,
+        "package_bytes": 151274296,
+        "system_deps_bytes": 0,
+        "method": "binary_size",
+        "description": "Native Rust core binary"
+      }
+    },
+    "pdf_metadata": null,
+    "ocr_status": "not_used"
+  },
+  {
+    "framework": "pdfplumber",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/fake_memo.pdf",
+    "file_size": 13374,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 65864791
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 34166541
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 31698250
+    },
+    "metrics": {
+      "peak_memory_bytes": 201998336,
+      "avg_cpu_percent": 0.018375566601753237,
+      "throughput_bytes_per_sec": 391435.58606064337,
+      "p50_memory_bytes": 201981952,
+      "p95_memory_bytes": 201981952,
+      "p99_memory_bytes": 201981952
+    },
+    "quality": {
+      "f1_score_text": 1.0,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 1.0
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 66962583
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": null
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pymupdf4llm",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/fake_memo.pdf",
+    "file_size": 13374,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 1,
+      "nanos": 323800792
+    },
+    "extraction_duration": {
+      "secs": 1,
+      "nanos": 269793041
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 54007751
+    },
+    "metrics": {
+      "peak_memory_bytes": 745930752,
+      "avg_cpu_percent": 0.8480884949608546,
+      "throughput_bytes_per_sec": 10532.425023740541,
+      "p50_memory_bytes": 446955520,
+      "p95_memory_bytes": 745914368,
+      "p99_memory_bytes": 745914368
+    },
+    "quality": {
+      "f1_score_text": 1.0,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 1.0
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 956744792
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": true,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": null
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  }
+]

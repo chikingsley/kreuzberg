@@ -7,7 +7,7 @@ name: Kreuzberg
 includes:
   - name: kreuzberg-shared-rules
     source: https://github.com/kreuzberg-dev/ai-rulez.git
-    ref: main
+    ref: 8192d4b680e46cfbde775dc498c8f6db5d500295
     include:
       - rules
       - context

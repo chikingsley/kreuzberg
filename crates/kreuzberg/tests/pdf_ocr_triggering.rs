@@ -288,6 +288,7 @@ fn test_ocr_custom_threshold() {
                 include_bbox: true,
                 ocr_coverage_threshold: Some(0.25),
             }),
+            table_detection: None,
         }),
         ..Default::default()
     };
