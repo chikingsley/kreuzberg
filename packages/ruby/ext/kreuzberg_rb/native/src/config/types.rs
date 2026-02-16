@@ -245,6 +245,7 @@ pub fn parse_pdf_config(ruby: &Ruby, hash: RHash) -> Result<PdfConfig, Error> {
         passwords,
         extract_metadata,
         hierarchy,
+        table_detection: None,
     };
 
     Ok(config)
