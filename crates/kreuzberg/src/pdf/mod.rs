@@ -54,6 +54,14 @@ pub mod rendering;
 #[cfg(feature = "pdf")]
 pub mod table;
 #[cfg(feature = "pdf")]
+pub mod table_clustering;
+#[cfg(feature = "pdf")]
+pub mod table_edges;
+#[cfg(feature = "pdf")]
+pub mod table_finder;
+#[cfg(feature = "pdf")]
+pub mod table_geometry;
+#[cfg(feature = "pdf")]
 pub mod text;
 
 #[cfg(feature = "pdf")]
@@ -78,4 +86,24 @@ pub use rendering::{PageRenderOptions, render_page_to_image};
 #[cfg(feature = "pdf")]
 pub use table::extract_words_from_page;
 #[cfg(feature = "pdf")]
+pub use table_finder::{
+    DetectedTable, StyledCellText, TableFinderResult, TableSettings, TableStrategy, TextStyle,
+    extract_table_text_styled, find_tables,
+};
+#[cfg(feature = "pdf")]
+pub use table_geometry::{are_neighbors, join_neighboring_rects};
+#[cfg(feature = "pdf")]
 pub use text::extract_text_from_pdf;
+
+/// Get a handle to the Pdfium library for direct PDF operations.
+///
+/// This provides access to the global Pdfium singleton. The returned handle
+/// can be used to load PDF documents for low-level operations like custom
+/// table extraction with specific `TableSettings`.
+///
+/// The handle holds an exclusive lock on PDFium (which is not thread-safe),
+/// so it should be dropped as soon as the operation is complete.
+#[cfg(feature = "pdf")]
+pub fn pdfium() -> impl std::ops::Deref<Target = pdfium_render::prelude::Pdfium> {
+    bindings::bind_pdfium(error::PdfError::TextExtractionFailed, "public access").expect("Failed to initialize Pdfium")
+}

@@ -197,6 +197,10 @@ jobs:
       - name: Verify API Parity
         run: python scripts/verify_api_parity.py
 
+      - name: Run AI-rulez Hardening Checks
+        run: scripts/ci/validate/check-ai-rulez-hardening.sh
+        shell: bash
+
       - name: Check final disk space
         if: always()
         run: scripts/ci/validate/show-disk-space.sh "Final disk space"

@@ -61,9 +61,9 @@ See: `extraction/email.rs`, `extractors/email.rs`
 
 | Helper | Location | Purpose |
 |--------|----------|---------|
-| `office_metadata::extract_metadata()` | `extraction/office.rs` | Office XML metadata |
+| `office_metadata::extract_metadata()` | `extraction/office_metadata/mod.rs` | Office XML metadata |
 | `cells_to_markdown()` | `extraction/mod.rs` | Convert cell grid to GFM table |
-| `build_archive_result()` | `extraction/archive/mod.rs` | Standard archive result |
+| `build_archive_result()` | `extractors/archive.rs` | Standard archive result |
 
 ## Adding a New Format
 

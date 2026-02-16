@@ -29,12 +29,12 @@ HTTP Client / AI Agent (Claude)
 [Router]
 ├── REST Endpoints
 │   ├── POST /extract - File upload extraction
-│   ├── POST /extract-url - URL-based extraction
-│   ├── GET /formats - List supported formats
+│   ├── POST /embed - Embeddings for input text
+│   ├── POST /chunk - Chunk input text
 │   ├── GET /health - Server health check
-│   ├── POST /batch - Batch document processing
+│   ├── GET /info - Server/runtime info
 │   ├── GET /cache/stats - Cache statistics
-│   └── DELETE /cache - Clear extraction cache
+│   └── DELETE /cache/clear - Clear extraction cache
 ├── MCP Endpoints
 │   ├── POST /mcp/tools - List available tools
 │   ├── POST /mcp/tools/call - Call a tool
@@ -60,13 +60,13 @@ JSON Response / MCP ToolResult
 
 ## Server Setup & Configuration
 
-**Location**: `crates/kreuzberg/src/api/server.rs`
+**Location**: `crates/kreuzberg/src/api/startup.rs`, `crates/kreuzberg/src/api/router.rs`
 
-Server initialization pattern: Create `ApiState` (holds `ExtractionConfig` + `ExtractionCache`), build Axum `Router` with all REST + MCP routes, apply middleware layers (body limits, CORS, tracing), serve via `tokio::net::TcpListener`.
+Server initialization pattern: Create `ApiState` (holds default `ExtractionConfig`), build Axum `Router`, apply middleware layers (body limits, CORS, tracing), serve via `tokio::net::TcpListener`.
 
 Key middleware layers applied in order:
 - `DefaultBodyLimit::max(100MB)` + `RequestBodyLimitLayer` -- configurable via env vars
-- `CorsLayer::permissive()` -- restrict in production via `CORS_ALLOWED_ORIGINS`
+- `CorsLayer` from `ServerConfig` -- restrict in production via `KREUZBERG_CORS_ORIGINS`
 - `TraceLayer::new_for_http()` -- request/response logging
 
 ## Core REST Handlers
@@ -76,12 +76,12 @@ Key middleware layers applied in order:
 | Handler | Method | Description |
 |---------|--------|-------------|
 | `extract_handler` | POST /extract | Multipart upload: parse file + optional config JSON, check cache, call `extract_bytes()`, cache result |
-| `extract_url_handler` | POST /extract-url | Fetch URL via reqwest, extract bytes |
-| `batch_handler` | POST /batch | Parallel extraction with `Semaphore`-limited concurrency (default: CPU count) |
+| `embed_handler` | POST /embed | Generate embeddings from input text |
+| `chunk_handler` | POST /chunk | Chunk text with config options |
 | `health_handler` | GET /health | Report status, version, uptime, feature availability (OCR, embeddings), cache stats |
-| `formats_handler` | GET /formats | Return supported format categories (office, pdf, images, web, email, archives, academic) |
+| `info_handler` | GET /info | Return server/runtime information |
 | `cache_stats_handler` | GET /cache/stats | Hit/miss counts and hit rate |
-| `cache_clear_handler` | DELETE /cache | Clear LRU cache |
+| `cache_clear_handler` | DELETE /cache/clear | Clear cache entries |
 
 ## Caching Strategy
 

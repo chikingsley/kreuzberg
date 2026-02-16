@@ -88,6 +88,25 @@ tasks:
       - task: php:install
       - echo "Setup complete - safe to re-run anytime"
 
+  local:install:
+    desc: "Prepare a local developer install (deps + Python editable build + Node native build + CLI)"
+    cmds:
+      - task: setup
+      - task: rust:ffi:build:dev
+      - task: python:build:dev
+      - task: node:build:dev
+      - task: rust:cli:install
+      - echo "Local install complete"
+
+  local:package:
+    desc: "Build local distributable artifacts (Python wheel + Node package tarball + CLI binary)"
+    cmds:
+      - task: python:build:release
+      - task: node:build:release
+      - cmd: cd crates/kreuzberg-node && npm pack
+      - task: rust:cli:build
+      - echo "Artifacts: target/wheels/*.whl, crates/kreuzberg-node/*.tgz, target/release/kreuzberg"
+
   build:
     desc: Build core libraries and language bindings
     cmds:

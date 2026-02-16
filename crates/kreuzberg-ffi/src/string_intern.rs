@@ -414,9 +414,15 @@ pub extern "C" fn kreuzberg_string_intern_reset() {
 mod tests {
     use super::*;
     use std::ffi::CString;
+    use std::sync::Mutex;
+
+    // String intern tests share a global table. Serialize test execution to avoid
+    // cross-test interference from concurrent reset/free operations.
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_intern_same_string() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         let s1 = CString::new("test_unique_12345").unwrap();
         let s2 = CString::new("test_unique_12345").unwrap();
 
@@ -439,6 +445,7 @@ mod tests {
 
     #[test]
     fn test_intern_different_strings() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         let s1 = CString::new("test_unique_aaa").unwrap();
         let s2 = CString::new("test_unique_bbb").unwrap();
 
@@ -461,6 +468,7 @@ mod tests {
 
     #[test]
     fn test_intern_reference_counting() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         let s = CString::new("test_refcount_xyz").unwrap();
 
         unsafe {
@@ -488,6 +496,7 @@ mod tests {
 
     #[test]
     fn test_intern_pre_populated() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         kreuzberg_string_intern_reset();
 
         let stats_initial = kreuzberg_string_intern_stats();
@@ -508,6 +517,7 @@ mod tests {
 
     #[test]
     fn test_intern_memory_savings() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         let test_str = "test_savings_qwerty";
         let s = CString::new(test_str).unwrap();
 
@@ -536,6 +546,7 @@ mod tests {
 
     #[test]
     fn test_intern_null_string() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         unsafe {
             let ptr = kreuzberg_intern_string(ptr::null());
             assert!(ptr.is_null());
@@ -544,6 +555,7 @@ mod tests {
 
     #[test]
     fn test_free_null_string() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         unsafe {
             kreuzberg_free_interned_string(ptr::null());
         }
@@ -551,6 +563,7 @@ mod tests {
 
     #[test]
     fn test_intern_stats_format() {
+        let _guard = TEST_LOCK.lock().expect("Test lock poisoned");
         let s1 = CString::new("test_stats_1").unwrap();
         let s2 = CString::new("test_stats_2").unwrap();
 

@@ -56,6 +56,8 @@ const FRAMEWORKS: &[(&str, &str, &str)] = &[
     ("tika", "jar_size", "Apache Tika content analysis"),
     ("pymupdf4llm", "pip_package", "PyMuPDF for LLM"),
     ("pdfplumber", "pip_package", "pdfplumber PDF extraction"),
+    ("pypdfium2", "pip_package", "pypdfium2 PDF extraction"),
+    ("pdfjs", "npm_package", "Mozilla PDF.js extraction"),
     ("mineru", "pip_package", "MinerU document intelligence"),
 ];
 
@@ -183,6 +185,8 @@ fn extract_package_name(framework: &str) -> &str {
         "unstructured" => "unstructured",
         "pymupdf4llm" => "pymupdf4llm",
         "pdfplumber" => "pdfplumber",
+        "pypdfium2" => "pypdfium2",
+        "pdfjs" => "pdfjs-dist",
         "mineru" => "mineru",
         _ => name,
     }
@@ -911,12 +915,14 @@ mod tests {
         assert_eq!(extract_package_name("docling"), "docling");
         assert_eq!(extract_package_name("docling-batch"), "docling");
         assert_eq!(extract_package_name("pdfplumber-batch"), "pdfplumber");
+        assert_eq!(extract_package_name("pypdfium2"), "pypdfium2");
+        assert_eq!(extract_package_name("pdfjs"), "pdfjs-dist");
     }
 
     #[test]
     fn test_frameworks_list_complete() {
-        // 10 kreuzberg bindings + 8 third-party = 18 total
-        assert_eq!(FRAMEWORKS.len(), 18);
+        // 10 kreuzberg bindings + 10 third-party = 20 total
+        assert_eq!(FRAMEWORKS.len(), 20);
 
         // Check all kreuzberg bindings present
         let names: Vec<&str> = FRAMEWORKS.iter().map(|(n, _, _)| *n).collect();
@@ -928,6 +934,8 @@ mod tests {
         assert!(names.contains(&"docling"));
         assert!(names.contains(&"tika"));
         assert!(names.contains(&"pandoc"));
+        assert!(names.contains(&"pypdfium2"));
+        assert!(names.contains(&"pdfjs"));
     }
 
     #[test]

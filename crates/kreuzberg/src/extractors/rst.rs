@@ -347,6 +347,7 @@ impl RstExtractor {
             cells,
             markdown,
             page_number: 1,
+            header: None,
         })
     }
 

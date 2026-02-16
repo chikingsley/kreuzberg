@@ -6,7 +6,6 @@
 //! - File validation and reading
 //! - Extraction pipeline orchestration
 
-#[cfg(any(feature = "otel", not(feature = "office")))]
 use crate::KreuzbergError;
 use crate::Result;
 use crate::core::config::ExtractionConfig;
@@ -14,7 +13,7 @@ use crate::core::mime::{LEGACY_POWERPOINT_MIME_TYPE, LEGACY_WORD_MIME_TYPE};
 use crate::types::ExtractionResult;
 use std::path::Path;
 
-use super::helpers::get_extractor;
+use super::helpers::get_extractors;
 
 /// Sanitize a file path to return only the filename.
 ///
@@ -182,10 +181,44 @@ pub(in crate::core::extractor) async fn extract_file_with_extractor(
 ) -> Result<ExtractionResult> {
     crate::extractors::ensure_initialized()?;
 
-    let extractor = get_extractor(mime_type)?;
-    let mut result = extractor.extract_file(path, mime_type, config).await?;
-    result = crate::core::pipeline::run_pipeline(result, config).await?;
-    Ok(result)
+    let extractors = get_extractors(mime_type)?;
+    let mut failures = Vec::new();
+    let mut last_error = None;
+
+    for extractor in extractors {
+        let extractor_name = extractor.name().to_string();
+        match extractor.extract_file(path, mime_type, config).await {
+            Ok(mut result) => {
+                result = crate::core::pipeline::run_pipeline(result, config).await?;
+                return Ok(result);
+            }
+            Err(err) => {
+                if matches!(&err, KreuzbergError::Io(_) | KreuzbergError::LockPoisoned(_)) {
+                    return Err(err);
+                }
+                let error_message = err.to_string();
+                tracing::debug!(
+                    "Extractor '{}' failed for MIME '{}', trying fallback: {}",
+                    extractor_name,
+                    mime_type,
+                    error_message
+                );
+                failures.push(format!("{}: {}", extractor_name, error_message));
+                last_error = Some(err);
+            }
+        }
+    }
+
+    tracing::debug!(
+        "All extractors failed for MIME '{}'. Attempts: {}",
+        mime_type,
+        failures.join(" | ")
+    );
+
+    match last_error {
+        Some(err) => Err(err),
+        None => Err(KreuzbergError::UnsupportedFormat(mime_type.to_string())),
+    }
 }
 
 pub(in crate::core::extractor) async fn extract_bytes_with_extractor(
@@ -195,8 +228,42 @@ pub(in crate::core::extractor) async fn extract_bytes_with_extractor(
 ) -> Result<ExtractionResult> {
     crate::extractors::ensure_initialized()?;
 
-    let extractor = get_extractor(mime_type)?;
-    let mut result = extractor.extract_bytes(content, mime_type, config).await?;
-    result = crate::core::pipeline::run_pipeline(result, config).await?;
-    Ok(result)
+    let extractors = get_extractors(mime_type)?;
+    let mut failures = Vec::new();
+    let mut last_error = None;
+
+    for extractor in extractors {
+        let extractor_name = extractor.name().to_string();
+        match extractor.extract_bytes(content, mime_type, config).await {
+            Ok(mut result) => {
+                result = crate::core::pipeline::run_pipeline(result, config).await?;
+                return Ok(result);
+            }
+            Err(err) => {
+                if matches!(&err, KreuzbergError::Io(_) | KreuzbergError::LockPoisoned(_)) {
+                    return Err(err);
+                }
+                let error_message = err.to_string();
+                tracing::debug!(
+                    "Extractor '{}' failed for MIME '{}', trying fallback: {}",
+                    extractor_name,
+                    mime_type,
+                    error_message
+                );
+                failures.push(format!("{}: {}", extractor_name, error_message));
+                last_error = Some(err);
+            }
+        }
+    }
+
+    tracing::debug!(
+        "All extractors failed for MIME '{}'. Attempts: {}",
+        mime_type,
+        failures.join(" | ")
+    );
+
+    match last_error {
+        Some(err) => Err(err),
+        None => Err(KreuzbergError::UnsupportedFormat(mime_type.to_string())),
+    }
 }

@@ -24,6 +24,136 @@ pub struct PdfConfig {
     /// Hierarchy extraction configuration (None = hierarchy extraction disabled)
     #[serde(default)]
     pub hierarchy: Option<HierarchyConfig>,
+
+    /// Table detection configuration (None = use defaults).
+    #[serde(default)]
+    pub table_detection: Option<PdfTableDetectionConfig>,
+}
+
+/// Table detection strategy exposed in configuration.
+#[cfg(feature = "pdf")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PdfTableStrategy {
+    Lines,
+    LinesStrict,
+    Text,
+    Explicit,
+}
+
+#[cfg(feature = "pdf")]
+impl Default for PdfTableStrategy {
+    fn default() -> Self {
+        Self::Lines
+    }
+}
+
+/// PDF table detection configuration.
+///
+/// This mirrors `TableSettings` and allows strategy/tolerance tuning through
+/// `ExtractionConfig` without code changes.
+#[cfg(feature = "pdf")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PdfTableDetectionConfig {
+    /// Enable table extraction for PDFs.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Strategy for vertical edge detection.
+    #[serde(default)]
+    pub vertical_strategy: PdfTableStrategy,
+    /// Strategy for horizontal edge detection.
+    #[serde(default)]
+    pub horizontal_strategy: PdfTableStrategy,
+    /// Explicit vertical line positions (x coordinates).
+    #[serde(default)]
+    pub explicit_vertical_lines: Vec<f64>,
+    /// Explicit horizontal line positions (y coordinates).
+    #[serde(default)]
+    pub explicit_horizontal_lines: Vec<f64>,
+    /// Explicit boxes `(x0, top, x1, bottom)` for manual table structure hints.
+    #[serde(default)]
+    pub explicit_boxes: Vec<(f64, f64, f64, f64)>,
+    /// Snap tolerance for aligning nearby edges.
+    #[serde(default = "default_table_snap_tolerance")]
+    pub snap_tolerance: f64,
+    /// Join tolerance for merging collinear edge segments.
+    #[serde(default = "default_table_join_tolerance")]
+    pub join_tolerance: f64,
+    /// Minimum edge length after merging.
+    #[serde(default = "default_table_edge_min_length")]
+    pub edge_min_length: f64,
+    /// Minimum edge length before merging.
+    #[serde(default = "default_table_edge_min_length_prefilter")]
+    pub edge_min_length_prefilter: f64,
+    /// Minimum words for vertical text-strategy edge detection.
+    #[serde(default = "default_table_min_words_vertical")]
+    pub min_words_vertical: usize,
+    /// Minimum words for horizontal text-strategy edge detection.
+    #[serde(default = "default_table_min_words_horizontal")]
+    pub min_words_horizontal: usize,
+    /// Tolerance for intersection detection.
+    #[serde(default = "default_table_intersection_tolerance")]
+    pub intersection_tolerance: f64,
+    /// Fallback spatial clustering column threshold.
+    #[serde(default = "default_fallback_column_threshold")]
+    pub fallback_column_threshold: u32,
+    /// Fallback spatial clustering row threshold ratio.
+    #[serde(default = "default_fallback_row_threshold_ratio")]
+    pub fallback_row_threshold_ratio: f64,
+}
+
+#[cfg(feature = "pdf")]
+impl Default for PdfTableDetectionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            vertical_strategy: PdfTableStrategy::Lines,
+            horizontal_strategy: PdfTableStrategy::Lines,
+            explicit_vertical_lines: Vec::new(),
+            explicit_horizontal_lines: Vec::new(),
+            explicit_boxes: Vec::new(),
+            snap_tolerance: default_table_snap_tolerance(),
+            join_tolerance: default_table_join_tolerance(),
+            edge_min_length: default_table_edge_min_length(),
+            edge_min_length_prefilter: default_table_edge_min_length_prefilter(),
+            min_words_vertical: default_table_min_words_vertical(),
+            min_words_horizontal: default_table_min_words_horizontal(),
+            intersection_tolerance: default_table_intersection_tolerance(),
+            fallback_column_threshold: default_fallback_column_threshold(),
+            fallback_row_threshold_ratio: default_fallback_row_threshold_ratio(),
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
+impl PdfTableDetectionConfig {
+    /// Convert config to runtime table-finder settings.
+    pub fn to_table_settings(&self) -> crate::pdf::TableSettings {
+        crate::pdf::TableSettings {
+            vertical_strategy: map_table_strategy(self.vertical_strategy),
+            horizontal_strategy: map_table_strategy(self.horizontal_strategy),
+            explicit_vertical_lines: self.explicit_vertical_lines.clone(),
+            explicit_horizontal_lines: self.explicit_horizontal_lines.clone(),
+            explicit_boxes: self.explicit_boxes.clone(),
+            snap_tolerance: self.snap_tolerance,
+            join_tolerance: self.join_tolerance,
+            edge_min_length: self.edge_min_length,
+            edge_min_length_prefilter: self.edge_min_length_prefilter,
+            min_words_vertical: self.min_words_vertical,
+            min_words_horizontal: self.min_words_horizontal,
+            intersection_tolerance: self.intersection_tolerance,
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
+fn map_table_strategy(strategy: PdfTableStrategy) -> crate::pdf::TableStrategy {
+    match strategy {
+        PdfTableStrategy::Lines => crate::pdf::TableStrategy::Lines,
+        PdfTableStrategy::LinesStrict => crate::pdf::TableStrategy::LinesStrict,
+        PdfTableStrategy::Text => crate::pdf::TableStrategy::Text,
+        PdfTableStrategy::Explicit => crate::pdf::TableStrategy::Explicit,
+    }
 }
 
 /// Hierarchy extraction configuration for PDF text structure analysis.
@@ -80,6 +210,42 @@ fn default_ocr_coverage_threshold() -> Option<f32> {
     None
 }
 
+fn default_table_snap_tolerance() -> f64 {
+    3.0
+}
+
+fn default_table_join_tolerance() -> f64 {
+    3.0
+}
+
+fn default_table_edge_min_length() -> f64 {
+    3.0
+}
+
+fn default_table_edge_min_length_prefilter() -> f64 {
+    1.0
+}
+
+fn default_table_min_words_vertical() -> usize {
+    3
+}
+
+fn default_table_min_words_horizontal() -> usize {
+    1
+}
+
+fn default_table_intersection_tolerance() -> f64 {
+    3.0
+}
+
+fn default_fallback_column_threshold() -> u32 {
+    50
+}
+
+fn default_fallback_row_threshold_ratio() -> f64 {
+    0.5
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -107,5 +273,19 @@ mod tests {
         assert_eq!(config.k_clusters, 3);
         assert!(!config.include_bbox);
         assert_eq!(config.ocr_coverage_threshold, Some(0.7));
+    }
+
+    #[test]
+    #[cfg(feature = "pdf")]
+    fn test_table_detection_config_default() {
+        use super::*;
+        let config = PdfTableDetectionConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.vertical_strategy, PdfTableStrategy::Lines);
+        assert_eq!(config.horizontal_strategy, PdfTableStrategy::Lines);
+        assert_eq!(config.snap_tolerance, 3.0);
+        assert_eq!(config.join_tolerance, 3.0);
+        assert_eq!(config.fallback_column_threshold, 50);
+        assert_eq!(config.fallback_row_threshold_ratio, 0.5);
     }
 }

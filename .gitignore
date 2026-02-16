@@ -60,7 +60,6 @@
 /tmp/kreuzberg-docker-test-results.json
 [Tt][Oo][Dd][Oo]*
 __pycache__/
-AGENTS.md
 aggregated-results/
 benchmark_results.json
 benchmarks/results/

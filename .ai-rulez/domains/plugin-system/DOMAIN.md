@@ -39,7 +39,7 @@ pub trait Plugin: Send + Sync {
 }
 ```
 
-### Document Extractor (`plugins/extractor.rs`)
+### Document Extractor (`plugins/extractor/trait.rs`)
 
 ```rust
 #[async_trait]
@@ -83,7 +83,7 @@ pub trait Validator: Plugin {
 }
 ```
 
-### Python Plugin FFI Bridge (`crates/kreuzberg-py/src/plugins.rs`)
+### Python Plugin FFI Bridge (`crates/kreuzberg-py/src/plugins/mod.rs`)
 
 ```python
 class MyCustomExtractor:
@@ -95,7 +95,7 @@ class MyCustomExtractor:
 Async method support with GIL management, exception handling, error translation.
 
 ### Plugin Registry
-See: `crates/kreuzberg/src/plugins/registry.rs` (DocumentExtractorRegistry: Arc<RwLock<Vec<Arc<dyn DocumentExtractor>>>> with MIME type index, register/unregister/get_for_mime/list_all/clear)
+See: `crates/kreuzberg/src/plugins/registry/mod.rs` (DocumentExtractorRegistry: Arc<RwLock<Vec<Arc<dyn DocumentExtractor>>>> with MIME type index, register/unregister/get_for_mime/list_all/clear)
 
 ## Integration with Kreuzberg Architecture
 
@@ -112,7 +112,7 @@ See: `crates/kreuzberg/src/plugins/registry.rs` (DocumentExtractorRegistry: Arc<
 ```
 
 ### Post-Processing Chain
-Sequential execution in priority order. See: `crates/kreuzberg/src/core/config.rs` (PostProcessorConfig, PostProcessorSpec)
+Sequential execution in priority order. See: `crates/kreuzberg/src/core/config/mod.rs` (PostProcessorConfig, PostProcessorSpec)
 
 ### Python Plugin Registration
 ```rust

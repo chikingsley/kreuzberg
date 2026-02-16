@@ -164,6 +164,72 @@ The original MIT OR Apache-2.0 dual license permits relicensing under MIT alone.
 
 ---
 
-**Last Updated**: February 10, 2026
+## pdfplumber — Table Detection Algorithm
+
+Line-intersection table detection algorithm ported from Python to Rust:
+
+- **Source**: https://github.com/jsvine/pdfplumber
+- **License**: MIT
+- **Author**: Jeremy Singer-Vine and pdfplumber contributors
+- **Usage**: Algorithm port (no code vendored — independently re-implemented in Rust)
+- **Location**: `crates/kreuzberg/src/pdf/table_finder.rs`, `table_edges.rs`, `table_geometry.rs`, `table_clustering.rs`
+- **Purpose**: PDF table detection via line-intersection analysis, spatial clustering, and cell extraction
+
+### What Was Ported
+
+The core table detection strategy from pdfplumber was studied and re-implemented in Rust:
+
+- Line-intersection algorithm for detecting table cell boundaries
+- Edge classification (explicit lines vs. inferred edges)
+- Spatial clustering of text into table cells
+- Table settings model (`TableSettings` with snap tolerance, join tolerance, strategies)
+
+### Test Fixtures from pdfplumber
+
+The following test PDF files were sourced from the pdfplumber test suite for validation:
+
+- `issue-53-example.pdf`, `issue-140-example.pdf`, `issue-336-example.pdf`, `issue-466-example.pdf`
+- `pdffill-demo.pdf`, `table-curves-example.pdf`
+- `nics-background-checks-2015-11.pdf`, `senate-expenditures.pdf`
+
+### License Compliance
+
+pdfplumber is MIT licensed. Our implementation is an independent Rust port — no Python source code was copied. The algorithm approach and test fixtures are used under MIT terms.
+
+---
+
+## PyMuPDF — Test Fixtures Only
+
+Test PDF documents used for validating table detection correctness:
+
+- **Source**: https://github.com/pymupdf/PyMuPDF
+- **License**: AGPL-3.0
+- **Author**: Artifex Software, Inc. and PyMuPDF contributors
+- **Usage**: Test PDF fixtures only (no code copied from PyMuPDF)
+- **Location**: `crates/kreuzberg/tests/data/table_pdfs/pymupdf-*.pdf`
+- **Purpose**: Cross-validation of table detection against documents used by PyMuPDF's test suite
+
+### Test Documents from PyMuPDF
+
+- `pymupdf-battery-file-22.pdf`, `pymupdf-chinese-tables.pdf`, `pymupdf-dotted-gridlines.pdf`
+- `pymupdf-small-table.pdf`, `pymupdf-strict-yes-no.pdf`, `pymupdf-styled-table.pdf`
+- `pymupdf-test-2812.pdf`, `pymupdf-test_2979.pdf`, `pymupdf-test_3062.pdf`
+- `pymupdf-test_3179.pdf`, `pymupdf-test_4017.pdf`
+
+### AGPL Compliance Statement
+
+We acknowledge that PyMuPDF is licensed under AGPL-3.0. We have:
+
+- ✓ Used PyMuPDF's test PDF documents as test fixtures only
+- ✓ NOT copied any PyMuPDF source code
+- ✓ NOT vendored or linked any PyMuPDF/MuPDF libraries
+- ✓ Implemented our table detection independently in Rust (ported from pdfplumber, not PyMuPDF)
+- ✓ Used PyMuPDF test documents only for behavioral cross-validation
+
+Our Rust table detection is independently implemented and does not contain any AGPL-licensed code from PyMuPDF.
+
+---
+
+**Last Updated**: February 16, 2026
 **Pandoc Version Used**: 3.8.3
 **Baseline Generation Date**: December 6, 2025
