@@ -15,7 +15,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use super::table_clustering::PositionedWord;
 use super::table_edges::{extract_edges_from_page, words_to_edges_h, words_to_edges_v};
 use super::table_geometry::{
-    Bbox, Edge, EdgeType, Orientation, filter_edges, merge_edges,
+    Bbox, Edge, EdgeType, Orientation, clip_edges, filter_edges, get_bbox_overlap, merge_edges,
 };
 
 use super::error::{PdfError, Result};
@@ -66,10 +66,18 @@ pub struct TableSettings {
     /// to the edge set. Useful for manually defining table structure when automatic
     /// detection fails (e.g., borderless tables).
     pub explicit_boxes: Vec<Bbox>,
-    /// Snap tolerance for aligning nearby edges.
+    /// Snap tolerance for aligning nearby edges (used for both axes unless overridden).
     pub snap_tolerance: f64,
-    /// Join tolerance for merging collinear edge segments.
+    /// Snap tolerance for x-axis only (vertical edge alignment). Overrides `snap_tolerance` for x.
+    pub snap_x_tolerance: Option<f64>,
+    /// Snap tolerance for y-axis only (horizontal edge alignment). Overrides `snap_tolerance` for y.
+    pub snap_y_tolerance: Option<f64>,
+    /// Join tolerance for merging collinear edge segments (used for both axes unless overridden).
     pub join_tolerance: f64,
+    /// Join tolerance for x-axis only. Overrides `join_tolerance` for horizontal segments.
+    pub join_x_tolerance: Option<f64>,
+    /// Join tolerance for y-axis only. Overrides `join_tolerance` for vertical segments.
+    pub join_y_tolerance: Option<f64>,
     /// Minimum edge length after merging.
     pub edge_min_length: f64,
     /// Minimum edge length for pre-filtering (before merge).
@@ -78,8 +86,48 @@ pub struct TableSettings {
     pub min_words_vertical: usize,
     /// Minimum words for horizontal text strategy.
     pub min_words_horizontal: usize,
-    /// Tolerance for intersection detection.
+    /// Tolerance for intersection detection (used for both axes unless overridden).
     pub intersection_tolerance: f64,
+    /// Intersection tolerance for x-axis only. Overrides `intersection_tolerance` for x.
+    pub intersection_x_tolerance: Option<f64>,
+    /// Intersection tolerance for y-axis only. Overrides `intersection_tolerance` for y.
+    pub intersection_y_tolerance: Option<f64>,
+    /// Optional clip region restricting table detection to a sub-area of the page.
+    /// Format: (x0, top, x1, bottom) in page coordinates (top-left origin).
+    pub clip: Option<Bbox>,
+    /// Base text grouping tolerance for character-to-word assembly in cells.
+    pub text_tolerance: Option<f64>,
+    /// Horizontal text tolerance. Overrides `text_tolerance` for x-axis spacing.
+    pub text_x_tolerance: Option<f64>,
+    /// Vertical text tolerance. Overrides `text_tolerance` for line break detection.
+    pub text_y_tolerance: Option<f64>,
+}
+
+impl TableSettings {
+    fn effective_snap_x(&self) -> f64 {
+        self.snap_x_tolerance.unwrap_or(self.snap_tolerance)
+    }
+    fn effective_snap_y(&self) -> f64 {
+        self.snap_y_tolerance.unwrap_or(self.snap_tolerance)
+    }
+    fn effective_join_x(&self) -> f64 {
+        self.join_x_tolerance.unwrap_or(self.join_tolerance)
+    }
+    fn effective_join_y(&self) -> f64 {
+        self.join_y_tolerance.unwrap_or(self.join_tolerance)
+    }
+    fn effective_intersection_x(&self) -> f64 {
+        self.intersection_x_tolerance.unwrap_or(self.intersection_tolerance)
+    }
+    fn effective_intersection_y(&self) -> f64 {
+        self.intersection_y_tolerance.unwrap_or(self.intersection_tolerance)
+    }
+    fn effective_text_x(&self) -> Option<f64> {
+        self.text_x_tolerance.or(self.text_tolerance)
+    }
+    fn effective_text_y(&self) -> f64 {
+        self.text_y_tolerance.or(self.text_tolerance).unwrap_or(5.0)
+    }
 }
 
 impl Default for TableSettings {
@@ -91,12 +139,22 @@ impl Default for TableSettings {
             explicit_horizontal_lines: Vec::new(),
             explicit_boxes: Vec::new(),
             snap_tolerance: DEFAULT_SNAP_TOLERANCE,
+            snap_x_tolerance: None,
+            snap_y_tolerance: None,
             join_tolerance: DEFAULT_JOIN_TOLERANCE,
+            join_x_tolerance: None,
+            join_y_tolerance: None,
             edge_min_length: DEFAULT_EDGE_MIN_LENGTH,
             edge_min_length_prefilter: DEFAULT_EDGE_MIN_LENGTH_PREFILTER,
             min_words_vertical: DEFAULT_MIN_WORDS_VERTICAL,
             min_words_horizontal: DEFAULT_MIN_WORDS_HORIZONTAL,
             intersection_tolerance: DEFAULT_INTERSECTION_TOLERANCE,
+            intersection_x_tolerance: None,
+            intersection_y_tolerance: None,
+            clip: None,
+            text_tolerance: None,
+            text_x_tolerance: None,
+            text_y_tolerance: None,
         }
     }
 }
@@ -137,6 +195,30 @@ impl DetectedTable {
 
         rows
     }
+
+    /// Get the number of rows in this table.
+    pub fn row_count(&self) -> usize {
+        self.rows().len()
+    }
+
+    /// Get the number of columns in this table.
+    pub fn col_count(&self) -> usize {
+        self.rows().first().map(|r| r.len()).unwrap_or(0)
+    }
+}
+
+/// Find the single largest table on a PDF page.
+///
+/// Returns the table with the most cells, or `None` if no tables were found.
+/// This is a convenience wrapper around [`find_tables`] for the common case
+/// where only one table is expected on the page.
+pub fn find_table(
+    page: &PdfPage,
+    settings: &TableSettings,
+    words: Option<&[PositionedWord]>,
+) -> Result<Option<DetectedTable>> {
+    let result = find_tables(page, settings, words)?;
+    Ok(result.tables.into_iter().max_by_key(|t| t.cells.len()))
 }
 
 /// Result of table finding on a page.
@@ -167,12 +249,19 @@ pub fn find_tables(
     settings: &TableSettings,
     words: Option<&[PositionedWord]>,
 ) -> Result<TableFinderResult> {
-    let page_bbox = (
-        0.0,
-        0.0,
-        page.width().value as f64,
-        page.height().value as f64,
-    );
+    let page_bbox = (0.0, 0.0, page.width().value as f64, page.height().value as f64);
+
+    // Early return for degenerate clip regions
+    if let Some(clip) = settings.clip {
+        if clip.0 >= clip.2 || clip.1 >= clip.3 {
+            return Ok(TableFinderResult {
+                edges: Vec::new(),
+                intersections: HashMap::new(),
+                cells: Vec::new(),
+                tables: Vec::new(),
+            });
+        }
+    }
 
     // Step 1: Collect edges based on strategies
     let edges = collect_edges(page, settings, words, page_bbox)?;
@@ -180,8 +269,8 @@ pub fn find_tables(
     // Step 2: Find intersections
     let intersections = edges_to_intersections(
         &edges,
-        settings.intersection_tolerance,
-        settings.intersection_tolerance,
+        settings.effective_intersection_x(),
+        settings.effective_intersection_y(),
     );
 
     // Step 3: Find cells from intersections
@@ -189,14 +278,12 @@ pub fn find_tables(
 
     // Step 4: Group cells into tables
     let table_groups = cells_to_tables(&cells);
-    let tables: Vec<DetectedTable> = table_groups
+    let mut tables: Vec<DetectedTable> = table_groups
         .into_iter()
         .map(|cell_group| {
             let bbox = cell_group.iter().fold(
                 (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY),
-                |(x0, top, x1, bottom), cell| {
-                    (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3))
-                },
+                |(x0, top, x1, bottom), cell| (x0.min(cell.0), top.min(cell.1), x1.max(cell.2), bottom.max(cell.3)),
             );
             DetectedTable {
                 cells: cell_group,
@@ -204,6 +291,11 @@ pub fn find_tables(
             }
         })
         .collect();
+
+    // Step 5: Filter tables by clip region if specified
+    if let Some(clip) = settings.clip {
+        tables.retain(|t| get_bbox_overlap(t.bbox, clip).is_some());
+    }
 
     Ok(TableFinderResult {
         edges,
@@ -225,17 +317,18 @@ fn collect_edges(
 
     // Vertical edges
     let mut v_edges = match settings.vertical_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Vertical), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Vertical),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Vertical),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_v(w, settings.min_words_vertical)
@@ -243,24 +336,26 @@ fn collect_edges(
         TableStrategy::Explicit => Vec::new(),
     };
 
-    // Add explicit vertical lines
+    // Add explicit vertical lines (span clip region if set, otherwise full page)
+    let effective_bbox = settings.clip.unwrap_or(page_bbox);
     for &x in &settings.explicit_vertical_lines {
-        v_edges.push(Edge::vertical(x, page_bbox.1, page_bbox.3, EdgeType::Line));
+        v_edges.push(Edge::vertical(x, effective_bbox.1, effective_bbox.3, EdgeType::Line));
     }
 
     // Horizontal edges
     let mut h_edges = match settings.horizontal_strategy {
-        TableStrategy::Lines => {
-            filter_edges(&raw_edges, Some(Orientation::Horizontal), None, settings.edge_min_length_prefilter)
-        }
-        TableStrategy::LinesStrict => {
-            filter_edges(
-                &raw_edges,
-                Some(Orientation::Horizontal),
-                Some(EdgeType::Line),
-                settings.edge_min_length_prefilter,
-            )
-        }
+        TableStrategy::Lines => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            None,
+            settings.edge_min_length_prefilter,
+        ),
+        TableStrategy::LinesStrict => filter_edges(
+            &raw_edges,
+            Some(Orientation::Horizontal),
+            Some(EdgeType::Line),
+            settings.edge_min_length_prefilter,
+        ),
         TableStrategy::Text => {
             let w = words.unwrap_or(&[]);
             words_to_edges_h(w, settings.min_words_horizontal)
@@ -268,9 +363,9 @@ fn collect_edges(
         TableStrategy::Explicit => Vec::new(),
     };
 
-    // Add explicit horizontal lines
+    // Add explicit horizontal lines (span clip region if set, otherwise full page)
     for &y in &settings.explicit_horizontal_lines {
-        h_edges.push(Edge::horizontal(page_bbox.0, page_bbox.2, y, EdgeType::Line));
+        h_edges.push(Edge::horizontal(effective_bbox.0, effective_bbox.2, y, EdgeType::Line));
     }
 
     // Add explicit boxes (decompose each box into 4 edges)
@@ -287,14 +382,21 @@ fn collect_edges(
 
     let all_edges = merge_edges(
         all_edges,
-        settings.snap_tolerance,
-        settings.snap_tolerance,
-        settings.join_tolerance,
-        settings.join_tolerance,
+        settings.effective_snap_x(),
+        settings.effective_snap_y(),
+        settings.effective_join_x(),
+        settings.effective_join_y(),
     );
 
     // Final filter by minimum length
-    Ok(filter_edges(&all_edges, None, None, settings.edge_min_length))
+    let all_edges = filter_edges(&all_edges, None, None, settings.edge_min_length);
+
+    // Apply clip region if specified
+    if let Some(clip) = settings.clip {
+        Ok(clip_edges(all_edges, clip))
+    } else {
+        Ok(all_edges)
+    }
 }
 
 /// Find intersection points between horizontal and vertical edges.
@@ -345,10 +447,7 @@ fn edges_to_intersections(
 ///
 /// A cell is formed when four intersection points form a rectangle,
 /// and each pair of adjacent corners is connected by the same edge.
-fn intersections_to_cells(
-    intersections: &HashMap<(u64, u64), IntersectionEdges>,
-    _edges: &[Edge],
-) -> Vec<Bbox> {
+fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>, _edges: &[Edge]) -> Vec<Bbox> {
     let edge_connects = |p1: (u64, u64), p2: (u64, u64)| -> bool {
         let i1 = match intersections.get(&p1) {
             Some(i) => i,
@@ -468,11 +567,7 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
 
         if current_cells.len() > 1 {
             // Sort top-to-bottom, left-to-right
-            current_cells.sort_by(|a, b| {
-                a.1.partial_cmp(&b.1)
-                    .unwrap()
-                    .then(a.0.partial_cmp(&b.0).unwrap())
-            });
+            current_cells.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap().then(a.0.partial_cmp(&b.0).unwrap()));
             tables.push(current_cells);
         }
     }
@@ -537,12 +632,8 @@ struct StrikethroughLine {
 ///
 /// For each cell, find characters whose midpoint falls within the cell bbox
 /// and concatenate them. Returns plain text for backward compatibility.
-pub fn extract_table_text(
-    table: &DetectedTable,
-    page: &PdfPage,
-    page_height: f64,
-) -> Result<Vec<Vec<String>>> {
-    let styled = extract_table_text_styled(table, page, page_height)?;
+pub fn extract_table_text(table: &DetectedTable, page: &PdfPage, page_height: f64) -> Result<Vec<Vec<String>>> {
+    let styled = extract_table_text_styled(table, page, page_height, None)?;
     Ok(styled
         .into_iter()
         .map(|row| row.into_iter().map(|c| c.plain).collect())
@@ -554,10 +645,15 @@ pub fn extract_table_text(
 /// Returns `StyledCellText` with both plain and markdown-formatted versions.
 /// The styled version wraps text spans in `**bold**`, `_italic_`, or `` `monospaced` ``
 /// markers based on the font properties of each character.
+///
+/// Pass `settings` to control text grouping tolerances (`text_x_tolerance`,
+/// `text_y_tolerance`). When `None`, defaults are used (no extra spacing,
+/// line break threshold of 5.0).
 pub fn extract_table_text_styled(
     table: &DetectedTable,
     page: &PdfPage,
     page_height: f64,
+    settings: Option<&TableSettings>,
 ) -> Result<Vec<Vec<StyledCellText>>> {
     let rows = table.rows();
 
@@ -597,7 +693,12 @@ pub fn extract_table_text_styled(
                 ch,
                 mid_x,
                 mid_y,
-                style: TextStyle { bold, italic, monospaced, strikethrough: false },
+                style: TextStyle {
+                    bold,
+                    italic,
+                    monospaced,
+                    strikethrough: false,
+                },
                 line_y,
                 char_bbox,
             })
@@ -638,10 +739,13 @@ pub fn extract_table_text_styled(
         for i in 0..len {
             if chars_data[i].ch.is_whitespace() && !chars_data[i].style.strikethrough {
                 // Check if previous non-ws and next non-ws are both strikethrough
-                let prev_st = (0..i).rev().find(|&j| !chars_data[j].ch.is_whitespace())
+                let prev_st = (0..i)
+                    .rev()
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
                     .map(|j| chars_data[j].style.strikethrough)
                     .unwrap_or(false);
-                let next_st = ((i + 1)..len).find(|&j| !chars_data[j].ch.is_whitespace())
+                let next_st = ((i + 1)..len)
+                    .find(|&j| !chars_data[j].ch.is_whitespace())
                     .map(|j| chars_data[j].style.strikethrough)
                     .unwrap_or(false);
                 if prev_st && next_st {
@@ -661,25 +765,45 @@ pub fn extract_table_text_styled(
                     let (x0, top, x1, bottom) = *cell;
                     let mut cell_chars: Vec<&CharPos> = chars_data
                         .iter()
-                        .filter(|c| {
-                            c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom
-                        })
+                        .filter(|c| c.mid_x >= x0 && c.mid_x < x1 && c.mid_y >= top && c.mid_y < bottom)
                         .collect();
 
                     // Sort by y then x for reading order
                     cell_chars.sort_by(|a, b| {
-                        a.mid_y.partial_cmp(&b.mid_y)
+                        a.mid_y
+                            .partial_cmp(&b.mid_y)
                             .unwrap()
                             .then(a.mid_x.partial_cmp(&b.mid_x).unwrap())
                     });
 
-                    let plain: String = cell_chars.iter().map(|c| c.ch).collect();
-                    let plain = plain.trim().to_string();
+                    // Build plain text, optionally inserting spaces based on text_x_tolerance
+                    let plain = if let Some(x_tol) = settings.and_then(|s| s.effective_text_x()) {
+                        let mut buf = String::new();
+                        for (i, ch) in cell_chars.iter().enumerate() {
+                            if i > 0 {
+                                let prev = cell_chars[i - 1];
+                                let gap = ch.mid_x - prev.mid_x;
+                                if gap > x_tol && !prev.ch.is_whitespace() && !ch.ch.is_whitespace() {
+                                    buf.push(' ');
+                                }
+                            }
+                            buf.push(ch.ch);
+                        }
+                        buf.trim().to_string()
+                    } else {
+                        let s: String = cell_chars.iter().map(|c| c.ch).collect();
+                        s.trim().to_string()
+                    };
 
-                    let styled = build_styled_text(&cell_chars);
+                    let line_break_threshold = settings.map(|s| s.effective_text_y()).unwrap_or(5.0);
+                    let styled = build_styled_text(&cell_chars, line_break_threshold);
                     let has_bold = cell_chars.iter().any(|c| c.style.bold);
 
-                    row_cells.push(StyledCellText { plain, styled, has_bold });
+                    row_cells.push(StyledCellText {
+                        plain,
+                        styled,
+                        has_bold,
+                    });
                 }
                 None => {
                     row_cells.push(StyledCellText {
@@ -787,11 +911,7 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
                         if dy < 2.0 && dx >= 3.0 {
                             // This is a thin horizontal line — candidate for strikethrough
                             let line_y = (current_y + y) / 2.0;
-                            let (x0, x1) = if current_x < x {
-                                (current_x, x)
-                            } else {
-                                (x, current_x)
-                            };
+                            let (x0, x1) = if current_x < x { (current_x, x) } else { (x, current_x) };
                             lines.push(StrikethroughLine { x0, x1, y: line_y });
                         }
                         current_x = x;
@@ -824,7 +944,11 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
                     // Thin horizontal rectangle: width >> height, height < 2pt
                     if height < 2.0 && width >= 3.0 && width > height * 3.0 {
                         let mid_y = (min_y + max_y) / 2.0;
-                        lines.push(StrikethroughLine { x0: min_x, x1: max_x, y: mid_y });
+                        lines.push(StrikethroughLine {
+                            x0: min_x,
+                            x1: max_x,
+                            y: mid_y,
+                        });
                     }
                 }
             }
@@ -839,7 +963,7 @@ fn collect_strikethrough_lines(page: &PdfPage, page_height: f64) -> Vec<Striketh
 /// Groups consecutive characters with the same style, then wraps each group
 /// in the appropriate markdown markers. Handles line breaks within cells
 /// by inserting `<br>` tags.
-fn build_styled_text(chars: &[&CharPos]) -> String {
+fn build_styled_text(chars: &[&CharPos], line_break_threshold: f64) -> String {
     if chars.is_empty() {
         return String::new();
     }
@@ -854,7 +978,6 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
     let mut current_text = String::new();
     let mut current_style = chars[0].style;
     let mut prev_line_y = chars[0].line_y;
-    let line_break_threshold = 5.0; // PDF units
 
     for &ch in chars {
         // Detect line break (significant y-coordinate change)
@@ -863,16 +986,25 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
             // Flush current run and insert line break marker
             let trimmed = current_text.trim_end().to_string();
             if !trimmed.is_empty() {
-                runs.push(Run { text: trimmed, style: current_style });
+                runs.push(Run {
+                    text: trimmed,
+                    style: current_style,
+                });
             }
-            runs.push(Run { text: "\n".to_string(), style: TextStyle::default() });
+            runs.push(Run {
+                text: "\n".to_string(),
+                style: TextStyle::default(),
+            });
             current_text = String::new();
             current_style = ch.style;
         }
 
         // Style change: flush current run
         if ch.style != current_style && !current_text.is_empty() {
-            runs.push(Run { text: current_text.clone(), style: current_style });
+            runs.push(Run {
+                text: current_text.clone(),
+                style: current_style,
+            });
             current_text = String::new();
             current_style = ch.style;
         }
@@ -883,7 +1015,10 @@ fn build_styled_text(chars: &[&CharPos]) -> String {
 
     // Flush last run
     if !current_text.is_empty() {
-        runs.push(Run { text: current_text, style: current_style });
+        runs.push(Run {
+            text: current_text,
+            style: current_style,
+        });
     }
 
     // Build output with markdown formatting

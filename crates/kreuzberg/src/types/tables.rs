@@ -57,6 +57,42 @@ pub struct TableCell {
     pub is_header: bool,
 }
 
+impl Table {
+    /// Convert the table to CSV format.
+    ///
+    /// Properly escapes cells containing commas, double quotes, or newlines
+    /// per RFC 4180.
+    pub fn to_csv(&self) -> String {
+        let mut csv = String::new();
+        for row in &self.cells {
+            for (i, cell) in row.iter().enumerate() {
+                if i > 0 {
+                    csv.push(',');
+                }
+                if cell.contains(',') || cell.contains('"') || cell.contains('\n') {
+                    csv.push('"');
+                    csv.push_str(&cell.replace('"', "\"\""));
+                    csv.push('"');
+                } else {
+                    csv.push_str(cell);
+                }
+            }
+            csv.push('\n');
+        }
+        csv
+    }
+
+    /// Number of rows in the table.
+    pub fn row_count(&self) -> usize {
+        self.cells.len()
+    }
+
+    /// Number of columns in the table (based on the first row).
+    pub fn col_count(&self) -> usize {
+        self.cells.first().map(|r| r.len()).unwrap_or(0)
+    }
+}
+
 fn default_span() -> usize {
     1
 }

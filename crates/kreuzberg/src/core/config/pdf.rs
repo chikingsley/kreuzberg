@@ -76,9 +76,21 @@ pub struct PdfTableDetectionConfig {
     /// Snap tolerance for aligning nearby edges.
     #[serde(default = "default_table_snap_tolerance")]
     pub snap_tolerance: f64,
+    /// Snap tolerance for x-axis only. Overrides `snap_tolerance` for x.
+    #[serde(default)]
+    pub snap_x_tolerance: Option<f64>,
+    /// Snap tolerance for y-axis only. Overrides `snap_tolerance` for y.
+    #[serde(default)]
+    pub snap_y_tolerance: Option<f64>,
     /// Join tolerance for merging collinear edge segments.
     #[serde(default = "default_table_join_tolerance")]
     pub join_tolerance: f64,
+    /// Join tolerance for x-axis only. Overrides `join_tolerance` for x.
+    #[serde(default)]
+    pub join_x_tolerance: Option<f64>,
+    /// Join tolerance for y-axis only. Overrides `join_tolerance` for y.
+    #[serde(default)]
+    pub join_y_tolerance: Option<f64>,
     /// Minimum edge length after merging.
     #[serde(default = "default_table_edge_min_length")]
     pub edge_min_length: f64,
@@ -94,6 +106,24 @@ pub struct PdfTableDetectionConfig {
     /// Tolerance for intersection detection.
     #[serde(default = "default_table_intersection_tolerance")]
     pub intersection_tolerance: f64,
+    /// Intersection tolerance for x-axis only. Overrides `intersection_tolerance` for x.
+    #[serde(default)]
+    pub intersection_x_tolerance: Option<f64>,
+    /// Intersection tolerance for y-axis only. Overrides `intersection_tolerance` for y.
+    #[serde(default)]
+    pub intersection_y_tolerance: Option<f64>,
+    /// Optional clip region `(x0, top, x1, bottom)` restricting detection to a sub-area.
+    #[serde(default)]
+    pub clip: Option<(f64, f64, f64, f64)>,
+    /// Base text grouping tolerance for character assembly in cells.
+    #[serde(default)]
+    pub text_tolerance: Option<f64>,
+    /// Horizontal text tolerance. Overrides `text_tolerance` for x-axis spacing.
+    #[serde(default)]
+    pub text_x_tolerance: Option<f64>,
+    /// Vertical text tolerance. Overrides `text_tolerance` for line break detection.
+    #[serde(default)]
+    pub text_y_tolerance: Option<f64>,
     /// Fallback spatial clustering column threshold.
     #[serde(default = "default_fallback_column_threshold")]
     pub fallback_column_threshold: u32,
@@ -113,12 +143,22 @@ impl Default for PdfTableDetectionConfig {
             explicit_horizontal_lines: Vec::new(),
             explicit_boxes: Vec::new(),
             snap_tolerance: default_table_snap_tolerance(),
+            snap_x_tolerance: None,
+            snap_y_tolerance: None,
             join_tolerance: default_table_join_tolerance(),
+            join_x_tolerance: None,
+            join_y_tolerance: None,
             edge_min_length: default_table_edge_min_length(),
             edge_min_length_prefilter: default_table_edge_min_length_prefilter(),
             min_words_vertical: default_table_min_words_vertical(),
             min_words_horizontal: default_table_min_words_horizontal(),
             intersection_tolerance: default_table_intersection_tolerance(),
+            intersection_x_tolerance: None,
+            intersection_y_tolerance: None,
+            clip: None,
+            text_tolerance: None,
+            text_x_tolerance: None,
+            text_y_tolerance: None,
             fallback_column_threshold: default_fallback_column_threshold(),
             fallback_row_threshold_ratio: default_fallback_row_threshold_ratio(),
         }
@@ -136,12 +176,22 @@ impl PdfTableDetectionConfig {
             explicit_horizontal_lines: self.explicit_horizontal_lines.clone(),
             explicit_boxes: self.explicit_boxes.clone(),
             snap_tolerance: self.snap_tolerance,
+            snap_x_tolerance: self.snap_x_tolerance,
+            snap_y_tolerance: self.snap_y_tolerance,
             join_tolerance: self.join_tolerance,
+            join_x_tolerance: self.join_x_tolerance,
+            join_y_tolerance: self.join_y_tolerance,
             edge_min_length: self.edge_min_length,
             edge_min_length_prefilter: self.edge_min_length_prefilter,
             min_words_vertical: self.min_words_vertical,
             min_words_horizontal: self.min_words_horizontal,
             intersection_tolerance: self.intersection_tolerance,
+            intersection_x_tolerance: self.intersection_x_tolerance,
+            intersection_y_tolerance: self.intersection_y_tolerance,
+            clip: self.clip,
+            text_tolerance: self.text_tolerance,
+            text_x_tolerance: self.text_x_tolerance,
+            text_y_tolerance: self.text_y_tolerance,
         }
     }
 }

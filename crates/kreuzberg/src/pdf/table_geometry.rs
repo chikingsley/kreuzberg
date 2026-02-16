@@ -284,8 +284,7 @@ pub fn merge_edges(
     };
 
     // Group edges by (orientation, primary_coord) and join each group
-    let mut groups: std::collections::BTreeMap<(u8, u64), Vec<Edge>> =
-        std::collections::BTreeMap::new();
+    let mut groups: std::collections::BTreeMap<(u8, u64), Vec<Edge>> = std::collections::BTreeMap::new();
 
     for edge in &edges {
         let orient_key = match edge.orientation {
@@ -293,10 +292,7 @@ pub fn merge_edges(
             Orientation::Vertical => 1u8,
         };
         let coord_key = edge.primary_coord().to_bits();
-        groups
-            .entry((orient_key, coord_key))
-            .or_default()
-            .push(edge.clone());
+        groups.entry((orient_key, coord_key)).or_default().push(edge.clone());
     }
 
     let mut result = Vec::new();
@@ -337,12 +333,7 @@ pub fn are_neighbors(r1: Bbox, r2: Bbox, snap_x: f64, snap_y: f64) -> bool {
 /// Only keeps regions that satisfy the provided predicate (e.g., "contains text").
 ///
 /// This mirrors PyMuPDF's `clean_graphics` algorithm.
-pub fn join_neighboring_rects<F>(
-    rects: &[Bbox],
-    snap_x: f64,
-    snap_y: f64,
-    keep_predicate: F,
-) -> Vec<Bbox>
+pub fn join_neighboring_rects<F>(rects: &[Bbox], snap_x: f64, snap_y: f64, keep_predicate: F) -> Vec<Bbox>
 where
     F: Fn(Bbox) -> bool,
 {
@@ -384,6 +375,48 @@ where
     result
 }
 
+/// Clip edges to a bounding box region.
+///
+/// Edges entirely outside the clip region are removed.
+/// Edges partially overlapping are trimmed to the clip boundaries.
+pub fn clip_edges(edges: Vec<Edge>, clip: Bbox) -> Vec<Edge> {
+    let (cx0, ctop, cx1, cbottom) = clip;
+    edges
+        .into_iter()
+        .filter_map(|edge| match edge.orientation {
+            Orientation::Horizontal => {
+                // Horizontal edge at y=edge.top. Must be within vertical clip bounds.
+                if edge.top < ctop || edge.top > cbottom {
+                    return None;
+                }
+                let new_x0 = edge.x0.max(cx0);
+                let new_x1 = edge.x1.min(cx1);
+                if new_x0 >= new_x1 {
+                    return None;
+                }
+                Some(Edge::horizontal(new_x0, new_x1, edge.top, edge.edge_type))
+            }
+            Orientation::Vertical => {
+                // Vertical edge at x=edge.x0. Must be within horizontal clip bounds.
+                if edge.x0 < cx0 || edge.x0 > cx1 {
+                    return None;
+                }
+                let new_top = edge.top.max(ctop);
+                let new_bottom = edge.bottom.min(cbottom);
+                if new_top >= new_bottom {
+                    return None;
+                }
+                Some(Edge::vertical(edge.x0, new_top, new_bottom, edge.edge_type))
+            }
+        })
+        .collect()
+}
+
+/// Check if a point (x, y) is inside a bounding box.
+pub fn point_in_bbox(x: f64, y: f64, bbox: Bbox) -> bool {
+    x >= bbox.0 && x < bbox.2 && y >= bbox.1 && y < bbox.3
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -412,10 +445,7 @@ mod tests {
             .iter()
             .filter(|e| e.orientation == Orientation::Horizontal)
             .count();
-        let v_count = edges
-            .iter()
-            .filter(|e| e.orientation == Orientation::Vertical)
-            .count();
+        let v_count = edges.iter().filter(|e| e.orientation == Orientation::Vertical).count();
         assert_eq!(h_count, 2);
         assert_eq!(v_count, 2);
     }
@@ -514,7 +544,7 @@ mod tests {
     fn test_join_neighboring_rects() {
         let rects = vec![
             (0.0, 0.0, 50.0, 50.0),
-            (50.0, 0.0, 100.0, 50.0),   // neighbor of first
+            (50.0, 0.0, 100.0, 50.0),     // neighbor of first
             (200.0, 200.0, 300.0, 300.0), // far away
         ];
         let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
@@ -540,14 +570,9 @@ mod tests {
 
     #[test]
     fn test_join_neighboring_rects_with_predicate() {
-        let rects = vec![
-            (0.0, 0.0, 50.0, 50.0),
-            (50.0, 0.0, 100.0, 50.0),
-        ];
+        let rects = vec![(0.0, 0.0, 50.0, 50.0), (50.0, 0.0, 100.0, 50.0)];
         // Predicate rejects small rects
-        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |r| {
-            (r.2 - r.0) > 80.0
-        });
+        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |r| (r.2 - r.0) > 80.0);
         assert_eq!(joined.len(), 1); // Merged rect is 100 wide, passes predicate
     }
 }

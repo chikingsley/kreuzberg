@@ -923,7 +923,7 @@ fn test_pymupdf_add_lines_strict() {
 
         let (cols, rows) = if !result.tables.is_empty() {
             let page_height = page.height().value as f64;
-            let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
+            let styled = extract_table_text_styled(&result.tables[0], &page, page_height, None).unwrap();
             println!(
                 "With add_lines: {} rows x {} cols",
                 styled.len(),
@@ -993,7 +993,7 @@ fn test_pymupdf_add_boxes_strict() {
         println!("With add_boxes: {} tables found", result.tables.len());
 
         if !result.tables.is_empty() {
-            let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
+            let styled = extract_table_text_styled(&result.tables[0], &page, page_height, None).unwrap();
             println!(
                 "Table: {} rows x {} cols",
                 styled.len(),
@@ -1189,4 +1189,224 @@ fn bench_all_pdfs_timing() {
             .map(|t| format!("{:.1}ms", t.as_secs_f64() * 1000.0))
             .collect::<Vec<_>>()
     );
+}
+
+// ============================================================
+// New tests: clip, x/y tolerances, convenience methods
+// ============================================================
+
+/// Test that clip restricts which tables are found.
+/// issue-336-example.pdf has 3 tables on one page.
+#[test]
+fn test_clip_restricts_tables() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+
+    // First, find all tables without clip
+    let settings = TableSettings::default();
+    let all_result = find_tables(&page, &settings, None).unwrap();
+    let total_tables = all_result.tables.len();
+    assert!(total_tables >= 2, "Expected at least 2 tables, got {}", total_tables);
+
+    // Now use the first table's bbox as clip region
+    let first_bbox = all_result.tables[0].bbox;
+    let mut clipped_settings = TableSettings::default();
+    clipped_settings.clip = Some(first_bbox);
+    let clipped_result = find_tables(&page, &clipped_settings, None).unwrap();
+
+    assert_eq!(
+        clipped_result.tables.len(),
+        1,
+        "Clip should restrict to exactly 1 table, got {}",
+        clipped_result.tables.len()
+    );
+}
+
+/// Test that clip: None gives same results as no clip.
+#[test]
+fn test_clip_none_matches_default() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+
+    let default_settings = TableSettings::default();
+    let result_default = find_tables(&page, &default_settings, None).unwrap();
+
+    let mut explicit_none = TableSettings::default();
+    explicit_none.clip = None;
+    let result_none = find_tables(&page, &explicit_none, None).unwrap();
+
+    assert_eq!(result_default.tables.len(), result_none.tables.len());
+}
+
+/// Test that a degenerate clip region returns no tables.
+#[test]
+fn test_clip_degenerate_returns_empty() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+
+    // Degenerate clip: x0 > x1
+    let mut settings = TableSettings::default();
+    settings.clip = Some((500.0, 0.0, 100.0, 100.0));
+    let result = find_tables(&page, &settings, None).unwrap();
+    assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
+
+    // Degenerate clip: top > bottom
+    settings.clip = Some((0.0, 500.0, 100.0, 100.0));
+    let result = find_tables(&page, &settings, None).unwrap();
+    assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
+}
+
+/// Test that separate x/y tolerances with same values match single tolerance.
+#[test]
+fn test_separate_xy_tolerances_match_single() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+
+    // Single tolerance (default)
+    let single = TableSettings::default();
+    let result_single = find_tables(&page, &single, None).unwrap();
+
+    // Separate x/y with same value as single
+    let mut separate = TableSettings::default();
+    separate.snap_x_tolerance = Some(3.0);
+    separate.snap_y_tolerance = Some(3.0);
+    separate.join_x_tolerance = Some(3.0);
+    separate.join_y_tolerance = Some(3.0);
+    separate.intersection_x_tolerance = Some(3.0);
+    separate.intersection_y_tolerance = Some(3.0);
+    let result_separate = find_tables(&page, &separate, None).unwrap();
+
+    assert_eq!(
+        result_single.tables.len(),
+        result_separate.tables.len(),
+        "Separate x/y tolerances with same values should match single tolerance"
+    );
+}
+
+/// Test find_table (singular) returns the table with the most cells.
+#[test]
+fn test_find_table_singular_returns_largest() {
+    use kreuzberg::pdf::{TableSettings, find_table, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+    let settings = TableSettings::default();
+
+    let all = find_tables(&page, &settings, None).unwrap();
+    let single = find_table(&page, &settings, None).unwrap();
+
+    assert!(single.is_some(), "Should find at least one table");
+    let single = single.unwrap();
+
+    // It should be the table with the most cells
+    let max_cells = all.tables.iter().map(|t| t.cells.len()).max().unwrap();
+    assert_eq!(single.cells.len(), max_cells);
+}
+
+/// Test DetectedTable::row_count and col_count.
+#[test]
+fn test_row_count_col_count() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+    let settings = TableSettings::default();
+
+    let result = find_tables(&page, &settings, None).unwrap();
+    assert!(!result.tables.is_empty());
+
+    let table = &result.tables[0];
+    let rows = table.rows();
+    assert_eq!(table.row_count(), rows.len());
+    assert_eq!(table.col_count(), rows.first().map(|r| r.len()).unwrap_or(0));
+}
+
+/// Test Table::to_csv basic output.
+#[test]
+fn test_to_csv_basic() {
+    use kreuzberg::types::Table;
+
+    let table = Table {
+        cells: vec![vec!["Name".into(), "Age".into()], vec!["Alice".into(), "30".into()]],
+        markdown: String::new(),
+        page_number: 1,
+        header: None,
+    };
+    assert_eq!(table.to_csv(), "Name,Age\nAlice,30\n");
+}
+
+/// Test Table::to_csv properly escapes special characters.
+#[test]
+fn test_to_csv_escaping() {
+    use kreuzberg::types::Table;
+
+    let table = Table {
+        cells: vec![vec![
+            "has,comma".into(),
+            "has\"quote".into(),
+            "has\nnewline".into(),
+            "plain".into(),
+        ]],
+        markdown: String::new(),
+        page_number: 1,
+        header: None,
+    };
+    assert_eq!(
+        table.to_csv(),
+        "\"has,comma\",\"has\"\"quote\",\"has\nnewline\",plain\n"
+    );
+}
+
+/// Test Table::row_count and col_count.
+#[test]
+fn test_table_row_col_count() {
+    use kreuzberg::types::Table;
+
+    let table = Table {
+        cells: vec![
+            vec!["A".into(), "B".into(), "C".into()],
+            vec!["D".into(), "E".into(), "F".into()],
+        ],
+        markdown: String::new(),
+        page_number: 1,
+        header: None,
+    };
+    assert_eq!(table.row_count(), 2);
+    assert_eq!(table.col_count(), 3);
+}
+
+/// Test Table::to_csv on an empty table.
+#[test]
+fn test_to_csv_empty() {
+    use kreuzberg::types::Table;
+
+    let table = Table {
+        cells: vec![],
+        markdown: String::new(),
+        page_number: 1,
+        header: None,
+    };
+    assert_eq!(table.to_csv(), "");
+    assert_eq!(table.row_count(), 0);
+    assert_eq!(table.col_count(), 0);
 }

@@ -51,7 +51,7 @@ pub(crate) fn extract_all_from_document(
     let (native_text, boundaries, page_contents, pdf_metadata) =
         crate::pdf::text::extract_text_and_metadata_from_pdf_document(document, Some(config))?;
 
-    let tables = extract_tables_from_document(document, &pdf_metadata)?;
+    let tables = extract_tables_from_document(document, &pdf_metadata, config)?;
 
     Ok((pdf_metadata, native_text, tables, page_contents, boundaries))
 }
@@ -66,13 +66,19 @@ pub(crate) fn extract_all_from_document(
 fn extract_tables_from_document(
     document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
+    config: &ExtractionConfig,
 ) -> Result<Vec<Table>> {
     use crate::ocr::table::{reconstruct_table, table_to_markdown};
     use crate::pdf::table::extract_words_from_page;
-    use crate::pdf::table_finder::{self, TableSettings, extract_table_text_styled};
+    use crate::pdf::table_finder::{self, extract_table_text_styled};
     use crate::types::TableHeader;
 
-    let settings = TableSettings::default();
+    let settings = config
+        .pdf_options
+        .as_ref()
+        .and_then(|p| p.table_detection.as_ref())
+        .map(|tc: &crate::core::config::pdf::PdfTableDetectionConfig| tc.to_table_settings())
+        .unwrap_or_default();
     let mut all_tables = Vec::new();
 
     for (page_index, page) in document.pages().iter().enumerate() {
@@ -83,7 +89,7 @@ fn extract_tables_from_document(
             Ok(result) if !result.tables.is_empty() => {
                 let page_height = page.height().value as f64;
                 for detected_table in &result.tables {
-                    match extract_table_text_styled(detected_table, &page, page_height) {
+                    match extract_table_text_styled(detected_table, &page, page_height, Some(&settings)) {
                         Ok(styled_rows) => {
                             if !styled_rows.is_empty() {
                                 let plain_cells: Vec<Vec<String>> = styled_rows
@@ -207,6 +213,7 @@ fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledC
 fn extract_tables_from_document(
     _document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
+    _config: &ExtractionConfig,
 ) -> Result<Vec<crate::types::Table>> {
     Ok(vec![])
 }
