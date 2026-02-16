@@ -1,0 +1,128 @@
+[
+  {
+    "framework": "pypdfium2",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/fake_memo.pdf",
+    "file_size": 13374,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 8553541
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 3337542
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 5215999
+    },
+    "metrics": {
+      "peak_memory_bytes": 317931520,
+      "avg_cpu_percent": 0.009431300312280655,
+      "throughput_bytes_per_sec": 4007140.5842982647,
+      "p50_memory_bytes": 317865984,
+      "p95_memory_bytes": 317865984,
+      "p99_memory_bytes": 317865984
+    },
+    "quality": {
+      "f1_score_text": 1.0,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 1.0
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 44438375
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 351588,
+        "package_bytes": 351588,
+        "system_deps_bytes": 0,
+        "method": "pip_package",
+        "description": "pypdfium2 PDF extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pdfjs",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/fake_memo.pdf",
+    "file_size": 13374,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 10914916
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 10494708
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 420208
+    },
+    "metrics": {
+      "peak_memory_bytes": 320045056,
+      "avg_cpu_percent": 0.0055876001715660095,
+      "throughput_bytes_per_sec": 1274356.561421242,
+      "p50_memory_bytes": 318078976,
+      "p95_memory_bytes": 318078976,
+      "p99_memory_bytes": 318078976
+    },
+    "quality": {
+      "f1_score_text": 1.0,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 1.0
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 162389916
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 9968929,
+        "package_bytes": 9968929,
+        "system_deps_bytes": 0,
+        "method": "npm_package",
+        "description": "Mozilla PDF.js extraction"
+      }
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  }
+]

@@ -4,7 +4,7 @@ skills:
     context: Implement plugins using trait interfaces
     key_source_files:
       - crates/kreuzberg/src/plugins/mod.rs (Plugin trait)
-      - crates/kreuzberg/src/plugins/extractor.rs (DocumentExtractor trait)
+      - crates/kreuzberg/src/plugins/extractor/trait.rs (DocumentExtractor trait)
     master_concepts:
       - Plugin trait structure
       - Lifecycle methods (initialize, shutdown)
@@ -36,7 +36,7 @@ skills:
   - name: document-extractor-plugin
     context: Implement custom document extractors
     key_source_files:
-      - crates/kreuzberg/src/plugins/extractor.rs
+      - crates/kreuzberg/src/plugins/extractor/trait.rs
     master_concepts:
       - DocumentExtractor trait implementation
       - MIME type declaration
@@ -105,7 +105,7 @@ skills:
   - name: python-plugin-wrapper
     context: Wrap Python plugins with Rust FFI
     key_source_files:
-      - crates/kreuzberg-py/src/plugins.rs
+      - crates/kreuzberg-py/src/plugins/mod.rs
     master_concepts:
       - PyO3 FFI bindings
       - Python object caching
@@ -252,7 +252,7 @@ skills:
   - name: gil-management-patterns
     context: Manage Python GIL efficiently
     key_source_files:
-      - crates/kreuzberg-py/src/plugins.rs (GIL patterns section)
+      - crates/kreuzberg-py/src/plugins/mod.rs (GIL patterns section)
     master_concepts:
       - GIL acquisition/release
       - Python::attach() for quick operations

@@ -1,0 +1,60 @@
+{
+  "by_extension": {
+    "pdf": {
+      "total_files": 1,
+      "framework_stats": {
+        "pypdfium2": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 23.216417,
+          "median_duration_ms": 23.216417,
+          "p95_duration_ms": 23.216417,
+          "avg_extraction_duration_ms": 17.717582999999998,
+          "median_extraction_duration_ms": 17.717582999999998,
+          "p95_extraction_duration_ms": 17.717582999999998,
+          "avg_throughput_mbps": 3.948958500716492,
+          "avg_peak_memory_mb": 348.913664
+        },
+        "kreuzberg-rust": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 4.342582999999999,
+          "median_duration_ms": 4.342582999999999,
+          "p95_duration_ms": 4.342582999999999,
+          "avg_extraction_duration_ms": 4.342582999999999,
+          "median_extraction_duration_ms": 4.342582999999999,
+          "p95_extraction_duration_ms": 4.342582999999999,
+          "avg_throughput_mbps": 16.11160915059079,
+          "avg_peak_memory_mb": 330.416128
+        },
+        "pdfjs": {
+          "count": 1,
+          "successful": 1,
+          "framework_errors": 0,
+          "harness_errors": 0,
+          "timeouts": 0,
+          "empty_content": 0,
+          "success_rate": 1.0,
+          "avg_duration_ms": 13.993625000000002,
+          "median_duration_ms": 13.993625000000002,
+          "p95_duration_ms": 13.993625000000002,
+          "avg_extraction_duration_ms": 13.560542,
+          "median_extraction_duration_ms": 13.560542,
+          "p95_extraction_duration_ms": 13.560542,
+          "avg_throughput_mbps": 5.1595282843414365,
+          "avg_peak_memory_mb": 333.4144
+        }
+      }
+    }
+  }
+}

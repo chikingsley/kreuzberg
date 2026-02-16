@@ -1,0 +1,114 @@
+name: Benchmarks Nightly Smoke
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Git branch to benchmark"
+        required: false
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-smoke:
+    name: Benchmark Smoke (PDF + OCR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng libjpeg-dev libpng-dev libtiff-dev
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          cache-key-prefix: benchmarks-nightly-smoke
+
+      - name: Build benchmark harness
+        run: cargo build -p benchmark-harness --release
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Python benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pdfplumber pypdfium2 pymupdf4llm pymupdf-layout
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install pdfjs benchmark dependency
+        run: npm install --no-save pdfjs-dist
+
+      - name: Run text-layer smoke benchmark
+        run: |
+          ./target/release/benchmark-harness run \
+            --fixtures tools/benchmark-harness/fixtures/pdf_tiny_memo.json \
+            --frameworks kreuzberg-rust,pdfplumber,pypdfium2,pymupdf4llm,pdfjs \
+            --output benchmark-results/nightly-smoke-text \
+            --iterations 1 \
+            --warmup 0 \
+            --timeout 180 \
+            --mode single-file \
+            --max-concurrent 1 \
+            --measure-quality
+
+      - name: Run OCR smoke benchmark
+        run: |
+          ./target/release/benchmark-harness run \
+            --fixtures tools/benchmark-harness/fixtures/pdf_scanned_ocr.json \
+            --frameworks kreuzberg-rust,pdfplumber,pypdfium2,pymupdf4llm,pdfjs \
+            --output benchmark-results/nightly-smoke-ocr \
+            --iterations 1 \
+            --warmup 0 \
+            --timeout 180 \
+            --mode single-file \
+            --max-concurrent 1 \
+            --measure-quality \
+            --ocr
+
+      - name: Publish summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Nightly Smoke Benchmark"
+            echo
+            echo "### Text Layer (pdf_tiny_memo)"
+            echo
+            echo "| Framework | Success | Quality | Duration (ms) |"
+            echo "| --- | --- | ---: | ---: |"
+            jq -r '.[] | "| \(.framework) | \(.success) | \(.quality.quality_score // 0) | \((.duration.secs * 1000) + (.duration.nanos / 1000000)) |"' benchmark-results/nightly-smoke-text/results.json
+            echo
+            echo "### OCR (pdf_scanned_ocr)"
+            echo
+            echo "| Framework | Success | Quality | Duration (ms) |"
+            echo "| --- | --- | ---: | ---: |"
+            jq -r '.[] | "| \(.framework) | \(.success) | \(.quality.quality_score // 0) | \((.duration.secs * 1000) + (.duration.nanos / 1000000)) |"' benchmark-results/nightly-smoke-ocr/results.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload smoke benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-nightly-smoke-${{ github.run_id }}
+          path: |
+            benchmark-results/nightly-smoke-text/
+            benchmark-results/nightly-smoke-ocr/
+          retention-days: 30

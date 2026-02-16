@@ -4,7 +4,7 @@ agents:
     role: Coordinate the complete document extraction workflow
     context:
       - Source: crates/kreuzberg-py/src/core.rs
-      - Source: crates/kreuzberg/src/core/extractor.rs
+      - Source: crates/kreuzberg/src/core/extractor/mod.rs
       - Key concepts:
           - Extract entry points (extract_file, extract_bytes, batch operations)
           - MIME type detection and format routing
@@ -85,7 +85,7 @@ agents:
   - name: config-manager
     role: Manage extraction configuration and behavior customization
     context:
-      - Source: crates/kreuzberg-py/src/config.rs
+      - Source: crates/kreuzberg-py/src/config/mod.rs
       - Key concepts:
           - ExtractionConfig cascade
           - PDF, Office, OCR, chunking, embedding configs

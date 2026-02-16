@@ -28,7 +28,7 @@ Central hub for document intelligence: detects formats, routes to extractors, ma
 
 ## Core Components
 
-### Extract Entry Points (`core/extractor.rs`)
+### Extract Entry Points (`core/extractor/mod.rs`)
 - `extract_file()` / `extract_bytes()` - Single document (async)
 - `batch_extract_file()` / `batch_extract_bytes()` - Concurrent multi-document
 - Synchronous wrappers for FFI and blocking contexts
@@ -63,7 +63,7 @@ All extractors must be Send + Sync. Config-driven behavior. Unified ExtractionRe
 - **Text**: Plaintext with encoding detection
 
 ### Extraction Configuration
-See: `crates/kreuzberg/src/core/config.rs` (ExtractionConfig struct with PdfConfig, OcrConfig, ChunkingConfig, EmbeddingConfig, etc.)
+See: `crates/kreuzberg/src/core/config/mod.rs` (ExtractionConfig struct with PdfConfig, OcrConfig, ChunkingConfig, EmbeddingConfig, etc.)
 
 ## Data Flow
 
@@ -80,7 +80,7 @@ See: `crates/kreuzberg/src/core/config.rs` (ExtractionConfig struct with PdfConf
 10. **Output** -> ExtractionResult
 
 ### Result Structure
-See: `crates/kreuzberg/src/core/result.rs` (ExtractionResult: content, mime_type, metadata, tables, detected_languages, chunks, images, pages)
+See: `crates/kreuzberg/src/types/extraction.rs` (ExtractionResult: content, mime_type, metadata, tables, detected_languages, chunks, images, pages)
 
 ## Dependencies & Relationships
 

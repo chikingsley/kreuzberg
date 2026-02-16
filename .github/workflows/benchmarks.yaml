@@ -1357,6 +1357,113 @@ jobs:
           path: benchmark-results/
           retention-days: 30
 
+  bench-pypdfium2:
+    name: pypdfium2 (${{ matrix.mode }})
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [single-file, batch]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Free disk space
+        run: scripts/ci/benchmarks/free-disk-space.sh
+
+      - name: Download benchmark harness binary
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-harness-binary
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.11"
+          cache-prefix: benchmark-pypdfium2
+
+      - name: Install pypdfium2 benchmark dependencies
+        run: |
+          uv sync --group dev --all-extras --all-packages --no-install-project --no-install-workspace
+          uv pip install pypdfium2
+
+      - name: Run benchmark
+        env:
+          FRAMEWORK: pypdfium2
+          MODE: ${{ matrix.mode }}
+          ITERATIONS: ${{ env.ITERATIONS }}
+          TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
+        run: scripts/benchmarks/run-benchmark.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-pypdfium2-${{ matrix.mode }}-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30
+
+  bench-pdfjs:
+    name: pdfjs (${{ matrix.mode }})
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [single-file, batch]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Free disk space
+        run: scripts/ci/benchmarks/free-disk-space.sh
+
+      - name: Download benchmark harness binary
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-harness-binary
+          path: target/release
+
+      - name: Restore benchmark binary permissions
+        run: scripts/benchmarks/restore-binary-permissions.sh
+
+      - name: Setup Node workspace
+        uses: ./.github/actions/setup-node-workspace
+
+      - name: Install pdfjs benchmark dependencies
+        run: pnpm add -Dw --no-save pdfjs-dist
+
+      - name: Run benchmark
+        env:
+          FRAMEWORK: pdfjs
+          MODE: ${{ matrix.mode }}
+          ITERATIONS: ${{ env.ITERATIONS }}
+          TIMEOUT: ${{ github.event.inputs.timeout }}
+          OCR_ENABLED: "false"
+        run: scripts/benchmarks/run-benchmark.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-pdfjs-${{ matrix.mode }}-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30
+
   bench-mineru:
     name: mineru (${{ matrix.mode }}, shard ${{ matrix.shard }}/3)
     needs: setup
@@ -1414,7 +1521,7 @@ jobs:
 
   aggregate-and-publish:
     name: Aggregate & Release Results
-    needs: [setup, bench-native, bench-python, bench-node, bench-wasm, bench-ruby, bench-go, bench-java, bench-csharp, bench-elixir, bench-php, bench-docling, bench-markitdown, bench-pandoc, bench-unstructured, bench-tika, bench-pymupdf4llm, bench-pdfplumber, bench-mineru]
+    needs: [setup, bench-native, bench-python, bench-node, bench-wasm, bench-ruby, bench-go, bench-java, bench-csharp, bench-elixir, bench-php, bench-docling, bench-markitdown, bench-pandoc, bench-unstructured, bench-tika, bench-pymupdf4llm, bench-pdfplumber, bench-pypdfium2, bench-pdfjs, bench-mineru]
     runs-on: ubuntu-latest
     if: ${{ always() && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') }}
     permissions:
@@ -1556,6 +1663,8 @@ jobs:
             "tika:single" "tika:batch"
             "pymupdf4llm:single" "pymupdf4llm:batch"
             "pdfplumber:single" "pdfplumber:batch"
+            "pypdfium2:single" "pypdfium2:batch"
+            "pdfjs:single" "pdfjs:batch"
             "mineru:single" "mineru:batch"
           )
 
@@ -1582,7 +1691,7 @@ jobs:
             echo "::warning::Missing $MISSING_COUNT expected framework:mode combinations:"
             echo "$MISSING_LIST"
 
-            # Fail if more than 20% of frameworks are missing (>7 out of 36)
+            # Fail if more than 20% of framework:mode entries are missing
             TOTAL_EXPECTED=${#EXPECTED_FRAMEWORKS[@]}
             THRESHOLD=$((TOTAL_EXPECTED * 20 / 100))
             if [[ $MISSING_COUNT -gt $THRESHOLD ]]; then

@@ -1,0 +1,6 @@
+# Paths intentionally present in docs but not filesystem references
+# (typically API route examples or wildcard docs snippets)
+tools/call
+tests/helpers.py
+tests/helpers.ts
+tests/test_

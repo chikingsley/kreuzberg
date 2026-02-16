@@ -3,7 +3,7 @@ agents:
   - name: ocr-orchestrator
     role: Coordinate OCR backend selection and image processing workflows
     context:
-      - Source: crates/kreuzberg/src/ocr/processor.rs
+      - Source: crates/kreuzberg/src/ocr/processor/mod.rs
       - Source: crates/kreuzberg/src/ocr/mod.rs
       - Key concepts:
           - OcrProcessor entry point
@@ -70,7 +70,7 @@ agents:
   - name: python-backend-bridge
     role: Manage Python OCR plugins (EasyOCR, PaddleOCR, custom)
     context:
-      - Source: crates/kreuzberg-py/src/plugins.rs
+      - Source: crates/kreuzberg-py/src/plugins/mod.rs
       - Key concepts:
           - GIL (Global Interpreter Lock) management
           - Async execution via tokio::task::spawn_blocking

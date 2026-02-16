@@ -7,21 +7,21 @@ use crate::utils::{PoolSizeHint, estimate_pool_size};
 use crate::{KreuzbergError, Result};
 use std::sync::Arc;
 
-/// Get an extractor from the registry.
+/// Get all candidate extractors for a MIME type in fallback order.
 ///
 /// This function acquires the registry read lock and retrieves the appropriate
-/// extractor for the given MIME type.
+/// extractors for the given MIME type.
 ///
 /// # Performance
 ///
 /// RwLock read + HashMap lookup is ~100ns, fast enough without caching.
 /// Removed thread-local cache to avoid Tokio work-stealing scheduler issues.
-pub(in crate::core::extractor) fn get_extractor(mime_type: &str) -> Result<Arc<dyn DocumentExtractor>> {
+pub(in crate::core::extractor) fn get_extractors(mime_type: &str) -> Result<Vec<Arc<dyn DocumentExtractor>>> {
     let registry = crate::plugins::registry::get_document_extractor_registry();
     let registry_read = registry
         .read()
         .map_err(|e| KreuzbergError::Other(format!("Document extractor registry lock poisoned: {}", e)))?;
-    registry_read.get(mime_type)
+    registry_read.get_all(mime_type)
 }
 
 /// Get optimal pool sizing hint for a document.

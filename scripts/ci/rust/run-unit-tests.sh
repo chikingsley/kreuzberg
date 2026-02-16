@@ -23,7 +23,7 @@ echo "  CARGO_TERM_COLOR: ${CARGO_TERM_COLOR:-not set}"
 
 echo "Workspace information:"
 echo "  Repository: $REPO_ROOT"
-echo "  Excluded packages: kreuzberg-e2e-generator, kreuzberg-py, kreuzberg-node"
+echo "  Excluded packages: kreuzberg-pdfium-render, kreuzberg-e2e-generator, kreuzberg-py, kreuzberg-node"
 
 if [ ! -d "$TESSDATA_PREFIX" ]; then
   echo "WARNING: TESSDATA_PREFIX directory not found: $TESSDATA_PREFIX"
@@ -55,14 +55,17 @@ fi
 
 echo "=== Starting cargo test ==="
 
-# NOTE: We intentionally avoid `--all-features` for the `kreuzberg` crate because
+# NOTE: We intentionally avoid `--all-features` for the `kreuzberg` crate and exclude
+# `kreuzberg-pdfium-render` from the workspace all-features pass.
+# `kreuzberg-pdfium-render --all-features` enables its `static` feature, which alters
+# available binding APIs and can break transitive dependency builds that expect dynamic APIs.
 TEST_LOG="/tmp/cargo-test-$$.log"
 
 if ! {
   echo "=== cargo test -p kreuzberg --features full ==="
   RUST_BACKTRACE=full cargo test -p kreuzberg --features full --verbose
 
-  echo "=== cargo test --workspace (all features, excluding kreuzberg) ==="
+  echo "=== cargo test --workspace (all features, excluding kreuzberg + incompatible test-only crates) ==="
   extra_excludes=()
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
     extra_excludes+=(--exclude benchmark-harness)
@@ -70,6 +73,7 @@ if ! {
   RUST_BACKTRACE=full cargo test \
     --workspace \
     --exclude kreuzberg \
+    --exclude kreuzberg-pdfium-render \
     --exclude kreuzberg-e2e-generator \
     --exclude kreuzberg-py \
     --exclude kreuzberg-node \

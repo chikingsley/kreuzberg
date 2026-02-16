@@ -2,7 +2,7 @@
 
 use crate::plugins::DocumentExtractor;
 use crate::{KreuzbergError, Result};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 /// Registry for document extractor plugins.
@@ -102,44 +102,72 @@ impl DocumentExtractorRegistry {
         )
     ))]
     pub fn get(&self, mime_type: &str) -> Result<Arc<dyn DocumentExtractor>> {
-        if let Some(priority_map) = self.extractors.get(mime_type)
-            && let Some((_priority, extractor)) = priority_map.iter().next_back()
-        {
-            #[cfg(feature = "otel")]
-            tracing::Span::current().record("registry.found", true);
-            return Ok(Arc::clone(extractor));
+        let extractors = match self.get_all(mime_type) {
+            Ok(extractors) => extractors,
+            Err(e) => {
+                #[cfg(feature = "otel")]
+                tracing::Span::current().record("registry.found", false);
+                return Err(e);
+            }
+        };
+
+        #[cfg(feature = "otel")]
+        tracing::Span::current().record("registry.found", true);
+
+        let extractor = extractors
+            .into_iter()
+            .next()
+            .expect("registry.get_all() returned empty extractor list");
+
+        Ok(extractor)
+    }
+
+    /// Get all candidate extractors for a MIME type in fallback order.
+    ///
+    /// Ordering rules:
+    /// 1. Exact MIME matches first (highest priority to lowest priority).
+    /// 2. Prefix wildcard matches next (e.g. `image/*`, highest to lowest).
+    /// 3. Duplicate extractor names are deduplicated, keeping the first occurrence.
+    pub fn get_all(&self, mime_type: &str) -> Result<Vec<Arc<dyn DocumentExtractor>>> {
+        let mut candidates: Vec<Arc<dyn DocumentExtractor>> = Vec::new();
+
+        if let Some(priority_map) = self.extractors.get(mime_type) {
+            for (_priority, extractor) in priority_map.iter().rev() {
+                candidates.push(Arc::clone(extractor));
+            }
         }
 
-        let mut best_match: Option<(i32, Arc<dyn DocumentExtractor>)> = None;
-
+        let mut wildcard_matches: Vec<(i32, Arc<dyn DocumentExtractor>)> = Vec::new();
         for (registered_mime, priority_map) in &self.extractors {
             if registered_mime.ends_with("/*") {
                 let prefix = &registered_mime[..registered_mime.len() - 1];
-                if mime_type.starts_with(prefix)
-                    && let Some((_priority, extractor)) = priority_map.iter().next_back()
-                {
-                    let priority = extractor.priority();
-                    match &best_match {
-                        None => best_match = Some((priority, Arc::clone(extractor))),
-                        Some((current_priority, _)) => {
-                            if priority > *current_priority {
-                                best_match = Some((priority, Arc::clone(extractor)));
-                            }
-                        }
+                if mime_type.starts_with(prefix) {
+                    for (priority, extractor) in priority_map.iter().rev() {
+                        wildcard_matches.push((*priority, Arc::clone(extractor)));
                     }
                 }
             }
         }
 
-        if let Some((_priority, extractor)) = best_match {
-            #[cfg(feature = "otel")]
-            tracing::Span::current().record("registry.found", true);
-            return Ok(extractor);
+        wildcard_matches.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.name().cmp(b.1.name())));
+        for (_priority, extractor) in wildcard_matches {
+            candidates.push(extractor);
         }
 
-        #[cfg(feature = "otel")]
-        tracing::Span::current().record("registry.found", false);
-        Err(KreuzbergError::UnsupportedFormat(mime_type.to_string()))
+        let mut seen = HashSet::new();
+        let mut deduped = Vec::new();
+        for extractor in candidates {
+            let name = extractor.name().to_string();
+            if seen.insert(name) {
+                deduped.push(extractor);
+            }
+        }
+
+        if deduped.is_empty() {
+            return Err(KreuzbergError::UnsupportedFormat(mime_type.to_string()));
+        }
+
+        Ok(deduped)
     }
 
     /// List all registered extractors.
@@ -663,5 +691,90 @@ mod tests {
 
         let retrieved = registry.get("application/pdf").unwrap();
         assert_eq!(retrieved.name(), "priority-100");
+    }
+
+    #[test]
+    fn test_document_extractor_get_all_returns_fallback_order() {
+        let mut registry = DocumentExtractorRegistry::new();
+
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "pdf-low".to_string(),
+                mime_types: &["application/pdf"],
+                priority: 10,
+            }))
+            .unwrap();
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "pdf-high".to_string(),
+                mime_types: &["application/pdf"],
+                priority: 100,
+            }))
+            .unwrap();
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "pdf-mid".to_string(),
+                mime_types: &["application/pdf"],
+                priority: 50,
+            }))
+            .unwrap();
+
+        let ordered = registry.get_all("application/pdf").unwrap();
+        let names: Vec<String> = ordered.iter().map(|e| e.name().to_string()).collect();
+        assert_eq!(
+            names,
+            vec![
+                "pdf-high".to_string(),
+                "pdf-mid".to_string(),
+                "pdf-low".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_document_extractor_get_all_prefers_exact_before_wildcard() {
+        let mut registry = DocumentExtractorRegistry::new();
+
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "image-any-high".to_string(),
+                mime_types: &["image/*"],
+                priority: 100,
+            }))
+            .unwrap();
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "image-png-exact".to_string(),
+                mime_types: &["image/png"],
+                priority: 50,
+            }))
+            .unwrap();
+
+        let ordered = registry.get_all("image/png").unwrap();
+        let names: Vec<String> = ordered.iter().map(|e| e.name().to_string()).collect();
+        assert_eq!(
+            names,
+            vec![
+                "image-png-exact".to_string(),
+                "image-any-high".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_document_extractor_get_all_deduplicates_same_extractor_name() {
+        let mut registry = DocumentExtractorRegistry::new();
+
+        registry
+            .register(Arc::new(MockExtractor {
+                name: "image-multi".to_string(),
+                mime_types: &["image/*", "image/png"],
+                priority: 80,
+            }))
+            .unwrap();
+
+        let ordered = registry.get_all("image/png").unwrap();
+        assert_eq!(ordered.len(), 1);
+        assert_eq!(ordered[0].name(), "image-multi");
     }
 }

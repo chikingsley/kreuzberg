@@ -61,7 +61,7 @@ pub struct TesseractConfig {
 **Key Pattern**: Lazy-initialize Tesseract instance per language pack to avoid repeated startup overhead.
 
 ```rust
-// Location: ocr/processor.rs
+// Location: ocr/processor/mod.rs
 lazy_static! {
     static ref TESSERACT_INSTANCES: RwLock<HashMap<String, TesseractInstance>> = RwLock::new(HashMap::new());
 }
@@ -358,7 +358,7 @@ pub async fn batch_ocr(
 
 ## Configuration Priority (Feature Matrix)
 
-**Location**: `crates/kreuzberg/src/core/config.rs`
+**Location**: `crates/kreuzberg/src/core/config/mod.rs`
 
 OCR backend selection precedence:
 1. **Explicit config** - `config.image.ocr_backend = Some("aws-textract")`

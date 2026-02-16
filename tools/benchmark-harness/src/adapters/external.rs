@@ -47,6 +47,12 @@ fn get_supported_formats(framework_name: &str) -> Vec<String> {
         // pdfplumber: PDF-only (built on pdfminer.six)
         "pdfplumber" => vec!["pdf".to_string()],
 
+        // pypdfium2: PDF-only (Python bindings for PDFium)
+        "pypdfium2" => vec!["pdf".to_string()],
+
+        // PDF.js: PDF-only parser (Node.js / Mozilla)
+        "pdfjs" => vec!["pdf".to_string()],
+
         // PyMuPDF4LLM: PDF + formats via PyMuPDF/fitz
         // See: https://pymupdf.readthedocs.io/en/latest/how-to-open-a-file.html
         // Note: many non-PDF formats return empty content — tracked as EmptyContent errors
@@ -245,33 +251,93 @@ fn get_script_path(script_name: &str) -> Result<PathBuf> {
 ///
 /// Returns (command, args) where command is the executable and args are the base arguments
 fn find_python_with_framework(framework: &str) -> Result<(PathBuf, Vec<String>)> {
-    if which::which("uv").is_ok() {
-        // Use `uv run <script>` which runs the script with the project's
-        // Python environment (.venv). Framework dependencies are installed
-        // via pyproject.toml dependency groups (bench-*).
-        return Ok((PathBuf::from("uv"), vec!["run".to_string()]));
+    let mut python_candidates: Vec<PathBuf> = vec![
+        PathBuf::from(".venv/bin/python"),
+        PathBuf::from(".venv/bin/python3"),
+        PathBuf::from(".venv/Scripts/python.exe"),
+    ];
+
+    for candidate in ["python3", "python"] {
+        if let Ok(path) = which::which(candidate) {
+            python_candidates.push(path);
+        }
     }
 
-    let python_candidates = vec!["python3", "python"];
-
-    for candidate in python_candidates {
-        if let Ok(python_path) = which::which(candidate) {
-            let check = std::process::Command::new(&python_path)
-                .arg("-c")
-                .arg(format!("import {}", framework))
-                .output();
-
-            if let Ok(output) = check
-                && output.status.success()
-            {
-                return Ok((python_path, vec![]));
-            }
+    for python_path in python_candidates {
+        if !python_path.exists() {
+            continue;
         }
+
+        let check = std::process::Command::new(&python_path)
+            .arg("-c")
+            .arg(format!("import {}", framework))
+            .output();
+
+        if let Ok(output) = check
+            && output.status.success()
+        {
+            return Ok((python_path, vec![]));
+        }
+    }
+
+    if which::which("uv").is_ok() {
+        // Fallback to `uv run python` when direct interpreters do not already
+        // have the framework installed.
+        return Ok((PathBuf::from("uv"), vec!["run".to_string(), "python".to_string()]));
     }
 
     Err(crate::error::Error::Config(format!(
         "No Python interpreter found with {} installed. Install with: pip install {}",
         framework, framework
+    )))
+}
+
+/// Helper function to find Node.js runtime with an npm package installed.
+///
+/// Returns (command, args) where command is the executable and args are the base arguments.
+fn find_node_with_package(package: &str) -> Result<(PathBuf, Vec<String>)> {
+    if which::which("pnpm").is_ok() {
+        let check = std::process::Command::new("pnpm")
+            .args(["exec", "node", "-e"])
+            .arg(format!("require.resolve('{}/package.json')", package))
+            .output();
+
+        if let Ok(output) = check
+            && output.status.success()
+        {
+            return Ok((PathBuf::from("pnpm"), vec!["exec".to_string(), "node".to_string()]));
+        }
+    }
+
+    if which::which("bun").is_ok() {
+        let check = std::process::Command::new("bun")
+            .args(["-e"])
+            .arg(format!("require.resolve('{}/package.json')", package))
+            .output();
+
+        if let Ok(output) = check
+            && output.status.success()
+        {
+            return Ok((PathBuf::from("bun"), vec![]));
+        }
+    }
+
+    if let Ok(node_path) = which::which("node") {
+        let check = std::process::Command::new(&node_path)
+            .arg("-e")
+            .arg(format!("require.resolve('{}/package.json')", package))
+            .output();
+
+        if let Ok(output) = check
+            && output.status.success()
+        {
+            return Ok((node_path, vec![]));
+        }
+    }
+
+    Err(crate::error::Error::Config(format!(
+        "No JavaScript runtime found with {} installed. Install with: pnpm add -Dw {} (or bun add -d {})",
+        package, package, package
     )))
 }
 
@@ -382,6 +448,37 @@ pub fn create_pdfplumber_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter>
     )
 }
 
+/// Creates a subprocess adapter for pypdfium2 (persistent server mode)
+pub fn create_pypdfium2_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
+    let script_path = get_script_path("pypdfium2_extract.py")?;
+    let (command, mut args) = find_python_with_framework("pypdfium2")?;
+    args.push(script_path.to_string_lossy().to_string());
+    args.push(format!("--timeout={}", PYTHON_EXTRACTION_TIMEOUT_SECS));
+    args.push(ocr_flag(ocr_enabled));
+    args.push("server".to_string());
+
+    let supported_formats = get_supported_formats("pypdfium2");
+    Ok(
+        SubprocessAdapter::with_persistent_mode("pypdfium2", command, args, vec![], supported_formats)
+            .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
+    )
+}
+
+/// Creates a subprocess adapter for PDF.js (persistent server mode)
+pub fn create_pdfjs_adapter(ocr_enabled: bool) -> Result<SubprocessAdapter> {
+    let script_path = get_script_path("pdfjs_extract.mjs")?;
+    let (command, mut args) = find_node_with_package("pdfjs-dist")?;
+    args.push(script_path.to_string_lossy().to_string());
+    args.push(ocr_flag(ocr_enabled));
+    args.push("server".to_string());
+
+    let supported_formats = get_supported_formats("pdfjs");
+    Ok(
+        SubprocessAdapter::with_persistent_mode("pdfjs", command, args, vec![], supported_formats)
+            .with_max_timeout(Duration::from_secs(PERSISTENT_MAX_TIMEOUT_SECS)),
+    )
+}
+
 /// Creates a subprocess adapter for MinerU (persistent server mode)
 ///
 /// Uses persistent mode to avoid repeated Python startup and heavy ML model
@@ -420,6 +517,8 @@ mod tests {
         let _ = create_tika_adapter(true);
         let _ = create_pymupdf4llm_adapter(true);
         let _ = create_pdfplumber_adapter(true);
+        let _ = create_pypdfium2_adapter(true);
+        let _ = create_pdfjs_adapter(true);
         let _ = create_mineru_adapter(true);
     }
 }

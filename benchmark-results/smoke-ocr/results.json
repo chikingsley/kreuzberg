@@ -1,0 +1,173 @@
+[
+  {
+    "framework": "kreuzberg-rust",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/scanned.pdf",
+    "file_size": 69966,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 12636833
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 12636708
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 0
+    },
+    "metrics": {
+      "peak_memory_bytes": 180469760,
+      "avg_cpu_percent": 0.013240949809551239,
+      "throughput_bytes_per_sec": 5536672.044332626,
+      "p50_memory_bytes": 179912704,
+      "p95_memory_bytes": 179912704,
+      "p99_memory_bytes": 179912704
+    },
+    "quality": {
+      "f1_score_text": 0.9879963065558633,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 0.9915974145891042
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 373490042
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": {
+        "size_bytes": 151274296,
+        "package_bytes": 151274296,
+        "system_deps_bytes": 0,
+        "method": "binary_size",
+        "description": "Native Rust core binary"
+      }
+    },
+    "pdf_metadata": null,
+    "ocr_status": "not_used"
+  },
+  {
+    "framework": "pdfplumber",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/scanned.pdf",
+    "file_size": 69966,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 0,
+      "nanos": 177753292
+    },
+    "extraction_duration": {
+      "secs": 0,
+      "nanos": 171585708
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 6167584
+    },
+    "metrics": {
+      "peak_memory_bytes": 209436672,
+      "avg_cpu_percent": 0.013635299985225387,
+      "throughput_bytes_per_sec": 407761.23382024333,
+      "p50_memory_bytes": 203374592,
+      "p95_memory_bytes": 209403904,
+      "p99_memory_bytes": 209403904
+    },
+    "quality": {
+      "f1_score_text": 0.9842738205365402,
+      "f1_score_numeric": 1.0,
+      "f1_score_layout": 0.0,
+      "quality_score": 0.988991674375578
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 0,
+      "nanos": 249527959
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": false,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": null
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  },
+  {
+    "framework": "pymupdf4llm",
+    "file_path": "tools/benchmark-harness/fixtures/../../../test_documents/pdf/scanned.pdf",
+    "file_size": 69966,
+    "success": true,
+    "error_message": null,
+    "error_kind": "none",
+    "duration": {
+      "secs": 1,
+      "nanos": 350838583
+    },
+    "extraction_duration": {
+      "secs": 1,
+      "nanos": 331074167
+    },
+    "subprocess_overhead": {
+      "secs": 0,
+      "nanos": 19764416
+    },
+    "metrics": {
+      "peak_memory_bytes": 772866048,
+      "avg_cpu_percent": 0.48882654735293146,
+      "throughput_bytes_per_sec": 52563.56237285462,
+      "p50_memory_bytes": 528957440,
+      "p95_memory_bytes": 772194304,
+      "p99_memory_bytes": 772833280
+    },
+    "quality": {
+      "f1_score_text": 0.9778188539741219,
+      "f1_score_numeric": 0.9724770642201834,
+      "f1_score_layout": 0.0,
+      "quality_score": 0.9762163170479403
+    },
+    "iterations": [],
+    "statistics": null,
+    "cold_start_duration": {
+      "secs": 1,
+      "nanos": 523875750
+    },
+    "file_extension": "pdf",
+    "framework_capabilities": {
+      "supported_extensions": [],
+      "ocr_support": true,
+      "batch_support": false,
+      "async_support": false,
+      "version": "",
+      "installation_size": null
+    },
+    "pdf_metadata": {
+      "has_text_layer": false,
+      "detection_method": "unknown",
+      "page_count": null,
+      "ocr_enabled": false,
+      "text_quality_score": null
+    },
+    "ocr_status": "unknown"
+  }
+]

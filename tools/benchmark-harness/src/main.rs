@@ -281,7 +281,8 @@ async fn main() -> Result<()> {
 
             use benchmark_harness::adapters::{
                 create_docling_adapter, create_markitdown_adapter, create_mineru_adapter, create_pandoc_adapter,
-                create_pdfplumber_adapter, create_pymupdf4llm_adapter, create_tika_adapter,
+                create_pdfjs_adapter, create_pdfplumber_adapter, create_pymupdf4llm_adapter,
+                create_pypdfium2_adapter, create_tika_adapter,
                 create_unstructured_adapter,
             };
 
@@ -294,10 +295,12 @@ async fn main() -> Result<()> {
             try_register!("tika", || create_tika_adapter(ocr), external_count);
             try_register!("pymupdf4llm", || create_pymupdf4llm_adapter(ocr), external_count);
             try_register!("pdfplumber", || create_pdfplumber_adapter(ocr), external_count);
+            try_register!("pypdfium2", || create_pypdfium2_adapter(ocr), external_count);
+            try_register!("pdfjs", || create_pdfjs_adapter(ocr), external_count);
             try_register!("mineru", || create_mineru_adapter(ocr), external_count);
 
             eprintln!(
-                "[adapter] Open source extraction frameworks: {}/8 available",
+                "[adapter] Open source extraction frameworks: {}/10 available",
                 external_count
             );
             eprintln!(
