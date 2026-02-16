@@ -731,11 +731,7 @@ mod tests {
         let names: Vec<String> = ordered.iter().map(|e| e.name().to_string()).collect();
         assert_eq!(
             names,
-            vec![
-                "pdf-high".to_string(),
-                "pdf-mid".to_string(),
-                "pdf-low".to_string(),
-            ]
+            vec!["pdf-high".to_string(), "pdf-mid".to_string(), "pdf-low".to_string(),]
         );
     }
 
@@ -762,10 +758,7 @@ mod tests {
         let names: Vec<String> = ordered.iter().map(|e| e.name().to_string()).collect();
         assert_eq!(
             names,
-            vec![
-                "image-png-exact".to_string(),
-                "image-any-high".to_string(),
-            ]
+            vec!["image-png-exact".to_string(), "image-any-high".to_string(),]
         );
     }
 
