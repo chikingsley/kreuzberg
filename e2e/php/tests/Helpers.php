@@ -41,6 +41,18 @@ class Helpers
             return null;
         }
 
+        // Transform embedding model from Rust object format to PHP string format.
+        // Fixtures define model as {"type": "preset", "name": "balanced"} but
+        // PHP's EmbeddingConfig expects just the preset name string "balanced".
+        if (isset($config['chunking']['embedding']['model'])
+            && is_array($config['chunking']['embedding']['model'])
+        ) {
+            $model = $config['chunking']['embedding']['model'];
+            if (isset($model['type']) && $model['type'] === 'preset' && isset($model['name'])) {
+                $config['chunking']['embedding']['model'] = $model['name'];
+            }
+        }
+
         return ExtractionConfig::fromArray($config);
     }
 

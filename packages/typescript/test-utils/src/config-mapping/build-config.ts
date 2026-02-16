@@ -1,10 +1,5 @@
-import {
-	assignBooleanField,
-	assignNumberField,
-	assignStringField,
-	assignStringArrayField,
-} from "./field-mappers.js";
-import { type PlainRecord, isPlainRecord } from "./types.js";
+import { assignBooleanField, assignNumberField, assignStringArrayField, assignStringField } from "./field-mappers.js";
+import { isPlainRecord, type PlainRecord } from "./types.js";
 
 /**
  * Config types - these should match the types from @kreuzberg/node
@@ -79,18 +74,8 @@ export interface ExtractionConfig {
 function mapTesseractConfig(raw: PlainRecord): TesseractConfig {
 	const config: TesseractConfig = {};
 	assignNumberField(config as PlainRecord, raw, "psm", "psm");
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"enable_table_detection",
-		"enableTableDetection",
-	);
-	assignStringField(
-		config as PlainRecord,
-		raw,
-		"tessedit_char_whitelist",
-		"tesseditCharWhitelist",
-	);
+	assignBooleanField(config as PlainRecord, raw, "enable_table_detection", "enableTableDetection");
+	assignStringField(config as PlainRecord, raw, "tessedit_char_whitelist", "tesseditCharWhitelist");
 	return config;
 }
 
@@ -128,25 +113,10 @@ function mapChunkingConfig(raw: PlainRecord): ChunkingConfig {
  */
 function mapImageExtractionConfig(raw: PlainRecord): ImageExtractionConfig {
 	const config: ImageExtractionConfig = {};
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"extract_images",
-		"extractImages",
-	);
+	assignBooleanField(config as PlainRecord, raw, "extract_images", "extractImages");
 	assignNumberField(config as PlainRecord, raw, "target_dpi", "targetDpi");
-	assignNumberField(
-		config as PlainRecord,
-		raw,
-		"max_image_dimension",
-		"maxImageDimension",
-	);
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"auto_adjust_dpi",
-		"autoAdjustDpi",
-	);
+	assignNumberField(config as PlainRecord, raw, "max_image_dimension", "maxImageDimension");
+	assignBooleanField(config as PlainRecord, raw, "auto_adjust_dpi", "autoAdjustDpi");
 	assignNumberField(config as PlainRecord, raw, "min_dpi", "minDpi");
 	assignNumberField(config as PlainRecord, raw, "max_dpi", "maxDpi");
 	return config;
@@ -157,19 +127,9 @@ function mapImageExtractionConfig(raw: PlainRecord): ImageExtractionConfig {
  */
 function mapPdfConfig(raw: PlainRecord): PdfConfig {
 	const config: PdfConfig = {};
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"extract_images",
-		"extractImages",
-	);
+	assignBooleanField(config as PlainRecord, raw, "extract_images", "extractImages");
 	assignStringArrayField(config as PlainRecord, raw, "passwords", "passwords");
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"extract_metadata",
-		"extractMetadata",
-	);
+	assignBooleanField(config as PlainRecord, raw, "extract_metadata", "extractMetadata");
 	return config;
 }
 
@@ -179,12 +139,7 @@ function mapPdfConfig(raw: PlainRecord): PdfConfig {
 function mapTokenReductionConfig(raw: PlainRecord): TokenReductionConfig {
 	const config: TokenReductionConfig = {};
 	assignStringField(config as PlainRecord, raw, "mode", "mode");
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"preserve_important_words",
-		"preserveImportantWords",
-	);
+	assignBooleanField(config as PlainRecord, raw, "preserve_important_words", "preserveImportantWords");
 	return config;
 }
 
@@ -194,18 +149,8 @@ function mapTokenReductionConfig(raw: PlainRecord): TokenReductionConfig {
 function mapLanguageDetectionConfig(raw: PlainRecord): LanguageDetectionConfig {
 	const config: LanguageDetectionConfig = {};
 	assignBooleanField(config as PlainRecord, raw, "enabled", "enabled");
-	assignNumberField(
-		config as PlainRecord,
-		raw,
-		"min_confidence",
-		"minConfidence",
-	);
-	assignBooleanField(
-		config as PlainRecord,
-		raw,
-		"detect_multiple",
-		"detectMultiple",
-	);
+	assignNumberField(config as PlainRecord, raw, "min_confidence", "minConfidence");
+	assignBooleanField(config as PlainRecord, raw, "detect_multiple", "detectMultiple");
 	return config;
 }
 
@@ -215,18 +160,8 @@ function mapLanguageDetectionConfig(raw: PlainRecord): LanguageDetectionConfig {
 function mapPostProcessorConfig(raw: PlainRecord): PostProcessorConfig {
 	const config: PostProcessorConfig = {};
 	assignBooleanField(config as PlainRecord, raw, "enabled", "enabled");
-	assignStringArrayField(
-		config as PlainRecord,
-		raw,
-		"enabled_processors",
-		"enabledProcessors",
-	);
-	assignStringArrayField(
-		config as PlainRecord,
-		raw,
-		"disabled_processors",
-		"disabledProcessors",
-	);
+	assignStringArrayField(config as PlainRecord, raw, "enabled_processors", "enabledProcessors");
+	assignStringArrayField(config as PlainRecord, raw, "disabled_processors", "disabledProcessors");
 	return config;
 }
 
@@ -244,19 +179,9 @@ export function buildConfig(raw: unknown): ExtractionConfig {
 	const target = result as PlainRecord;
 
 	assignBooleanField(target, source, "use_cache", "useCache");
-	assignBooleanField(
-		target,
-		source,
-		"enable_quality_processing",
-		"enableQualityProcessing",
-	);
+	assignBooleanField(target, source, "enable_quality_processing", "enableQualityProcessing");
 	assignBooleanField(target, source, "force_ocr", "forceOcr");
-	assignNumberField(
-		target,
-		source,
-		"max_concurrent_extractions",
-		"maxConcurrentExtractions",
-	);
+	assignNumberField(target, source, "max_concurrent_extractions", "maxConcurrentExtractions");
 
 	if (isPlainRecord(source["ocr"])) {
 		const mapped = mapOcrConfig(source["ocr"]);
@@ -282,9 +207,7 @@ export function buildConfig(raw: unknown): ExtractionConfig {
 	}
 
 	if (isPlainRecord(source["language_detection"])) {
-		result.languageDetection = mapLanguageDetectionConfig(
-			source["language_detection"],
-		);
+		result.languageDetection = mapLanguageDetectionConfig(source["language_detection"]);
 	}
 
 	if (isPlainRecord(source["postprocessor"])) {
