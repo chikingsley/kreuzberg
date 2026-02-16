@@ -148,6 +148,17 @@ jobs:
           bundler-cache: true
           working-directory: packages/ruby
 
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
+
+      - name: Install Ruby dependencies
+        shell: bash
+        working-directory: packages/ruby
+        run: |
+          bundle install
+
       - name: Print Ruby environment (pre-setup)
         shell: bash
         run: |
@@ -172,8 +183,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: pwsh -File scripts/ci/ruby/windows-max-path-mitigation.ps1
-
-      # Note: Ruby deps for non-Windows are installed by ruby/setup-ruby bundler-cache above.
 
       - name: Install Ruby deps (Windows)
         if: runner.os == 'Windows'
@@ -550,6 +559,17 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
           working-directory: packages/ruby
+
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
+
+      - name: Install Ruby dependencies
+        shell: bash
+        working-directory: packages/ruby
+        run: |
+          bundle install
 
       - name: Configure short paths for Windows MAX_PATH mitigation
         if: runner.os == 'Windows'

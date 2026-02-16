@@ -1486,7 +1486,7 @@ jobs:
           echo "Artifact directories: $ARTIFACT_DIRS"
 
           # Run consolidation
-          cargo run --release --package benchmark-harness -- consolidate \
+          cargo run --release --package benchmark-harness --bin benchmark-harness -- consolidate \
             --inputs "$ARTIFACT_DIRS" \
             --output consolidated-output/
 
