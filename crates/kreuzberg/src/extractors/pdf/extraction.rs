@@ -103,11 +103,7 @@ fn extract_tables_from_document(
                             }
                         }
                         Err(e) => {
-                            tracing::debug!(
-                                "Line-based table text extraction failed on page {}: {}",
-                                page_number,
-                                e
-                            );
+                            tracing::debug!("Line-based table text extraction failed on page {}: {}", page_number, e);
                         }
                     }
                 }
@@ -157,9 +153,7 @@ fn extract_tables_from_document(
 /// rows don't, the first row is confidently identified as a header.
 /// Falls back to assuming first row is header (common convention).
 #[cfg(all(feature = "pdf", feature = "ocr"))]
-fn detect_header(
-    styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>],
-) -> Option<crate::types::TableHeader> {
+fn detect_header(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> Option<crate::types::TableHeader> {
     if styled_rows.is_empty() {
         return None;
     }
@@ -176,9 +170,7 @@ fn detect_header(
 
 /// Convert styled 2D cell data to markdown table format with inline formatting.
 #[cfg(all(feature = "pdf", feature = "ocr"))]
-fn styled_cells_to_markdown(
-    styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>],
-) -> String {
+fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> String {
     if styled_rows.is_empty() {
         return String::new();
     }

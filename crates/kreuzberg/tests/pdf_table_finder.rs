@@ -67,21 +67,13 @@ fn test_pdffill_demo_extracts_tables() {
 
     println!("pdffill-demo: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         if !table.cells.is_empty() {
             println!("    First row: {:?}", &table.cells[0]);
         }
     }
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in pdffill-demo.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in pdffill-demo.pdf");
 }
 
 // ============================================================
@@ -95,12 +87,7 @@ fn test_edges_strict_issue_140() {
 
     println!("issue-140 (edges_strict): found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         for (j, row) in table.cells.iter().enumerate() {
             println!("    Row {}: {:?}", j, row);
         }
@@ -119,16 +106,11 @@ fn test_edges_strict_issue_140() {
         .cloned()
         .collect();
 
-    assert!(
-        !all_text.is_empty(),
-        "Expected non-empty table text in issue-140"
-    );
+    assert!(!all_text.is_empty(), "Expected non-empty table text in issue-140");
 
     // pdfplumber's assertion: last row should contain UPC data
     // We check for the presence of key values from the table
-    let has_upc_data = all_text.contains("0085648100300")
-        || all_text.contains("CENTRAL")
-        || all_text.contains("LILYS");
+    let has_upc_data = all_text.contains("0085648100300") || all_text.contains("CENTRAL") || all_text.contains("LILYS");
     if has_upc_data {
         println!("Found expected UPC data in table cells");
     }
@@ -173,10 +155,7 @@ fn test_explicit_strategy_decimalization() {
 
     // This test verifies the explicit strategy works at all.
     // The actual explicit strategy is tested below at the API level.
-    assert!(
-        !tables.is_empty(),
-        "Expected tables from pdffill-demo.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected tables from pdffill-demo.pdf");
 }
 
 // ============================================================
@@ -190,12 +169,7 @@ fn test_text_tolerance_senate_expenditures() {
 
     println!("senate-expenditures: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         for (j, row) in table.cells.iter().enumerate() {
             println!("    Row {}: {:?}", j, row);
         }
@@ -224,12 +198,7 @@ fn test_text_layout_issue_53() {
 
     println!("issue-53: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         for (j, row) in table.cells.iter().enumerate() {
             println!("    Row {}: {:?}", j, row);
         }
@@ -258,12 +227,7 @@ fn test_order_issue_336_multiple_tables() {
 
     println!("issue-336: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
     }
 
     // pdfplumber finds exactly 3 tables
@@ -307,12 +271,7 @@ fn test_issue_466_mixed_strategy() {
 
     println!("issue-466: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         for (j, row) in table.cells.iter().enumerate() {
             println!("    Row {}: {:?}", j, row);
         }
@@ -342,12 +301,7 @@ fn test_discussion_539_null_value() {
 
     println!("nics-background-checks: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
     }
 
     // The main assertion from pdfplumber is that this doesn't crash.
@@ -371,12 +325,7 @@ fn test_table_curves_detection() {
 
     println!("table-curves: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
         for (j, row) in table.cells.iter().enumerate() {
             println!("    Row {}: {:?}", j, row);
         }
@@ -434,17 +383,11 @@ fn test_edge_extraction_from_bordered_pdf() {
 
     // issue-140 has a clearly bordered table; line-based detection
     // should find it (not fall back to spatial clustering)
-    assert!(
-        !tables.is_empty(),
-        "Expected tables from bordered PDF"
-    );
+    assert!(!tables.is_empty(), "Expected tables from bordered PDF");
 
     // Verify multiple rows extracted
     let total_rows: usize = tables.iter().map(|t| t.cells.len()).sum();
-    assert!(
-        total_rows >= 2,
-        "Expected at least 2 total rows across all tables"
-    );
+    assert!(total_rows >= 2, "Expected at least 2 total rows across all tables");
 }
 
 // ============================================================
@@ -481,12 +424,7 @@ fn test_all_fixtures_load_without_error() {
         let bytes = load_pdf_bytes(name);
         let config = ExtractionConfig::default();
         let result = extract_bytes_sync(&bytes, "application/pdf", &config);
-        assert!(
-            result.is_ok(),
-            "Failed to extract {}: {}",
-            name,
-            result.err().unwrap()
-        );
+        assert!(result.is_ok(), "Failed to extract {}: {}", name, result.err().unwrap());
         let result = result.unwrap();
         println!(
             "{}: {} tables, text length {}",
@@ -535,11 +473,7 @@ fn test_pymupdf_chinese_tables() {
 
     // Each table should have meaningful content
     for (i, table) in tables.iter().take(2).enumerate() {
-        assert!(
-            !table.cells.is_empty(),
-            "Table {} should have rows",
-            i
-        );
+        assert!(!table.cells.is_empty(), "Table {} should have rows", i);
         assert!(
             table.cells[0].len() >= 2,
             "Table {} should have at least 2 columns, got {}",
@@ -572,10 +506,7 @@ fn test_pymupdf_2812_rotation_invariance() {
 
     // PyMuPDF expects 1 table per page (4 pages)
     // We should find at least some tables across the rotated pages
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in rotated PDF"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in rotated PDF");
 
     // For each table found, verify it has a reasonable structure
     for (i, table) in tables.iter().enumerate() {
@@ -597,10 +528,7 @@ fn test_pymupdf_2812_rotation_invariance() {
 fn test_pymupdf_2979_uniform_row_lengths() {
     let tables = extract_tables_from_pdf("pymupdf-test_2979.pdf");
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in test_2979.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in test_2979.pdf");
 
     let table = &tables[0];
     println!(
@@ -610,11 +538,7 @@ fn test_pymupdf_2979_uniform_row_lengths() {
     );
 
     // PyMuPDF's key assertion: all rows have the same number of cells
-    let lengths: std::collections::HashSet<usize> = table
-        .cells
-        .iter()
-        .map(|row| row.len())
-        .collect();
+    let lengths: std::collections::HashSet<usize> = table.cells.iter().map(|row| row.len()).collect();
 
     assert_eq!(
         lengths.len(),
@@ -635,17 +559,10 @@ fn test_pymupdf_3062_deterministic_extraction() {
     let tables1 = extract_tables_from_pdf("pymupdf-test_3062.pdf");
     let tables2 = extract_tables_from_pdf("pymupdf-test_3062.pdf");
 
-    assert!(
-        !tables1.is_empty(),
-        "Expected at least one table in test_3062.pdf"
-    );
+    assert!(!tables1.is_empty(), "Expected at least one table in test_3062.pdf");
 
     // PyMuPDF asserts: cells1 == cells0 (deterministic)
-    assert_eq!(
-        tables1.len(),
-        tables2.len(),
-        "Table count should be deterministic"
-    );
+    assert_eq!(tables1.len(), tables2.len(), "Table count should be deterministic");
 
     for (i, (t1, t2)) in tables1.iter().zip(tables2.iter()).enumerate() {
         assert_eq!(
@@ -682,10 +599,7 @@ fn test_pymupdf_strict_lines() {
     }
 
     // The PDF has a table with borders — we should detect it
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in strict-yes-no.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in strict-yes-no.pdf");
 
     // Verify the table has content consistent with PyMuPDF's test
     // (3-column table with Header1/Header2/Header3)
@@ -743,12 +657,7 @@ fn test_pymupdf_battery_file_no_tables() {
 
     println!("pymupdf battery-file-22: found {} tables", tables.len());
     for (i, table) in tables.iter().enumerate() {
-        println!(
-            "  Table {}: {} rows, page {}",
-            i,
-            table.cells.len(),
-            table.page_number
-        );
+        println!("  Table {}: {} rows, page {}", i, table.cells.len(), table.page_number);
     }
 
     // PyMuPDF asserts 0 tables (false-positive suppression).
@@ -756,10 +665,7 @@ fn test_pymupdf_battery_file_no_tables() {
     // in non-table content. We check that line-based detection doesn't
     // produce false positives by verifying reasonable behavior.
     // If tables are found, they should be from the fallback, not spurious.
-    println!(
-        "Battery file: {} tables found (PyMuPDF expects 0)",
-        tables.len()
-    );
+    println!("Battery file: {} tables found (PyMuPDF expects 0)", tables.len());
 }
 
 // ============================================================
@@ -821,10 +727,7 @@ fn test_pymupdf_4017_financial_tables() {
         }
     }
 
-    assert!(
-        !tables.is_empty(),
-        "Expected at least one table in test_4017.pdf"
-    );
+    assert!(!tables.is_empty(), "Expected at least one table in test_4017.pdf");
 
     // Check for key financial data that PyMuPDF expects
     let all_text: String = tables
@@ -874,24 +777,21 @@ fn test_pymupdf_md_styles_strict() {
 
     // Bold: **Bold (0,1)**
     assert!(
-        table.markdown.contains("**Bold (0,1)**")
-            || table.markdown.contains("**Bold(0,1)**"),
+        table.markdown.contains("**Bold (0,1)**") || table.markdown.contains("**Bold(0,1)**"),
         "Missing bold markdown: should contain **Bold (0,1)**\nActual:\n{}",
         table.markdown
     );
 
     // Italic: _Italic (2,1)_
     assert!(
-        table.markdown.contains("_Italic (2,1)_")
-            || table.markdown.contains("_Italic(2,1)_"),
+        table.markdown.contains("_Italic (2,1)_") || table.markdown.contains("_Italic(2,1)_"),
         "Missing italic markdown: should contain _Italic (2,1)_\nActual:\n{}",
         table.markdown
     );
 
     // Bold-italic: **_Bold-italic_**
     assert!(
-        table.markdown.contains("**_Bold-italic_**")
-            || table.markdown.contains("**_Bold-italic (2,2)_**"),
+        table.markdown.contains("**_Bold-italic_**") || table.markdown.contains("**_Bold-italic (2,2)_**"),
         "Missing bold-italic markdown: should contain **_Bold-italic_**\nActual:\n{}",
         table.markdown
     );
@@ -962,7 +862,11 @@ fn test_pymupdf_markdown_strict() {
 fn test_pymupdf_header_detection_strict() {
     let tables = extract_tables_from_pdf("pymupdf-chinese-tables.pdf");
 
-    assert!(tables.len() >= 2, "Expected at least 2 tables in chinese-tables.pdf, got {}", tables.len());
+    assert!(
+        tables.len() >= 2,
+        "Expected at least 2 tables in chinese-tables.pdf, got {}",
+        tables.len()
+    );
 
     // PyMuPDF asserts: tab1.header.external == False
     let tab1 = &tables[0];
@@ -973,10 +877,7 @@ fn test_pymupdf_header_detection_strict() {
     // PyMuPDF asserts: tab1.header.cells == tab1.rows[0].cells
     // Our equivalent: header names should match first row content
     if !tab1.cells.is_empty() {
-        assert_eq!(
-            h1.names, tab1.cells[0],
-            "Table 1 header names should match first row"
-        );
+        assert_eq!(h1.names, tab1.cells[0], "Table 1 header names should match first row");
     }
 
     // PyMuPDF asserts: tab2.header.external == False
@@ -986,10 +887,7 @@ fn test_pymupdf_header_detection_strict() {
     assert!(!h2.external, "Table 2 header should NOT be external");
 
     if !tab2.cells.is_empty() {
-        assert_eq!(
-            h2.names, tab2.cells[0],
-            "Table 2 header names should match first row"
-        );
+        assert_eq!(h2.names, tab2.cells[0], "Table 2 header names should match first row");
     }
 }
 
@@ -1000,7 +898,7 @@ fn test_pymupdf_header_detection_strict() {
 // ============================================================
 #[test]
 fn test_pymupdf_add_lines_strict() {
-    use kreuzberg::pdf::{find_tables, extract_table_text_styled, TableSettings};
+    use kreuzberg::pdf::{TableSettings, extract_table_text_styled, find_tables};
 
     // Scope the pdfium handle to release the global lock before other tests need it
     let bytes = load_pdf_bytes("pymupdf-small-table.pdf");
@@ -1026,7 +924,11 @@ fn test_pymupdf_add_lines_strict() {
         let (cols, rows) = if !result.tables.is_empty() {
             let page_height = page.height().value as f64;
             let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
-            println!("With add_lines: {} rows x {} cols", styled.len(), styled.first().map(|r| r.len()).unwrap_or(0));
+            println!(
+                "With add_lines: {} rows x {} cols",
+                styled.len(),
+                styled.first().map(|r| r.len()).unwrap_or(0)
+            );
             for (i, row) in styled.iter().enumerate() {
                 let cells: Vec<&str> = row.iter().map(|c| c.plain.as_str()).collect();
                 println!("  Row {}: {:?}", i, cells);
@@ -1046,10 +948,7 @@ fn test_pymupdf_add_lines_strict() {
     // NOTE: Our edge detection may find a table from existing graphics that
     // PyMuPDF's stricter line-only detection misses. This is a known behavioral
     // difference — log it rather than assert 0.
-    println!(
-        "Without add_lines: {} tables (PyMuPDF expects 0)",
-        no_lines_count
-    );
+    println!("Without add_lines: {} tables (PyMuPDF expects 0)", no_lines_count);
 
     // With add_lines: PyMuPDF asserts 4 columns, 5 rows
     assert_eq!(with_lines_cols, 4, "Expected 4 columns with add_lines");
@@ -1063,7 +962,7 @@ fn test_pymupdf_add_lines_strict() {
 // ============================================================
 #[test]
 fn test_pymupdf_add_boxes_strict() {
-    use kreuzberg::pdf::{find_tables, extract_table_text_styled, TableSettings};
+    use kreuzberg::pdf::{TableSettings, extract_table_text_styled, find_tables};
 
     let bytes = load_pdf_bytes("pymupdf-small-table.pdf");
 
@@ -1095,13 +994,18 @@ fn test_pymupdf_add_boxes_strict() {
 
         if !result.tables.is_empty() {
             let styled = extract_table_text_styled(&result.tables[0], &page, page_height).unwrap();
-            println!("Table: {} rows x {} cols", styled.len(), styled.first().map(|r| r.len()).unwrap_or(0));
+            println!(
+                "Table: {} rows x {} cols",
+                styled.len(),
+                styled.first().map(|r| r.len()).unwrap_or(0)
+            );
             for (i, row) in styled.iter().enumerate() {
                 let cells: Vec<&str> = row.iter().map(|c| c.plain.as_str()).collect();
                 println!("  Row {}: {:?}", i, cells);
             }
 
-            styled.iter()
+            styled
+                .iter()
                 .map(|row| row.iter().map(|c| c.plain.clone()).collect())
                 .collect()
         } else {
@@ -1120,9 +1024,9 @@ fn test_pymupdf_add_boxes_strict() {
 
     for expected_row in &expected {
         for expected_cell in expected_row {
-            let found = plain_cells.iter().any(|row| {
-                row.iter().any(|cell| cell.contains(expected_cell))
-            });
+            let found = plain_cells
+                .iter()
+                .any(|row| row.iter().any(|cell| cell.contains(expected_cell)));
             assert!(
                 found,
                 "Expected cell content '{}' not found in extracted table.\nExtracted: {:?}",
@@ -1142,13 +1046,17 @@ fn test_vector_graphics_joining() {
     // Test that touching/overlapping rects are joined
     let rects = vec![
         (10.0, 10.0, 50.0, 50.0),
-        (50.0, 10.0, 100.0, 50.0),  // touches first
-        (100.0, 10.0, 150.0, 50.0), // touches second
+        (50.0, 10.0, 100.0, 50.0),    // touches first
+        (100.0, 10.0, 150.0, 50.0),   // touches second
         (300.0, 300.0, 400.0, 400.0), // far away
     ];
 
     let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
-    assert_eq!(joined.len(), 2, "Chain of 3 touching rects + 1 isolated should produce 2 groups");
+    assert_eq!(
+        joined.len(),
+        2,
+        "Chain of 3 touching rects + 1 isolated should produce 2 groups"
+    );
 
     // First group: merged chain
     assert_eq!(joined[0], (10.0, 10.0, 150.0, 50.0));
@@ -1157,7 +1065,12 @@ fn test_vector_graphics_joining() {
 
     // Test are_neighbors directly
     assert!(are_neighbors((0.0, 0.0, 10.0, 10.0), (10.0, 0.0, 20.0, 10.0), 1.0, 1.0));
-    assert!(!are_neighbors((0.0, 0.0, 10.0, 10.0), (100.0, 100.0, 200.0, 200.0), 1.0, 1.0));
+    assert!(!are_neighbors(
+        (0.0, 0.0, 10.0, 10.0),
+        (100.0, 100.0, 200.0, 200.0),
+        1.0,
+        1.0
+    ));
 }
 
 // ############################################################
