@@ -85,7 +85,7 @@ fn extract_tables_from_document(
         let page_number = page_index + 1;
 
         // Try line-based detection first
-        match table_finder::find_tables(&page, &settings, None) {
+        match table_finder::find_tables(&page, &settings, None, None) {
             Ok(result) if !result.tables.is_empty() => {
                 let page_height = page.height().value as f64;
                 for detected_table in &result.tables {

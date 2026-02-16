@@ -912,14 +912,14 @@ fn test_pymupdf_add_lines_strict() {
 
         // 1. Without add_lines: count tables found
         let settings = TableSettings::default();
-        let result = find_tables(&page, &settings, None).unwrap();
+        let result = find_tables(&page, &settings, None, None).unwrap();
         let no_lines_count = result.tables.len();
 
         // 2. With add_lines: PyMuPDF adds 3 vertical lines, expects 4 cols x 5 rows
         let mut settings = TableSettings::default();
         settings.explicit_vertical_lines = vec![238.99, 334.56, 433.18];
 
-        let result = find_tables(&page, &settings, None).unwrap();
+        let result = find_tables(&page, &settings, None, None).unwrap();
 
         let (cols, rows) = if !result.tables.is_empty() {
             let page_height = page.height().value as f64;
@@ -989,7 +989,7 @@ fn test_pymupdf_add_boxes_strict() {
         }
         settings.explicit_boxes = boxes;
 
-        let result = find_tables(&page, &settings, None).unwrap();
+        let result = find_tables(&page, &settings, None, None).unwrap();
         println!("With add_boxes: {} tables found", result.tables.len());
 
         if !result.tables.is_empty() {
@@ -1208,7 +1208,7 @@ fn test_clip_restricts_tables() {
 
     // First, find all tables without clip
     let settings = TableSettings::default();
-    let all_result = find_tables(&page, &settings, None).unwrap();
+    let all_result = find_tables(&page, &settings, None, None).unwrap();
     let total_tables = all_result.tables.len();
     assert!(total_tables >= 2, "Expected at least 2 tables, got {}", total_tables);
 
@@ -1216,7 +1216,7 @@ fn test_clip_restricts_tables() {
     let first_bbox = all_result.tables[0].bbox;
     let mut clipped_settings = TableSettings::default();
     clipped_settings.clip = Some(first_bbox);
-    let clipped_result = find_tables(&page, &clipped_settings, None).unwrap();
+    let clipped_result = find_tables(&page, &clipped_settings, None, None).unwrap();
 
     assert_eq!(
         clipped_result.tables.len(),
@@ -1237,11 +1237,11 @@ fn test_clip_none_matches_default() {
     let page = doc.pages().get(0).unwrap();
 
     let default_settings = TableSettings::default();
-    let result_default = find_tables(&page, &default_settings, None).unwrap();
+    let result_default = find_tables(&page, &default_settings, None, None).unwrap();
 
     let mut explicit_none = TableSettings::default();
     explicit_none.clip = None;
-    let result_none = find_tables(&page, &explicit_none, None).unwrap();
+    let result_none = find_tables(&page, &explicit_none, None, None).unwrap();
 
     assert_eq!(result_default.tables.len(), result_none.tables.len());
 }
@@ -1259,12 +1259,12 @@ fn test_clip_degenerate_returns_empty() {
     // Degenerate clip: x0 > x1
     let mut settings = TableSettings::default();
     settings.clip = Some((500.0, 0.0, 100.0, 100.0));
-    let result = find_tables(&page, &settings, None).unwrap();
+    let result = find_tables(&page, &settings, None, None).unwrap();
     assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
 
     // Degenerate clip: top > bottom
     settings.clip = Some((0.0, 500.0, 100.0, 100.0));
-    let result = find_tables(&page, &settings, None).unwrap();
+    let result = find_tables(&page, &settings, None, None).unwrap();
     assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
 }
 
@@ -1280,7 +1280,7 @@ fn test_separate_xy_tolerances_match_single() {
 
     // Single tolerance (default)
     let single = TableSettings::default();
-    let result_single = find_tables(&page, &single, None).unwrap();
+    let result_single = find_tables(&page, &single, None, None).unwrap();
 
     // Separate x/y with same value as single
     let mut separate = TableSettings::default();
@@ -1290,7 +1290,7 @@ fn test_separate_xy_tolerances_match_single() {
     separate.join_y_tolerance = Some(3.0);
     separate.intersection_x_tolerance = Some(3.0);
     separate.intersection_y_tolerance = Some(3.0);
-    let result_separate = find_tables(&page, &separate, None).unwrap();
+    let result_separate = find_tables(&page, &separate, None, None).unwrap();
 
     assert_eq!(
         result_single.tables.len(),
@@ -1310,8 +1310,8 @@ fn test_find_table_singular_returns_largest() {
     let page = doc.pages().get(0).unwrap();
     let settings = TableSettings::default();
 
-    let all = find_tables(&page, &settings, None).unwrap();
-    let single = find_table(&page, &settings, None).unwrap();
+    let all = find_tables(&page, &settings, None, None).unwrap();
+    let single = find_table(&page, &settings, None, None).unwrap();
 
     assert!(single.is_some(), "Should find at least one table");
     let single = single.unwrap();
@@ -1332,7 +1332,7 @@ fn test_row_count_col_count() {
     let page = doc.pages().get(0).unwrap();
     let settings = TableSettings::default();
 
-    let result = find_tables(&page, &settings, None).unwrap();
+    let result = find_tables(&page, &settings, None, None).unwrap();
     assert!(!result.tables.is_empty());
 
     let table = &result.tables[0];
@@ -1353,6 +1353,31 @@ fn test_to_csv_basic() {
         header: None,
     };
     assert_eq!(table.to_csv(), "Name,Age\nAlice,30\n");
+}
+
+/// Test pre-extracted edges parameter produces identical results.
+#[test]
+fn test_pre_extracted_edges_match() {
+    use kreuzberg::pdf::{TableSettings, find_tables};
+
+    let bytes = load_pdf_bytes("issue-336-example.pdf");
+    let pdfium = kreuzberg::pdf::pdfium();
+    let doc = pdfium.load_pdf_from_byte_vec(bytes, None).unwrap();
+    let page = doc.pages().get(0).unwrap();
+    let settings = TableSettings::default();
+
+    // First call: extract edges normally
+    let result1 = find_tables(&page, &settings, None, None).unwrap();
+    assert!(!result1.tables.is_empty(), "Need tables for this test");
+
+    // Second call: reuse edges from the first call
+    let result2 = find_tables(&page, &settings, None, Some(&result1.edges)).unwrap();
+
+    assert_eq!(result1.tables.len(), result2.tables.len(), "Same number of tables");
+    assert_eq!(result1.cells.len(), result2.cells.len(), "Same number of cells");
+    for (t1, t2) in result1.tables.iter().zip(result2.tables.iter()) {
+        assert_eq!(t1.cells.len(), t2.cells.len(), "Same cells per table");
+    }
 }
 
 /// Test Table::to_csv properly escapes special characters.

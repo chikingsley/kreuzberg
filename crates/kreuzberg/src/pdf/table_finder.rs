@@ -212,12 +212,16 @@ impl DetectedTable {
 /// Returns the table with the most cells, or `None` if no tables were found.
 /// This is a convenience wrapper around [`find_tables`] for the common case
 /// where only one table is expected on the page.
+///
+/// The optional `edges` parameter allows passing pre-extracted edges to skip
+/// the edge extraction phase — useful when calling repeatedly on the same page.
 pub fn find_table(
     page: &PdfPage,
     settings: &TableSettings,
     words: Option<&[PositionedWord]>,
+    edges: Option<&[Edge]>,
 ) -> Result<Option<DetectedTable>> {
-    let result = find_tables(page, settings, words)?;
+    let result = find_tables(page, settings, words, edges)?;
     Ok(result.tables.into_iter().max_by_key(|t| t.cells.len()))
 }
 
@@ -244,10 +248,16 @@ pub struct IntersectionEdges {
 /// Find tables on a PDF page using the given settings.
 ///
 /// This is the main entry point for table detection.
+///
+/// The optional `edges` parameter allows passing pre-extracted edges (e.g., from
+/// a previous `find_tables` call's `TableFinderResult::edges`). When provided,
+/// the edge extraction, merging, and filtering phases are skipped entirely,
+/// making repeated calls on the same page significantly faster.
 pub fn find_tables(
     page: &PdfPage,
     settings: &TableSettings,
     words: Option<&[PositionedWord]>,
+    edges: Option<&[Edge]>,
 ) -> Result<TableFinderResult> {
     let page_bbox = (0.0, 0.0, page.width().value as f64, page.height().value as f64);
 
@@ -263,8 +273,11 @@ pub fn find_tables(
         }
     }
 
-    // Step 1: Collect edges based on strategies
-    let edges = collect_edges(page, settings, words, page_bbox)?;
+    // Step 1: Use pre-extracted edges if provided, otherwise collect from page
+    let edges = match edges {
+        Some(pre_extracted) => pre_extracted.to_vec(),
+        None => collect_edges(page, settings, words, page_bbox)?,
+    };
 
     // Step 2: Find intersections
     let intersections = edges_to_intersections(
