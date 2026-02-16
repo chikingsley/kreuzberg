@@ -54,6 +54,14 @@ pub mod rendering;
 #[cfg(feature = "pdf")]
 pub mod table;
 #[cfg(feature = "pdf")]
+pub mod table_clustering;
+#[cfg(feature = "pdf")]
+pub mod table_edges;
+#[cfg(feature = "pdf")]
+pub mod table_finder;
+#[cfg(feature = "pdf")]
+pub mod table_geometry;
+#[cfg(feature = "pdf")]
 pub mod text;
 
 #[cfg(feature = "pdf")]
