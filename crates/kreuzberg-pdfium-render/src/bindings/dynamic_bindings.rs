@@ -945,7 +945,6 @@ pub(crate) struct DynamicPdfiumBindings {
     extern_FPDFAnnot_GetFlags: unsafe extern "C" fn(annot: FPDF_ANNOTATION) -> c_int,
     extern_FPDFAnnot_SetFlags: unsafe extern "C" fn(annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL,
     extern_FPDFAnnot_GetFormFieldFlags: unsafe extern "C" fn(handle: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION) -> c_int,
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     extern_FPDFAnnot_SetFormFieldFlags:
         unsafe extern "C" fn(handle: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL,
     extern_FPDFAnnot_GetFormFieldAtPoint:
@@ -975,7 +974,6 @@ pub(crate) struct DynamicPdfiumBindings {
         unsafe extern "C" fn(handle: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, index: c_int) -> FPDF_BOOL,
     extern_FPDFAnnot_GetFontSize:
         unsafe extern "C" fn(hHandle: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, value: *mut f32) -> FPDF_BOOL,
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     extern_FPDFAnnot_SetFontColor: unsafe extern "C" fn(
         handle: FPDF_FORMHANDLE,
         annot: FPDF_ANNOTATION,
@@ -1553,7 +1551,6 @@ pub(crate) struct DynamicPdfiumBindings {
     extern_FPDFPath_GetDrawMode:
         unsafe extern "C" fn(path: FPDF_PAGEOBJECT, fillmode: *mut c_int, stroke: *mut FPDF_BOOL) -> FPDF_BOOL,
     extern_FPDFPage_InsertObject: unsafe extern "C" fn(page: FPDF_PAGE, page_obj: FPDF_PAGEOBJECT),
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     extern_FPDFPage_InsertObjectAtIndex:
         unsafe extern "C" fn(page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL,
     extern_FPDFPage_RemoveObject: unsafe extern "C" fn(page: FPDF_PAGE, page_obj: FPDF_PAGEOBJECT) -> FPDF_BOOL,
@@ -2171,7 +2168,6 @@ pub(crate) struct DynamicPdfiumBindings {
         buflen: c_ulong,
         out_buflen: *mut c_ulong,
     ) -> FPDF_BOOL,
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     extern_FPDFAttachment_GetSubtype:
         unsafe extern "C" fn(attachment: FPDF_ATTACHMENT, buffer: *mut FPDF_WCHAR, buflen: c_ulong) -> c_ulong,
     extern_FPDFCatalog_IsTagged: unsafe extern "C" fn(document: FPDF_DOCUMENT) -> FPDF_BOOL,
@@ -2562,7 +2558,6 @@ impl DynamicPdfiumBindings {
             extern_FPDFAnnot_GetFlags: *(Self::bind(&library, "FPDFAnnot_GetFlags")?),
             extern_FPDFAnnot_SetFlags: *(Self::bind(&library, "FPDFAnnot_SetFlags")?),
             extern_FPDFAnnot_GetFormFieldFlags: *(Self::bind(&library, "FPDFAnnot_GetFormFieldFlags")?),
-            #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
             extern_FPDFAnnot_SetFormFieldFlags: *(Self::bind(&library, "FPDFAnnot_SetFormFieldFlags")?),
             extern_FPDFAnnot_GetFormFieldAtPoint: *(Self::bind(&library, "FPDFAnnot_GetFormFieldAtPoint")?),
             extern_FPDFAnnot_GetFormFieldName: *(Self::bind(&library, "FPDFAnnot_GetFormFieldName")?),
@@ -2572,7 +2567,6 @@ impl DynamicPdfiumBindings {
             extern_FPDFAnnot_GetOptionLabel: *(Self::bind(&library, "FPDFAnnot_GetOptionLabel")?),
             extern_FPDFAnnot_IsOptionSelected: *(Self::bind(&library, "FPDFAnnot_IsOptionSelected")?),
             extern_FPDFAnnot_GetFontSize: *(Self::bind(&library, "FPDFAnnot_GetFontSize")?),
-            #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
             extern_FPDFAnnot_SetFontColor: *(Self::bind(&library, "FPDFAnnot_SetFontColor")?),
             #[cfg(any(
                 feature = "pdfium_future",
@@ -2887,7 +2881,6 @@ impl DynamicPdfiumBindings {
             extern_FPDFPath_SetDrawMode: *(Self::bind(&library, "FPDFPath_SetDrawMode")?),
             extern_FPDFPath_GetDrawMode: *(Self::bind(&library, "FPDFPath_GetDrawMode")?),
             extern_FPDFPage_InsertObject: *(Self::bind(&library, "FPDFPage_InsertObject")?),
-            #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
             extern_FPDFPage_InsertObjectAtIndex: *(Self::bind(&library, "FPDFPage_InsertObjectAtIndex")?),
             extern_FPDFPage_RemoveObject: *(Self::bind(&library, "FPDFPage_RemoveObject")?),
             extern_FPDFPage_CountObjects: *(Self::bind(&library, "FPDFPage_CountObjects")?),
@@ -3100,7 +3093,6 @@ impl DynamicPdfiumBindings {
             extern_FPDFAttachment_GetStringValue: *(Self::bind(&library, "FPDFAttachment_GetStringValue")?),
             extern_FPDFAttachment_SetFile: *(Self::bind(&library, "FPDFAttachment_SetFile")?),
             extern_FPDFAttachment_GetFile: *(Self::bind(&library, "FPDFAttachment_GetFile")?),
-            #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
             extern_FPDFAttachment_GetSubtype: *(Self::bind(&library, "FPDFAttachment_GetSubtype")?),
             extern_FPDFCatalog_IsTagged: *(Self::bind(&library, "FPDFCatalog_IsTagged")?),
             #[cfg(any(
@@ -5172,7 +5164,6 @@ impl PdfiumLibraryBindings for DynamicPdfiumBindings {
         unsafe { (self.extern_FPDFAnnot_GetFormFieldFlags)(form, annot) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
@@ -5251,7 +5242,6 @@ impl PdfiumLibraryBindings for DynamicPdfiumBindings {
         unsafe { (self.extern_FPDFAnnot_GetFontSize)(form, annot, value) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAnnot_SetFontColor(
@@ -6698,7 +6688,6 @@ impl PdfiumLibraryBindings for DynamicPdfiumBindings {
         unsafe { (self.extern_FPDFPage_InsertObject)(page, page_obj) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
@@ -7987,7 +7976,6 @@ impl PdfiumLibraryBindings for DynamicPdfiumBindings {
         unsafe { (self.extern_FPDFAttachment_GetFile)(attachment, buffer, buflen, out_buflen) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAttachment_GetSubtype(

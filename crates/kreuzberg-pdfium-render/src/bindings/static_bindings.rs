@@ -2012,25 +2012,6 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
         unsafe { crate::bindgen::FPDFAnnot_GetFormFieldFlags(form, annot) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFormFieldFlags(form, annot, flags) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFormFieldFlags(form, annot, flags) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFormFieldFlags(form, annot, flags) }
-    }
-
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFAnnot_SetFormFieldFlags(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, flags: c_int) -> FPDF_BOOL {
@@ -2107,59 +2088,6 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
     #[allow(non_snake_case)]
     fn FPDFAnnot_GetFontSize(&self, form: FPDF_FORMHANDLE, annot: FPDF_ANNOTATION, value: *mut f32) -> FPDF_BOOL {
         unsafe { crate::bindgen::FPDFAnnot_GetFontSize(form, annot, value) }
-    }
-
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFontColor(
-        &self,
-        form: FPDF_FORMHANDLE,
-        annot: FPDF_ANNOTATION,
-        R: c_uint,
-        G: c_uint,
-        B: c_uint,
-    ) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFontColor(form, annot, R, G, B) }
-    }
-
-    #[cfg(any(
-        feature = "pdfium_future",
-        feature = "pdfium_7543",
-        feature = "pdfium_7350",
-        feature = "pdfium_7215",
-        feature = "pdfium_7123",
-        feature = "pdfium_6996",
-        feature = "pdfium_6721",
-        feature = "pdfium_6666",
-        feature = "pdfium_6611",
-        feature = "pdfium_6569",
-        feature = "pdfium_6555",
-    ))]
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFontColor(
-        &self,
-        form: FPDF_FORMHANDLE,
-        annot: FPDF_ANNOTATION,
-        R: c_uint,
-        G: c_uint,
-        B: c_uint,
-    ) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFontColor(form, annot, R, G, B) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAnnot_SetFontColor(
-        &self,
-        form: FPDF_FORMHANDLE,
-        annot: FPDF_ANNOTATION,
-        R: c_uint,
-        G: c_uint,
-        B: c_uint,
-    ) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFAnnot_SetFontColor(form, annot, R, G, B) }
     }
 
     #[inline]
@@ -3684,25 +3612,6 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
         unsafe { crate::bindgen::FPDFPage_InsertObject(page, page_obj) }
     }
 
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFPage_InsertObjectAtIndex(page, page_object, index) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFPage_InsertObjectAtIndex(page, page_object, index) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
-        unsafe { crate::bindgen::FPDFPage_InsertObjectAtIndex(page, page_object, index) }
-    }
-
     #[inline]
     #[allow(non_snake_case)]
     fn FPDFPage_InsertObjectAtIndex(&self, page: FPDF_PAGE, page_object: FPDF_PAGEOBJECT, index: usize) -> FPDF_BOOL {
@@ -5001,40 +4910,6 @@ impl PdfiumLibraryBindings for StaticPdfiumBindings {
         out_buflen: *mut c_ulong,
     ) -> FPDF_BOOL {
         unsafe { crate::bindgen::FPDFAttachment_GetFile(attachment, buffer, buflen, out_buflen) }
-    }
-
-    #[cfg(any(feature = "pdfium_future", feature = "pdfium_7350"))]
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAttachment_GetSubtype(
-        &self,
-        attachment: FPDF_ATTACHMENT,
-        buffer: *mut FPDF_WCHAR,
-        buflen: c_ulong,
-    ) -> c_ulong {
-        unsafe { crate::bindgen::FPDFAttachment_GetSubtype(attachment, buffer, buflen) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAttachment_GetSubtype(
-        &self,
-        attachment: FPDF_ATTACHMENT,
-        buffer: *mut FPDF_WCHAR,
-        buflen: c_ulong,
-    ) -> c_ulong {
-        unsafe { crate::bindgen::FPDFAttachment_GetSubtype(attachment, buffer, buflen) }
-    }
-
-    #[inline]
-    #[allow(non_snake_case)]
-    fn FPDFAttachment_GetSubtype(
-        &self,
-        attachment: FPDF_ATTACHMENT,
-        buffer: *mut FPDF_WCHAR,
-        buflen: c_ulong,
-    ) -> c_ulong {
-        unsafe { crate::bindgen::FPDFAttachment_GetSubtype(attachment, buffer, buflen) }
     }
 
     #[inline]
