@@ -284,7 +284,8 @@ pub fn merge_edges(
     };
 
     // Group edges by (orientation, primary_coord) and join each group
-    let mut groups: std::collections::BTreeMap<(u8, u64), Vec<Edge>> = std::collections::BTreeMap::new();
+    let mut groups: std::collections::BTreeMap<(u8, u64), Vec<Edge>> =
+        std::collections::BTreeMap::new();
 
     for edge in &edges {
         let orient_key = match edge.orientation {
@@ -292,7 +293,10 @@ pub fn merge_edges(
             Orientation::Vertical => 1u8,
         };
         let coord_key = edge.primary_coord().to_bits();
-        groups.entry((orient_key, coord_key)).or_default().push(edge.clone());
+        groups
+            .entry((orient_key, coord_key))
+            .or_default()
+            .push(edge.clone());
     }
 
     let mut result = Vec::new();
@@ -333,7 +337,12 @@ pub fn are_neighbors(r1: Bbox, r2: Bbox, snap_x: f64, snap_y: f64) -> bool {
 /// Only keeps regions that satisfy the provided predicate (e.g., "contains text").
 ///
 /// This mirrors PyMuPDF's `clean_graphics` algorithm.
-pub fn join_neighboring_rects<F>(rects: &[Bbox], snap_x: f64, snap_y: f64, keep_predicate: F) -> Vec<Bbox>
+pub fn join_neighboring_rects<F>(
+    rects: &[Bbox],
+    snap_x: f64,
+    snap_y: f64,
+    keep_predicate: F,
+) -> Vec<Bbox>
 where
     F: Fn(Bbox) -> bool,
 {
@@ -403,7 +412,10 @@ mod tests {
             .iter()
             .filter(|e| e.orientation == Orientation::Horizontal)
             .count();
-        let v_count = edges.iter().filter(|e| e.orientation == Orientation::Vertical).count();
+        let v_count = edges
+            .iter()
+            .filter(|e| e.orientation == Orientation::Vertical)
+            .count();
         assert_eq!(h_count, 2);
         assert_eq!(v_count, 2);
     }
@@ -502,7 +514,7 @@ mod tests {
     fn test_join_neighboring_rects() {
         let rects = vec![
             (0.0, 0.0, 50.0, 50.0),
-            (50.0, 0.0, 100.0, 50.0),     // neighbor of first
+            (50.0, 0.0, 100.0, 50.0),   // neighbor of first
             (200.0, 200.0, 300.0, 300.0), // far away
         ];
         let joined = join_neighboring_rects(&rects, 3.0, 3.0, |_| true);
@@ -528,9 +540,14 @@ mod tests {
 
     #[test]
     fn test_join_neighboring_rects_with_predicate() {
-        let rects = vec![(0.0, 0.0, 50.0, 50.0), (50.0, 0.0, 100.0, 50.0)];
+        let rects = vec![
+            (0.0, 0.0, 50.0, 50.0),
+            (50.0, 0.0, 100.0, 50.0),
+        ];
         // Predicate rejects small rects
-        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |r| (r.2 - r.0) > 80.0);
+        let joined = join_neighboring_rects(&rects, 3.0, 3.0, |r| {
+            (r.2 - r.0) > 80.0
+        });
         assert_eq!(joined.len(), 1); // Merged rect is 100 wide, passes predicate
     }
 }
