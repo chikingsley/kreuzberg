@@ -256,20 +256,7 @@ mod tests {
             Ok(ExtractionResult {
                 content: "test".to_string(),
                 mime_type: Cow::Borrowed("text/plain"),
-                metadata: crate::types::Metadata::default(),
-                tables: vec![],
-                detected_languages: None,
-                chunks: None,
-                images: None,
-                djot_content: None,
-                pages: None,
-                elements: None,
-                ocr_elements: None,
-                document: None,
-                #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
-                extracted_keywords: None,
-                quality_score: None,
-                processing_warnings: Vec::new(),
+                ..Default::default()
             })
         }
 
@@ -389,20 +376,7 @@ mod tests {
             Ok(ExtractionResult {
                 content: "test".to_string(),
                 mime_type: Cow::Borrowed("text/plain"),
-                metadata: crate::types::Metadata::default(),
-                tables: vec![],
-                detected_languages: None,
-                chunks: None,
-                images: None,
-                djot_content: None,
-                pages: None,
-                elements: None,
-                ocr_elements: None,
-                document: None,
-                #[cfg(any(feature = "keywords-yake", feature = "keywords-rake"))]
-                extracted_keywords: None,
-                quality_score: None,
-                processing_warnings: Vec::new(),
+                ..Default::default()
             })
         }
 

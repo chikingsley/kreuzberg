@@ -77,7 +77,7 @@ fn extract_tables_from_document(
         .pdf_options
         .as_ref()
         .and_then(|p| p.table_detection.as_ref())
-        .map(|tc: &crate::core::config::pdf::PdfTableDetectionConfig| tc.to_table_settings())
+        .map(|tc| tc.to_table_settings())
         .unwrap_or_default();
     let mut all_tables = Vec::new();
 
