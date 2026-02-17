@@ -254,38 +254,47 @@ fn default_ocr_coverage_threshold() -> Option<f32> {
     None
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_snap_tolerance() -> f64 {
     3.0
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_join_tolerance() -> f64 {
     3.0
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_edge_min_length() -> f64 {
     3.0
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_edge_min_length_prefilter() -> f64 {
     1.0
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_min_words_vertical() -> usize {
     3
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_min_words_horizontal() -> usize {
     1
 }
 
+#[cfg(feature = "pdf")]
 fn default_table_intersection_tolerance() -> f64 {
     3.0
 }
 
+#[cfg(feature = "pdf")]
 fn default_fallback_column_threshold() -> u32 {
     50
 }
 
+#[cfg(feature = "pdf")]
 fn default_fallback_row_threshold_ratio() -> f64 {
     0.5
 }

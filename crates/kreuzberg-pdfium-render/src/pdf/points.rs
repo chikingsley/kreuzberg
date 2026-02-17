@@ -11,7 +11,7 @@ use {crate::pdf::bitmap::PdfBitmap, crate::pdf::document::PdfDocument, crate::pd
 /// The internal coordinate system inside a [PdfDocument] is measured in Points, a
 /// device-independent unit equal to 1/72 inches, roughly 0.358 mm. Points are converted to pixels
 /// when a [PdfPage] is rendered into a [PdfBitmap].
-#[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct PdfPoints {
     pub value: f32,
 }
@@ -167,7 +167,6 @@ impl Neg for PdfPoints {
 
 impl Eq for PdfPoints {}
 
-#[allow(clippy::derive_ord_xor_partial_ord)]
 // We would ideally use f32::total_cmp() here, but it was not stabilized until 1.62.0.
 // Providing our own (simple) implementation allows for better backwards compatibility.
 // Strictly speaking, our implementation is not _true_ total ordering because it treats
@@ -176,6 +175,13 @@ impl Eq for PdfPoints {}
 //
 // For a deeper dive on the precise considerations of total ordering as applied to
 // floating point values, see: https://github.com/rust-lang/rust/pull/72568
+impl PartialOrd for PdfPoints {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl Ord for PdfPoints {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
