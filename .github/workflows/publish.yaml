@@ -1540,9 +1540,64 @@ jobs:
           path: java-natives/${{ matrix.settings.rid }}
           retention-days: 14
 
+  java-natives-musl:
+    name: Build Java native libs (linux-musl-${{ matrix.arch }})
+    needs: [prepare, check-maven]
+    if: ${{ needs.prepare.outputs.release_java == 'true' && (needs.check-maven.outputs.exists != 'true' || needs.prepare.outputs.dry_run == 'true') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            rid: linux-musl-x86_64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rid: linux-musl-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build FFI library via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-ffi \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_ffi.so
+          echo "Library built successfully for musl"
+
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p "java-natives/${{ matrix.rid }}"
+          cp dist/libkreuzberg_ffi.so "java-natives/${{ matrix.rid }}/"
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-natives-${{ matrix.rid }}
+          path: java-natives/${{ matrix.rid }}
+          retention-days: 14
+
   java-package:
     name: Build Java package
-    needs: [prepare, check-maven, java-natives]
+    needs: [prepare, check-maven, java-natives, java-natives-musl]
     if: ${{ needs.prepare.outputs.release_java == 'true' && needs.check-maven.outputs.exists != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1632,6 +1687,8 @@ jobs:
           test -f packages/java/src/main/resources/natives/linux-arm64/libkreuzberg_ffi.so
           test -f packages/java/src/main/resources/natives/macos-arm64/libkreuzberg_ffi.dylib
           test -f packages/java/src/main/resources/natives/windows-x86_64/kreuzberg_ffi.dll
+          test -f packages/java/src/main/resources/natives/linux-musl-x86_64/libkreuzberg_ffi.so
+          test -f packages/java/src/main/resources/natives/linux-musl-arm64/libkreuzberg_ffi.so
 
       - name: Build and package
         working-directory: packages/java
@@ -1763,7 +1820,7 @@ jobs:
 
   csharp-package:
     name: Build C# package
-    needs: [prepare, check-nuget, csharp-native-assets]
+    needs: [prepare, check-nuget, csharp-native-assets, csharp-native-assets-musl]
     if: ${{ needs.prepare.outputs.release_csharp == 'true' && needs.check-nuget.outputs.exists != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1951,6 +2008,62 @@ jobs:
         env:
           RID: ${{ matrix.rid }}
         run: scripts/publish/csharp/verify-native-assets-dir.sh
+
+      - name: Upload native assets artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-native-assets-${{ matrix.rid }}
+          path: runtimes/
+          retention-days: 14
+
+  csharp-native-assets-musl:
+    name: Build C# native assets (linux-musl-${{ matrix.arch }})
+    needs: [prepare, check-nuget]
+    if: ${{ needs.prepare.outputs.release_csharp == 'true' && needs.check-nuget.outputs.exists != 'true' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+            rid: linux-musl-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rid: linux-musl-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build FFI library via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-ffi \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_ffi.so
+          echo "Library built successfully for musl"
+
+      - name: Assemble native assets for NuGet
+        run: |
+          mkdir -p "runtimes/${{ matrix.rid }}/native"
+          cp dist/libkreuzberg_ffi.so "runtimes/${{ matrix.rid }}/native/"
+          ls -lah "runtimes/${{ matrix.rid }}/native/"
 
       - name: Upload native assets artifact
         uses: actions/upload-artifact@v4
@@ -2339,15 +2452,99 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  elixir-natives-musl:
+    name: Build Elixir native libs (linux-musl-${{ matrix.arch }})
+    needs: [prepare]
+    if: ${{ needs.prepare.outputs.release_elixir == 'true' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            label: linux-musl-x86_64
+            target: x86_64-unknown-linux-musl
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            label: linux-musl-aarch64
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build Rustler NIF via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-rustler \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_rustler.so
+          echo "Library built successfully for musl"
+
+      - name: Package native libraries (NIF 2.16)
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TARGET="${{ matrix.target }}"
+          NIF_VERSION="2.16"
+          ARCHIVE_EXT="so"
+
+          mkdir -p dist/elixir
+          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          TARBALL="${ARTIFACT_NAME}.tar.gz"
+
+          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          echo "Created: dist/elixir/${TARBALL}"
+
+      - name: Package native libraries (NIF 2.17)
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TARGET="${{ matrix.target }}"
+          NIF_VERSION="2.17"
+          ARCHIVE_EXT="so"
+
+          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          TARBALL="${ARTIFACT_NAME}.tar.gz"
+
+          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          echo "Created: dist/elixir/${TARBALL}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: elixir-${{ matrix.label }}
+          path: dist/elixir/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   upload-elixir-release:
     name: Upload Elixir binaries to GitHub Release
-    needs: [prepare, validate-versions, elixir-natives]
+    needs: [prepare, validate-versions, elixir-natives, elixir-natives-musl]
     if: |
       always() &&
       needs.prepare.outputs.dry_run != 'true' &&
       needs.prepare.outputs.is_tag == 'true' &&
       needs.prepare.outputs.release_elixir == 'true' &&
-      needs.elixir-natives.result == 'success'
+      (needs.elixir-natives.result == 'success' || needs.elixir-natives-musl.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -2918,6 +3115,8 @@ jobs:
           test -f packages/java/src/main/resources/natives/linux-arm64/libkreuzberg_ffi.so
           test -f packages/java/src/main/resources/natives/macos-arm64/libkreuzberg_ffi.dylib
           test -f packages/java/src/main/resources/natives/windows-x86_64/kreuzberg_ffi.dll
+          test -f packages/java/src/main/resources/natives/linux-musl-x86_64/libkreuzberg_ffi.so
+          test -f packages/java/src/main/resources/natives/linux-musl-arm64/libkreuzberg_ffi.so
 
       - name: Prefer gpg2 binary
         if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.maven_check.outputs.exists != 'true' }}
