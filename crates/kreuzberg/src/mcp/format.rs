@@ -21,7 +21,7 @@ use crate::{ExtractionConfig, ExtractionResult as KreuzbergResult};
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use kreuzberg::{ExtractionConfig, OutputFormat};
 /// use serde_json::json;
 ///

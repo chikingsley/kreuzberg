@@ -99,7 +99,7 @@ pub fn create_router_with_limits(config: ExtractionConfig, limits: ApiSizeLimits
 /// # Examples
 ///
 /// ```no_run
-/// use kreuzberg::{ExtractionConfig, api::create_router_with_limits, core::ServerConfig};
+/// use kreuzberg::{ExtractionConfig, api::{create_router_with_limits_and_server_config, ApiSizeLimits}, core::ServerConfig};
 ///
 /// # #[tokio::main]
 /// # async fn main() -> kreuzberg::Result<()> {
@@ -108,7 +108,7 @@ pub fn create_router_with_limits(config: ExtractionConfig, limits: ApiSizeLimits
 /// server_config.cors_origins = vec!["https://example.com".to_string()];
 /// let router = create_router_with_limits_and_server_config(
 ///     extraction_config,
-///     Default::default(),
+///     ApiSizeLimits::default(),
 ///     server_config
 /// );
 /// # Ok(())

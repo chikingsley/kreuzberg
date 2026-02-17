@@ -73,6 +73,9 @@ pub enum OcrBackendType {
 ///             elements: None,
 ///             ocr_elements: None,
 ///             document: None,
+///             extracted_keywords: None,
+///             quality_score: None,
+///             processing_warnings: vec![],
 ///         })
 ///     }
 ///
@@ -157,6 +160,9 @@ pub trait OcrBackend: Plugin {
     ///         elements: None,
     ///         ocr_elements: None,
     ///         document: None,
+    ///         extracted_keywords: None,
+    ///         quality_score: None,
+    ///         processing_warnings: vec![],
     ///     })
     /// }
     /// # }
@@ -333,6 +339,9 @@ pub trait OcrBackend: Plugin {
 ///             elements: None,
 ///             ocr_elements: None,
 ///             document: None,
+///             extracted_keywords: None,
+///             quality_score: None,
+///             processing_warnings: vec![],
 ///         })
 ///     }
 ///     fn supports_language(&self, _: &str) -> bool { true }

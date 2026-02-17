@@ -52,6 +52,9 @@
 //! #             elements: None,
 //! #             ocr_elements: None,
 //! #             document: None,
+//! #             extracted_keywords: None,
+//! #             quality_score: None,
+//! #             processing_warnings: vec![],
 //! #         })
 //! #     }
 //! #     async fn extract_file(&self, _: &std::path::Path, _: &str, _: &kreuzberg::ExtractionConfig)
@@ -69,6 +72,9 @@
 //! #             elements: None,
 //! #             ocr_elements: None,
 //! #             document: None,
+//! #             extracted_keywords: None,
+//! #             quality_score: None,
+//! #             processing_warnings: vec![],
 //! #         })
 //! #     }
 //! #     fn supported_mime_types(&self) -> &[&str] { &[] }
@@ -135,6 +141,9 @@
 //!             elements: None,
 //!             ocr_elements: None,
 //!             document: None,
+//!             extracted_keywords: None,
+//!             quality_score: None,
+//!             processing_warnings: vec![],
 //!         })
 //!     }
 //!
