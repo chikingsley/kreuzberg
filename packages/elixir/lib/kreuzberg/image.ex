@@ -17,6 +17,7 @@ defmodule Kreuzberg.Image do
     * `:is_mask` - Whether this image is a mask image
     * `:description` - Optional description of the image
     * `:ocr_result` - Nested OCR extraction result map
+    * `:bounding_box` - Bounding box coordinates if available
   """
 
   @type t :: %__MODULE__{
@@ -30,7 +31,8 @@ defmodule Kreuzberg.Image do
           bits_per_component: non_neg_integer() | nil,
           is_mask: boolean(),
           description: String.t() | nil,
-          ocr_result: Kreuzberg.ExtractionResult.t() | nil
+          ocr_result: Kreuzberg.ExtractionResult.t() | nil,
+          bounding_box: map() | nil
         }
 
   defstruct [
@@ -41,6 +43,7 @@ defmodule Kreuzberg.Image do
     :bits_per_component,
     :description,
     :ocr_result,
+    :bounding_box,
     data: <<>>,
     format: "",
     image_index: 0,
@@ -96,7 +99,8 @@ defmodule Kreuzberg.Image do
       bits_per_component: data["bits_per_component"],
       is_mask: data["is_mask"] || false,
       description: data["description"],
-      ocr_result: normalize_ocr_result(data["ocr_result"])
+      ocr_result: normalize_ocr_result(data["ocr_result"]),
+      bounding_box: data["bounding_box"]
     }
   end
 
@@ -121,7 +125,8 @@ defmodule Kreuzberg.Image do
           nil -> nil
           %Kreuzberg.ExtractionResult{} = r -> Kreuzberg.ExtractionResult.to_map(r)
           other -> other
-        end
+        end,
+      "bounding_box" => image.bounding_box
     }
   end
 

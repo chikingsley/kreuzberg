@@ -440,7 +440,7 @@ fn parse_odt_table(table_node: roxmltree::Node, table_index: usize) -> Option<Ta
         cells,
         markdown,
         page_number: table_index + 1,
-        header: None,
+        bounding_box: None,
     })
 }
 

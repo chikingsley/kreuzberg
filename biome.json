@@ -1,12 +1,20 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.0/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**/*", "!crates/kreuzberg-tesseract/third_party", "!test_documents"]
+		"includes": [
+			"**/*",
+			"!crates/kreuzberg-tesseract/third_party",
+			"!test_documents",
+			"!**/artifacts",
+			"!**/dist",
+			"!**/pkg",
+			"!**/vendor"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -24,7 +32,11 @@
 		"rules": {
 			"recommended": true,
 			"suspicious": {
-				"noExplicitAny": "warn"
+				"noExplicitAny": "warn",
+				"noImplicitAnyLet": "warn"
+			},
+			"complexity": {
+				"useLiteralKeys": "off"
 			}
 		}
 	},
@@ -85,6 +97,26 @@
 		},
 		{
 			"includes": ["**/scripts/**/*.ts", "**/src/ocr/**/*.ts", "**/src/ocr/**/*.d.ts"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["docs/**/*.css"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noImportantStyles": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/src/utils/**/*.ts"],
 			"linter": {
 				"rules": {
 					"suspicious": {

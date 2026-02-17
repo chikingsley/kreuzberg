@@ -1,20 +1,15 @@
 {
-  "document": "../../../test_documents/pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf",
-  "file_type": "pdf",
-  "file_size": 2636899,
-  "expected_frameworks": [
-    "kreuzberg",
-    "docling",
-    "markitdown",
-    "unstructured"
-  ],
-  "metadata": {
-    "description": "Technical manual - 2.5MB machine learning course textbook",
-    "category": "pdf-technical",
-    "size_class": "large"
-  },
-  "ground_truth": {
-    "text_file": "../../../test_documents/ground_truth/pdf/pdf_technical_manual.txt",
-    "source": "pdftotext"
-  }
+	"document": "../../../test_documents/pdf/a_course_in_machine_learning_ciml_v0_9_all.pdf",
+	"file_type": "pdf",
+	"file_size": 2636899,
+	"expected_frameworks": ["kreuzberg", "docling", "markitdown", "unstructured"],
+	"metadata": {
+		"description": "Technical manual - 2.5MB machine learning course textbook",
+		"category": "pdf-technical",
+		"size_class": "large"
+	},
+	"ground_truth": {
+		"text_file": "../../../test_documents/ground_truth/pdf/pdf_technical_manual.txt",
+		"source": "pdftotext"
+	}
 }

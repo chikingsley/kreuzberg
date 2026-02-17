@@ -1,16 +1,16 @@
 {
-  "id": "office_bibtex_basic",
-  "category": "office",
-  "description": "BibTeX bibliography extraction.",
-  "document": {
-    "path": "bibtex/comprehensive.bib",
-    "media_type": "application/x-bibtex"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/x-bibtex", "text/x-bibtex"],
-    "min_content_length": 10
-  }
+	"id": "office_bibtex_basic",
+	"category": "office",
+	"description": "BibTeX bibliography extraction.",
+	"document": {
+		"path": "bibtex/comprehensive.bib",
+		"media_type": "application/x-bibtex"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/x-bibtex", "text/x-bibtex"],
+		"min_content_length": 10
+	}
 }

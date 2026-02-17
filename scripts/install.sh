@@ -67,9 +67,10 @@ detect_target() {
 get_latest_version() {
   need_cmd curl
 
-  local url="https://api.github.com/repos/${REPO}/releases/latest"
+  # List recent releases and pick the first tag starting with "v" (skip benchmark runs etc.)
+  local url="https://api.github.com/repos/${REPO}/releases?per_page=20"
   local tag
-  tag="$(curl -fsSL "$url" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/')"
+  tag="$(curl -fsSL "$url" | grep '"tag_name"' | sed 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/' | grep '^v' | head -1)"
 
   if [ -z "$tag" ]; then
     error "failed to fetch latest release tag from GitHub"
@@ -120,7 +121,6 @@ install() {
 
   info "Downloading ${url}"
 
-  local tmpdir
   tmpdir="$(mktemp -d)"
   trap 'rm -rf "$tmpdir"' EXIT
 

@@ -75,9 +75,14 @@ pub fn cluster_font_sizes(blocks: &[TextBlock], k: usize) -> Result<Vec<FontSize
     let actual_k = k.min(blocks.len());
 
     // Extract unique font sizes for initialization
-    let mut font_sizes: Vec<f32> = blocks.iter().map(|b| b.font_size).collect();
-    font_sizes.sort_by(|a, b| b.partial_cmp(a).expect("Failed to compare font sizes during sorting")); // Sort descending
-    font_sizes.dedup(); // Remove duplicates to get unique font sizes
+    let mut font_sizes: Vec<f32> = blocks
+        .iter()
+        .map(|b| b.font_size)
+        .filter(|fs| fs.is_finite()) // Filter out NaN/Inf from corrupt PDFs
+        .collect();
+    font_sizes.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal)); // Sort descending
+    // Tolerance-based dedup: merge font sizes within 0.05pt (float imprecision)
+    font_sizes.dedup_by(|a, b| (*a - *b).abs() < 0.05);
 
     // Initialize centroids using actual font sizes from the data
     // This is more robust than dividing the range uniformly
@@ -105,7 +110,7 @@ pub fn cluster_font_sizes(blocks: &[TextBlock], k: usize) -> Result<Vec<FontSize
             centroids.push(interpolated);
         }
 
-        centroids.sort_by(|a, b| b.partial_cmp(a).expect("Failed to compare centroids during sorting"));
+        centroids.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
         // Keep sorted descending
     }
 
@@ -154,13 +159,77 @@ pub fn cluster_font_sizes(blocks: &[TextBlock], k: usize) -> Result<Vec<FontSize
     }
 
     // Sort by centroid size in descending order (largest font = H1)
-    result.sort_by(|a, b| {
-        b.centroid
-            .partial_cmp(&a.centroid)
-            .expect("Failed to compare centroids during final sort")
-    });
+    result.sort_by(|a, b| b.centroid.partial_cmp(&a.centroid).unwrap_or(std::cmp::Ordering::Equal));
 
     Ok(result)
+}
+
+/// Assign heading levels using the "most frequent cluster = Body" rule.
+///
+/// Instead of naively mapping the largest font size to H1, this function
+/// identifies the cluster with the most members as body text. Only clusters
+/// with fewer members AND larger font size than body become headings.
+///
+/// # Arguments
+///
+/// * `clusters` - Slice of FontSizeCluster objects (sorted by centroid descending)
+///
+/// # Returns
+///
+/// Vector of tuples `(centroid, heading_level)` where `None` means body text
+/// and `Some(1..=6)` means H1-H6. Sorted by centroid descending.
+pub fn assign_heading_levels_smart(clusters: &[FontSizeCluster]) -> Vec<(f32, Option<u8>)> {
+    if clusters.is_empty() {
+        return Vec::new();
+    }
+
+    // Single cluster means everything is body
+    if clusters.len() == 1 {
+        return vec![(clusters[0].centroid, None)];
+    }
+
+    // Find the cluster with the most members (this is body text)
+    let body_idx = clusters
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, c)| c.members.len())
+        .map(|(i, _)| i)
+        .unwrap_or(0);
+
+    let body_centroid = clusters[body_idx].centroid;
+
+    // Collect heading candidates: clusters with larger font size than body AND fewer members
+    let mut heading_candidates: Vec<(usize, f32)> = clusters
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| *i != body_idx && c.centroid > body_centroid)
+        .map(|(i, c)| (i, c.centroid))
+        .collect();
+
+    // Sort heading candidates by centroid descending (largest = H1)
+    heading_candidates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Assign heading levels H1-H6 (max 6 heading levels)
+    let max_headings = 6usize;
+    let mut result: Vec<(f32, Option<u8>)> = Vec::with_capacity(clusters.len());
+
+    for (i, cluster) in clusters.iter().enumerate() {
+        if i == body_idx {
+            result.push((cluster.centroid, None));
+        } else if let Some(pos) = heading_candidates.iter().position(|(idx, _)| *idx == i) {
+            if pos < max_headings {
+                result.push((cluster.centroid, Some((pos + 1) as u8)));
+            } else {
+                // More than 6 heading levels, treat as body
+                result.push((cluster.centroid, None));
+            }
+        } else {
+            // Smaller font size than body, treat as body
+            result.push((cluster.centroid, None));
+        }
+    }
+
+    result
 }
 
 /// Helper function to assign blocks to their nearest centroid.

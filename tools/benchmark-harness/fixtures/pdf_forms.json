@@ -1,19 +1,17 @@
 {
-  "document": "../../../test_documents/pdf/code_and_formula.pdf",
-  "file_type": "pdf",
-  "file_size": 89031,
-  "expected_frameworks": [
-    "kreuzberg"
-  ],
-  "metadata": {
-    "description": "PDF with forms and formulas - 87KB document containing form fields and mathematical formulas to test extraction of structured content",
-    "category": "pdf-forms",
-    "size_class": "small",
-    "has_forms": true,
-    "special_handling": "form_fields"
-  },
-  "ground_truth": {
-    "text_file": "../../../test_documents/ground_truth/pdf/pdf_forms.txt",
-    "source": "pdftotext"
-  }
+	"document": "../../../test_documents/pdf/code_and_formula.pdf",
+	"file_type": "pdf",
+	"file_size": 89031,
+	"expected_frameworks": ["kreuzberg"],
+	"metadata": {
+		"description": "PDF with forms and formulas - 87KB document containing form fields and mathematical formulas to test extraction of structured content",
+		"category": "pdf-forms",
+		"size_class": "small",
+		"has_forms": true,
+		"special_handling": "form_fields"
+	},
+	"ground_truth": {
+		"text_file": "../../../test_documents/ground_truth/pdf/pdf_forms.txt",
+		"source": "pdftotext"
+	}
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
-import * as readline from "readline";
-import * as path from "path";
-import { extractFile, initWasm, ExtractionConfig } from "@kreuzberg/wasm";
+import * as readline from "node:readline";
+import * as path from "node:path";
+import { extractFile, initWasm, type ExtractionConfig } from "@kreuzberg/wasm";
 
 interface ExtractionOutput {
 	content: string;
@@ -112,9 +112,7 @@ async function extractAsync(filePath: string, ocrEnabled: boolean): Promise<Extr
 async function extractBatch(filePaths: string[], ocrEnabled: boolean): Promise<ExtractionOutput[]> {
 	const config = createConfig(ocrEnabled);
 	const start = performance.now();
-	const results = await Promise.all(
-		filePaths.map((fp) => extractFile(fp, guessMimeType(fp), config)),
-	);
+	const results = await Promise.all(filePaths.map((fp) => extractFile(fp, guessMimeType(fp), config)));
 	const totalDurationMs = performance.now() - start;
 
 	const perFileDurationMs = filePaths.length > 0 ? totalDurationMs / filePaths.length : 0;

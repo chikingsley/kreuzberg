@@ -71,7 +71,7 @@ mod tests {
             cells: vec![vec!["A".to_string(), "B".to_string()]],
             markdown: "| A | B |\n|---|---|\n".to_string(),
             page_number: 1,
-            header: None,
+            bounding_box: None,
         };
 
         let json = serde_json::to_value(&table).unwrap();
@@ -90,7 +90,7 @@ mod tests {
             ],
             markdown: "| X | Y |\n|---|---|\n| 1 | 2 |\n".to_string(),
             page_number: 5,
-            header: None,
+            bounding_box: None,
         };
 
         let json = serde_json::to_string(&original).unwrap();
@@ -107,7 +107,7 @@ mod tests {
             cells: vec![vec!["shared".to_string()]],
             markdown: "| shared |".to_string(),
             page_number: 1,
-            header: None,
+            bounding_box: None,
         });
 
         let tables_before = [Arc::clone(&shared_table), Arc::clone(&shared_table)].to_vec();
@@ -123,13 +123,13 @@ mod tests {
                 cells: vec![vec!["A".to_string()]],
                 markdown: "| A |".to_string(),
                 page_number: 1,
-                header: None,
+                bounding_box: None,
             },
             Table {
                 cells: vec![vec!["B".to_string()]],
                 markdown: "| B |".to_string(),
                 page_number: 2,
-                header: None,
+                bounding_box: None,
             },
         ];
 
@@ -152,13 +152,13 @@ mod tests {
                     cells: vec![vec!["Table1".to_string()]],
                     markdown: "| Table1 |".to_string(),
                     page_number: 3,
-                    header: None,
+                    bounding_box: None,
                 }),
                 Arc::new(Table {
                     cells: vec![vec!["Table2".to_string()]],
                     markdown: "| Table2 |".to_string(),
                     page_number: 3,
-                    header: None,
+                    bounding_box: None,
                 }),
             ],
             images: Vec::new(),
@@ -190,6 +190,7 @@ mod tests {
             is_mask: false,
             description: Some("Image 1".to_string()),
             ocr_result: None,
+            bounding_box: None,
         });
 
         let image2 = Arc::new(ExtractedImage {
@@ -204,6 +205,7 @@ mod tests {
             is_mask: false,
             description: Some("Image 2".to_string()),
             ocr_result: None,
+            bounding_box: None,
         });
 
         let page = PageContent {
@@ -231,7 +233,7 @@ mod tests {
             cells: vec![vec!["shared across pages".to_string()]],
             markdown: "| shared across pages |".to_string(),
             page_number: 0,
-            header: None,
+            bounding_box: None,
         });
 
         let page1 = PageContent {
@@ -288,18 +290,173 @@ mod tests {
             cells: vec![vec!["A".to_string()]],
             markdown: "| A |".to_string(),
             page_number: 1,
-            header: None,
+            bounding_box: None,
         };
 
         let table2 = Table {
             cells: vec![vec!["B".to_string()]],
             markdown: "| B |".to_string(),
             page_number: 2,
-            header: None,
+            bounding_box: None,
         };
 
         let json = serde_json::to_string(&vec![table1, table2]).unwrap();
         assert!(json.contains("\"A\""));
         assert!(json.contains("\"B\""));
+    }
+
+    #[test]
+    fn test_extracted_image_with_bounding_box_serialization() {
+        let image = ExtractedImage {
+            data: Bytes::from_static(&[0xFF, 0xD8]),
+            format: Cow::Borrowed("jpeg"),
+            image_index: 0,
+            page_number: Some(1),
+            width: Some(640),
+            height: Some(480),
+            colorspace: None,
+            bits_per_component: None,
+            is_mask: false,
+            description: None,
+            ocr_result: None,
+            bounding_box: Some(BoundingBox {
+                x0: 72.0,
+                y0: 200.0,
+                x1: 540.0,
+                y1: 600.0,
+            }),
+        };
+
+        let json = serde_json::to_string(&image).unwrap();
+        assert!(json.contains("\"bounding_box\""));
+        assert!(json.contains("\"x0\":72.0"));
+        assert!(json.contains("\"y0\":200.0"));
+        assert!(json.contains("\"x1\":540.0"));
+        assert!(json.contains("\"y1\":600.0"));
+
+        // Round-trip
+        let deserialized: ExtractedImage = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.image_index, 0);
+        assert!(deserialized.bounding_box.is_some());
+        let bbox = deserialized.bounding_box.unwrap();
+        assert_eq!(bbox.x0, 72.0);
+        assert_eq!(bbox.y0, 200.0);
+        assert_eq!(bbox.x1, 540.0);
+        assert_eq!(bbox.y1, 600.0);
+    }
+
+    #[test]
+    fn test_extracted_image_without_bounding_box_omitted_in_json() {
+        let image = ExtractedImage {
+            data: Bytes::from_static(&[0x89, 0x50]),
+            format: Cow::Borrowed("png"),
+            image_index: 0,
+            page_number: None,
+            width: None,
+            height: None,
+            colorspace: None,
+            bits_per_component: None,
+            is_mask: false,
+            description: None,
+            ocr_result: None,
+            bounding_box: None,
+        };
+
+        let json = serde_json::to_string(&image).unwrap();
+        assert!(!json.contains("bounding_box"));
+    }
+
+    #[test]
+    fn test_extracted_image_bounding_box_backward_compatibility() {
+        // Old JSON without bounding_box field should deserialize
+        let json = r#"{
+            "data": "Rm9v",
+            "format": "png",
+            "image_index": 5,
+            "page_number": 2,
+            "width": 100,
+            "height": 200,
+            "colorspace": null,
+            "bits_per_component": null,
+            "is_mask": false,
+            "description": null,
+            "ocr_result": null
+        }"#;
+
+        let image: ExtractedImage = serde_json::from_str(json).unwrap();
+        assert_eq!(image.image_index, 5);
+        assert_eq!(image.page_number, Some(2));
+        assert!(image.bounding_box.is_none());
+    }
+
+    #[test]
+    fn test_extracted_image_with_bounding_box_all_fields() {
+        let image = ExtractedImage {
+            data: Bytes::from_static(&[0xFF, 0xD8, 0xFF, 0xE0]),
+            format: Cow::Borrowed("jpeg"),
+            image_index: 3,
+            page_number: Some(5),
+            width: Some(1920),
+            height: Some(1080),
+            colorspace: Some("RGB".to_string()),
+            bits_per_component: Some(8),
+            is_mask: false,
+            description: Some("Test image".to_string()),
+            ocr_result: None,
+            bounding_box: Some(BoundingBox {
+                x0: 100.0,
+                y0: 150.0,
+                x1: 800.0,
+                y1: 950.0,
+            }),
+        };
+
+        let json_value = serde_json::to_value(&image).unwrap();
+        let deserialized: ExtractedImage = serde_json::from_value(json_value).unwrap();
+
+        assert_eq!(deserialized.image_index, 3);
+        assert_eq!(deserialized.page_number, Some(5));
+        assert_eq!(deserialized.width, Some(1920));
+        assert_eq!(deserialized.height, Some(1080));
+        assert_eq!(deserialized.colorspace, Some("RGB".to_string()));
+        assert_eq!(deserialized.bits_per_component, Some(8));
+        assert_eq!(deserialized.description, Some("Test image".to_string()));
+        assert!(deserialized.bounding_box.is_some());
+        let bbox = deserialized.bounding_box.unwrap();
+        assert_eq!(bbox.x0, 100.0);
+        assert_eq!(bbox.y0, 150.0);
+        assert_eq!(bbox.x1, 800.0);
+        assert_eq!(bbox.y1, 950.0);
+    }
+
+    #[test]
+    fn test_extracted_image_bounding_box_clone() {
+        let image = ExtractedImage {
+            data: Bytes::from_static(&[0xFF, 0xD8]),
+            format: Cow::Borrowed("jpeg"),
+            image_index: 1,
+            page_number: Some(1),
+            width: Some(640),
+            height: Some(480),
+            colorspace: None,
+            bits_per_component: None,
+            is_mask: false,
+            description: None,
+            ocr_result: None,
+            bounding_box: Some(BoundingBox {
+                x0: 10.0,
+                y0: 20.0,
+                x1: 100.0,
+                y1: 200.0,
+            }),
+        };
+
+        let cloned = image.clone();
+        assert_eq!(cloned.image_index, image.image_index);
+        assert_eq!(cloned.bounding_box, image.bounding_box);
+
+        // Debug should work
+        let debug = format!("{:?}", image);
+        assert!(debug.contains("bounding_box"));
     }
 }

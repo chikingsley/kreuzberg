@@ -37,6 +37,8 @@ use super::validation::validate_utf8_boundaries;
 ///     overlap: 50,
 ///     trim: true,
 ///     chunker_type: ChunkerType::Text,
+///     embedding: None,
+///     preset: None,
 /// };
 /// let result = chunk_text("Long text...", &config, None)?;
 /// assert!(!result.chunks.is_empty());

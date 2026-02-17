@@ -557,6 +557,17 @@ export interface ExtractedKeyword {
 }
 
 /**
+ * Warning from a post-processor during extraction.
+ */
+export interface ProcessingWarning {
+	/** Name of the post-processor that produced the warning */
+	source: string;
+
+	/** Warning message */
+	message: string;
+}
+
+/**
  * Page tracking and extraction configuration.
  *
  * Controls how pages/slides/sheets are extracted and tracked in the document.
@@ -657,6 +668,9 @@ export interface Table {
 
 	/** Page number where this table was found (1-indexed) */
 	pageNumber: number;
+
+	/** Bounding box of the table on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 export interface ExcelMetadata {
@@ -945,6 +959,9 @@ export interface ExtractedImage {
 
 	/** OCR extraction result if OCR was run on this image, null otherwise */
 	ocrResult?: ExtractionResult | null;
+
+	/** Bounding box of the image on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 /**
@@ -1167,8 +1184,14 @@ export interface ExtractionResult {
 	/** Per-page content when page extraction is enabled, null otherwise. Each item contains page number, content, tables, and images. */
 	pages?: PageContent[] | null;
 
-	/** Extracted keywords when keyword extraction is enabled, null otherwise */
-	keywords?: ExtractedKeyword[] | null;
+	/** Extracted keywords when keyword extraction is enabled, undefined otherwise */
+	extractedKeywords?: ExtractedKeyword[];
+
+	/** Quality score when quality processing is enabled, undefined otherwise */
+	qualityScore?: number;
+
+	/** Processing warnings from post-processors */
+	processingWarnings?: ProcessingWarning[];
 
 	/** Granular OCR elements (words, lines, blocks) when OCR element extraction is enabled, null otherwise */
 	ocrElements?: OcrElement[] | null;

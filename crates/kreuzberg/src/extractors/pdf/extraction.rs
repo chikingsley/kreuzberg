@@ -3,7 +3,7 @@
 //! Handles document loading, text extraction, metadata parsing, and table detection.
 
 use crate::Result;
-use crate::core::config::ExtractionConfig;
+use crate::core::config::{ExtractionConfig, OutputFormat};
 use crate::types::{PageBoundary, PageContent};
 
 #[cfg(feature = "pdf")]
@@ -18,6 +18,7 @@ pub(crate) type PdfExtractionPhaseResult = (
     Vec<Table>,
     Option<Vec<PageContent>>,
     Option<Vec<PageBoundary>>,
+    Option<String>, // pre-rendered markdown (when output_format == Markdown)
 );
 
 /// Extract text, metadata, and tables from a PDF document using a single shared instance.
@@ -43,6 +44,7 @@ pub(crate) type PdfExtractionPhaseResult = (
 /// - Extracted tables (if OCR feature enabled)
 /// - Per-page content (if page extraction configured)
 /// - Page boundaries for per-page OCR evaluation
+/// - Pre-rendered markdown (if output_format == Markdown, None otherwise)
 #[cfg(feature = "pdf")]
 pub(crate) fn extract_all_from_document(
     document: &PdfDocument,
@@ -51,9 +53,41 @@ pub(crate) fn extract_all_from_document(
     let (native_text, boundaries, page_contents, pdf_metadata) =
         crate::pdf::text::extract_text_and_metadata_from_pdf_document(document, Some(config))?;
 
-    let tables = extract_tables_from_document(document, &pdf_metadata, config)?;
+    let tables = extract_tables_from_document(document, &pdf_metadata)?;
 
-    Ok((pdf_metadata, native_text, tables, page_contents, boundaries))
+    // If markdown output is requested, render it while we have the document loaded.
+    // Skip when force_ocr is set since OCR results produce their own markdown via hOCR.
+    let pre_rendered_markdown = if config.output_format == OutputFormat::Markdown && !config.force_ocr {
+        let k = config
+            .pdf_options
+            .as_ref()
+            .and_then(|opts| opts.hierarchy.as_ref())
+            .map(|h| h.k_clusters)
+            .unwrap_or(4);
+
+        match crate::pdf::markdown::render_document_as_markdown_with_tables(document, k, &tables) {
+            Ok(md) if !md.trim().is_empty() => Some(md),
+            Ok(_) => {
+                tracing::warn!("Markdown rendering produced empty output, will fall back to plain text");
+                None
+            }
+            Err(e) => {
+                tracing::warn!("Markdown rendering failed: {:?}, will fall back to plain text", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    Ok((
+        pdf_metadata,
+        native_text,
+        tables,
+        page_contents,
+        boundaries,
+        pre_rendered_markdown,
+    ))
 }
 
 /// Extract tables from PDF document using native text positions.
@@ -66,146 +100,76 @@ pub(crate) fn extract_all_from_document(
 fn extract_tables_from_document(
     document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
-    config: &ExtractionConfig,
 ) -> Result<Vec<Table>> {
     use crate::ocr::table::{reconstruct_table, table_to_markdown};
     use crate::pdf::table::extract_words_from_page;
-    use crate::pdf::table_finder::{self, extract_table_text_styled};
-    use crate::types::TableHeader;
 
-    let settings = config
-        .pdf_options
-        .as_ref()
-        .and_then(|p| p.table_detection.as_ref())
-        .map(|tc| tc.to_table_settings())
-        .unwrap_or_default();
     let mut all_tables = Vec::new();
 
     for (page_index, page) in document.pages().iter().enumerate() {
-        let page_number = page_index + 1;
+        let words = extract_words_from_page(&page, 0.0)?;
 
-        // Try line-based detection first
-        match table_finder::find_tables(&page, &settings, None, None) {
-            Ok(result) if !result.tables.is_empty() => {
-                let page_height = page.height().value as f64;
-                for detected_table in &result.tables {
-                    match extract_table_text_styled(detected_table, &page, page_height, Some(&settings)) {
-                        Ok(styled_rows) => {
-                            if !styled_rows.is_empty() {
-                                let plain_cells: Vec<Vec<String>> = styled_rows
-                                    .iter()
-                                    .map(|row| row.iter().map(|c| c.plain.clone()).collect())
-                                    .collect();
-
-                                let markdown = styled_cells_to_markdown(&styled_rows);
-                                let header = detect_header(&styled_rows);
-
-                                all_tables.push(Table {
-                                    cells: plain_cells,
-                                    markdown,
-                                    page_number,
-                                    header,
-                                });
-                            }
-                        }
-                        Err(e) => {
-                            tracing::debug!("Line-based table text extraction failed on page {}: {}", page_number, e);
-                        }
-                    }
-                }
-            }
-            Ok(_) | Err(_) => {
-                // Fallback: spatial clustering (existing approach)
-                let words = match extract_words_from_page(&page, 0.0) {
-                    Ok(w) => w,
-                    Err(_) => continue,
-                };
-
-                if words.is_empty() {
-                    continue;
-                }
-
-                let column_threshold = 50;
-                let row_threshold_ratio = 0.5;
-
-                let table_cells = reconstruct_table(&words, column_threshold, row_threshold_ratio);
-
-                if !table_cells.is_empty() {
-                    let markdown = table_to_markdown(&table_cells);
-
-                    let header = Some(TableHeader {
-                        names: table_cells[0].clone(),
-                        external: false,
-                        row_index: 0,
-                    });
-
-                    all_tables.push(Table {
-                        cells: table_cells,
-                        markdown,
-                        page_number,
-                        header,
-                    });
-                }
-            }
+        if words.is_empty() {
+            continue;
         }
+
+        let column_threshold = 50;
+        let row_threshold_ratio = 0.5;
+
+        let table_cells = reconstruct_table(&words, column_threshold, row_threshold_ratio);
+
+        // Validate table: reject false positives.
+        // A real table must have at least 2 rows AND 2 columns.
+        // Single-column or single-row "tables" are almost always regular text lines.
+        let min_rows = 2;
+        let min_cols = table_cells.iter().map(|r| r.len()).min().unwrap_or(0);
+        if table_cells.len() < min_rows || min_cols < 2 {
+            continue;
+        }
+
+        let markdown = table_to_markdown(&table_cells);
+
+        // Compute table bounding box from word positions.
+        // Note: The table detector (reconstruct_table) treats ALL words on the page as
+        // potential table content, so the bbox covers all page words. This is correct:
+        // if the page passes the 2x2 validation, the entire page IS the table.
+        // For pages with mixed content (table + body text), the detector would either
+        // reject the page (not 2x2) or include everything (the full page is tabular).
+        let page_height = page.height().value as f64;
+
+        // HocrWord coordinates are in image space (y=0 at top, from table.rs:finalize_word).
+        // Convert back to PDF coordinates (y=0 at bottom) for the BoundingBox.
+        let img_left = words.iter().map(|w| w.left as f64).fold(f64::INFINITY, f64::min);
+        let img_top = words.iter().map(|w| w.top as f64).fold(f64::INFINITY, f64::min);
+        let img_right = words
+            .iter()
+            .map(|w| (w.left + w.width) as f64)
+            .fold(f64::NEG_INFINITY, f64::max);
+        let img_bottom = words
+            .iter()
+            .map(|w| (w.top + w.height) as f64)
+            .fold(f64::NEG_INFINITY, f64::max);
+
+        let bounding_box = if img_left.is_finite() {
+            Some(crate::types::BoundingBox {
+                x0: img_left,
+                y0: page_height - img_bottom, // bottom in PDF coords
+                x1: img_right,
+                y1: page_height - img_top, // top in PDF coords
+            })
+        } else {
+            None
+        };
+
+        all_tables.push(Table {
+            cells: table_cells,
+            markdown,
+            page_number: page_index + 1,
+            bounding_box,
+        });
     }
 
     Ok(all_tables)
-}
-
-/// Detect the table header from styled cell data.
-///
-/// Uses bold text detection: if the first row has bold text and subsequent
-/// rows don't, the first row is confidently identified as a header.
-/// Falls back to assuming first row is header (common convention).
-#[cfg(all(feature = "pdf", feature = "ocr"))]
-fn detect_header(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> Option<crate::types::TableHeader> {
-    if styled_rows.is_empty() {
-        return None;
-    }
-
-    let first_row = &styled_rows[0];
-    let names: Vec<String> = first_row.iter().map(|c| c.plain.clone()).collect();
-
-    Some(crate::types::TableHeader {
-        names,
-        external: false,
-        row_index: 0,
-    })
-}
-
-/// Convert styled 2D cell data to markdown table format with inline formatting.
-#[cfg(all(feature = "pdf", feature = "ocr"))]
-fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledCellText>]) -> String {
-    if styled_rows.is_empty() {
-        return String::new();
-    }
-
-    let mut md = String::new();
-
-    for (row_idx, row) in styled_rows.iter().enumerate() {
-        md.push('|');
-        for cell in row {
-            md.push(' ');
-            if cell.styled.is_empty() {
-                md.push_str(&cell.plain);
-            } else {
-                md.push_str(&cell.styled);
-            }
-            md.push_str(" |");
-        }
-        md.push('\n');
-
-        if row_idx == 0 {
-            md.push('|');
-            for _ in row {
-                md.push_str(" --- |");
-            }
-            md.push('\n');
-        }
-    }
-
-    md
 }
 
 /// Fallback for when OCR feature is not enabled - returns empty tables.
@@ -213,7 +177,107 @@ fn styled_cells_to_markdown(styled_rows: &[Vec<crate::pdf::table_finder::StyledC
 fn extract_tables_from_document(
     _document: &PdfDocument,
     _metadata: &crate::pdf::metadata::PdfExtractionMetadata,
-    _config: &ExtractionConfig,
 ) -> Result<Vec<crate::types::Table>> {
     Ok(vec![])
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_bounding_box_coordinate_conversion() {
+        // Test the bounding box computation logic independently
+        // Simulate words at known positions and verify the resulting bbox
+        let page_height = 800.0_f64;
+
+        // Simulated word positions in image coordinates (y=0 at top)
+        // Word 1: left=50, top=100, width=200, height=20
+        // Word 2: left=50, top=130, width=250, height=20
+        let img_left = 50.0_f64;
+        let img_top = 100.0_f64;
+        let img_right = 300.0_f64; // max(50+200, 50+250)
+        let img_bottom = 150.0_f64; // max(100+20, 130+20)
+
+        let bbox = crate::types::BoundingBox {
+            x0: img_left,
+            y0: page_height - img_bottom, // 800 - 150 = 650
+            x1: img_right,
+            y1: page_height - img_top, // 800 - 100 = 700
+        };
+
+        assert_eq!(bbox.x0, 50.0);
+        assert_eq!(bbox.y0, 650.0); // bottom in PDF coords
+        assert_eq!(bbox.x1, 300.0);
+        assert_eq!(bbox.y1, 700.0); // top in PDF coords
+        // y1 > y0 confirms the table is above the bottom
+        assert!(bbox.y1 > bbox.y0);
+    }
+
+    #[test]
+    fn test_bounding_box_coordinate_conversion_different_scales() {
+        // Test with different page height and word positions
+        let page_height = 1000.0_f64;
+
+        // Words spanning from top=50 to bottom=400
+        let img_left = 100.0_f64;
+        let img_top = 50.0_f64;
+        let img_right = 600.0_f64;
+        let img_bottom = 400.0_f64;
+
+        let bbox = crate::types::BoundingBox {
+            x0: img_left,
+            y0: page_height - img_bottom, // 1000 - 400 = 600
+            x1: img_right,
+            y1: page_height - img_top, // 1000 - 50 = 950
+        };
+
+        assert_eq!(bbox.x0, 100.0);
+        assert_eq!(bbox.y0, 600.0);
+        assert_eq!(bbox.x1, 600.0);
+        assert_eq!(bbox.y1, 950.0);
+        // Height of table: 950 - 600 = 350 pixels
+        assert_eq!(bbox.y1 - bbox.y0, 350.0);
+    }
+
+    #[test]
+    fn test_bounding_box_coordinate_conversion_preserves_width() {
+        // Width should be preserved during coordinate transformation
+        let page_height = 595.0_f64; // Standard letter page height
+
+        let img_left = 72.0_f64;
+        let img_right = 522.0_f64; // width = 450
+        let img_top = 36.0_f64;
+        let img_bottom = 300.0_f64; // height = 264
+
+        let bbox = crate::types::BoundingBox {
+            x0: img_left,
+            y0: page_height - img_bottom,
+            x1: img_right,
+            y1: page_height - img_top,
+        };
+
+        let expected_width = img_right - img_left;
+        let actual_width = bbox.x1 - bbox.x0;
+        assert_eq!(actual_width, expected_width);
+        assert_eq!(actual_width, 450.0);
+    }
+
+    #[test]
+    fn test_bounding_box_serialization_round_trip() {
+        let original = crate::types::BoundingBox {
+            x0: 10.5,
+            y0: 20.25,
+            x1: 100.75,
+            y1: 200.5,
+        };
+
+        let json = serde_json::to_string(&original).unwrap();
+        let deserialized: crate::types::BoundingBox = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(original, deserialized);
+        assert_eq!(deserialized.x0, 10.5);
+        assert_eq!(deserialized.y0, 20.25);
+        assert_eq!(deserialized.x1, 100.75);
+        assert_eq!(deserialized.y1, 200.5);
+    }
 }

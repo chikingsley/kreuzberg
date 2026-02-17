@@ -37,19 +37,11 @@ export class VitestAdapter implements AssertionAdapter {
 		this.expect(value, message).not.toBeUndefined();
 	}
 
-	assertGreaterThanOrEqual(
-		actual: number,
-		minimum: number,
-		message?: string,
-	): void {
+	assertGreaterThanOrEqual(actual: number, minimum: number, message?: string): void {
 		this.expect(actual, message).toBeGreaterThanOrEqual(minimum);
 	}
 
-	assertLessThanOrEqual(
-		actual: number,
-		maximum: number,
-		message?: string,
-	): void {
+	assertLessThanOrEqual(actual: number, maximum: number, message?: string): void {
 		this.expect(actual, message).toBeLessThanOrEqual(maximum);
 	}
 

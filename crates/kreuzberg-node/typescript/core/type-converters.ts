@@ -312,6 +312,24 @@ function convertResult(rawResult: unknown): ExtractionResult {
 		returnObj.ocrElements = ocrElementsData as import("../types.js").OcrElement[];
 	}
 
+	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+	const extractedKeywordsData = result["extractedKeywords"];
+	if (Array.isArray(extractedKeywordsData)) {
+		returnObj.extractedKeywords = extractedKeywordsData as import("../types.js").ExtractedKeyword[];
+	}
+
+	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+	const qualityScoreData = result["qualityScore"];
+	if (typeof qualityScoreData === "number") {
+		returnObj.qualityScore = qualityScoreData;
+	}
+
+	// biome-ignore lint/complexity/useLiteralKeys: required for strict TypeScript noPropertyAccessFromIndexSignature
+	const processingWarningsData = result["processingWarnings"];
+	if (Array.isArray(processingWarningsData)) {
+		returnObj.processingWarnings = processingWarningsData as Array<{ source: string; message: string }>;
+	}
+
 	return returnObj;
 }
 

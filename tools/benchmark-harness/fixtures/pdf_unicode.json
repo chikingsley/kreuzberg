@@ -1,19 +1,17 @@
 {
-  "document": "../../../test_documents/pdf/non_ascii_text.pdf",
-  "file_type": "pdf",
-  "file_size": 1799461,
-  "expected_frameworks": [
-    "kreuzberg"
-  ],
-  "metadata": {
-    "description": "Non-ASCII Unicode text document - 1.7MB PDF with extensive non-ASCII characters and multiple scripts to test unicode and encoding handling",
-    "category": "pdf-unicode",
-    "size_class": "large",
-    "language": "multi-unicode",
-    "special_handling": "unicode_encoding"
-  },
-  "ground_truth": {
-    "text_file": "../../../test_documents/ground_truth/pdf/pdf_unicode.txt",
-    "source": "pdftotext"
-  }
+	"document": "../../../test_documents/pdf/non_ascii_text.pdf",
+	"file_type": "pdf",
+	"file_size": 1799461,
+	"expected_frameworks": ["kreuzberg"],
+	"metadata": {
+		"description": "Non-ASCII Unicode text document - 1.7MB PDF with extensive non-ASCII characters and multiple scripts to test unicode and encoding handling",
+		"category": "pdf-unicode",
+		"size_class": "large",
+		"language": "multi-unicode",
+		"special_handling": "unicode_encoding"
+	},
+	"ground_truth": {
+		"text_file": "../../../test_documents/ground_truth/pdf/pdf_unicode.txt",
+		"source": "pdftotext"
+	}
 }

@@ -386,7 +386,7 @@ fn convert_docx_table_to_table(docx_table: &crate::extraction::docx::parser::Tab
         cells,
         markdown,
         page_number: table_index + 1,
-        header: None,
+        bounding_box: None,
     }
 }
 
@@ -673,6 +673,7 @@ impl DocumentExtractor for DocxExtractor {
                                 is_mask: false,
                                 description,
                                 ocr_result: None,
+                                bounding_box: None,
                             });
                         }
                     }

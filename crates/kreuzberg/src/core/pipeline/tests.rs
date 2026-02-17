@@ -40,7 +40,13 @@ async fn test_run_pipeline_basic() {
         Cow::Borrowed(VALIDATION_MARKER_KEY),
         serde_json::json!(ORDER_VALIDATION_MARKER),
     );
-    let config = ExtractionConfig::default();
+    let config = ExtractionConfig {
+        postprocessor: Some(crate::core::config::PostProcessorConfig {
+            enabled: false,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
 
     let processed = run_pipeline(result, &config).await.unwrap();
     assert_eq!(processed.content, "test");
@@ -98,6 +104,10 @@ async fn test_pipeline_without_quality_processing() {
     };
     let config = ExtractionConfig {
         enable_quality_processing: false,
+        postprocessor: Some(crate::core::config::PostProcessorConfig {
+            enabled: false,
+            ..Default::default()
+        }),
         ..Default::default()
     };
 
@@ -166,6 +176,10 @@ async fn test_pipeline_without_chunking() {
     };
     let config = ExtractionConfig {
         chunking: None,
+        postprocessor: Some(crate::core::config::PostProcessorConfig {
+            enabled: false,
+            ..Default::default()
+        }),
         ..Default::default()
     };
 
@@ -201,7 +215,13 @@ async fn test_pipeline_preserves_metadata() {
         quality_score: None,
         processing_warnings: Vec::new(),
     };
-    let config = ExtractionConfig::default();
+    let config = ExtractionConfig {
+        postprocessor: Some(crate::core::config::PostProcessorConfig {
+            enabled: false,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
 
     let processed = run_pipeline(result, &config).await.unwrap();
     assert_eq!(
@@ -222,7 +242,7 @@ async fn test_pipeline_preserves_tables() {
         cells: vec![vec!["A".to_string(), "B".to_string()]],
         markdown: "| A | B |".to_string(),
         page_number: 0,
-        header: None,
+        bounding_box: None,
     };
 
     let result = ExtractionResult {
@@ -243,7 +263,13 @@ async fn test_pipeline_preserves_tables() {
         quality_score: None,
         processing_warnings: Vec::new(),
     };
-    let config = ExtractionConfig::default();
+    let config = ExtractionConfig {
+        postprocessor: Some(crate::core::config::PostProcessorConfig {
+            enabled: false,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
 
     let processed = run_pipeline(result, &config).await.unwrap();
     assert_eq!(processed.tables.len(), 1);

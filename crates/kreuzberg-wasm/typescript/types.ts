@@ -585,6 +585,8 @@ export interface Table {
 	headers?: string[];
 	/** Table rows */
 	rows?: string[][];
+	/** Bounding box of the table on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 /**
@@ -647,6 +649,8 @@ export interface ExtractedImage {
 	description?: string | null;
 	/** Optional OCR result from the image */
 	ocrResult?: ExtractionResult | string | null;
+	/** Bounding box of the image on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 /**

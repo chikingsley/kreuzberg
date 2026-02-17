@@ -404,18 +404,7 @@ describe("ExtractionResult Structure and Metadata", () => {
 
 			// format_type discriminates between metadata types
 			if (metadata.format_type !== undefined && metadata.format_type !== null) {
-				const validTypes = [
-					"pdf",
-					"excel",
-					"email",
-					"pptx",
-					"archive",
-					"image",
-					"xml",
-					"text",
-					"html",
-					"ocr",
-				];
+				const validTypes = ["pdf", "excel", "email", "pptx", "archive", "image", "xml", "text", "html", "ocr"];
 				expect(validTypes).toContain(metadata.format_type);
 			}
 		});
@@ -497,10 +486,7 @@ describe("ExtractionResult Structure and Metadata", () => {
 			const config = { pages: { extractPages: true } };
 			const result = extractBytesSync(testBuffer, "text/plain", config);
 
-			if (
-				result.metadata.page_structure?.pages !== undefined &&
-				result.metadata.page_structure?.pages !== null
-			) {
+			if (result.metadata.page_structure?.pages !== undefined && result.metadata.page_structure?.pages !== null) {
 				const pages = result.metadata.page_structure.pages;
 				expect(Array.isArray(pages)).toBe(true);
 

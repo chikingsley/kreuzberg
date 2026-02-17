@@ -25,10 +25,7 @@ export const KREUZBERG_WORKSPACE_LOCATOR: WorkspaceLocator = {
 /**
  * Finds the workspace root by searching for a marker file/directory
  */
-export function findWorkspaceRoot(
-	locator: WorkspaceLocator,
-	startDir: string = process.cwd(),
-): string {
+export function findWorkspaceRoot(locator: WorkspaceLocator, startDir: string = process.cwd()): string {
 	const { marker, maxDepth = 5 } = locator;
 	let currentDir = resolve(startDir);
 
@@ -60,10 +57,7 @@ export function findWorkspaceRoot(
 /**
  * Resolves a document path relative to the workspace test_documents directory
  */
-export function resolveDocument(
-	relativePath: string,
-	workspaceRoot?: string,
-): string {
+export function resolveDocument(relativePath: string, workspaceRoot?: string): string {
 	const root = workspaceRoot ?? findWorkspaceRoot(KREUZBERG_WORKSPACE_LOCATOR);
 	return join(root, "test_documents", relativePath);
 }

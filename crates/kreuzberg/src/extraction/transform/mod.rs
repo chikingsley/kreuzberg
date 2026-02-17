@@ -374,7 +374,7 @@ mod tests {
             ],
             markdown: "| Header1 | Header2 |\n| Cell1 | Cell2 |".to_string(),
             page_number: 1,
-            header: None,
+            bounding_box: None,
         };
 
         let image = ExtractedImage {
@@ -389,6 +389,7 @@ mod tests {
             is_mask: false,
             description: None,
             ocr_result: None,
+            bounding_box: None,
         };
 
         let result = ExtractionResult {

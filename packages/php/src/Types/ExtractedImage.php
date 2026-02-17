@@ -18,6 +18,7 @@ namespace Kreuzberg\Types;
  * @property-read bool $isMask Whether image is a mask
  * @property-read string|null $description Image description/alt text
  * @property-read ExtractionResult|null $ocrResult OCR result if OCR was performed on this image
+ * @property-read BoundingBox|null $boundingBox Bounding box coordinates if available
  */
 readonly class ExtractedImage
 {
@@ -33,6 +34,7 @@ readonly class ExtractedImage
         public bool $isMask = false,
         public ?string $description = null,
         public ?ExtractionResult $ocrResult = null,
+        public ?BoundingBox $boundingBox = null,
     ) {
     }
 
@@ -78,6 +80,13 @@ readonly class ExtractedImage
             $ocrResult = ExtractionResult::fromArray($ocrResultData);
         }
 
+        $boundingBox = null;
+        if (isset($data['bounding_box'])) {
+            /** @var array<string, mixed> $boundingBoxData */
+            $boundingBoxData = $data['bounding_box'];
+            $boundingBox = BoundingBox::fromArray($boundingBoxData);
+        }
+
         return new self(
             data: $imageData,
             format: $format,
@@ -90,6 +99,7 @@ readonly class ExtractedImage
             isMask: $isMask,
             description: $description,
             ocrResult: $ocrResult,
+            boundingBox: $boundingBox,
         );
     }
 }

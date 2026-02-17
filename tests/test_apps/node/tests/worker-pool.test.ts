@@ -9,10 +9,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-	type ExtractionResult,
-	extractFileSync,
-} from "@kreuzberg/node";
+import { type ExtractionResult, extractFileSync } from "@kreuzberg/node";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 /**
@@ -23,7 +20,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
  * as placeholders for when worker pool functionality is exposed.
  */
 describe("Worker Pool APIs", () => {
-	let testFiles: string[] = [];
+	const testFiles: string[] = [];
 
 	beforeAll(() => {
 		for (let i = 0; i < 5; i++) {

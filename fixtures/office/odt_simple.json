@@ -1,17 +1,17 @@
 {
-  "id": "office_odt_simple",
-  "category": "office",
-  "description": "Basic ODT document with paragraphs and headings.",
-  "document": {
-    "path": "odt/simple.odt",
-    "media_type": "application/vnd.oasis.opendocument.text"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "application/vnd.oasis.opendocument.text",
-    "min_content_length": 50,
-    "content_contains_any": ["favorite things", "Parrots", "Analysis"]
-  }
+	"id": "office_odt_simple",
+	"category": "office",
+	"description": "Basic ODT document with paragraphs and headings.",
+	"document": {
+		"path": "odt/simple.odt",
+		"media_type": "application/vnd.oasis.opendocument.text"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "application/vnd.oasis.opendocument.text",
+		"min_content_length": 50,
+		"content_contains_any": ["favorite things", "Parrots", "Analysis"]
+	}
 }

@@ -157,6 +157,7 @@ fn extract_pptx_from_container<R: std::io::Read + std::io::Seek>(
                     is_mask: false,
                     description: None,
                     ocr_result: None,
+                    bounding_box: None,
                 });
             }
         }

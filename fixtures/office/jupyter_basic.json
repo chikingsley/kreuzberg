@@ -1,16 +1,16 @@
 {
-  "id": "office_jupyter_basic",
-  "category": "office",
-  "description": "Jupyter notebook extraction.",
-  "document": {
-    "path": "jupyter/rank.ipynb",
-    "media_type": "application/x-ipynb+json"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "application/x-ipynb+json",
-    "min_content_length": 10
-  }
+	"id": "office_jupyter_basic",
+	"category": "office",
+	"description": "Jupyter notebook extraction.",
+	"document": {
+		"path": "jupyter/rank.ipynb",
+		"media_type": "application/x-ipynb+json"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "application/x-ipynb+json",
+		"min_content_length": 10
+	}
 }

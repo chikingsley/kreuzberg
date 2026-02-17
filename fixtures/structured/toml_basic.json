@@ -1,16 +1,16 @@
 {
-  "id": "structured_toml_basic",
-  "category": "structured",
-  "description": "TOML configuration file extraction.",
-  "document": {
-    "path": "data_formats/cargo.toml",
-    "media_type": "application/toml"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/toml", "text/toml"],
-    "min_content_length": 10
-  }
+	"id": "structured_toml_basic",
+	"category": "structured",
+	"description": "TOML configuration file extraction.",
+	"document": {
+		"path": "data_formats/cargo.toml",
+		"media_type": "application/toml"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/toml", "text/toml"],
+		"min_content_length": 10
+	}
 }

@@ -1098,12 +1098,13 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux
+            ruby_platform: x86_64-linux
           - os: ubuntu-24.04-arm
             label: linux-arm64
+            ruby_platform: aarch64-linux
           - os: macos-latest
             label: macos-arm64
-          - os: windows-latest
-            label: windows-x64
+            ruby_platform: arm64-darwin
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     env:
@@ -1131,15 +1132,21 @@ jobs:
       - name: Install system dependencies
         uses: ./.github/actions/install-system-deps
 
-      - name: Install MSYS2 toolchain
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ridk exec pacman -S --needed --noconfirm base-devel mingw-w64-ucrt-x86_64-toolchain
+      - name: Setup OpenSSL
+        uses: ./.github/actions/setup-openssl
 
-      - name: Install Rust (GNU on Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: rustup toolchain install stable-gnu --profile minimal --no-self-update
+      - name: Setup Tesseract cache
+        id: tesseract-cache
+        uses: ./.github/actions/setup-tesseract-cache
+        with:
+          label: ${{ matrix.label }}
+          enable-cache: "true"
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          cache-key-prefix: publish-ruby-${{ matrix.label }}
+          use-sccache: true
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -1151,16 +1158,6 @@ jobs:
       - name: Install Bundler
         shell: bash
         run: (gem install bundler -v 4.0.0 --no-document || gem install bundler --no-document) && bundler --version
-
-      - name: Configure short paths for Windows MAX_PATH mitigation
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/publish/ruby/windows-configure-short-paths.ps1
-
-      - name: Configure bindgen compatibility headers (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/publish/ruby/windows-configure-bindgen-headers.ps1
 
       - name: Cache Pdfium binaries
         uses: ./.github/actions/cache-pdfium
@@ -1180,115 +1177,79 @@ jobs:
             packages/ruby
             packages/ruby/lib
 
-      - name: Download ONNX Runtime (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/publish/ruby/windows-download-onnx-runtime.ps1
+      - name: Setup ONNX Runtime
+        uses: ./.github/actions/setup-onnx-runtime
+        with:
+          ort-version: ${{ env.ORT_VERSION }}
+          dest-dir: target/release
 
-      - name: Install Ruby dependencies (Unix)
-        if: runner.os != 'Windows'
+      - name: Install Ruby dependencies
         run: scripts/ci/ruby/install-ruby-deps.sh packages/ruby
-
-      - name: Install Ruby dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: $workspace = ridk exec bash -lc "cygpath -au '$env:GITHUB_WORKSPACE'"; ridk exec bash -lc "cd $workspace && bash scripts/ci/ruby/install-ruby-deps.sh packages/ruby"
 
       - name: Install Task
         uses: ./.github/actions/install-task
 
-      - name: Build kreuzberg-ffi (Unix)
-        if: runner.os != 'Windows'
-        run: task rust:ffi:build
-
-      - name: Build kreuzberg-ffi (Windows)
-        if: runner.os == 'Windows'
+      - name: Build kreuzberg-ffi
         run: task rust:ffi:build
 
       - name: Vendor kreuzberg core crate
         shell: bash
         run: python3 scripts/ci/ruby/vendor-kreuzberg-core.py
 
-      - name: Ensure Ruby bundle config (Unix)
-        if: runner.os != 'Windows'
+      - name: Ensure Ruby bundle config
         shell: bash
         working-directory: packages/ruby
         run: |
           bundle config set --local path vendor/bundle
           bundle check || bundle install
 
-      - name: Build gem (Unix)
-        if: runner.os != 'Windows'
+      - name: Compile native extension
         shell: bash
         working-directory: packages/ruby
         timeout-minutes: 60
         run: |
-          echo "Starting gem build..."
-          if ! bundle exec rake build 2>&1 | tee build.log; then
-            echo "ERROR: Rake build command failed with exit code ${PIPESTATUS[0]}" >&2
+          echo "Compiling native extension..."
+          if ! bundle exec rake compile 2>&1 | tee compile.log; then
+            echo "ERROR: Rake compile failed with exit code ${PIPESTATUS[0]}" >&2
             exit 1
           fi
-          echo "Rake build command completed"
+          echo "Native extension compiled successfully"
+          echo "=== Native libraries ==="
+          find lib -name '*.so' -o -name '*.bundle' -o -name '*.dylib' 2>/dev/null | head -20
 
-      - name: Verify gem was built
-        if: runner.os != 'Windows'
+      - name: Build platform gem
+        shell: bash
+        working-directory: packages/ruby
+        run: ruby ../../scripts/publish/ruby/build-native-gem.rb "${{ matrix.ruby_platform }}"
+
+      - name: Verify platform gem was built
         shell: bash
         working-directory: packages/ruby
         run: |
           if [ ! -d pkg ]; then
             echo "ERROR: pkg directory does not exist" >&2
-            echo "Working directory contents:" >&2
             ls -la >&2
             exit 1
           fi
-          if [ -z "$(ls -A pkg/*.gem 2>/dev/null)" ]; then
-            echo "ERROR: No .gem files found in pkg directory" >&2
-            echo "pkg directory contents:" >&2
+          if ! find pkg -maxdepth 1 -name "kreuzberg-*-${{ matrix.ruby_platform }}.gem" -print -quit | grep -q .; then
+            echo "ERROR: No platform gem for ${{ matrix.ruby_platform }} found in pkg/" >&2
             ls -la pkg/ >&2
-            echo "" >&2
-            echo "Last 50 lines of build log:" >&2
-            tail -50 build.log >&2 || echo "build.log not found" >&2
             exit 1
           fi
-          echo "✓ Gem built successfully:"
+          echo "Platform gem built successfully:"
           ls -lh pkg/*.gem
 
-      - name: Check disk space after build (Unix)
-        if: runner.os != 'Windows'
+      - name: Check disk space after build
         shell: bash
         run: |
-          echo "=== Disk space after gem build ===" >&2
-          df -h / >&2
+          echo "=== Disk space after gem build ==="
+          df -h /
           if [ -d packages/ruby/pkg ]; then
-            du -sh packages/ruby/pkg/ >&2
-            ls -lah packages/ruby/pkg/ >&2
-          else
-            echo "WARNING: packages/ruby/pkg/ directory does not exist" >&2
+            du -sh packages/ruby/pkg/
+            ls -lah packages/ruby/pkg/
           fi
 
-      - name: Ensure Ruby bundle config (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $workspace = ridk exec bash -lc "cygpath -au '$env:GITHUB_WORKSPACE'"
-          $gemdir = "$workspace/packages/ruby"
-          ridk exec bash -lc "cd $gemdir && bundle config set --local path vendor/bundle"
-          ridk exec bash -lc "cd $gemdir && bundle check || bundle install"
-
-      - name: Build gem (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/publish/ruby/build-gem-windows.ps1
-
-      - name: Check disk space after build (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "=== Disk space after gem build ===" -ForegroundColor Yellow
-          Get-Volume | Select-Object DriveLetter, Size, SizeRemaining | Format-Table
-
-      - name: Verify gem integrity (Unix)
-        if: runner.os != 'Windows'
+      - name: Verify gem integrity
         shell: bash
         run: |
           cd packages/ruby/pkg
@@ -1306,47 +1267,21 @@ jobs:
             file "$gem"
             echo "File size: $(stat -f%z "$gem" 2>/dev/null || stat -c%s "$gem") bytes"
             echo ""
-            echo "Primary validation: gem spec check..."
             if ! gem spec "$gem" >/dev/null 2>&1; then
               echo "WARNING: gem spec check failed, attempting tar validation..."
-              echo "Trying tar -tzf (gzipped)..."
               if tar -tzf "$gem" >/dev/null 2>&1; then
-                echo "✓ Gzipped tar verified"
+                echo "Gzipped tar verified"
+              elif tar -tf "$gem" >/dev/null 2>&1; then
+                echo "Uncompressed tar verified"
               else
-                echo "Trying tar -tf (uncompressed)..."
-                if tar -tf "$gem" >/dev/null 2>&1; then
-                  echo "✓ Uncompressed tar verified"
-                else
-                  echo "ERROR: Corrupted gem file: $gem" >&2
-                  echo "First 100 bytes (hex):"
-                  xxd -l 100 "$gem" || od -t x1 -N 100 "$gem"
-                  exit 1
-                fi
+                echo "ERROR: Corrupted gem file: $gem" >&2
+                exit 1
               fi
             else
-              echo "✓ gem spec validation passed"
+              echo "gem spec validation passed"
             fi
             echo ""
           done
-
-      - name: Verify gem integrity (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          cd packages/ruby/pkg
-          Get-ChildItem *.gem | ForEach-Object {
-            $gemPath = $_.FullName
-            Write-Host "Validating $($_.Name)..."
-            $gemSpec = & gem spec $gemPath 2>&1
-            if ($LASTEXITCODE -ne 0) {
-              Write-Warning "gem spec check failed for $($_.Name), attempting tar validation..."
-              # Windows doesn't have tar by default, just check file size
-              if ($_.Length -le 100KB) {
-                Write-Error "Gem file appears to be corrupted or too small: $($_.Name)" -ErrorAction Stop
-              }
-            }
-            Write-Host "Size: $($_.Length) bytes"
-          }
 
       - name: Upload gem artifacts
         uses: actions/upload-artifact@v4
@@ -1605,9 +1540,64 @@ jobs:
           path: java-natives/${{ matrix.settings.rid }}
           retention-days: 14
 
+  java-natives-musl:
+    name: Build Java native libs (linux-musl-${{ matrix.arch }})
+    needs: [prepare, check-maven]
+    if: ${{ needs.prepare.outputs.release_java == 'true' && (needs.check-maven.outputs.exists != 'true' || needs.prepare.outputs.dry_run == 'true') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            rid: linux-musl-x86_64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rid: linux-musl-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build FFI library via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-ffi \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_ffi.so
+          echo "Library built successfully for musl"
+
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p "java-natives/${{ matrix.rid }}"
+          cp dist/libkreuzberg_ffi.so "java-natives/${{ matrix.rid }}/"
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-natives-${{ matrix.rid }}
+          path: java-natives/${{ matrix.rid }}
+          retention-days: 14
+
   java-package:
     name: Build Java package
-    needs: [prepare, check-maven, java-natives]
+    needs: [prepare, check-maven, java-natives, java-natives-musl]
     if: ${{ needs.prepare.outputs.release_java == 'true' && needs.check-maven.outputs.exists != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1697,6 +1687,8 @@ jobs:
           test -f packages/java/src/main/resources/natives/linux-arm64/libkreuzberg_ffi.so
           test -f packages/java/src/main/resources/natives/macos-arm64/libkreuzberg_ffi.dylib
           test -f packages/java/src/main/resources/natives/windows-x86_64/kreuzberg_ffi.dll
+          test -f packages/java/src/main/resources/natives/linux-musl-x86_64/libkreuzberg_ffi.so
+          test -f packages/java/src/main/resources/natives/linux-musl-arm64/libkreuzberg_ffi.so
 
       - name: Build and package
         working-directory: packages/java
@@ -1828,7 +1820,7 @@ jobs:
 
   csharp-package:
     name: Build C# package
-    needs: [prepare, check-nuget, csharp-native-assets]
+    needs: [prepare, check-nuget, csharp-native-assets, csharp-native-assets-musl]
     if: ${{ needs.prepare.outputs.release_csharp == 'true' && needs.check-nuget.outputs.exists != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -2016,6 +2008,62 @@ jobs:
         env:
           RID: ${{ matrix.rid }}
         run: scripts/publish/csharp/verify-native-assets-dir.sh
+
+      - name: Upload native assets artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-native-assets-${{ matrix.rid }}
+          path: runtimes/
+          retention-days: 14
+
+  csharp-native-assets-musl:
+    name: Build C# native assets (linux-musl-${{ matrix.arch }})
+    needs: [prepare, check-nuget]
+    if: ${{ needs.prepare.outputs.release_csharp == 'true' && needs.check-nuget.outputs.exists != 'true' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+            rid: linux-musl-x64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            rid: linux-musl-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build FFI library via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-ffi \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_ffi.so
+          echo "Library built successfully for musl"
+
+      - name: Assemble native assets for NuGet
+        run: |
+          mkdir -p "runtimes/${{ matrix.rid }}/native"
+          cp dist/libkreuzberg_ffi.so "runtimes/${{ matrix.rid }}/native/"
+          ls -lah "runtimes/${{ matrix.rid }}/native/"
 
       - name: Upload native assets artifact
         uses: actions/upload-artifact@v4
@@ -2404,15 +2452,99 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  elixir-natives-musl:
+    name: Build Elixir native libs (linux-musl-${{ matrix.arch }})
+    needs: [prepare]
+    if: ${{ needs.prepare.outputs.release_elixir == 'true' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            label: linux-musl-x86_64
+            target: x86_64-unknown-linux-musl
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            label: linux-musl-aarch64
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure target commit
+        if: ${{ needs.prepare.outputs.target_sha != '' }}
+        run: git checkout --progress --force ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Free up disk space
+        run: scripts/publish/ubuntu/free-disk-space.sh
+
+      - name: Build Rustler NIF via Docker (musl)
+        run: |
+          docker build -f docker/Dockerfile.musl-rustler \
+            --output type=local,dest=./dist .
+
+      - name: Verify musl library
+        run: |
+          file dist/libkreuzberg_rustler.so
+          echo "Library built successfully for musl"
+
+      - name: Package native libraries (NIF 2.16)
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TARGET="${{ matrix.target }}"
+          NIF_VERSION="2.16"
+          ARCHIVE_EXT="so"
+
+          mkdir -p dist/elixir
+          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          TARBALL="${ARTIFACT_NAME}.tar.gz"
+
+          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          echo "Created: dist/elixir/${TARBALL}"
+
+      - name: Package native libraries (NIF 2.17)
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TARGET="${{ matrix.target }}"
+          NIF_VERSION="2.17"
+          ARCHIVE_EXT="so"
+
+          ARTIFACT_NAME="libkreuzberg_rustler-v${VERSION}-nif-${NIF_VERSION}-${TARGET}.${ARCHIVE_EXT}"
+          TARBALL="${ARTIFACT_NAME}.tar.gz"
+
+          cp dist/libkreuzberg_rustler.so "${ARTIFACT_NAME}"
+          tar -czf "dist/elixir/${TARBALL}" "${ARTIFACT_NAME}"
+          echo "Created: dist/elixir/${TARBALL}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: elixir-${{ matrix.label }}
+          path: dist/elixir/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   upload-elixir-release:
     name: Upload Elixir binaries to GitHub Release
-    needs: [prepare, validate-versions, elixir-natives]
+    needs: [prepare, validate-versions, elixir-natives, elixir-natives-musl]
     if: |
       always() &&
       needs.prepare.outputs.dry_run != 'true' &&
       needs.prepare.outputs.is_tag == 'true' &&
       needs.prepare.outputs.release_elixir == 'true' &&
-      needs.elixir-natives.result == 'success'
+      (needs.elixir-natives.result == 'success' || needs.elixir-natives-musl.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -2602,24 +2734,6 @@ jobs:
         shell: bash
         run: (gem install bundler -v 4.0.0 --no-document || gem install bundler --no-document) && bundler --version
 
-      - name: Cache Pdfium binaries
-        uses: ./.github/actions/cache-pdfium
-        with:
-          pdfium-version: ${{ env.PDFIUM_VERSION }}
-
-      - name: Download Pdfium runtime
-        uses: ./.github/actions/download-pdfium
-        with:
-          pdfium-version: ${{ env.PDFIUM_VERSION }}
-
-      - name: Stage PDFium runtime artifacts
-        uses: ./.github/actions/stage-pdfium-runtime
-        with:
-          destination: packages/ruby/ext/kreuzberg_rb/native
-          additional-destinations: |
-            packages/ruby
-            packages/ruby/lib
-
       - name: Install Ruby dependencies
         shell: bash
         run: scripts/ci/ruby/install-ruby-deps.sh packages/ruby
@@ -2628,16 +2742,38 @@ jobs:
         shell: bash
         run: python3 scripts/ci/ruby/vendor-kreuzberg-core.py
 
-      - name: Rebuild gems from source
+      - name: Build source gem (fallback for unsupported platforms)
         shell: bash
         working-directory: packages/ruby
-        run: bundle exec rake build
+        run: |
+          bundle config set --local path vendor/bundle
+          bundle check || bundle install
+          bundle exec rake build
 
-      - name: Copy rebuilt gems to dist directory
+      - name: Copy source gem to dist directory
         shell: bash
         run: |
           mkdir -p dist
           cp packages/ruby/pkg/*.gem dist/
+
+      - name: List all gems for publishing
+        shell: bash
+        working-directory: dist
+        run: |
+          echo "=== All gems to publish ==="
+          ls -lh kreuzberg-*.gem
+          echo ""
+          gem_count=$(find . -maxdepth 1 -name 'kreuzberg-*.gem' -print | wc -l)
+          echo "Total gems: $gem_count"
+          echo ""
+          echo "Expected:"
+          echo "  - Source gem: kreuzberg-VERSION.gem"
+          echo "  - Linux x86_64: kreuzberg-VERSION-x86_64-linux.gem"
+          echo "  - Linux ARM64: kreuzberg-VERSION-aarch64-linux.gem"
+          echo "  - macOS ARM64: kreuzberg-VERSION-arm64-darwin.gem"
+          if [ "$gem_count" -lt 2 ]; then
+            echo "WARNING: Expected at least 2 gems (source + platform), found $gem_count" >&2
+          fi
 
       - name: Re-check RubyGems before publish
         id: recheck
@@ -2979,6 +3115,8 @@ jobs:
           test -f packages/java/src/main/resources/natives/linux-arm64/libkreuzberg_ffi.so
           test -f packages/java/src/main/resources/natives/macos-arm64/libkreuzberg_ffi.dylib
           test -f packages/java/src/main/resources/natives/windows-x86_64/kreuzberg_ffi.dll
+          test -f packages/java/src/main/resources/natives/linux-musl-x86_64/libkreuzberg_ffi.so
+          test -f packages/java/src/main/resources/natives/linux-musl-arm64/libkreuzberg_ffi.so
 
       - name: Prefer gpg2 binary
         if: ${{ needs.prepare.outputs.dry_run != 'true' && steps.maven_check.outputs.exists != 'true' }}

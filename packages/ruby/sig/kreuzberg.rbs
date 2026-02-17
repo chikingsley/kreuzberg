@@ -677,7 +677,8 @@ module Kreuzberg
   type table_hash = {
     cells: Array[Array[String]],
     markdown: String,
-    page_number: Integer
+    page_number: Integer,
+    bounding_box: { x0: Float, y0: Float, x1: Float, y1: Float }?
   }
 
   type chunk_hash = {
@@ -703,6 +704,7 @@ module Kreuzberg
     bits_per_component: Integer?,
     is_mask: bool,
     description: String?,
+    bounding_box: { x0: Float, y0: Float, x1: Float, y1: Float }?,
     ocr_result: extraction_result_hash?
   }
 
@@ -746,8 +748,9 @@ module Kreuzberg
       attr_reader cells: Array[Array[String]]
       attr_reader markdown: String
       attr_reader page_number: Integer
+      attr_reader bounding_box: BoundingBox?
 
-      def initialize: (cells: Array[Array[String]], markdown: String, page_number: Integer) -> void
+      def initialize: (cells: Array[Array[String]], markdown: String, page_number: Integer, bounding_box: BoundingBox?) -> void
       def to_h: () -> table_hash
     end
 
@@ -789,6 +792,7 @@ module Kreuzberg
       attr_reader bits_per_component: Integer?
       attr_reader is_mask: bool
       attr_reader description: String?
+      attr_reader bounding_box: BoundingBox?
       attr_reader ocr_result: Result?
 
       def initialize: (
@@ -802,6 +806,7 @@ module Kreuzberg
         bits_per_component: Integer?,
         is_mask: bool,
         description: String?,
+        bounding_box: BoundingBox?,
         ocr_result: Result?
       ) -> void
       def to_h: () -> image_hash

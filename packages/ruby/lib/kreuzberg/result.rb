@@ -22,9 +22,11 @@ module Kreuzberg
     #   @return [String] Markdown representation
     # @!attribute [r] page_number
     #   @return [Integer] Page number where table was found
-    Table = Struct.new(:cells, :markdown, :page_number, keyword_init: true) do
+    # @!attribute [r] bounding_box
+    #   @return [BoundingBox, nil] Bounding box of the table on the page
+    Table = Struct.new(:cells, :markdown, :page_number, :bounding_box, keyword_init: true) do
       def to_h
-        { cells: cells, markdown: markdown, page_number: page_number }
+        { cells: cells, markdown: markdown, page_number: page_number, bounding_box: bounding_box&.to_h }
       end
     end
 
@@ -78,6 +80,7 @@ module Kreuzberg
       :bits_per_component,
       :is_mask,
       :description,
+      :bounding_box,
       :ocr_result,
       keyword_init: true
     ) do
@@ -93,6 +96,7 @@ module Kreuzberg
           bits_per_component: bits_per_component,
           is_mask: is_mask,
           description: description,
+          bounding_box: bounding_box&.to_h,
           ocr_result: ocr_result&.to_h
         }
       end
@@ -486,10 +490,12 @@ module Kreuzberg
       return [] if tables_data.nil? || tables_data.empty?
 
       tables_data.map do |table_hash|
+        bounding_box = parse_bounding_box(table_hash['bounding_box'])
         Table.new(
           cells: table_hash['cells'] || [],
           markdown: table_hash['markdown'] || '',
-          page_number: table_hash['page_number'] || 0
+          page_number: table_hash['page_number'] || 0,
+          bounding_box: bounding_box
         )
       end
     end
@@ -521,23 +527,26 @@ module Kreuzberg
     def parse_images(images_data)
       return nil if images_data.nil?
 
-      images_data.map do |image_hash|
-        data = image_hash['data']
-        data = data.dup.force_encoding(Encoding::BINARY) if data.respond_to?(:force_encoding)
-        Image.new(
-          data: data,
-          format: image_hash['format'],
-          image_index: image_hash['image_index'],
-          page_number: image_hash['page_number'],
-          width: image_hash['width'],
-          height: image_hash['height'],
-          colorspace: image_hash['colorspace'],
-          bits_per_component: image_hash['bits_per_component'],
-          is_mask: image_hash['is_mask'],
-          description: image_hash['description'],
-          ocr_result: image_hash['ocr_result'] ? Result.new(image_hash['ocr_result']) : nil
-        )
-      end
+      images_data.map { |image_hash| parse_single_image(image_hash) }
+    end
+
+    def parse_single_image(image_hash)
+      data = image_hash['data']
+      data = data.dup.force_encoding(Encoding::BINARY) if data.respond_to?(:force_encoding)
+      Image.new(
+        data: data,
+        format: image_hash['format'],
+        image_index: image_hash['image_index'],
+        page_number: image_hash['page_number'],
+        width: image_hash['width'],
+        height: image_hash['height'],
+        colorspace: image_hash['colorspace'],
+        bits_per_component: image_hash['bits_per_component'],
+        is_mask: image_hash['is_mask'],
+        description: image_hash['description'],
+        bounding_box: parse_bounding_box(image_hash['bounding_box']),
+        ocr_result: image_hash['ocr_result'] ? Result.new(image_hash['ocr_result']) : nil
+      )
     end
 
     def parse_pages(pages_data)
@@ -607,6 +616,21 @@ module Kreuzberg
         y0: coordinates_data['y0'].to_f,
         x1: coordinates_data['x1'].to_f,
         y1: coordinates_data['y1'].to_f
+      )
+    end
+
+    def parse_bounding_box(bounding_box_data)
+      return nil if bounding_box_data.nil?
+
+      # If it's already a BoundingBox object, return it
+      return bounding_box_data if bounding_box_data.is_a?(BoundingBox)
+
+      # Otherwise parse from hash
+      BoundingBox.new(
+        x0: bounding_box_data['x0'].to_f,
+        y0: bounding_box_data['y0'].to_f,
+        x1: bounding_box_data['x1'].to_f,
+        y1: bounding_box_data['y1'].to_f
       )
     end
 

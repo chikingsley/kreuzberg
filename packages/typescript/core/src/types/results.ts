@@ -21,6 +21,8 @@ export interface Table {
 	cells: string[][];
 	markdown: string;
 	pageNumber: number;
+	/** Bounding box of the table on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 export interface ChunkMetadata {
@@ -51,6 +53,8 @@ export interface ExtractedImage {
 	isMask: boolean;
 	description?: string | null;
 	ocrResult?: ExtractionResult;
+	/** Bounding box of the image on the page (PDF coordinates). */
+	boundingBox?: BoundingBox | null;
 }
 
 // ============================================================================
@@ -265,7 +269,7 @@ export interface PageContent {
  * Represents rectangular coordinates with position and dimensions.
  */
 export interface OcrBoundingGeometryRectangle {
-	type: 'rectangle';
+	type: "rectangle";
 	left: number;
 	top: number;
 	width: number;
@@ -278,7 +282,7 @@ export interface OcrBoundingGeometryRectangle {
  * Represents irregular quadrilateral shapes with four corner points.
  */
 export interface OcrBoundingGeometryQuadrilateral {
-	type: 'quadrilateral';
+	type: "quadrilateral";
 	points: number[][];
 }
 
@@ -320,7 +324,7 @@ export interface OcrRotation {
  *
  * Defines the granularity of OCR element extraction.
  */
-export type OcrElementLevel = 'word' | 'line' | 'block' | 'page';
+export type OcrElementLevel = "word" | "line" | "block" | "page";
 
 /**
  * Individual OCR element (word, line, block, or page).

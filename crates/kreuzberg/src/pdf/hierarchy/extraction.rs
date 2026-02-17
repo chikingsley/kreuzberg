@@ -31,6 +31,12 @@ pub struct CharData {
     pub width: f32,
     /// Character height in PDF units
     pub height: f32,
+    /// Whether the font is bold (from pdfium force-bold flag)
+    pub is_bold: bool,
+    /// Whether the font is italic
+    pub is_italic: bool,
+    /// Baseline Y position (from character origin, falls back to bounds bottom)
+    pub baseline_y: f32,
 }
 
 /// A block of text with spatial and semantic information.
@@ -299,6 +305,40 @@ pub fn extract_chars_with_fonts(page: &PdfPage) -> Result<Vec<CharData>> {
             continue;
         };
 
+        // Extract font style flags from descriptor, then check font name as fallback.
+        // Many PDFs encode bold/italic in font name ("TimesNewRoman-Bold") without
+        // setting descriptor flags. We check per-attribute independently so that
+        // e.g. a font with bold flag but no italic flag still gets italic from name.
+        let (font_name, is_bold_flag, is_italic_flag) = pdf_char.font_info();
+
+        // Only check font name/weight if at least one attribute is missing from flags
+        let (bold_from_name, italic_from_name, bold_from_weight) = if !is_bold_flag || !is_italic_flag {
+            let name_lower = font_name.to_lowercase();
+            let bold_n = name_lower.contains("bold");
+            let italic_n = name_lower.contains("italic") || name_lower.contains("oblique");
+            let bold_w = pdf_char
+                .font_weight()
+                .map(|w| {
+                    matches!(
+                        w,
+                        PdfFontWeight::Weight700Bold | PdfFontWeight::Weight800 | PdfFontWeight::Weight900
+                    )
+                })
+                .unwrap_or(false);
+            (bold_n, italic_n, bold_w)
+        } else {
+            (false, false, false)
+        };
+
+        let is_bold = is_bold_flag || bold_from_name || bold_from_weight;
+        let is_italic = is_italic_flag || italic_from_name;
+
+        // Extract baseline Y from character origin, fall back to bounds bottom
+        let baseline_y = pdf_char
+            .origin()
+            .map(|(_x, y)| y.value)
+            .unwrap_or(bounds.bottom().value);
+
         // Extract position and size information
         let char_data = CharData {
             text: ch.to_string(),
@@ -307,6 +347,9 @@ pub fn extract_chars_with_fonts(page: &PdfPage) -> Result<Vec<CharData>> {
             width: bounds.width().value,
             height: bounds.height().value,
             font_size,
+            is_bold,
+            is_italic,
+            baseline_y,
         };
 
         char_data_list.push(char_data);
@@ -358,16 +401,11 @@ pub fn merge_chars_into_blocks(chars: Vec<CharData>) -> Vec<TextBlock> {
 
     // Sort by position (top to bottom, then left to right)
     char_boxes.sort_by(|a, b| {
-        let y_diff =
-            a.1.top
-                .partial_cmp(&b.1.top)
-                .expect("Failed to compare top coordinates");
+        let y_diff = a.1.top.partial_cmp(&b.1.top).unwrap_or(std::cmp::Ordering::Equal);
         if y_diff != std::cmp::Ordering::Equal {
             y_diff
         } else {
-            a.1.left
-                .partial_cmp(&b.1.left)
-                .expect("Failed to compare left coordinates")
+            a.1.left.partial_cmp(&b.1.left).unwrap_or(std::cmp::Ordering::Equal)
         }
     });
 
@@ -535,6 +573,9 @@ mod tests {
             font_size: 12.0,
             width: 10.0,
             height: 12.0,
+            is_bold: true,
+            is_italic: false,
+            baseline_y: 48.0,
         };
 
         assert_eq!(char_data.text, "A");
@@ -543,6 +584,9 @@ mod tests {
         assert_eq!(char_data.font_size, 12.0);
         assert_eq!(char_data.width, 10.0);
         assert_eq!(char_data.height, 12.0);
+        assert!(char_data.is_bold);
+        assert!(!char_data.is_italic);
+        assert_eq!(char_data.baseline_y, 48.0);
     }
 
     #[test]
@@ -554,10 +598,16 @@ mod tests {
             font_size: 14.0,
             width: 8.0,
             height: 14.0,
+            is_bold: false,
+            is_italic: true,
+            baseline_y: 98.0,
         };
 
         let cloned = char_data.clone();
         assert_eq!(cloned.text, char_data.text);
         assert_eq!(cloned.font_size, char_data.font_size);
+        assert_eq!(cloned.is_bold, char_data.is_bold);
+        assert_eq!(cloned.is_italic, char_data.is_italic);
+        assert_eq!(cloned.baseline_y, char_data.baseline_y);
     }
 }

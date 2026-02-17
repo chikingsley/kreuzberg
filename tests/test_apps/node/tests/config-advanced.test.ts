@@ -215,7 +215,7 @@ describe("Advanced Configuration Options", () => {
 				},
 			};
 			const img = config.images;
-			if (img && img.minDpi && img.targetDpi && img.maxDpi) {
+			if (img?.minDpi && img.targetDpi && img.maxDpi) {
 				expect(img.minDpi <= img.targetDpi).toBe(true);
 				expect(img.targetDpi <= img.maxDpi).toBe(true);
 			}

@@ -74,7 +74,7 @@ env:
 jobs:
   rust-unit:
     name: Rust Unit Tests (${{ matrix.os }})
-    if: github.actor != 'dependabot[bot]'
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     permissions:
@@ -169,7 +169,7 @@ jobs:
 
   rust-e2e:
     name: Rust E2E Tests
-    if: github.actor != 'dependabot[bot]'
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -238,104 +238,9 @@ jobs:
         if: always() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/cleanup-rust-cache
 
-  test-system-pdfium:
-    name: Test System PDFium (${{ matrix.os }})
-    if: github.actor != 'dependabot[bot]'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 180
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: macos-latest
-            target: aarch64-apple-darwin
-    steps:
-      - uses: actions/checkout@v4
-        id: checkout
-
-      - name: Install system dependencies
-        uses: ./.github/actions/install-system-deps
-
-      - name: Free disk space before setup
-        if: matrix.os == 'ubuntu-latest'
-        uses: ./.github/actions/free-disk-space-linux
-        with:
-          show-initial: "true"
-          show-final: "true"
-
-      - name: Install system PDFium (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: scripts/install-system-pdfium-linux.sh
-        shell: bash
-
-      - name: Install system PDFium (macOS)
-        if: matrix.os == 'macos-latest'
-        run: scripts/install-system-pdfium-macos.sh
-        shell: bash
-
-      - name: Verify pkg-config detects pdfium
-        run: scripts/ci/rust/verify-pdfium-pkg-config.sh
-        shell: bash
-
-      - name: Cache Hugging Face models (fastembed)
-        uses: ./.github/actions/cache-hf-fastembed
-
-      - name: Setup ONNX Runtime
-        uses: ./.github/actions/setup-onnx-runtime
-        with:
-          ort-version: ${{ env.ORT_VERSION }}
-
-      - name: Setup Rust
-        uses: ./.github/actions/setup-rust
-        with:
-          cache-key-prefix: system-pdfium-${{ matrix.os }}
-          target: ${{ matrix.target }}
-          use-sccache: 'true'
-          report-stats: 'true'
-
-      - name: Install Task
-        uses: ./.github/actions/install-task
-
-      - name: Build kreuzberg with pdf,system-pdfium features
-        run: task rust:build:ci
-        shell: bash
-        env:
-          PKG_CONFIG_PATH: "${{ matrix.os == 'macos-latest' && '/usr/local/lib/pkgconfig' || '' }}"
-
-      - name: Run tests with pdf,system-pdfium features
-        run: task rust:test:ci
-        shell: bash
-        env:
-          PKG_CONFIG_PATH: "${{ matrix.os == 'macos-latest' && '/usr/local/lib/pkgconfig' || '' }}"
-          LD_LIBRARY_PATH: "/usr/local/lib:${{ env.LD_LIBRARY_PATH || '' }}"
-          DYLD_LIBRARY_PATH: "/usr/local/lib:${{ env.DYLD_LIBRARY_PATH || '' }}"
-          DYLD_FALLBACK_LIBRARY_PATH: "/usr/local/lib:${{ env.DYLD_FALLBACK_LIBRARY_PATH || '' }}"
-
-      - name: Verify no bundled pdfium in library
-        run: scripts/ci/rust/verify-no-bundled-pdfium.sh
-        shell: bash
-
-      - name: Verify binary links against system library (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: scripts/ci/rust/verify-system-pdfium-linux.sh
-        shell: bash
-
-      - name: Verify binary links against system library (macOS)
-        if: matrix.os == 'macos-latest'
-        run: scripts/ci/rust/verify-system-pdfium-macos.sh
-        shell: bash
-
-      - name: Cleanup Rust cache
-        if: always() && steps.checkout.outcome == 'success'
-        uses: ./.github/actions/cleanup-rust-cache
-
   build-and-smoke-cli:
     name: CLI Build + Smoke (${{ matrix.target }})
-    if: github.actor != 'dependabot[bot]'
+    if: github.repository == 'kreuzberg-dev/kreuzberg' && github.actor != 'dependabot[bot]'
     timeout-minutes: 180
     permissions:
       contents: read

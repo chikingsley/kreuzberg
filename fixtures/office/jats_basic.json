@@ -1,16 +1,16 @@
 {
-  "id": "office_jats_basic",
-  "category": "office",
-  "description": "JATS scientific article extraction.",
-  "document": {
-    "path": "jats/sample_article.jats",
-    "media_type": "application/x-jats+xml"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/x-jats+xml", "text/jats"],
-    "min_content_length": 10
-  }
+	"id": "office_jats_basic",
+	"category": "office",
+	"description": "JATS scientific article extraction.",
+	"document": {
+		"path": "jats/sample_article.jats",
+		"media_type": "application/x-jats+xml"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/x-jats+xml", "text/jats"],
+		"min_content_length": 10
+	}
 }

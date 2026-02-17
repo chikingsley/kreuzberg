@@ -1,16 +1,16 @@
 {
-  "id": "office_latex_basic",
-  "category": "office",
-  "description": "LaTeX document text extraction.",
-  "document": {
-    "path": "latex/basic_sections.tex",
-    "media_type": "application/x-latex"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/x-latex", "text/x-latex"],
-    "min_content_length": 20
-  }
+	"id": "office_latex_basic",
+	"category": "office",
+	"description": "LaTeX document text extraction.",
+	"document": {
+		"path": "latex/basic_sections.tex",
+		"media_type": "application/x-latex"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/x-latex", "text/x-latex"],
+		"min_content_length": 20
+	}
 }

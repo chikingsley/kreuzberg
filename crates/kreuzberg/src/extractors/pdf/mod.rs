@@ -85,7 +85,8 @@ impl DocumentExtractor for PdfExtractor {
         let content = &*derotated;
 
         #[cfg(feature = "pdf")]
-        let (mut pdf_metadata, native_text, tables, page_contents, _boundaries) = {
+        #[allow(unused_variables)]
+        let (mut pdf_metadata, native_text, tables, page_contents, boundaries, pre_rendered_markdown) = {
             #[cfg(target_arch = "wasm32")]
             {
                 let pdfium = crate::pdf::bindings::bind_pdfium(PdfError::MetadataExtractionFailed, "initialize Pdfium")
@@ -138,7 +139,7 @@ impl DocumentExtractor for PdfExtractor {
                             }
                         };
 
-                        let (pdf_metadata, native_text, tables, page_contents, _boundaries) =
+                        let (pdf_metadata, native_text, tables, page_contents, boundaries, pre_rendered_markdown) =
                             extract_all_from_document(&document, &config_owned)
                                 .map_err(|e| PdfError::ExtractionFailed(e.to_string()))?;
 
@@ -157,7 +158,8 @@ impl DocumentExtractor for PdfExtractor {
                             native_text,
                             tables,
                             page_contents,
-                            _boundaries,
+                            boundaries,
+                            pre_rendered_markdown,
                         ))
                     })
                     .await
@@ -202,16 +204,16 @@ impl DocumentExtractor for PdfExtractor {
         };
 
         #[cfg(feature = "ocr")]
-        let text = if config.force_ocr {
+        let (text, used_ocr) = if config.force_ocr {
             if config.ocr.is_some() {
-                extract_with_ocr(content, config).await?
+                (extract_with_ocr(content, config).await?, true)
             } else {
-                native_text
+                (native_text, false)
             }
         } else if config.ocr.is_some() {
             let decision = ocr::evaluate_per_page_ocr(
                 &native_text,
-                _boundaries.as_deref(),
+                boundaries.as_deref(),
                 pdf_metadata.pdf_specific.page_count,
             );
 
@@ -230,16 +232,28 @@ impl DocumentExtractor for PdfExtractor {
             }
 
             if decision.fallback {
-                extract_with_ocr(content, config).await?
+                (extract_with_ocr(content, config).await?, true)
             } else {
-                native_text
+                (native_text, false)
             }
         } else {
-            native_text
+            (native_text, false)
         };
 
         #[cfg(not(feature = "ocr"))]
-        let text = native_text;
+        let (text, used_ocr) = (native_text, false);
+
+        // Post-processing: use pre-rendered markdown from initial document load if available.
+        // The markdown was rendered during the first document load to avoid redundant PDF parsing.
+        // OCR results already produce markdown via the hOCR path, so this only applies
+        // when native text extraction was used and markdown output was requested.
+        // Note: we defer consumption of pre_rendered_markdown until after images are available
+        // so that we can inject image placeholders into it before finalizing the text.
+        #[cfg(feature = "pdf")]
+        let use_pdf_markdown = !used_ocr && pre_rendered_markdown.is_some();
+
+        #[cfg(not(feature = "pdf"))]
+        let use_pdf_markdown = false;
 
         #[cfg(feature = "pdf")]
         if let Some(ref page_cfg) = config.pages
@@ -281,6 +295,7 @@ impl DocumentExtractor for PdfExtractor {
                                 is_mask: false,
                                 description: None,
                                 ocr_result: None,
+                                bounding_box: None,
                             }
                         })
                         .collect(),
@@ -292,6 +307,48 @@ impl DocumentExtractor for PdfExtractor {
             // Image extraction is not enabled
             None
         };
+
+        // Run OCR on extracted images if configured (same pattern as docx/pptx)
+        #[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+        let images = if let Some(imgs) = images {
+            match crate::extraction::image_ocr::process_images_with_ocr(imgs, config).await {
+                Ok(processed) => Some(processed),
+                Err(e) => {
+                    tracing::warn!(
+                        "Image OCR on embedded PDF images failed: {:?}, continuing without image OCR",
+                        e
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        // Finalize text: apply pre-rendered markdown (with image placeholder injection) if available.
+        // Images (including OCR) are now fully resolved, so we can inject placeholders.
+        #[cfg(feature = "pdf")]
+        let (text, used_pdf_markdown) = if use_pdf_markdown {
+            if let Some(md) = pre_rendered_markdown {
+                let final_md = if let Some(ref imgs) = images {
+                    if !imgs.is_empty() {
+                        crate::pdf::markdown::inject_image_placeholders(&md, imgs)
+                    } else {
+                        md
+                    }
+                } else {
+                    md
+                };
+                (final_md, true)
+            } else {
+                (text, false)
+            }
+        } else {
+            (text, false)
+        };
+
+        #[cfg(not(feature = "pdf"))]
+        let used_pdf_markdown = false;
 
         let final_pages = assign_tables_and_images_to_pages(page_contents, &tables, images.as_deref().unwrap_or(&[]));
 
@@ -306,10 +363,25 @@ impl DocumentExtractor for PdfExtractor {
             }
         }
 
+        // Always preserve the original document MIME type (e.g. application/pdf).
+        // The output format is tracked separately in metadata.output_format.
+        let effective_mime_type = mime_type.to_string();
+
+        // Signal pre-formatted markdown so the pipeline doesn't double-convert.
+        #[cfg(feature = "pdf")]
+        let pre_formatted_output = if used_pdf_markdown {
+            Some("markdown".to_string())
+        } else {
+            None
+        };
+        #[cfg(not(feature = "pdf"))]
+        let pre_formatted_output: Option<String> = None;
+
         Ok(ExtractionResult {
             content: text,
-            mime_type: mime_type.to_string().into(),
+            mime_type: effective_mime_type.into(),
             metadata: Metadata {
+                output_format: pre_formatted_output,
                 #[cfg(feature = "pdf")]
                 title: pdf_metadata.title.clone(),
                 #[cfg(feature = "pdf")]

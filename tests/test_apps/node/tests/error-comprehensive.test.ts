@@ -377,13 +377,7 @@ describe("Comprehensive Error Handling", () => {
 		});
 
 		it("should provide error categorization", () => {
-			const errorTypes = [
-				"validation_error",
-				"parsing_error",
-				"ocr_error",
-				"io_error",
-				"permission_error",
-			];
+			const errorTypes = ["validation_error", "parsing_error", "ocr_error", "io_error", "permission_error"];
 
 			for (const errType of errorTypes) {
 				const classification = classifyError(errType);

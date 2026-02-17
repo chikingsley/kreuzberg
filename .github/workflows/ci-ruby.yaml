@@ -148,6 +148,17 @@ jobs:
           bundler-cache: true
           working-directory: packages/ruby
 
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
+
+      - name: Install Ruby dependencies
+        shell: bash
+        working-directory: packages/ruby
+        run: |
+          bundle install
+
       - name: Print Ruby environment (pre-setup)
         shell: bash
         run: |
@@ -172,8 +183,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: pwsh -File scripts/ci/ruby/windows-max-path-mitigation.ps1
-
-      # Note: Ruby deps for non-Windows are installed by ruby/setup-ruby bundler-cache above.
 
       - name: Install Ruby deps (Windows)
         if: runner.os == 'Windows'
@@ -385,18 +394,14 @@ jobs:
             echo "✓ Cleaned tmp/"
           fi
 
-          # Also clean any cached compilation artifacts
-          if [ -d ".bundle" ]; then
-            echo "Cleaning bundle cache..."
-            rm -rf .bundle/bundle
-            echo "✓ Cleaned .bundle/bundle"
-          fi
+          # Note: Do NOT clean .bundle/ - it contains gems installed by ruby/setup-ruby
 
           echo "Cleanup complete"
           echo ""
 
       - name: Build Ruby gem
         shell: bash
+        working-directory: packages/ruby
         run: |
           echo "=== Building Ruby Gem ==="
           echo "Platform: ${{ runner.os }}"
@@ -409,11 +414,14 @@ jobs:
           if [ "${{ runner.os }}" = "Windows" ]; then
             echo "=== Windows-specific environment ==="
             echo "Checking for required libraries in target/release..."
-            ls -lh target/release/*.{dll,a} 2>/dev/null || echo "No DLL/archive files found yet"
+            ls -lh ../../target/release/*.{dll,a} 2>/dev/null || echo "No DLL/archive files found yet"
             echo ""
           fi
 
-          task ruby:build:ci 2>&1 | tee /tmp/gem-build.log || {
+          # Ensure bundler can find gems (workaround for task runner CWD issues)
+          bundle install --quiet
+
+          bundle exec rake compile 2>&1 | tee /tmp/gem-build.log || {
             EXIT_CODE=$?
             echo ""
             echo "=== GEM BUILD FAILED (exit code: $EXIT_CODE) ==="
@@ -427,10 +435,11 @@ jobs:
               grep -i "error\|failed\|fatal" /tmp/gem-build.log | tail -30 || echo "No obvious errors found"
               echo ""
               echo "Checking mkmf.log if exists..."
-              find packages/ruby -name "mkmf.log" -exec tail -50 {} \; 2>/dev/null || echo "mkmf.log not found"
+              find . -name "mkmf.log" -exec tail -50 {} \; 2>/dev/null || echo "mkmf.log not found"
             fi
             exit "$EXIT_CODE"
           }
+          bundle exec rake build
         env:
           RB_SYS_VERBOSE: "1"
           CARGO_BUILD_JOBS: "1"
@@ -555,6 +564,17 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
           working-directory: packages/ruby
+
+      - name: Set BUNDLE_GEMFILE (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "BUNDLE_GEMFILE=${{ github.workspace }}/packages/ruby/Gemfile" >> "$GITHUB_ENV"
+
+      - name: Install Ruby dependencies
+        shell: bash
+        working-directory: packages/ruby
+        run: |
+          bundle install
 
       - name: Configure short paths for Windows MAX_PATH mitigation
         if: runner.os == 'Windows'

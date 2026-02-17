@@ -1,16 +1,16 @@
 {
-  "id": "office_typst_basic",
-  "category": "office",
-  "description": "Typst document text extraction.",
-  "document": {
-    "path": "typst/headings.typ",
-    "media_type": "application/x-typst"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/x-typst", "text/x-typst"],
-    "min_content_length": 10
-  }
+	"id": "office_typst_basic",
+	"category": "office",
+	"description": "Typst document text extraction.",
+	"document": {
+		"path": "typst/headings.typ",
+		"media_type": "application/x-typst"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/x-typst", "text/x-typst"],
+		"min_content_length": 10
+	}
 }

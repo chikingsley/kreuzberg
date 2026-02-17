@@ -19,7 +19,7 @@ export interface TesseractConfig {
  *
  * Defines the granularity of OCR element extraction.
  */
-export type OcrElementLevel = 'word' | 'line' | 'block' | 'page';
+export type OcrElementLevel = "word" | "line" | "block" | "page";
 
 /**
  * Configuration for OCR element extraction.

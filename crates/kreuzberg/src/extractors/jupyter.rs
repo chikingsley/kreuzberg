@@ -312,6 +312,7 @@ impl JupyterExtractor {
                             is_mask: false,
                             description: Some(format!("Notebook cell {} output", cell_idx)),
                             ocr_result: None,
+                            bounding_box: None,
                         });
                         content.push_str(&format!("[Image: {}]\n", mime_type));
                     }

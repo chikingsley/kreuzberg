@@ -472,17 +472,23 @@ impl BenchmarkRunner {
 
         // Take error_kind from the most severe across iterations
         // Severity: Timeout=3 > HarnessError=2 > FrameworkError=1 > EmptyContent=1 > None=0
-        let error_kind = all_results
-            .iter()
-            .map(|r| r.error_kind)
-            .max_by_key(|ek| match ek {
-                ErrorKind::Timeout => 3,
-                ErrorKind::HarnessError => 2,
-                ErrorKind::FrameworkError => 1,
-                ErrorKind::EmptyContent => 1,
-                ErrorKind::None => 0,
-            })
-            .unwrap_or(ErrorKind::None);
+        // But if any iteration succeeded, the aggregated result is successful with error_kind=None,
+        // because we use the successful iteration's data for the final result.
+        let error_kind = if any_success {
+            ErrorKind::None
+        } else {
+            all_results
+                .iter()
+                .map(|r| r.error_kind)
+                .max_by_key(|ek| match ek {
+                    ErrorKind::Timeout => 3,
+                    ErrorKind::HarnessError => 2,
+                    ErrorKind::FrameworkError => 1,
+                    ErrorKind::EmptyContent => 1,
+                    ErrorKind::None => 0,
+                })
+                .unwrap_or(ErrorKind::None)
+        };
 
         // Take quality from the first SUCCESSFUL iteration, not always from the first iteration
         let quality = all_results
@@ -620,13 +626,20 @@ impl BenchmarkRunner {
                 first_result.error_message.clone()
             };
 
+            // If any iteration succeeded, the aggregated result is successful with error_kind=None
+            let error_kind = if any_success {
+                ErrorKind::None
+            } else {
+                first_result.error_kind
+            };
+
             aggregated_results.push(BenchmarkResult {
                 framework: first_result.framework.clone(),
                 file_path: first_result.file_path.clone(),
                 file_size: first_result.file_size,
                 success: any_success,
                 error_message,
-                error_kind: first_result.error_kind,
+                error_kind,
                 duration: statistics.mean,
                 extraction_duration: avg_extraction_duration,
                 subprocess_overhead,

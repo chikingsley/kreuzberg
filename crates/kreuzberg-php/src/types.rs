@@ -107,6 +107,12 @@ pub struct ExtractionResult {
     /// Extracted keywords
     pub keywords: Option<Vec<Keyword>>,
 
+    /// Extracted keywords with algorithm metadata
+    pub extracted_keywords: Option<Vec<Keyword>>,
+
+    /// Quality score
+    pub quality_score: Option<f64>,
+
     /// Structured Djot content (when output_format='djot')
     djot_content_json: Option<String>,
 
@@ -238,6 +244,35 @@ impl ExtractionResult {
                     let value: serde_json::Value =
                         serde_json::from_str(json).map_err(|e| format!("Failed to parse ocr_elements: {}", e))?;
                     Ok(Some(json_value_to_php(&value)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "extractedKeywords" | "extracted_keywords" => {
+                if let Some(keywords) = &self.extracted_keywords {
+                    use ext_php_rs::boxed::ZBox;
+                    use ext_php_rs::types::ZendObject;
+
+                    // Convert keywords to PHP array of objects (stdClass)
+                    let mut php_keywords = Vec::new();
+                    for kw in keywords {
+                        // Create a proper PHP object with text, score, and algorithm properties
+                        let mut kw_obj = ZendObject::new_stdclass();
+                        kw_obj.set_property("text", kw.text.as_str().into_zval(false)?)?;
+                        kw_obj.set_property("score", kw.score.into_zval(false)?)?;
+                        if let Some(algo) = &kw.algorithm {
+                            kw_obj.set_property("algorithm", algo.as_str().into_zval(false)?)?;
+                        }
+                        php_keywords.push(kw_obj.into_zval(false)?);
+                    }
+                    Ok(Some(php_keywords.into_zval(false)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            "qualityScore" | "quality_score" => {
+                if let Some(score) = self.quality_score {
+                    Ok(Some(score.into_zval(false)?))
                 } else {
                     Ok(None)
                 }
@@ -405,6 +440,18 @@ impl ExtractionResult {
             None
         };
 
+        let extracted_keywords = result.extracted_keywords.as_ref().map(|kws| {
+            kws.iter()
+                .map(|kw| Keyword {
+                    text: kw.text.clone(),
+                    score: kw.score,
+                    algorithm: Some(format!("{:?}", kw.algorithm).to_lowercase()),
+                })
+                .collect::<Vec<_>>()
+        });
+
+        let quality_score = result.quality_score;
+
         // Add error metadata if present (for batch operations)
         if let Some(error) = &result.metadata.error {
             let error_json = serde_json::to_value(error).map_err(|e| format!("Failed to serialize error: {}", e))?;
@@ -499,6 +546,8 @@ impl ExtractionResult {
             chunks,
             pages,
             keywords,
+            extracted_keywords,
+            quality_score,
             djot_content_json,
             elements_json,
             document_json,
@@ -539,6 +588,10 @@ pub struct ExtractedTable {
     /// Page number
     #[php(prop)]
     pub page_number: usize,
+
+    /// Bounding box as associative array {x0, y0, x1, y1} or null
+    #[php(prop)]
+    pub bounding_box: Option<HashMap<String, f64>>,
 }
 
 #[php_impl]
@@ -553,10 +606,19 @@ impl ExtractedTable {
 impl ExtractedTable {
     /// Convert from Rust Table to PHP ExtractedTable.
     pub fn from_rust(table: kreuzberg::Table) -> PhpResult<Self> {
+        let bounding_box = table.bounding_box.map(|bb| {
+            let mut map = HashMap::new();
+            map.insert("x0".to_string(), bb.x0);
+            map.insert("y0".to_string(), bb.y0);
+            map.insert("x1".to_string(), bb.x1);
+            map.insert("y1".to_string(), bb.y1);
+            map
+        });
         Ok(Self {
             cells: table.cells,
             markdown: table.markdown,
             page_number: table.page_number,
+            bounding_box,
         })
     }
 }
@@ -595,6 +657,9 @@ pub struct ExtractedImage {
     pub description: Option<String>,
     #[php(prop)]
     pub is_mask: bool,
+    /// Bounding box as associative array {x0, y0, x1, y1} or null
+    #[php(prop)]
+    pub bounding_box: Option<HashMap<String, f64>>,
 }
 
 #[php_impl]
@@ -608,6 +673,14 @@ impl ExtractedImage {
 
 impl ExtractedImage {
     pub fn from_rust(img: kreuzberg::ExtractedImage) -> PhpResult<Self> {
+        let bounding_box = img.bounding_box.map(|bb| {
+            let mut map = HashMap::new();
+            map.insert("x0".to_string(), bb.x0);
+            map.insert("y0".to_string(), bb.y0);
+            map.insert("x1".to_string(), bb.x1);
+            map.insert("y1".to_string(), bb.y1);
+            map
+        });
         Ok(Self {
             data: img.data.to_vec(),
             format: img.format.into_owned(),
@@ -619,6 +692,7 @@ impl ExtractedImage {
             bits_per_component: img.bits_per_component.map(|b| b as i32),
             description: img.description,
             is_mask: img.is_mask,
+            bounding_box,
         })
     }
 }
@@ -1044,10 +1118,20 @@ pub(crate) fn php_array_to_table(arr: &ext_php_rs::types::ZendHashTable) -> PhpR
         .map(|v| v as usize)
         .unwrap_or(1);
 
+    let bounding_box = arr
+        .get("bounding_box")
+        .and_then(|v| v.array())
+        .map(|bb_arr| kreuzberg::types::BoundingBox {
+            x0: bb_arr.get("x0").and_then(|v| v.double()).unwrap_or(0.0),
+            y0: bb_arr.get("y0").and_then(|v| v.double()).unwrap_or(0.0),
+            x1: bb_arr.get("x1").and_then(|v| v.double()).unwrap_or(0.0),
+            y1: bb_arr.get("y1").and_then(|v| v.double()).unwrap_or(0.0),
+        });
+
     Ok(kreuzberg::types::Table {
         cells,
         markdown,
         page_number,
-        header: None,
+        bounding_box,
     })
 }

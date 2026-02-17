@@ -4,12 +4,7 @@ import type { FixtureSkipHandler } from "./types.js";
  * Default implementation of fixture skip handler
  */
 export class DefaultSkipHandler implements FixtureSkipHandler {
-	shouldSkipFixture(
-		error: unknown,
-		fixtureId: string,
-		requirements: string[],
-		notes?: string | null,
-	): boolean {
+	shouldSkipFixture(error: unknown, fixtureId: string, requirements: string[], notes?: string | null): boolean {
 		if (!(error instanceof Error)) {
 			return false;
 		}
@@ -17,15 +12,9 @@ export class DefaultSkipHandler implements FixtureSkipHandler {
 		const message = `${error.name}: ${error.message}`;
 		const lower = message.toLowerCase();
 
-		const requirementHit = requirements.some((req) =>
-			lower.includes(req.toLowerCase()),
-		);
-		const missingDependency =
-			lower.includes("missingdependencyerror") ||
-			lower.includes("missing dependency");
-		const unsupportedFormat =
-			lower.includes("unsupported mime type") ||
-			lower.includes("unsupported format");
+		const requirementHit = requirements.some((req) => lower.includes(req.toLowerCase()));
+		const missingDependency = lower.includes("missingdependencyerror") || lower.includes("missing dependency");
+		const unsupportedFormat = lower.includes("unsupported mime type") || lower.includes("unsupported format");
 
 		if (missingDependency || unsupportedFormat || requirementHit) {
 			const reason = missingDependency

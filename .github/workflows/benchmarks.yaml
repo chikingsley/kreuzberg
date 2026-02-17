@@ -1593,7 +1593,7 @@ jobs:
           echo "Artifact directories: $ARTIFACT_DIRS"
 
           # Run consolidation
-          cargo run --release --package benchmark-harness -- consolidate \
+          cargo run --release --package benchmark-harness --bin benchmark-harness -- consolidate \
             --inputs "$ARTIFACT_DIRS" \
             --output consolidated-output/
 
@@ -1727,6 +1727,7 @@ jobs:
           EOF
 
           gh release create "$TAG" \
+            --prerelease \
             --title "Benchmark Results ${DATE} (${SHORT_SHA})" \
             --notes "Comparative benchmark results from workflow run [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
 

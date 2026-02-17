@@ -1533,6 +1533,7 @@ class ExtractedImage(TypedDict, total=False):
     bits_per_component: int
     is_mask: bool
     description: str
+    bounding_box: BoundingBox
     ocr_result: ExtractionResult
 
 class ChunkMetadata(TypedDict, total=False):
@@ -1809,6 +1810,7 @@ class ExtractedTable:
     cells: list[list[str]]
     markdown: str
     page_number: int
+    bounding_box: BoundingBox | None
 
 @overload
 def extract_file_sync(

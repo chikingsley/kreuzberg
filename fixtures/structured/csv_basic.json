@@ -1,16 +1,16 @@
 {
-  "id": "structured_csv_basic",
-  "category": "structured",
-  "description": "CSV data file extraction.",
-  "document": {
-    "path": "csv/stanley_cups.csv",
-    "media_type": "text/csv"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "text/csv",
-    "min_content_length": 20
-  }
+	"id": "structured_csv_basic",
+	"category": "structured",
+	"description": "CSV data file extraction.",
+	"document": {
+		"path": "csv/stanley_cups.csv",
+		"media_type": "text/csv"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "text/csv",
+		"min_content_length": 20
+	}
 }

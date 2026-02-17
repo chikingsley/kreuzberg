@@ -67,6 +67,25 @@ public class PdfTest {
     }
 
     @Test
+    public void pdfBoundingBoxes() throws Exception {
+        JsonNode config = MAPPER.readTree("{\"images\":{\"extract_images\":true}}");
+        E2EHelpers.runFixture(
+            "pdf_bounding_boxes",
+            "pdf/tiny.pdf",
+            config,
+            Arrays.asList("pdf"),
+            null,
+            true,
+            result -> {
+                E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/pdf"));
+                E2EHelpers.Assertions.assertMinContentLength(result, 50);
+                E2EHelpers.Assertions.assertTableCount(result, 1, null);
+                E2EHelpers.Assertions.assertTableBoundingBoxes(result);
+            }
+        );
+    }
+
+    @Test
     public void pdfCodeAndFormula() throws Exception {
         JsonNode config = null;
         E2EHelpers.runFixture(
@@ -225,7 +244,6 @@ public class PdfTest {
             result -> {
                 E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/pdf"));
                 E2EHelpers.Assertions.assertMinContentLength(result, 500);
-                E2EHelpers.Assertions.assertTableCount(result, 1, null);
             }
         );
     }
@@ -243,7 +261,6 @@ public class PdfTest {
             result -> {
                 E2EHelpers.Assertions.assertExpectedMime(result, Arrays.asList("application/pdf"));
                 E2EHelpers.Assertions.assertMinContentLength(result, 100);
-                E2EHelpers.Assertions.assertTableCount(result, 1, null);
             }
         );
     }

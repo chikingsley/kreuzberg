@@ -198,10 +198,11 @@ jobs:
           task-command: node:build:ci
           cache-paths: |
             crates/kreuzberg-node/
-          cache-version: v1
+          cache-version: v4
           rust-hash: "n/a"
           binding-files: |
             crates/kreuzberg-node/**
+            crates/kreuzberg/src/**
           dep-files: |
             Cargo.lock
             crates/kreuzberg-node/package.json

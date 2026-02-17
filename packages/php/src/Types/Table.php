@@ -10,6 +10,7 @@ namespace Kreuzberg\Types;
  * @property-read array<array<string>> $cells Table cells (2D array)
  * @property-read string $markdown Table in markdown format
  * @property-read int $pageNumber Page number where table was found
+ * @property-read BoundingBox|null $boundingBox Bounding box coordinates if available
  */
 readonly class Table
 {
@@ -20,6 +21,7 @@ readonly class Table
         public array $cells,
         public string $markdown,
         public int $pageNumber,
+        public ?BoundingBox $boundingBox = null,
     ) {
     }
 
@@ -37,10 +39,18 @@ readonly class Table
         /** @var int $pageNumber */
         $pageNumber = $data['page_number'] ?? 0;
 
+        $boundingBox = null;
+        if (isset($data['bounding_box'])) {
+            /** @var array<string, mixed> $boundingBoxData */
+            $boundingBoxData = $data['bounding_box'];
+            $boundingBox = BoundingBox::fromArray($boundingBoxData);
+        }
+
         return new self(
             cells: $cells,
             markdown: $markdown,
             pageNumber: $pageNumber,
+            boundingBox: $boundingBox,
         );
     }
 }

@@ -15,10 +15,7 @@ export class DenoAdapter implements AssertionAdapter {
 		const actualStr = JSON.stringify(actual);
 		const expectedStr = JSON.stringify(expected);
 		if (actualStr !== expectedStr) {
-			throw new Error(
-				message ||
-					`Expected ${actualStr} to equal ${expectedStr}`,
-			);
+			throw new Error(message || `Expected ${actualStr} to equal ${expectedStr}`);
 		}
 	}
 
@@ -28,29 +25,15 @@ export class DenoAdapter implements AssertionAdapter {
 		}
 	}
 
-	assertGreaterThanOrEqual(
-		actual: number,
-		minimum: number,
-		message?: string,
-	): void {
+	assertGreaterThanOrEqual(actual: number, minimum: number, message?: string): void {
 		if (actual < minimum) {
-			throw new Error(
-				message ||
-					`Expected ${actual} to be greater than or equal to ${minimum}`,
-			);
+			throw new Error(message || `Expected ${actual} to be greater than or equal to ${minimum}`);
 		}
 	}
 
-	assertLessThanOrEqual(
-		actual: number,
-		maximum: number,
-		message?: string,
-	): void {
+	assertLessThanOrEqual(actual: number, maximum: number, message?: string): void {
 		if (actual > maximum) {
-			throw new Error(
-				message ||
-					`Expected ${actual} to be less than or equal to ${maximum}`,
-			);
+			throw new Error(message || `Expected ${actual} to be less than or equal to ${maximum}`);
 		}
 	}
 

@@ -192,9 +192,9 @@ fn get_latest_version(repo: &str) -> String {
 
     if repo.contains("paulocoutinhox") {
         eprintln!(
-            "cargo:warning=Failed to fetch latest PDFium WASM version from GitHub API, using fallback version 7442b"
+            "cargo:warning=Failed to fetch latest PDFium WASM version from GitHub API, using fallback version 7623"
         );
-        "7442b".to_string()
+        "7623".to_string()
     } else if repo.contains("bblanchon") {
         eprintln!(
             "cargo:warning=Failed to fetch latest PDFium binaries version from GitHub API, using fallback version 7568"

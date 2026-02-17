@@ -19,6 +19,7 @@ public final class ExtractedImage {
 	private final boolean mask;
 	private final String description;
 	private final ExtractionResult ocrResult;
+	private final BoundingBox boundingBox;
 
 	@JsonCreator
 	public ExtractedImage(@JsonProperty("data") byte[] data, @JsonProperty("format") String format,
@@ -26,7 +27,8 @@ public final class ExtractedImage {
 			@JsonProperty("width") Integer width, @JsonProperty("height") Integer height,
 			@JsonProperty("colorspace") String colorspace, @JsonProperty("bits_per_component") Integer bitsPerComponent,
 			@JsonProperty("is_mask") boolean mask, @JsonProperty("description") String description,
-			@JsonProperty("ocr_result") ExtractionResult ocrResult) {
+			@JsonProperty("ocr_result") ExtractionResult ocrResult,
+			@JsonProperty("bounding_box") BoundingBox boundingBox) {
 		this.data = Objects.requireNonNull(data, "data must not be null").clone();
 		this.format = Objects.requireNonNull(format, "format must not be null");
 		this.imageIndex = imageIndex;
@@ -38,6 +40,7 @@ public final class ExtractedImage {
 		this.mask = mask;
 		this.description = description;
 		this.ocrResult = ocrResult;
+		this.boundingBox = boundingBox;
 	}
 
 	public byte[] getData() {
@@ -84,6 +87,10 @@ public final class ExtractedImage {
 		return Optional.ofNullable(ocrResult);
 	}
 
+	public Optional<BoundingBox> getBoundingBox() {
+		return Optional.ofNullable(boundingBox);
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -98,13 +105,14 @@ public final class ExtractedImage {
 				&& Objects.equals(width, other.width) && Objects.equals(height, other.height)
 				&& Objects.equals(colorspace, other.colorspace)
 				&& Objects.equals(bitsPerComponent, other.bitsPerComponent)
-				&& Objects.equals(description, other.description) && Objects.equals(ocrResult, other.ocrResult);
+				&& Objects.equals(description, other.description) && Objects.equals(ocrResult, other.ocrResult)
+				&& Objects.equals(boundingBox, other.boundingBox);
 	}
 
 	@Override
 	public int hashCode() {
 		int result = Objects.hash(format, imageIndex, pageNumber, width, height, colorspace, bitsPerComponent, mask,
-				description, ocrResult);
+				description, ocrResult, boundingBox);
 		result = 31 * result + Arrays.hashCode(data);
 		return result;
 	}
@@ -112,6 +120,7 @@ public final class ExtractedImage {
 	@Override
 	public String toString() {
 		return "ExtractedImage{" + "format='" + format + '\'' + ", imageIndex=" + imageIndex + ", pageNumber="
-				+ pageNumber + ", width=" + width + ", height=" + height + ", mask=" + mask + '}';
+				+ pageNumber + ", width=" + width + ", height=" + height + ", mask=" + mask + ", boundingBox="
+				+ boundingBox + '}';
 	}
 }

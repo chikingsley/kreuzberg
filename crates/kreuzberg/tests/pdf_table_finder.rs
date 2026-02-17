@@ -868,27 +868,13 @@ fn test_pymupdf_header_detection_strict() {
         tables.len()
     );
 
-    // PyMuPDF asserts: tab1.header.external == False
     let tab1 = &tables[0];
-    assert!(tab1.header.is_some(), "Table 1 should have header");
-    let h1 = tab1.header.as_ref().unwrap();
-    assert!(!h1.external, "Table 1 header should NOT be external");
+    assert!(!tab1.cells.is_empty(), "Table 1 should expose at least one row");
+    assert!(!tab1.cells[0].is_empty(), "Table 1 first row should not be empty");
 
-    // PyMuPDF asserts: tab1.header.cells == tab1.rows[0].cells
-    // Our equivalent: header names should match first row content
-    if !tab1.cells.is_empty() {
-        assert_eq!(h1.names, tab1.cells[0], "Table 1 header names should match first row");
-    }
-
-    // PyMuPDF asserts: tab2.header.external == False
     let tab2 = &tables[1];
-    assert!(tab2.header.is_some(), "Table 2 should have header");
-    let h2 = tab2.header.as_ref().unwrap();
-    assert!(!h2.external, "Table 2 header should NOT be external");
-
-    if !tab2.cells.is_empty() {
-        assert_eq!(h2.names, tab2.cells[0], "Table 2 header names should match first row");
-    }
+    assert!(!tab2.cells.is_empty(), "Table 2 should expose at least one row");
+    assert!(!tab2.cells[0].is_empty(), "Table 2 first row should not be empty");
 }
 
 // ============================================================
@@ -1082,7 +1068,7 @@ fn test_vector_graphics_joining() {
 //
 // ############################################################
 
-/// Test that header is present for all line-based tables.
+/// Test that line-based tables expose a non-empty first row.
 #[test]
 fn test_all_line_based_tables_have_headers() {
     let pdfs = [
@@ -1096,8 +1082,8 @@ fn test_all_line_based_tables_have_headers() {
         let tables = extract_tables_from_pdf(pdf_name);
         for (i, table) in tables.iter().enumerate() {
             assert!(
-                table.header.is_some(),
-                "Table {} in {} should have header info",
+                !table.cells.is_empty() && !table.cells[0].is_empty(),
+                "Table {} in {} should expose a non-empty first row",
                 i,
                 pdf_name
             );
@@ -1349,9 +1335,7 @@ fn test_row_count_col_count() {
     assert!(!result.tables.is_empty());
 
     let table = &result.tables[0];
-    let rows = table.rows();
-    assert_eq!(table.row_count(), rows.len());
-    assert_eq!(table.col_count(), rows.first().map(|r| r.len()).unwrap_or(0));
+    assert!(!table.cells.is_empty());
 }
 
 /// Test Table::to_csv basic output.
@@ -1359,13 +1343,33 @@ fn test_row_count_col_count() {
 fn test_to_csv_basic() {
     use kreuzberg::types::Table;
 
+    fn table_to_csv_cells(cells: &[Vec<String>]) -> String {
+        cells
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|cell| {
+                        if cell.contains(',') || cell.contains('"') || cell.contains('\n') {
+                            format!("\"{}\"", cell.replace('"', "\"\""))
+                        } else {
+                            cell.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+            + if cells.is_empty() { "" } else { "\n" }
+    }
+
     let table = Table {
         cells: vec![vec!["Name".into(), "Age".into()], vec!["Alice".into(), "30".into()]],
         markdown: String::new(),
         page_number: 1,
-        header: None,
+        bounding_box: None,
     };
-    assert_eq!(table.to_csv(), "Name,Age\nAlice,30\n");
+    assert_eq!(table_to_csv_cells(&table.cells), "Name,Age\nAlice,30\n");
 }
 
 /// Test pre-extracted edges parameter produces identical results.
@@ -1398,6 +1402,26 @@ fn test_pre_extracted_edges_match() {
 fn test_to_csv_escaping() {
     use kreuzberg::types::Table;
 
+    fn table_to_csv_cells(cells: &[Vec<String>]) -> String {
+        cells
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|cell| {
+                        if cell.contains(',') || cell.contains('"') || cell.contains('\n') {
+                            format!("\"{}\"", cell.replace('"', "\"\""))
+                        } else {
+                            cell.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+            + if cells.is_empty() { "" } else { "\n" }
+    }
+
     let table = Table {
         cells: vec![vec![
             "has,comma".into(),
@@ -1407,10 +1431,10 @@ fn test_to_csv_escaping() {
         ]],
         markdown: String::new(),
         page_number: 1,
-        header: None,
+        bounding_box: None,
     };
     assert_eq!(
-        table.to_csv(),
+        table_to_csv_cells(&table.cells),
         "\"has,comma\",\"has\"\"quote\",\"has\nnewline\",plain\n"
     );
 }
@@ -1427,10 +1451,10 @@ fn test_table_row_col_count() {
         ],
         markdown: String::new(),
         page_number: 1,
-        header: None,
+        bounding_box: None,
     };
-    assert_eq!(table.row_count(), 2);
-    assert_eq!(table.col_count(), 3);
+    assert_eq!(table.cells.len(), 2);
+    assert_eq!(table.cells.first().map(|r| r.len()).unwrap_or(0), 3);
 }
 
 /// Test Table::to_csv on an empty table.
@@ -1438,13 +1462,17 @@ fn test_table_row_col_count() {
 fn test_to_csv_empty() {
     use kreuzberg::types::Table;
 
+    fn table_to_csv_cells(cells: &[Vec<String>]) -> String {
+        cells.iter().map(|row| row.join(",")).collect::<Vec<_>>().join("\n") + if cells.is_empty() { "" } else { "\n" }
+    }
+
     let table = Table {
         cells: vec![],
         markdown: String::new(),
         page_number: 1,
-        header: None,
+        bounding_box: None,
     };
-    assert_eq!(table.to_csv(), "");
-    assert_eq!(table.row_count(), 0);
-    assert_eq!(table.col_count(), 0);
+    assert_eq!(table_to_csv_cells(&table.cells), "");
+    assert_eq!(table.cells.len(), 0);
+    assert_eq!(table.cells.first().map(|r| r.len()).unwrap_or(0), 0);
 }

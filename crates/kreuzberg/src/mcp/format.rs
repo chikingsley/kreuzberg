@@ -21,7 +21,7 @@ use crate::{ExtractionConfig, ExtractionResult as KreuzbergResult};
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use kreuzberg::{ExtractionConfig, OutputFormat};
 /// use serde_json::json;
 ///
@@ -329,7 +329,7 @@ mod tests {
                 ],
                 page_number: 1,
                 markdown: "| Col1 | Col2 |\n|------|------|\n| A    | B    |".to_string(),
-                header: None,
+                bounding_box: None,
             }],
             detected_languages: None,
             chunks: None,

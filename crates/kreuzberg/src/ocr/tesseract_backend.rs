@@ -240,7 +240,7 @@ impl OcrBackend for TesseractBackend {
                     cells: t.cells,
                     markdown: t.markdown,
                     page_number: t.page_number,
-                    header: None,
+                    bounding_box: None,
                 })
                 .collect(),
             detected_languages: None,
@@ -321,7 +321,7 @@ impl OcrBackend for TesseractBackend {
                     cells: t.cells,
                     markdown: t.markdown,
                     page_number: t.page_number,
-                    header: None,
+                    bounding_box: None,
                 })
                 .collect(),
             detected_languages: None,

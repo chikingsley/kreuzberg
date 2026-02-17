@@ -72,6 +72,18 @@ fn test_language_to_script_family_tesseract_codes() {
 
     assert_eq!(map_language_code("rus"), Some("cyrillic"));
     assert_eq!(language_to_script_family("cyrillic"), "eslav");
+
+    assert_eq!(map_language_code("ara"), Some("arabic"));
+    assert_eq!(language_to_script_family("arabic"), "arabic");
+
+    assert_eq!(map_language_code("hin"), Some("devanagari"));
+    assert_eq!(language_to_script_family("devanagari"), "devanagari");
+
+    assert_eq!(map_language_code("tam"), Some("tamil"));
+    assert_eq!(language_to_script_family("tamil"), "tamil");
+
+    assert_eq!(map_language_code("tel"), Some("telugu"));
+    assert_eq!(language_to_script_family("telugu"), "telugu");
 }
 
 /// Test that ISO 639-1 language codes map correctly to PaddleOCR codes.
@@ -87,6 +99,10 @@ fn test_language_to_script_family_iso639_codes() {
     assert_eq!(map_language_code("th"), Some("thai"));
     assert_eq!(map_language_code("el"), Some("greek"));
     assert_eq!(map_language_code("ru"), Some("cyrillic"));
+    assert_eq!(map_language_code("ar"), Some("arabic"));
+    assert_eq!(map_language_code("hi"), Some("devanagari"));
+    assert_eq!(map_language_code("ta"), Some("tamil"));
+    assert_eq!(map_language_code("te"), Some("telugu"));
 
     // Verify they map to correct families
     assert_eq!(language_to_script_family("en"), "english");
@@ -98,6 +114,10 @@ fn test_language_to_script_family_iso639_codes() {
     assert_eq!(language_to_script_family("thai"), "thai");
     assert_eq!(language_to_script_family("greek"), "greek");
     assert_eq!(language_to_script_family("cyrillic"), "eslav");
+    assert_eq!(language_to_script_family("arabic"), "arabic");
+    assert_eq!(language_to_script_family("devanagari"), "devanagari");
+    assert_eq!(language_to_script_family("tamil"), "tamil");
+    assert_eq!(language_to_script_family("telugu"), "telugu");
 }
 
 /// Test that unknown language codes fall back to "english" script family.
@@ -179,6 +199,36 @@ fn test_map_language_code_normalization() {
     assert_eq!(map_language_code("pt"), Some("latin"));
     assert_eq!(map_language_code("por"), Some("latin"));
     assert_eq!(map_language_code("portuguese"), Some("latin"));
+
+    // Arabic variants
+    assert_eq!(map_language_code("ar"), Some("arabic"));
+    assert_eq!(map_language_code("ara"), Some("arabic"));
+    assert_eq!(map_language_code("arabic"), Some("arabic"));
+    assert_eq!(map_language_code("fa"), Some("arabic"));
+    assert_eq!(map_language_code("persian"), Some("arabic"));
+    assert_eq!(map_language_code("ur"), Some("arabic"));
+    assert_eq!(map_language_code("urdu"), Some("arabic"));
+
+    // Devanagari variants
+    assert_eq!(map_language_code("hi"), Some("devanagari"));
+    assert_eq!(map_language_code("hin"), Some("devanagari"));
+    assert_eq!(map_language_code("hindi"), Some("devanagari"));
+    assert_eq!(map_language_code("mr"), Some("devanagari"));
+    assert_eq!(map_language_code("marathi"), Some("devanagari"));
+    assert_eq!(map_language_code("sa"), Some("devanagari"));
+    assert_eq!(map_language_code("sanskrit"), Some("devanagari"));
+    assert_eq!(map_language_code("ne"), Some("devanagari"));
+    assert_eq!(map_language_code("nepali"), Some("devanagari"));
+
+    // Tamil variants
+    assert_eq!(map_language_code("ta"), Some("tamil"));
+    assert_eq!(map_language_code("tam"), Some("tamil"));
+    assert_eq!(map_language_code("tamil"), Some("tamil"));
+
+    // Telugu variants
+    assert_eq!(map_language_code("te"), Some("telugu"));
+    assert_eq!(map_language_code("tel"), Some("telugu"));
+    assert_eq!(map_language_code("telugu"), Some("telugu"));
 
     // Unknown codes should return None
     assert_eq!(map_language_code("xyz"), None);

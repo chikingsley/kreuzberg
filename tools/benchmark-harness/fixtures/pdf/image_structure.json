@@ -1,22 +1,15 @@
 {
-  "document": "../../../../test_documents/vendored/pdfplumber/pdf/image_structure.pdf",
-  "file_type": "pdf",
-  "file_size": 45966,
-  "expected_frameworks": [
-    "kreuzberg",
-    "docling",
-    "markitdown",
-    "unstructured",
-    "pdfplumber",
-    "pymupdf4llm"
-  ],
-  "metadata": {
-    "description": "Document from pdfplumber test suite",
-    "source": "pdfplumber",
-    "size_category": "small"
-  },
-  "ground_truth": {
-    "text_file": "../../../../test_documents/ground_truth/pdf/image_structure.txt",
-    "source": "pdftotext"
-  }
+	"document": "../../../../test_documents/vendored/pdfplumber/pdf/image_structure.pdf",
+	"file_type": "pdf",
+	"file_size": 45966,
+	"expected_frameworks": ["kreuzberg", "docling", "markitdown", "unstructured", "pdfplumber", "pymupdf4llm"],
+	"metadata": {
+		"description": "Document from pdfplumber test suite",
+		"source": "pdfplumber",
+		"size_category": "small"
+	},
+	"ground_truth": {
+		"text_file": "../../../../test_documents/ground_truth/pdf/image_structure.txt",
+		"source": "pdftotext"
+	}
 }

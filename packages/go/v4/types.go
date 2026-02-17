@@ -123,9 +123,10 @@ type ExtractionResult struct {
 
 // Table represents a detected table in the source document.
 type Table struct {
-	Cells      [][]string `json:"cells"`
-	Markdown   string     `json:"markdown"`
-	PageNumber int        `json:"page_number"`
+	Cells       [][]string   `json:"cells"`
+	Markdown    string       `json:"markdown"`
+	PageNumber  int          `json:"page_number"`
+	BoundingBox *BoundingBox `json:"bounding_box,omitempty"`
 }
 
 // Chunk contains chunked content plus optional embeddings and metadata.
@@ -159,6 +160,7 @@ type ExtractedImage struct {
 	IsMask           bool              `json:"is_mask"`
 	Description      *string           `json:"description,omitempty"`
 	OCRResult        *ExtractionResult `json:"ocr_result,omitempty"`
+	BoundingBox      *BoundingBox      `json:"bounding_box,omitempty"`
 }
 
 // Metadata aggregates document metadata and format-specific payloads.

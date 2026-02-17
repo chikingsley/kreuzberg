@@ -72,7 +72,7 @@ impl TableState {
             cells: self.rows,
             markdown,
             page_number: 1,
-            header: None,
+            bounding_box: None,
         })
     }
 }

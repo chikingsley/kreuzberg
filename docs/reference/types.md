@@ -2053,6 +2053,7 @@ pub struct Table {
     pub cells: Vec<Vec<String>>,
     pub markdown: String,
     pub page_number: usize,
+    pub bounding_box: Option<BoundingBox>,
 }
 ```
 
@@ -2063,6 +2064,7 @@ class Table(TypedDict):
     cells: list[list[str]]
     markdown: str
     page_number: int
+    bounding_box: BoundingBox | None
 ```
 
 ### TypeScript
@@ -2072,13 +2074,14 @@ export interface Table {
     cells: string[][];
     markdown: string;
     pageNumber: number;
+    boundingBox?: BoundingBox | null;
 }
 ```
 
 ### Ruby
 
 ```ruby title="table.rb"
-Kreuzberg::Result::Table = Struct.new(:cells, :markdown, :page_number, keyword_init: true)
+Kreuzberg::Result::Table = Struct.new(:cells, :markdown, :page_number, :bounding_box, keyword_init: true)
 ```
 
 ### Java
@@ -2087,7 +2090,8 @@ Kreuzberg::Result::Table = Struct.new(:cells, :markdown, :page_number, keyword_i
 public record Table(
     List<List<String>> cells,
     String markdown,
-    int pageNumber
+    int pageNumber,
+    Optional<BoundingBox> boundingBox
 ) {}
 ```
 
@@ -2095,9 +2099,10 @@ public record Table(
 
 ```go title="table.go"
 type Table struct {
-    Cells      [][]string `json:"cells"`
-    Markdown   string     `json:"markdown"`
-    PageNumber int        `json:"page_number"`
+    Cells        [][]string   `json:"cells"`
+    Markdown     string       `json:"markdown"`
+    PageNumber   int          `json:"page_number"`
+    BoundingBox  *BoundingBox `json:"bounding_box,omitempty"`
 }
 ```
 
@@ -2235,6 +2240,7 @@ pub struct ExtractedImage {
     pub is_mask: bool,
     pub description: Option<String>,
     pub ocr_result: Option<Box<ExtractionResult>>,
+    pub bounding_box: Option<BoundingBox>,
 }
 ```
 
@@ -2258,6 +2264,7 @@ class ExtractedImage(TypedDict, total=False):
     is_mask: bool
     description: str | None
     ocr_result: ExtractionResult | None
+    bounding_box: BoundingBox | None
 ```
 
 ### TypeScript
@@ -2275,6 +2282,7 @@ export interface ExtractedImage {
     isMask: boolean;
     description?: string | null;
     ocrResult?: ExtractionResult | null;
+    boundingBox?: BoundingBox | null;
 }
 ```
 
@@ -2283,7 +2291,7 @@ export interface ExtractedImage {
 ```ruby title="extracted_image.rb"
 Kreuzberg::Result::Image = Struct.new(
     :data, :format, :image_index, :page_number, :width, :height,
-    :colorspace, :bits_per_component, :is_mask, :description, :ocr_result,
+    :colorspace, :bits_per_component, :is_mask, :description, :ocr_result, :bounding_box,
     keyword_init: true
 )
 ```
@@ -2302,7 +2310,8 @@ public record ExtractedImage(
     Optional<Integer> bitsPerComponent,
     boolean isMask,
     Optional<String> description,
-    Optional<ExtractionResult> ocrResult
+    Optional<ExtractionResult> ocrResult,
+    Optional<BoundingBox> boundingBox
 ) {}
 ```
 
@@ -2321,6 +2330,7 @@ type ExtractedImage struct {
     IsMask           bool              `json:"is_mask"`
     Description      *string           `json:"description,omitempty"`
     OCRResult        *ExtractionResult `json:"ocr_result,omitempty"`
+    BoundingBox      *BoundingBox      `json:"bounding_box,omitempty"`
 }
 ```
 

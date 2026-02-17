@@ -1,16 +1,16 @@
 {
-  "id": "email_eml_multipart",
-  "category": "email",
-  "description": "EML with multipart MIME content.",
-  "document": {
-    "path": "email/html_email_multipart.eml",
-    "media_type": "message/rfc822"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "message/rfc822",
-    "min_content_length": 10
-  }
+	"id": "email_eml_multipart",
+	"category": "email",
+	"description": "EML with multipart MIME content.",
+	"document": {
+		"path": "email/html_email_multipart.eml",
+		"media_type": "message/rfc822"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "message/rfc822",
+		"min_content_length": 10
+	}
 }

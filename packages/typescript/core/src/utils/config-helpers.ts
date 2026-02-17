@@ -132,14 +132,12 @@ export function configMerge(base: ExtractionConfig, override: Partial<Extraction
 			typeof baseValue === "object" &&
 			!Array.isArray(baseValue)
 		) {
-			// biome-ignore lint/suspicious/noExplicitAny: Merging nested config objects requires dynamic assignment
-			(result as any)[key] = {
+			Reflect.set(result, key, {
 				...baseValue,
 				...overrideValue,
-			};
+			});
 		} else {
-			// biome-ignore lint/suspicious/noExplicitAny: Override assignment requires dynamic typing
-			(result as any)[key] = overrideValue;
+			Reflect.set(result, key, overrideValue);
 		}
 	}
 

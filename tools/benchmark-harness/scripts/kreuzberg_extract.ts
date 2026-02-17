@@ -9,8 +9,8 @@
  * - server: persistent mode reading paths from stdin
  */
 
-import * as readline from "readline";
-import { batchExtractFiles, extractFile, ExtractionConfig } from "@kreuzberg/node";
+import * as readline from "node:readline";
+import { batchExtractFiles, extractFile, type ExtractionConfig } from "@kreuzberg/node";
 
 interface ExtractionOutput {
 	content: string;

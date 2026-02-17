@@ -7,9 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [4.3.5]
 
 ### Added
+
+- **PDF markdown output format**: Native PDF text extraction now supports `output_format: Markdown`, producing structured markdown with headings (via font-size clustering), paragraphs, inline bold/italic markup, and list detection — instead of flat text with visual line breaks.
+- **Multi-column PDF layout detection**: Histogram-based column gutter detection identifies 2+ column layouts (academic papers, magazines) and processes each column independently, preventing text interleaving across columns.
+- **Bold/italic detection via font name fallback**: When PDF font descriptor flags don't indicate bold/italic, the extractor checks font names for "Bold"/"Italic"/"Oblique" substrings and font weight >= 700 as secondary signals.
+- **musl/Alpine Linux native builds for Elixir, Java, and C#**: New Docker-based CI jobs build native libraries (`libkreuzberg_rustler.so`, `libkreuzberg_ffi.so`) targeting `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`. Enables instant install on Alpine Linux and musl-based distributions without compiling from source.
+- **Pre-compiled platform-specific Ruby gems**: The publish workflow now ships pre-compiled native gems for `x86_64-linux`, `aarch64-linux`, `arm64-darwin`, and `x64-mingw-ucrt`, eliminating the 30+ minute compile-from-source on `gem install kreuzberg`. A fallback source gem is still published for unsupported platforms.
+- **`bounding_box: Option<BoundingBox>` field on `Table` struct**: Added spatial positioning data for table extraction, enabling precise table layout reconstruction. Computed from character positions during PDF table detection.
+- **`bounding_box: Option<BoundingBox>` field on `ExtractedImage` struct**: Added spatial positioning data for extracted images, enabling image layout reconstruction in document pipelines.
+- **Inline table embedding in PDF markdown output**: Tables are inserted at correct vertical position within markdown content instead of being appended at the end. Position determined by bounding box `y0` coordinate.
+- **Image placeholder injection in PDF markdown output**: Image references are inserted with OCR text as blockquotes at correct vertical position matching the image's bounding box.
+- **`render_document_as_markdown_with_tables()` function**: New public function for table-aware markdown rendering that embeds tables inline at correct positions and injects image placeholders. Used internally by `render_document_as_markdown()`.
+- **`inject_image_placeholders()` function**: New post-processing function for markdown that injects `![Image description]()` placeholders and OCR text blockquotes at correct vertical positions in the content.
+- **`bounding_box` field in all language bindings**: Added `bounding_box` (optional `BoundingBox`) to `Table` and `ExtractedImage` types across all 10 language bindings: Python, TypeScript (Node/Core/WASM), Ruby, PHP, Go, Java, C#, and Elixir.
+
+### Fixed
+
+- **Pipeline test flakiness**: Disabled post-processing in pipeline tests that don't test post-processing, fixing `test_pipeline_without_chunking` and related tests that failed due to global processor cache poisoning in parallel execution.
+- **PHP FFI bridge missing `bounding_box`**: The PHP Rust bridge (`kreuzberg-php`) was not passing `bounding_box` through for `Table` or `ExtractedImage`, causing the field to always be null despite being defined in the PHP user-facing types.
+
+- **PaddleOCR dict index offset causing wrong character recognition (#395)**: `read_keys_from_file()` was missing the CTC blank token (`#`) at index 0 and the space token at the end, causing off-by-one character mapping errors. Now matches the `get_keys()` layout used for embedded models.
+- **PaddleOCR angle classifier misfiring on short text (#395)**: Changed `use_angle_cls` default from `true` to `false`. The angle classifier can misfire on short text regions (e.g., 2-3 character table cells), rotating crops incorrectly before recognition. Users can re-enable via `PaddleOcrConfig::with_angle_cls(true)` for rotated documents.
+- **PaddleOCR excessive padding including table gridlines (#395)**: Reduced default detection padding from 50px to 10px and made it configurable via `PaddleOcrConfig::with_padding()`. Large padding on small images caused table gridlines to be included in text crops.
+- **Ruby CI Bundler gems destroyed by vendoring script**: The `vendor-kreuzberg-core.py` script was deleting the entire `vendor/` directory including `vendor/bundle/` (Bundler's gem installation). Now only cleans crate subdirectories, preserving Bundler state.
+- **PDF document loaded twice for markdown rendering**: Eliminated redundant Pdfium initialization and document parsing by rendering markdown speculatively during the first document load, saving 25-40ms per PDF.
+- **NaN panics in PDF text clustering and block merging**: Replaced `expect()` calls on `partial_cmp` with `unwrap_or(Ordering::Equal)` across clustering, extraction, and markdown modules to handle corrupt PDF coordinates gracefully.
+- **PDF heading detection false positives**: Added distance threshold to font-size centroid matching — decorative elements with extreme font sizes no longer receive heading levels.
+- **PDF list item false positives**: Long paragraphs starting with "1." or "-" no longer misclassified as list items (added line count constraint).
+- **Silent markdown fallback**: `tracing::warn` messages for markdown rendering failures are no longer gated behind the `otel` feature flag.
+- **PDF font-size clustering float imprecision**: Changed exact `dedup()` to tolerance-based dedup (0.05pt) and added NaN/Inf filtering for font sizes from corrupt PDFs.
 
 - **ExtractionResult typed keyword and quality fields**: `ExtractionResult` now includes typed fields `extracted_keywords: Option<Vec<ExtractedKeyword>>` and `quality_score: Option<f64>` instead of untyped `metadata.additional` entries. Keywords now carry algorithm, score, and position information for better keyword analysis.
 - **ProcessingWarning type for extraction pipeline**: New `ProcessingWarning { source: String, message: String }` type added to `ExtractionResult.processing_warnings` to explicitly surface non-fatal warnings during document processing (e.g., recoverable decoding issues, missing optional features).
@@ -29,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **PDF table extraction now computes bounding boxes from character positions**: Table bounding box is calculated as the aggregate bounds of all constituent character positions, enabling precise spatial positioning in downstream rendering pipelines.
+- **`render_document_as_markdown()` now delegates to `render_document_as_markdown_with_tables()` with empty tables**: The original function is now a thin wrapper for backward compatibility, with all table-aware rendering logic centralized in the new `_with_tables()` variant.
+
 - **PaddleOCR recognition models upgraded to PP-OCRv5**: Upgraded arabic, devanagari, tamil, and telugu recognition models from PP-OCRv3 to PP-OCRv5 for improved accuracy. All 11 script families now use PP-OCRv5 models.
 - **PDFium upgraded to chromium/7678**: Upgraded PDFium binary version from 7578 to the latest release (chromium/7678, Feb 2026) across all CI workflows, Docker images, and task configuration. C API is fully backward-compatible with existing bindings.
 - **kreuzberg-pdfium-render trimmed to single version**: Removed support for 22 legacy PDFium API versions (5961-7350 + future), deleting ~328k lines of dead code including bindgen files, C headers, and ~4,256 version-conditional compilation blocks. Removed XFA, V8, Skia, and Win32 feature-gated code paths.
@@ -36,6 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docker full image: pre-download all PaddleOCR models**: Replaced broken single-language model download with all 11 recognition script families (english, chinese, latin, korean, eslav, thai, greek, arabic, devanagari, tamil, telugu) plus dictionaries. Fixed incorrect HuggingFace URLs and cache paths. Added retry logic with backoff for transient HuggingFace 502 errors.
 - **Docker test suite: PaddleOCR verification**: Added `test_paddle_ocr_extraction` to the full variant Docker tests to verify pre-loaded models work end-to-end.
 - **E2E tests updated for typed extraction fields**: End-to-end tests now validate typed `extracted_keywords`, `quality_score`, and `processing_warnings` fields instead of reading from `metadata.additional` dictionary.
+
+---
+
+## [4.3.4] - 2026-02-16
+
+### Fixed
+
+- **Node.js keyword extraction fields missing**: The TypeScript `convertResult()` type converter was silently dropping `extractedKeywords`, `qualityScore`, and `processingWarnings` from NAPI results because it only copied explicitly listed fields. Added the missing field conversions. Also renamed the mismatched `keywords` property to `extractedKeywords` in the TypeScript types to match the NAPI binding definition.
+- **Windows PHP CI build failure (`crc::Table` not found)**: Downgraded `lzma-rust2` from 0.16.1 to 0.15.7 to avoid pulling `crc` 3.4.0, which removed the `Table` type used by downstream dependencies.
+- **CLI installer resolving benchmark tags as latest release**: The `install.sh` script used GitHub's `/releases/latest` API which returned benchmark run releases instead of actual versioned releases. Changed to filter for `v`-prefixed tags. Also marked benchmark releases as prerelease in the workflow so they no longer interfere.
 
 ---
 

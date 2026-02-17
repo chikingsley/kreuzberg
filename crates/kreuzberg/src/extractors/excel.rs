@@ -46,7 +46,7 @@ impl ExcelExtractor {
                     cells: cells.clone(),
                     markdown: sheet.markdown.clone(),
                     page_number: sheet_index + 1,
-                    header: None,
+                    bounding_box: None,
                 });
             }
         }

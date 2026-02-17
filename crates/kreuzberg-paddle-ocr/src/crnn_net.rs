@@ -86,28 +86,24 @@ impl CrnnNet {
             ))
         })?;
 
-        // Estimate capacity (safe division by using checked arithmetic)
-        let capacity = if !model_charater_list.is_empty() {
-            (model_charater_list.len() as f32 / 3.9) as usize
-        } else {
-            10 // default capacity if list is empty
-        };
-        let mut keys = Vec::with_capacity(capacity);
-
-        keys.push("#".to_string());
-
-        keys.extend(model_charater_list.split('\n').map(|s: &str| s.to_string()));
-
-        keys.push(" ".to_string());
+        // PP-OCRv5 model metadata already includes the CTC blank token ("#") at
+        // index 0 and the space token (" ") at the end.  Do NOT prepend/append
+        // extra tokens — doing so shifts every character index by one and
+        // produces garbled output.
+        let keys: Vec<String> = model_charater_list.split('\n').map(|s: &str| s.to_string()).collect();
 
         Ok(keys)
     }
 
     fn read_keys_from_file(&mut self, path: &str) -> Result<(), OcrError> {
         let content = std::fs::read_to_string(path)?;
-        let mut keys = Vec::new();
 
-        keys.extend(content.split('\n').map(|s| s.to_string()));
+        // PP-OCRv5 dict files already include the CTC blank token ("#") at
+        // index 0 and the space token (" ") at the end.  Do NOT prepend/append
+        // extra tokens — doing so shifts every character index by one and
+        // produces garbled output.
+        let keys: Vec<String> = content.split('\n').map(|s| s.to_string()).collect();
+
         self.keys = keys;
         Ok(())
     }
@@ -221,5 +217,59 @@ impl CrnnNet {
             0.0
         };
         Ok(text_line)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_score_to_text_line_skips_blank_index() {
+        // keys[0] = "#" (CTC blank), keys[1] = "a", keys[2] = "b"
+        let keys = vec!["#".to_string(), "a".to_string(), "b".to_string()];
+        // 3 timesteps, 3 classes each. Simulate: blank, "a", "b"
+        let output = vec![
+            1.0, 0.0, 0.0, // timestep 0: max at index 0 (blank) -> skip
+            0.0, 0.9, 0.1, // timestep 1: max at index 1 ("a")
+            0.0, 0.1, 0.8, // timestep 2: max at index 2 ("b")
+        ];
+        let result = CrnnNet::score_to_text_line(&output, 3, 3, &keys).unwrap();
+        assert_eq!(result.text, "ab");
+    }
+
+    #[test]
+    fn test_score_to_text_line_deduplicates_consecutive() {
+        let keys = vec!["#".to_string(), "h".to_string(), "i".to_string()];
+        // 4 timesteps: "h", "h", "i", "i" -> should deduplicate to "hi"
+        let output = vec![
+            0.0, 0.9, 0.0, // "h"
+            0.0, 0.8, 0.0, // "h" again (same index, skip)
+            0.0, 0.0, 0.9, // "i"
+            0.0, 0.0, 0.8, // "i" again (same index, skip)
+        ];
+        let result = CrnnNet::score_to_text_line(&output, 4, 3, &keys).unwrap();
+        assert_eq!(result.text, "hi");
+    }
+
+    #[test]
+    fn test_read_keys_from_file_preserves_dict_layout() {
+        let dir = std::env::temp_dir().join("kreuzberg_test_dict");
+        std::fs::create_dir_all(&dir).unwrap();
+        let dict_path = dir.join("test_dict.txt");
+        // PP-OCRv5 dict files already include "#" (blank) at start and " " at end.
+        std::fs::write(&dict_path, "#\na\nb\nc\n ").unwrap();
+
+        let mut net = CrnnNet::new();
+        net.read_keys_from_file(dict_path.to_str().unwrap()).unwrap();
+
+        // Dict is loaded as-is: ["#", "a", "b", "c", " "]
+        assert_eq!(net.keys[0], "#");
+        assert_eq!(net.keys[1], "a");
+        assert_eq!(net.keys[2], "b");
+        assert_eq!(net.keys[3], "c");
+        assert_eq!(net.keys[net.keys.len() - 1], " ");
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

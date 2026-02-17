@@ -68,9 +68,13 @@ readonly class EmbeddingConfig
      */
     public static function fromArray(array $data): self
     {
-        /** @var string $model */
+        /** @var string|array<string, string> $model */
         $model = $data['model'] ?? 'balanced';
-        if (!is_string($model)) {
+        if (is_array($model)) {
+            // Handle Rust-format model: {"type": "preset", "name": "balanced"}
+            /** @var string $model */
+            $model = $model['name'] ?? 'balanced';
+        } elseif (!is_string($model)) {
             /** @var string $model */
             $model = (string) $model;
         }

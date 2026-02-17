@@ -18,12 +18,7 @@ test = false
 
 [dependencies]
 async-trait = { workspace = true }
-kreuzberg = { path = "../kreuzberg", features = [
-    "full",
-    "bundled-pdfium",
-    "ollama-ocr",
-    "vllm-ocr",
-] }
+kreuzberg = { path = "../kreuzberg", features = ["full", "bundled-pdfium"] }
 kreuzberg-ffi = { path = "../kreuzberg-ffi" }
 once_cell = "1.21"
 # NOTE: pyo3 pinned to 0.27.x until pyo3-async-runtimes supports 0.28.x
@@ -32,9 +27,9 @@ pyo3-async-runtimes = { version = "=0.27.0", features = ["tokio-runtime"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt", "macros"] }
 tracing = { workspace = true }
-html-to-markdown-rs = { version = "2.25.0", default-features = false }
-image = { workspace = true, default-features = false, features = ["png"] }
+html-to-markdown-rs = { version = "2.25.1", default-features = false }
 ahash = "0.8"
+image = { workspace = true }
 
 [features]
 default = ["extension-module"]

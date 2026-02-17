@@ -27,6 +27,8 @@
 //!     overlap: 50,
 //!     trim: true,
 //!     chunker_type: ChunkerType::Text,
+//!     embedding: None,
+//!     preset: None,
 //! };
 //!
 //! let long_text = "This is a very long document...".repeat(100);

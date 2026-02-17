@@ -1,16 +1,16 @@
 {
-  "id": "structured_yaml_basic",
-  "category": "structured",
-  "description": "YAML file text extraction.",
-  "document": {
-    "path": "yaml/simple.yaml",
-    "media_type": "application/yaml"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"],
-    "min_content_length": 10
-  }
+	"id": "structured_yaml_basic",
+	"category": "structured",
+	"description": "YAML file text extraction.",
+	"document": {
+		"path": "yaml/simple.yaml",
+		"media_type": "application/yaml"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/yaml", "text/yaml", "text/x-yaml", "application/x-yaml"],
+		"min_content_length": 10
+	}
 }

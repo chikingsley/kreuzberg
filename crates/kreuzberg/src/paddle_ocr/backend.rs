@@ -260,7 +260,7 @@ impl PaddleOcrBackend {
             plugin_name: "paddle-ocr".to_string(),
         })?;
 
-        let padding = 50u32;
+        let padding = config.padding;
         let max_side_len = config.det_limit_side_len;
         let box_score_thresh = config.det_db_thresh;
         let box_thresh = config.det_db_box_thresh;
@@ -362,8 +362,8 @@ impl OcrBackend for PaddleOcrBackend {
                     tables.push(Table {
                         cells,
                         markdown: table_markdown,
-                        page_number: 1, // Single image = page 1
-                        header: None,
+                        page_number: 1,
+                        bounding_box: None,
                     });
                 }
             }

@@ -242,7 +242,7 @@ fn parse_docbook_single_pass(content: &str) -> Result<DocBookParseResult> {
                                 cells: current_table.clone(),
                                 markdown,
                                 page_number: table_index + 1,
-                                header: None,
+                                bounding_box: None,
                             });
                             table_index += 1;
                             current_table.clear();

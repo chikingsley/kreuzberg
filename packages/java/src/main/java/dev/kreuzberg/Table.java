@@ -20,9 +20,12 @@ import java.util.Objects;
  *            the Markdown representation of the table
  * @param pageNumber
  *            the page number where the table was found (1-indexed)
+ * @param boundingBox
+ *            the bounding box coordinates of the table on the page, if
+ *            available
  */
 public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProperty("markdown") String markdown,
-		@JsonProperty("page_number") int pageNumber) {
+		@JsonProperty("page_number") int pageNumber, @JsonProperty("bounding_box") BoundingBox boundingBox) {
 	/**
 	 * Creates a new Table.
 	 *
@@ -33,6 +36,8 @@ public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProper
 	 * @param pageNumber
 	 *            the page number (0 for non-paginated documents, >= 1 for paginated
 	 *            documents)
+	 * @param boundingBox
+	 *            the bounding box coordinates, or null if not available
 	 * @throws NullPointerException
 	 *             if cells or markdown is null
 	 * @throws IllegalArgumentException
@@ -40,7 +45,7 @@ public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProper
 	 */
 	@JsonCreator
 	public Table(@JsonProperty("cells") List<List<String>> cells, @JsonProperty("markdown") String markdown,
-			@JsonProperty("page_number") int pageNumber) {
+			@JsonProperty("page_number") int pageNumber, @JsonProperty("bounding_box") BoundingBox boundingBox) {
 		Objects.requireNonNull(cells, "cells must not be null");
 		Objects.requireNonNull(markdown, "markdown must not be null");
 		if (pageNumber < 0) {
@@ -49,6 +54,7 @@ public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProper
 		this.cells = deepCopyTable(cells);
 		this.markdown = markdown;
 		this.pageNumber = pageNumber;
+		this.boundingBox = boundingBox;
 	}
 
 	/**
@@ -60,10 +66,12 @@ public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProper
 	 *            the Markdown representation
 	 * @param pageNumber
 	 *            the page number
+	 * @param boundingBox
+	 *            the bounding box coordinates, or null if not available
 	 * @return a new Table
 	 */
-	public static Table of(List<List<String>> cells, String markdown, int pageNumber) {
-		return new Table(cells, markdown, pageNumber);
+	public static Table of(List<List<String>> cells, String markdown, int pageNumber, BoundingBox boundingBox) {
+		return new Table(cells, markdown, pageNumber, boundingBox);
 	}
 
 	/**
@@ -118,7 +126,8 @@ public record Table(@JsonProperty("cells") List<List<String>> cells, @JsonProper
 
 	@Override
 	public String toString() {
-		return "Table{" + "rows=" + getRowCount() + ", cols=" + getColumnCount() + ", page=" + pageNumber + '}';
+		return "Table{" + "rows=" + getRowCount() + ", cols=" + getColumnCount() + ", page=" + pageNumber
+				+ ", boundingBox=" + boundingBox + '}';
 	}
 
 	private static List<List<String>> deepCopyTable(List<List<String>> table) {

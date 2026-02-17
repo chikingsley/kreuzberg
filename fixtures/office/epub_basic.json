@@ -1,16 +1,16 @@
 {
-  "id": "office_epub_basic",
-  "category": "office",
-  "description": "EPUB book extraction with text content.",
-  "document": {
-    "path": "epub/features.epub",
-    "media_type": "application/epub+zip"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "application/epub+zip",
-    "min_content_length": 50
-  }
+	"id": "office_epub_basic",
+	"category": "office",
+	"description": "EPUB book extraction with text content.",
+	"document": {
+		"path": "epub/features.epub",
+		"media_type": "application/epub+zip"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "application/epub+zip",
+		"min_content_length": 50
+	}
 }

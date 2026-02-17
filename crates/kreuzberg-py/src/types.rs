@@ -389,6 +389,15 @@ impl ExtractionResult {
                     img_dict.set_item("description", desc)?;
                 }
 
+                if let Some(bbox) = &img.bounding_box {
+                    let bbox_dict = PyDict::new(py);
+                    bbox_dict.set_item("x0", bbox.x0)?;
+                    bbox_dict.set_item("y0", bbox.y0)?;
+                    bbox_dict.set_item("x1", bbox.x1)?;
+                    bbox_dict.set_item("y1", bbox.y1)?;
+                    img_dict.set_item("bounding_box", bbox_dict)?;
+                }
+
                 if let Some(ocr) = img.ocr_result {
                     let ocr_py = Self::from_rust(*ocr, py, output_format.clone(), result_format.clone())?;
                     img_dict.set_item("ocr_result", ocr_py)?;
@@ -476,6 +485,16 @@ impl ExtractionResult {
                     if let Some(desc) = &img.description {
                         img_dict.set_item("description", desc)?;
                     }
+
+                    if let Some(bbox) = &img.bounding_box {
+                        let bbox_dict = PyDict::new(py);
+                        bbox_dict.set_item("x0", bbox.x0)?;
+                        bbox_dict.set_item("y0", bbox.y0)?;
+                        bbox_dict.set_item("x1", bbox.x1)?;
+                        bbox_dict.set_item("y1", bbox.y1)?;
+                        img_dict.set_item("bounding_box", bbox_dict)?;
+                    }
+
                     page_images.append(img_dict)?;
                 }
                 page_dict.set_item("images", page_images)?;
@@ -800,6 +819,9 @@ pub struct ExtractedTable {
 
     #[pyo3(get)]
     pub page_number: usize,
+
+    #[pyo3(get)]
+    pub bounding_box: Option<Py<PyDict>>,
 }
 
 #[pymethods]
@@ -916,10 +938,20 @@ impl ExtractedTable {
             cells.append(py_row)?;
         }
 
+        let bounding_box = table.bounding_box.map(|bbox| {
+            let dict = PyDict::new(py);
+            dict.set_item("x0", bbox.x0).unwrap();
+            dict.set_item("y0", bbox.y0).unwrap();
+            dict.set_item("x1", bbox.x1).unwrap();
+            dict.set_item("y1", bbox.y1).unwrap();
+            dict.unbind()
+        });
+
         Ok(Self {
             cells: cells.unbind(),
             markdown: table.markdown,
             page_number: table.page_number,
+            bounding_box,
         })
     }
 }

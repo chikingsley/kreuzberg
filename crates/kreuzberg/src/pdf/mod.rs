@@ -48,6 +48,8 @@ pub mod hierarchy;
 #[cfg(feature = "pdf")]
 pub mod images;
 #[cfg(feature = "pdf")]
+pub mod markdown;
+#[cfg(feature = "pdf")]
 pub mod metadata;
 #[cfg(feature = "pdf")]
 pub mod rendering;

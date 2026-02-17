@@ -2,13 +2,14 @@ defmodule Kreuzberg.Table do
   @moduledoc """
   Structure representing an extracted table from a document.
 
-  Matches the Rust `Table` struct which has exactly three fields.
+  Matches the Rust `Table` struct with cells, markdown, page number, and optional bounding box.
 
   ## Fields
 
     * `:cells` - Two-dimensional list of table cells [[cell1, cell2], ...]
     * `:markdown` - Markdown representation of the table
     * `:page_number` - Page number where table appears (0-indexed)
+    * `:bounding_box` - Bounding box coordinates {x0, y0, x1, y1} if available, nil otherwise
 
   ## Examples
 
@@ -24,10 +25,11 @@ defmodule Kreuzberg.Table do
   @type t :: %__MODULE__{
           cells: list(list(String.t())),
           markdown: String.t(),
-          page_number: non_neg_integer()
+          page_number: non_neg_integer(),
+          bounding_box: map() | nil
         }
 
-  defstruct cells: [], markdown: "", page_number: 0
+  defstruct cells: [], markdown: "", page_number: 0, bounding_box: nil
 
   @doc """
   Creates a Table struct from a map.
@@ -42,7 +44,8 @@ defmodule Kreuzberg.Table do
     %__MODULE__{
       cells: data["cells"] || [],
       markdown: data["markdown"] || "",
-      page_number: data["page_number"] || 0
+      page_number: data["page_number"] || 0,
+      bounding_box: data["bounding_box"]
     }
   end
 
@@ -54,7 +57,8 @@ defmodule Kreuzberg.Table do
     %{
       "cells" => table.cells,
       "markdown" => table.markdown,
-      "page_number" => table.page_number
+      "page_number" => table.page_number,
+      "bounding_box" => table.bounding_box
     }
   end
 

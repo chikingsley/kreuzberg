@@ -168,6 +168,9 @@ pub mod pdf_helpers {
             font_size,
             width: font_size * 0.6,
             height: font_size,
+            is_bold: false,
+            is_italic: false,
+            baseline_y: y,
         }
     }
 

@@ -1,17 +1,17 @@
 {
-  "id": "office_odt_list",
-  "category": "office",
-  "description": "ODT document containing unordered lists with nesting.",
-  "document": {
-    "path": "odt/unorderedList.odt",
-    "media_type": "application/vnd.oasis.opendocument.text"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "application/vnd.oasis.opendocument.text",
-    "min_content_length": 30,
-    "content_contains_any": ["list item", "New level", "Pushed us"]
-  }
+	"id": "office_odt_list",
+	"category": "office",
+	"description": "ODT document containing unordered lists with nesting.",
+	"document": {
+		"path": "odt/unorderedList.odt",
+		"media_type": "application/vnd.oasis.opendocument.text"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "application/vnd.oasis.opendocument.text",
+		"min_content_length": 30,
+		"content_contains_any": ["list item", "New level", "Pushed us"]
+	}
 }

@@ -1,16 +1,16 @@
 {
-  "id": "image_svg_basic",
-  "category": "image",
-  "description": "SVG image extraction.",
-  "document": {
-    "path": "xml/simple_svg.svg",
-    "media_type": "image/svg+xml"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": "image/svg+xml",
-    "min_content_length": 5
-  }
+	"id": "image_svg_basic",
+	"category": "image",
+	"description": "SVG image extraction.",
+	"document": {
+		"path": "xml/simple_svg.svg",
+		"media_type": "image/svg+xml"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": "image/svg+xml",
+		"min_content_length": 5
+	}
 }

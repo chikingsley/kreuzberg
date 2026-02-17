@@ -1,16 +1,16 @@
 {
-  "id": "office_fictionbook_basic",
-  "category": "office",
-  "description": "FictionBook (.fb2) text extraction.",
-  "document": {
-    "path": "fictionbook/basic.fb2",
-    "media_type": "application/x-fictionbook+xml"
-  },
-  "extraction": {
-    "config": {}
-  },
-  "assertions": {
-    "expected_mime": ["application/x-fictionbook+xml", "application/x-fictionbook"],
-    "min_content_length": 10
-  }
+	"id": "office_fictionbook_basic",
+	"category": "office",
+	"description": "FictionBook (.fb2) text extraction.",
+	"document": {
+		"path": "fictionbook/basic.fb2",
+		"media_type": "application/x-fictionbook+xml"
+	},
+	"extraction": {
+		"config": {}
+	},
+	"assertions": {
+		"expected_mime": ["application/x-fictionbook+xml", "application/x-fictionbook"],
+		"min_content_length": 10
+	}
 }

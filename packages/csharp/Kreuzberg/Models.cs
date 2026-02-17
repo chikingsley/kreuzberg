@@ -645,6 +645,12 @@ public sealed class Table
     /// </summary>
     [JsonPropertyName("page_number")]
     public int PageNumber { get; set; }
+
+    /// <summary>
+    /// Bounding box coordinates for this table on the page, if available.
+    /// </summary>
+    [JsonPropertyName("bounding_box")]
+    public BoundingBox? BoundingBox { get; set; }
 }
 
 /// <summary>
@@ -789,6 +795,12 @@ public sealed class ExtractedImage
     /// </summary>
     [JsonPropertyName("ocr_result")]
     public ExtractionResult? OcrResult { get; set; }
+
+    /// <summary>
+    /// Bounding box coordinates for this image on the page, if available.
+    /// </summary>
+    [JsonPropertyName("bounding_box")]
+    public BoundingBox? BoundingBox { get; set; }
 }
 
 /// <summary>

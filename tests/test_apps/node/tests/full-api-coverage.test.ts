@@ -30,7 +30,7 @@ import {
 	ErrorCode,
 	type ExtractedImage,
 	type ExtractedKeyword,
-	ExtractionConfig,
+	type ExtractionConfig,
 	type ExtractionResult,
 	extractBytes,
 	extractBytesSync,
@@ -84,9 +84,9 @@ import {
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 describe("Complete Kreuzberg API Coverage", () => {
-	let testDir = tmpdir();
-	let testFiles: string[] = [];
-	let testBuffers: { content: Buffer; mimeType: string }[] = [];
+	const testDir = tmpdir();
+	const testFiles: string[] = [];
+	const testBuffers: { content: Buffer; mimeType: string }[] = [];
 
 	beforeAll(() => {
 		// Create test files for use in tests
