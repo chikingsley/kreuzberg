@@ -34,12 +34,22 @@ impl OcrBackendRegistry {
     /// Logs warnings if backend initialization fails (common in containerized environments
     /// with missing dependencies or permission issues).
     pub fn new() -> Self {
-        #[cfg(any(feature = "ocr", feature = "paddle-ocr", feature = "ollama-ocr", feature = "vllm-ocr"))]
+        #[cfg(any(
+            feature = "ocr",
+            feature = "paddle-ocr",
+            feature = "ollama-ocr",
+            feature = "vllm-ocr"
+        ))]
         let mut registry = Self {
             backends: HashMap::new(),
         };
 
-        #[cfg(not(any(feature = "ocr", feature = "paddle-ocr", feature = "ollama-ocr", feature = "vllm-ocr")))]
+        #[cfg(not(any(
+            feature = "ocr",
+            feature = "paddle-ocr",
+            feature = "ollama-ocr",
+            feature = "vllm-ocr"
+        )))]
         let registry = Self {
             backends: HashMap::new(),
         };

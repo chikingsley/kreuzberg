@@ -63,10 +63,7 @@ impl VllmOcrBackend {
     /// Send an image to vLLM and return the extracted text.
     fn call_vllm(&self, image_bytes: &[u8]) -> Result<String> {
         let b64 = base64::engine::general_purpose::STANDARD.encode(image_bytes);
-        let url = format!(
-            "{}/v1/chat/completions",
-            self.endpoint.trim_end_matches('/')
-        );
+        let url = format!("{}/v1/chat/completions", self.endpoint.trim_end_matches('/'));
 
         // OpenAI-compatible vision format: images as data URLs in content array
         let body = serde_json::json!({
@@ -154,11 +151,7 @@ impl Plugin for VllmOcrBackend {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl OcrBackend for VllmOcrBackend {
-    async fn process_image(
-        &self,
-        image_bytes: &[u8],
-        _config: &OcrConfig,
-    ) -> Result<ExtractionResult> {
+    async fn process_image(&self, image_bytes: &[u8], _config: &OcrConfig) -> Result<ExtractionResult> {
         let backend = self.clone();
         let bytes = image_bytes.to_vec();
 
@@ -220,10 +213,8 @@ pub struct VllmOcrBuilder {
 impl Default for VllmOcrBuilder {
     fn default() -> Self {
         Self {
-            endpoint: std::env::var("VLLM_OCR_BASE_URL")
-                .unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string()),
-            model: std::env::var("VLLM_OCR_MODEL")
-                .unwrap_or_else(|_| DEFAULT_MODEL.to_string()),
+            endpoint: std::env::var("VLLM_OCR_BASE_URL").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string()),
+            model: std::env::var("VLLM_OCR_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string()),
             prompt: DEFAULT_PROMPT.to_string(),
             api_key: std::env::var("VLLM_OCR_API_KEY").ok(),
         }
@@ -286,9 +277,7 @@ mod tests {
 
     #[test]
     fn test_builder_no_api_key() {
-        let backend = VllmOcrBackend::builder()
-            .endpoint("http://localhost:8000")
-            .build();
+        let backend = VllmOcrBackend::builder().endpoint("http://localhost:8000").build();
         assert!(backend.api_key.is_none() || backend.api_key.is_some());
         // api_key comes from env, so just verify the field exists
     }

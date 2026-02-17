@@ -498,6 +498,7 @@ fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>
                 continue;
             }
 
+            let mut found = false;
             for &right_pt in &right {
                 if !edge_connects(pt, right_pt) {
                     continue;
@@ -514,8 +515,12 @@ fn intersections_to_cells(intersections: &HashMap<(u64, u64), IntersectionEdges>
                     let x1 = f64::from_bits(bottom_right.0);
                     let bottom = f64::from_bits(bottom_right.1);
                     cells.push((x0, top, x1, bottom));
-                    break; // Found the smallest cell for this top-left corner and this below point
+                    found = true;
+                    break; // Nearest right: smallest width
                 }
+            }
+            if found {
+                break; // Nearest below: smallest height — avoids generating spanning cells
             }
         }
     }
@@ -549,8 +554,7 @@ fn cells_to_tables(cells: &[Bbox]) -> Vec<Vec<Bbox>> {
 
             remaining.retain(|cell| {
                 let corners = bbox_corners(*cell);
-                let should_include =
-                    current_cells.is_empty() || corners.iter().any(|c| current_corners.contains(c));
+                let should_include = current_cells.is_empty() || corners.iter().any(|c| current_corners.contains(c));
                 if should_include {
                     current_corners.extend(corners.iter());
                     current_cells.push(*cell);
@@ -631,8 +635,11 @@ struct StrikethroughLine {
 /// For each cell, find characters whose midpoint falls within the cell bbox
 /// and concatenate them. Returns plain text for backward compatibility.
 pub fn extract_table_text(table: &DetectedTable, page: &PdfPage, page_height: f64) -> Result<Vec<Vec<String>>> {
-    extract_table_text_styled(table, page, page_height, None)
-        .map(|rows| rows.into_iter().map(|row| row.into_iter().map(|c| c.plain).collect()).collect())
+    extract_table_text_styled(table, page, page_height, None).map(|rows| {
+        rows.into_iter()
+            .map(|row| row.into_iter().map(|c| c.plain).collect())
+            .collect()
+    })
 }
 
 /// Extract styled text content for each cell in a detected table.
@@ -1080,9 +1087,10 @@ mod tests {
         let intersections = edges_to_intersections(&edges, 1.0, 1.0);
         let cells = intersections_to_cells(&intersections, &edges);
 
-        // A 3x3 grid produces 6 cells: 4 minimal (1x1) + 2 spanning cells
-        // (matching pdfplumber's behavior — spanning cells get resolved during table grouping)
-        assert_eq!(cells.len(), 6);
+        // A 3x3 grid of intersection points produces exactly 4 minimal cells (2x2 grid of cells).
+        // No spanning cells are generated — each top-left corner yields only the nearest
+        // valid rectangle, preventing vertical cell merging in row extraction.
+        assert_eq!(cells.len(), 4);
         // Verify all 4 minimal cells are present
         assert!(cells.contains(&(0.0, 0.0, 50.0, 50.0)));
         assert!(cells.contains(&(50.0, 0.0, 100.0, 50.0)));

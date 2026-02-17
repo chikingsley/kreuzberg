@@ -3564,6 +3564,7 @@ dependencies = [
  "ahash",
  "async-trait",
  "html-to-markdown-rs",
+ "image",
  "kreuzberg",
  "kreuzberg-ffi",
  "once_cell",

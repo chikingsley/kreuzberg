@@ -16,13 +16,11 @@ fn model_available(model: &str) -> bool {
         return false;
     };
     let body: serde_json::Value = resp.body_mut().read_json().unwrap_or_default();
-    body["models"]
-        .as_array()
-        .is_some_and(|models| {
-            models
-                .iter()
-                .any(|m| m["name"].as_str().unwrap_or("").starts_with(model))
-        })
+    body["models"].as_array().is_some_and(|models| {
+        models
+            .iter()
+            .any(|m| m["name"].as_str().unwrap_or("").starts_with(model))
+    })
 }
 
 fn test_image_path(name: &str) -> std::path::PathBuf {

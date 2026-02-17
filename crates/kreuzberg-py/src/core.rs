@@ -465,6 +465,249 @@ pub fn batch_extract_bytes<'py>(
     })
 }
 
+// ── PDF utilities (split, render, page count) ────────────────────────
+
+/// Split a PDF into parts by page ranges.
+///
+/// Each range is a ``(start, end)`` tuple of **1-indexed, inclusive** page numbers.
+/// Returns a list of ``bytes`` objects, each a complete PDF file.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     ranges (list[tuple[int, int]]): Page ranges to extract, e.g. ``[(1, 3), (5, 5)]``
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     list[bytes]: One PDF per range
+///
+/// Raises:
+///     ValueError: If a range is invalid (start > end, page 0, out of bounds)
+///     RuntimeError: If the PDF cannot be loaded
+///
+/// Example:
+///     >>> from kreuzberg import split_pdf
+///     >>> pdf = open("big.pdf", "rb").read()
+///     >>> parts = split_pdf(pdf, [(1, 5), (6, 10)])
+///     >>> open("part1.pdf", "wb").write(parts[0])
+#[pyfunction]
+#[pyo3(signature = (data, ranges, password=None))]
+pub fn split_pdf(
+    py: Python,
+    data: Vec<u8>,
+    ranges: Vec<(u32, u32)>,
+    password: Option<String>,
+) -> PyResult<Vec<pyo3::Py<pyo3::types::PyBytes>>> {
+    let page_ranges: Vec<kreuzberg::pdf::split::PageRange> = ranges
+        .into_iter()
+        .map(|(s, e)| kreuzberg::pdf::split::PageRange::new(s, e))
+        .collect();
+
+    let results = Python::detach(py, || {
+        kreuzberg::pdf::split::split_pdf_with_password(&data, &page_ranges, password.as_deref())
+    })
+    .map_err(|e| to_py_err(e.into()))?;
+
+    Ok(results
+        .into_iter()
+        .map(|bytes| pyo3::types::PyBytes::new(py, &bytes).unbind())
+        .collect())
+}
+
+/// Split a PDF into individual single-page PDFs.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     list[bytes]: One single-page PDF per page in the document
+///
+/// Example:
+///     >>> from kreuzberg import split_pdf_into_pages
+///     >>> pdf = open("document.pdf", "rb").read()
+///     >>> pages = split_pdf_into_pages(pdf)
+///     >>> for i, page in enumerate(pages):
+///     ...     open(f"page_{i+1}.pdf", "wb").write(page)
+#[pyfunction]
+#[pyo3(signature = (data, password=None))]
+pub fn split_pdf_into_pages(
+    py: Python,
+    data: Vec<u8>,
+    password: Option<String>,
+) -> PyResult<Vec<pyo3::Py<pyo3::types::PyBytes>>> {
+    let results = Python::detach(py, || {
+        kreuzberg::pdf::split::split_pdf_into_pages_with_password(&data, password.as_deref())
+    })
+    .map_err(|e| to_py_err(e.into()))?;
+
+    Ok(results
+        .into_iter()
+        .map(|bytes| pyo3::types::PyBytes::new(py, &bytes).unbind())
+        .collect())
+}
+
+/// Split a PDF into chunks of N pages each.
+///
+/// The last chunk may have fewer pages if the total isn't evenly divisible.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     chunk_size (int): Number of pages per chunk
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     list[bytes]: One PDF per chunk
+///
+/// Example:
+///     >>> from kreuzberg import split_pdf_into_chunks
+///     >>> pdf = open("book.pdf", "rb").read()
+///     >>> chunks = split_pdf_into_chunks(pdf, 10)  # 10 pages per chunk
+#[pyfunction]
+#[pyo3(signature = (data, chunk_size, password=None))]
+pub fn split_pdf_into_chunks(
+    py: Python,
+    data: Vec<u8>,
+    chunk_size: u32,
+    password: Option<String>,
+) -> PyResult<Vec<pyo3::Py<pyo3::types::PyBytes>>> {
+    let results = Python::detach(py, || {
+        kreuzberg::pdf::split::split_pdf_into_chunks_with_password(&data, chunk_size, password.as_deref())
+    })
+    .map_err(|e| to_py_err(e.into()))?;
+
+    Ok(results
+        .into_iter()
+        .map(|bytes| pyo3::types::PyBytes::new(py, &bytes).unbind())
+        .collect())
+}
+
+/// Get the page count of a PDF.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     int: Number of pages
+///
+/// Example:
+///     >>> from kreuzberg import pdf_page_count
+///     >>> pdf = open("document.pdf", "rb").read()
+///     >>> count = pdf_page_count(pdf)
+///     >>> print(f"{count} pages")
+#[pyfunction]
+#[pyo3(signature = (data, password=None))]
+pub fn pdf_page_count(py: Python, data: Vec<u8>, password: Option<String>) -> PyResult<u32> {
+    Python::detach(py, || {
+        kreuzberg::pdf::split::page_count_with_password(&data, password.as_deref())
+    })
+    .map_err(|e| to_py_err(e.into()))
+}
+
+/// Render a single PDF page to a PNG image.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     page_index (int): 0-indexed page number
+///     dpi (int): Resolution in dots per inch (default: 300)
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     bytes: PNG image data
+///
+/// Raises:
+///     ValueError: If page_index is out of bounds
+///     RuntimeError: If rendering fails
+///
+/// Example:
+///     >>> from kreuzberg import render_page_to_image
+///     >>> pdf = open("document.pdf", "rb").read()
+///     >>> png = render_page_to_image(pdf, 0, dpi=150)
+///     >>> open("page1.png", "wb").write(png)
+#[pyfunction]
+#[pyo3(signature = (data, page_index, dpi=300, password=None))]
+pub fn render_page_to_image(
+    py: Python,
+    data: Vec<u8>,
+    page_index: usize,
+    dpi: i32,
+    password: Option<String>,
+) -> PyResult<pyo3::Py<pyo3::types::PyBytes>> {
+    let png_bytes = Python::detach(py, || -> Result<Vec<u8>, kreuzberg::KreuzbergError> {
+        let renderer = kreuzberg::pdf::rendering::PdfRenderer::new()?;
+
+        let options = kreuzberg::pdf::rendering::PageRenderOptions {
+            target_dpi: dpi,
+            ..Default::default()
+        };
+
+        let image = renderer.render_page_to_image_with_password(&data, page_index, &options, password.as_deref())?;
+
+        let mut buf = std::io::Cursor::new(Vec::new());
+        image
+            .write_to(&mut buf, image::ImageFormat::Png)
+            .map_err(|e| kreuzberg::KreuzbergError::image_processing(format!("PNG encoding failed: {}", e)))?;
+
+        Ok(buf.into_inner())
+    })
+    .map_err(to_py_err)?;
+
+    Ok(pyo3::types::PyBytes::new(py, &png_bytes).unbind())
+}
+
+/// Render all pages of a PDF to PNG images.
+///
+/// Args:
+///     data (bytes): PDF file content
+///     dpi (int): Resolution in dots per inch (default: 300)
+///     password (str | None): Optional password for encrypted PDFs
+///
+/// Returns:
+///     list[bytes]: PNG image data for each page
+///
+/// Example:
+///     >>> from kreuzberg import render_all_pages_to_images
+///     >>> pdf = open("document.pdf", "rb").read()
+///     >>> images = render_all_pages_to_images(pdf, dpi=150)
+///     >>> for i, png in enumerate(images):
+///     ...     open(f"page_{i+1}.png", "wb").write(png)
+#[pyfunction]
+#[pyo3(signature = (data, dpi=300, password=None))]
+pub fn render_all_pages_to_images(
+    py: Python,
+    data: Vec<u8>,
+    dpi: i32,
+    password: Option<String>,
+) -> PyResult<Vec<pyo3::Py<pyo3::types::PyBytes>>> {
+    let all_png_bytes = Python::detach(py, || -> Result<Vec<Vec<u8>>, kreuzberg::KreuzbergError> {
+        let renderer = kreuzberg::pdf::rendering::PdfRenderer::new()?;
+
+        let options = kreuzberg::pdf::rendering::PageRenderOptions {
+            target_dpi: dpi,
+            ..Default::default()
+        };
+
+        let images = renderer.render_all_pages_with_password(&data, &options, password.as_deref())?;
+
+        images
+            .into_iter()
+            .map(|image: image::DynamicImage| {
+                let mut buf = std::io::Cursor::new(Vec::new());
+                image
+                    .write_to(&mut buf, image::ImageFormat::Png)
+                    .map_err(|e| kreuzberg::KreuzbergError::image_processing(format!("PNG encoding failed: {}", e)))?;
+                Ok(buf.into_inner())
+            })
+            .collect()
+    })
+    .map_err(to_py_err)?;
+
+    Ok(all_png_bytes
+        .into_iter()
+        .map(|bytes| pyo3::types::PyBytes::new(py, &bytes).unbind())
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

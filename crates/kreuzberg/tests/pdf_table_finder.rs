@@ -1004,7 +1004,10 @@ fn test_pymupdf_add_boxes_strict() {
                 println!("  Row {}: {:?}", i, cells);
             }
 
-            styled.into_iter().map(|row| row.into_iter().map(|c| c.plain).collect()).collect()
+            styled
+                .into_iter()
+                .map(|row| row.into_iter().map(|c| c.plain).collect())
+                .collect()
         } else {
             Vec::new()
         }

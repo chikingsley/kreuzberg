@@ -114,9 +114,12 @@ pub fn rect_to_edges(x0: f64, top: f64, x1: f64, bottom: f64) -> Vec<Edge> {
 
 /// Merge multiple bounding boxes into the smallest containing bbox.
 pub fn merge_bboxes(bboxes: &[Bbox]) -> Option<Bbox> {
-    bboxes.iter().copied().reduce(|(x0, top, x1, bottom), (bx0, btop, bx1, bbottom)| {
-        (x0.min(bx0), top.min(btop), x1.max(bx1), bottom.max(bbottom))
-    })
+    bboxes
+        .iter()
+        .copied()
+        .reduce(|(x0, top, x1, bottom), (bx0, btop, bx1, bbottom)| {
+            (x0.min(bx0), top.min(btop), x1.max(bx1), bottom.max(bbottom))
+        })
 }
 
 /// Check if two bounding boxes overlap. Returns the overlap bbox if they do.
@@ -277,12 +280,19 @@ pub fn merge_edges(
     for edge in &edges {
         let orient_key = edge.orientation == Orientation::Vertical;
         let coord_key = edge.primary_coord().to_bits();
-        groups.entry((orient_key as u8, coord_key)).or_default().push(edge.clone());
+        groups
+            .entry((orient_key as u8, coord_key))
+            .or_default()
+            .push(edge.clone());
     }
 
     let mut result = Vec::new();
     for ((orient_key, _), group) in &groups {
-        let tolerance = if *orient_key == 0 { join_x_tolerance } else { join_y_tolerance };
+        let tolerance = if *orient_key == 0 {
+            join_x_tolerance
+        } else {
+            join_y_tolerance
+        };
         result.extend(join_edge_group(group, tolerance));
     }
 

@@ -100,6 +100,13 @@ fn _internal_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(core::batch_extract_files, m)?)?;
     m.add_function(wrap_pyfunction!(core::batch_extract_bytes, m)?)?;
 
+    m.add_function(wrap_pyfunction!(core::split_pdf, m)?)?;
+    m.add_function(wrap_pyfunction!(core::split_pdf_into_pages, m)?)?;
+    m.add_function(wrap_pyfunction!(core::split_pdf_into_chunks, m)?)?;
+    m.add_function(wrap_pyfunction!(core::pdf_page_count, m)?)?;
+    m.add_function(wrap_pyfunction!(core::render_page_to_image, m)?)?;
+    m.add_function(wrap_pyfunction!(core::render_all_pages_to_images, m)?)?;
+
     m.add_function(wrap_pyfunction!(plugins::register_ocr_backend, m)?)?;
     m.add_function(wrap_pyfunction!(plugins::unregister_ocr_backend, m)?)?;
     m.add_function(wrap_pyfunction!(plugins::list_ocr_backends, m)?)?;

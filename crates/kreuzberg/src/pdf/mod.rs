@@ -52,6 +52,8 @@ pub mod metadata;
 #[cfg(feature = "pdf")]
 pub mod rendering;
 #[cfg(feature = "pdf")]
+pub mod split;
+#[cfg(feature = "pdf")]
 pub mod table;
 #[cfg(feature = "pdf")]
 pub mod table_clustering;
@@ -83,6 +85,12 @@ pub use images::{PdfImage, PdfImageExtractor, extract_images_from_pdf};
 pub use metadata::extract_metadata;
 #[cfg(feature = "pdf")]
 pub use rendering::{PageRenderOptions, render_page_to_image};
+#[cfg(feature = "pdf")]
+pub use split::{
+    PageRange, page_count, page_count_with_password, split_pdf, split_pdf_into_chunks,
+    split_pdf_into_chunks_with_password, split_pdf_into_pages, split_pdf_into_pages_with_password,
+    split_pdf_with_password,
+};
 #[cfg(feature = "pdf")]
 pub use table::extract_words_from_page;
 #[cfg(feature = "pdf")]
