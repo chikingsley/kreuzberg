@@ -916,8 +916,10 @@ fn test_pymupdf_add_lines_strict() {
         let no_lines_count = result.tables.len();
 
         // 2. With add_lines: PyMuPDF adds 3 vertical lines, expects 4 cols x 5 rows
-        let mut settings = TableSettings::default();
-        settings.explicit_vertical_lines = vec![238.99, 334.56, 433.18];
+        let settings = TableSettings {
+            explicit_vertical_lines: vec![238.99, 334.56, 433.18],
+            ..Default::default()
+        };
 
         let result = find_tables(&page, &settings, None, None).unwrap();
 
@@ -1214,8 +1216,10 @@ fn test_clip_restricts_tables() {
 
     // Now use the first table's bbox as clip region
     let first_bbox = all_result.tables[0].bbox;
-    let mut clipped_settings = TableSettings::default();
-    clipped_settings.clip = Some(first_bbox);
+    let clipped_settings = TableSettings {
+        clip: Some(first_bbox),
+        ..Default::default()
+    };
     let clipped_result = find_tables(&page, &clipped_settings, None, None).unwrap();
 
     assert_eq!(
@@ -1239,8 +1243,10 @@ fn test_clip_none_matches_default() {
     let default_settings = TableSettings::default();
     let result_default = find_tables(&page, &default_settings, None, None).unwrap();
 
-    let mut explicit_none = TableSettings::default();
-    explicit_none.clip = None;
+    let explicit_none = TableSettings {
+        clip: None,
+        ..Default::default()
+    };
     let result_none = find_tables(&page, &explicit_none, None, None).unwrap();
 
     assert_eq!(result_default.tables.len(), result_none.tables.len());
@@ -1257,13 +1263,18 @@ fn test_clip_degenerate_returns_empty() {
     let page = doc.pages().get(0).unwrap();
 
     // Degenerate clip: x0 > x1
-    let mut settings = TableSettings::default();
-    settings.clip = Some((500.0, 0.0, 100.0, 100.0));
+    let settings = TableSettings {
+        clip: Some((500.0, 0.0, 100.0, 100.0)),
+        ..Default::default()
+    };
     let result = find_tables(&page, &settings, None, None).unwrap();
     assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
 
     // Degenerate clip: top > bottom
-    settings.clip = Some((0.0, 500.0, 100.0, 100.0));
+    let settings = TableSettings {
+        clip: Some((0.0, 500.0, 100.0, 100.0)),
+        ..Default::default()
+    };
     let result = find_tables(&page, &settings, None, None).unwrap();
     assert!(result.tables.is_empty(), "Degenerate clip should find no tables");
 }
@@ -1283,13 +1294,15 @@ fn test_separate_xy_tolerances_match_single() {
     let result_single = find_tables(&page, &single, None, None).unwrap();
 
     // Separate x/y with same value as single
-    let mut separate = TableSettings::default();
-    separate.snap_x_tolerance = Some(3.0);
-    separate.snap_y_tolerance = Some(3.0);
-    separate.join_x_tolerance = Some(3.0);
-    separate.join_y_tolerance = Some(3.0);
-    separate.intersection_x_tolerance = Some(3.0);
-    separate.intersection_y_tolerance = Some(3.0);
+    let separate = TableSettings {
+        snap_x_tolerance: Some(3.0),
+        snap_y_tolerance: Some(3.0),
+        join_x_tolerance: Some(3.0),
+        join_y_tolerance: Some(3.0),
+        intersection_x_tolerance: Some(3.0),
+        intersection_y_tolerance: Some(3.0),
+        ..Default::default()
+    };
     let result_separate = find_tables(&page, &separate, None, None).unwrap();
 
     assert_eq!(

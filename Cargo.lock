@@ -1484,12 +1484,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1"
 
 [[package]]
-name = "cty"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b365fabc795046672053e29c954733ec3b05e4be654ab130fe8f1f94d7051f35"
-
-[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3491,7 +3485,6 @@ dependencies = [
  "kreuzberg",
  "kreuzberg-ffi",
  "lazy_static",
- "mimalloc-rust",
  "napi",
  "napi-build",
  "napi-derive",
@@ -3957,26 +3950,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "mimalloc-rust"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5eb726c8298efb4010b2c46d8050e4be36cf807b9d9e98cb112f830914fc9bbe"
-dependencies = [
- "cty",
- "mimalloc-rust-sys",
-]
-
-[[package]]
-name = "mimalloc-rust-sys"
-version = "1.7.9-source"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6413e13241a9809f291568133eca6694572cf528c1a6175502d090adce5dd5db"
-dependencies = [
- "cc",
- "cty",
 ]
 
 [[package]]

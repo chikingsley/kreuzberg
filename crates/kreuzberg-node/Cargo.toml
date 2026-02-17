@@ -36,6 +36,3 @@ ctor = "0.6"
 
 [build-dependencies]
 napi-build = "2.3"
-
-[target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
-mimalloc-rust = "0.2"
