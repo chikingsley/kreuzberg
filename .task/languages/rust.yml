@@ -190,7 +190,7 @@ tasks:
     env:
       PATH: '{{.CARGO_PATH_PREFIX}}{{.PATH}}'
     cmds:
-      - cargo test --lib --workspace --exclude kreuzberg-php --exclude kreuzberg-node --exclude kreuzberg-wasm
+      - cargo test --lib --workspace --exclude kreuzberg-php --exclude kreuzberg-node --exclude kreuzberg-wasm --exclude kreuzberg-py
 
   lint:
     desc: Auto-fix Rust code linting (cargo fmt + clippy)
