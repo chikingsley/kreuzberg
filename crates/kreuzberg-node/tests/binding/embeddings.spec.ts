@@ -17,6 +17,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { extractBytesSync } from "../../dist/index.js";
 import type { ExtractionConfig, JsEmbeddingModelType } from "../../src/types.js";
 
+// Embedding tests require ONNX Runtime/model artifacts and are opt-in for local runs.
+const runEmbeddingTests = process.env.RUN_EMBEDDING_TESTS === "1";
+
 /**
  * Helper function to calculate Euclidean norm (magnitude) of a vector.
  */
@@ -52,7 +55,7 @@ function isNormalized(vector: number[]): boolean {
 	return Math.abs(norm - 1.0) < tolerance;
 }
 
-describe("Embedding Vector Generation (Node.js Bindings)", () => {
+describe.skipIf(!runEmbeddingTests)("Embedding Vector Generation (Node.js Bindings)", () => {
 	describe("vector generation correctness", () => {
 		it("should generate embedding vectors with correct dimensions", () => {
 			const config: ExtractionConfig = {

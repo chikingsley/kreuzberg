@@ -68,27 +68,45 @@ tasks:
   test:
     desc: Run Python tests
     dir: packages/python
-    env:
-      ORT_DYLIB_PATH: /opt/homebrew/lib/libonnxruntime.dylib
     cmds:
-      - uv run pytest
+      - |
+        if [ "$(uname -s)" = "Darwin" ]; then
+          export ORT_DYLIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
+        fi
+        uv run pytest
+
+  test:fast:
+    desc: Run Python tests with local extension rebuild but without dependency re-sync
+    dir: packages/python
+    cmds:
+      - uv run --no-sync maturin develop
+      - |
+        if [ "$(uname -s)" = "Darwin" ]; then
+          export ORT_DYLIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
+        fi
+        uv run --no-sync pytest
 
   test:ci:
     desc: Run Python tests in CI mode with coverage
     dir: packages/python
     env:
       RUST_BACKTRACE: '1'
-      ORT_DYLIB_PATH: /opt/homebrew/lib/libonnxruntime.dylib
     cmds:
-      - uv run pytest --cov --cov-report=html -vv -s --tb=long --log-cli-level=DEBUG
+      - |
+        if [ "$(uname -s)" = "Darwin" ]; then
+          export ORT_DYLIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
+        fi
+        uv run pytest --cov --cov-report=html -vv -s --tb=long --log-cli-level=DEBUG
 
   test:coverage:
     desc: Run Python tests with coverage report
     dir: packages/python
-    env:
-      ORT_DYLIB_PATH: /opt/homebrew/lib/libonnxruntime.dylib
     cmds:
-      - uv run pytest --cov --cov-report=html
+      - |
+        if [ "$(uname -s)" = "Darwin" ]; then
+          export ORT_DYLIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
+        fi
+        uv run pytest --cov --cov-report=html
 
   lint:
     desc: Auto-fix Python code linting (ruff check + format)

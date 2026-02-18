@@ -135,6 +135,18 @@ tasks:
       - task: elixir:test
       - task: wasm:test
 
+  test:py-node:
+    desc: Run only Python + Node test suites (fast local path)
+    deps:
+      - task: python:test:fast
+      - task: node:test
+
+  build:py-node:dev:
+    desc: Build only Python + Node bindings in debug mode
+    cmds:
+      - task: python:build:dev
+      - task: node:build:dev
+
   check:
     desc: Run all linting and formatting checks via prek
     cmds:
