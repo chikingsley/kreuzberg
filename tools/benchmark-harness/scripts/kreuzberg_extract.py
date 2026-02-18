@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import time
 from typing import Any
@@ -22,6 +23,8 @@ from kreuzberg import (
     extract_file,
     extract_file_sync,
 )
+
+_BENCH_OCR_BACKEND = os.getenv("KREUZBERG_BENCH_OCR_BACKEND", "rapid-ocr")
 
 
 def _determine_ocr_used(metadata: dict[str, Any], ocr_enabled: bool) -> bool:
@@ -43,7 +46,7 @@ def extract_sync(file_path: str, ocr_enabled: bool) -> dict[str, Any]:
     # Use minimal config with cache disabled for benchmarking
     config = ExtractionConfig(use_cache=False)
     if ocr_enabled:
-        config.ocr = OcrConfig(backend="tesseract")
+        config.ocr = OcrConfig(backend=_BENCH_OCR_BACKEND)
 
     start = time.perf_counter()
     result = extract_file_sync(file_path, config=config)
@@ -63,7 +66,7 @@ async def extract_async(file_path: str, ocr_enabled: bool) -> dict[str, Any]:
     # Use minimal config with cache disabled for benchmarking
     config = ExtractionConfig(use_cache=False)
     if ocr_enabled:
-        config.ocr = OcrConfig(backend="tesseract")
+        config.ocr = OcrConfig(backend=_BENCH_OCR_BACKEND)
 
     start = time.perf_counter()
     result = await extract_file(file_path, config=config)
@@ -83,7 +86,7 @@ def extract_batch_sync(file_paths: list[str], ocr_enabled: bool) -> list[dict[st
     # Use minimal config with cache disabled for benchmarking
     config = ExtractionConfig(use_cache=False)
     if ocr_enabled:
-        config.ocr = OcrConfig(backend="tesseract")
+        config.ocr = OcrConfig(backend=_BENCH_OCR_BACKEND)
 
     start = time.perf_counter()
     results = batch_extract_files_sync(file_paths, config=config)  # type: ignore[arg-type]
